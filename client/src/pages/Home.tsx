@@ -124,7 +124,7 @@ export default function Home() {
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-6">
               <Sparkles className="h-3.5 w-3.5" />
-              Virtual Speaker v2.4
+              Virtual Speaker v2.5
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
@@ -307,7 +307,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>Virtual Speaker v2.4 - AI-Powered Virtual Lecture Automation Platform</p>
+          <p>Virtual Speaker v2.5 - AI-Powered Virtual Lecture Automation Platform</p>
         </div>
       </footer>
     </div>

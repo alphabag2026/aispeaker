@@ -26,6 +26,7 @@ import {
   Play,
   HelpCircle,
   History,
+  Tv,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -49,6 +50,7 @@ export default function Navbar() {
       { href: "/studio", label: "스튜디오", icon: Play },
       { href: "/instructor", label: "강사 대시보드", icon: Monitor },
       { href: "/pipeline-dashboard", label: "제작 히스토리", icon: History },
+      { href: "/broadcasts", label: "라이브 방송", icon: Tv },
       { href: "/obs-tutorial", label: "OBS 가이드", icon: HelpCircle },
     ] : []),
   ];

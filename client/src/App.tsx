@@ -26,6 +26,9 @@ import ScriptEditor from "./pages/ScriptEditor";
 import PipelineDashboard from "./pages/PipelineDashboard";
 import ScriptTemplateLibrary from "./pages/ScriptTemplateLibrary";
 import PreviewPlayer from "./pages/PreviewPlayer";
+import BroadcastManager from "./pages/BroadcastManager";
+import BroadcastStudio from "./pages/BroadcastStudio";
+import BroadcastViewer from "./pages/BroadcastViewer";
 
 function Router() {
   return (
@@ -52,6 +55,9 @@ function Router() {
       <Route path="/pipeline-dashboard" component={PipelineDashboard} />
       <Route path="/script-templates" component={ScriptTemplateLibrary} />
       <Route path="/preview/:id" component={PreviewPlayer} />
+      <Route path="/broadcasts" component={BroadcastManager} />
+      <Route path="/broadcast/studio/:id" component={BroadcastStudio} />
+      <Route path="/broadcast/view/:roomCode" component={BroadcastViewer} />
       <Route path="/obs-tutorial" component={ObsTutorial} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

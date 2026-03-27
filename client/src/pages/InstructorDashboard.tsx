@@ -27,6 +27,7 @@ import {
   GitBranch,
   BarChart3,
   PlayCircle,
+  Tv,
 } from "lucide-react";
 
 export default function InstructorDashboard() {
@@ -422,6 +423,43 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-orange-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* v2.5 Quick Actions */}
+        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">v2.5 신규 도구</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Link href="/broadcasts">
+            <Card className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-red-500/30 hover:border-red-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                    <Tv className="h-5 w-5 text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">라이브 방송</h3>
+                    <p className="text-sm text-muted-foreground">AI 강사 실시간 강의 방송</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-red-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/broadcasts">
+            <Card className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-500/30 hover:border-cyan-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                    <Radio className="h-5 w-5 text-cyan-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">방송 관리</h3>
+                    <p className="text-sm text-muted-foreground">방송 생성, 예약, 이력 관리</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-cyan-400 transition-colors" />
               </CardContent>
             </Card>
           </Link>

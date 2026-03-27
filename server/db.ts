@@ -25,6 +25,9 @@ import {
   scriptTemplates, InsertScriptTemplate,
   scriptVersions, InsertScriptVersion,
   contentAnalyses, InsertContentAnalysis,
+  liveBroadcasts, InsertLiveBroadcast,
+  broadcastViewers, InsertBroadcastViewer,
+  broadcastChats, InsertBroadcastChat,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -906,4 +909,141 @@ export async function updateContentAnalysis(id: number, data: Partial<{
 }>) {
   const db = await getDb();
   await db!.update(contentAnalyses).set(data).where(eq(contentAnalyses.id, id));
+}
+
+// ============ Live Broadcast helpers (v2.5) ============
+
+export async function createBroadcast(data: InsertLiveBroadcast) {
+  const db = await getDb(); if (!db) return 0;
+  const result = await db.insert(liveBroadcasts).values(data);
+  return result[0].insertId;
+}
+
+export async function getBroadcastById(id: number) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.select().from(liveBroadcasts).where(eq(liveBroadcasts.id, id)).limit(1);
+  return result[0] || null;
+}
+
+export async function getBroadcastByRoomCode(roomCode: string) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.select().from(liveBroadcasts).where(eq(liveBroadcasts.roomCode, roomCode)).limit(1);
+  return result[0] || null;
+}
+
+export async function getInstructorBroadcasts(instructorId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select({ broadcast: liveBroadcasts, script: lectureScripts })
+    .from(liveBroadcasts)
+    .leftJoin(lectureScripts, eq(liveBroadcasts.scriptId, lectureScripts.id))
+    .where(eq(liveBroadcasts.instructorId, instructorId))
+    .orderBy(desc(liveBroadcasts.createdAt));
+}
+
+export async function getLiveBroadcasts() {
+  const db = await getDb(); if (!db) return [];
+  return db.select({ broadcast: liveBroadcasts, instructor: users })
+    .from(liveBroadcasts)
+    .leftJoin(users, eq(liveBroadcasts.instructorId, users.id))
+    .where(eq(liveBroadcasts.status, 'live' as any))
+    .orderBy(desc(liveBroadcasts.startedAt));
+}
+
+export async function updateBroadcast(id: number, data: Partial<InsertLiveBroadcast>) {
+  const db = await getDb(); if (!db) return;
+  await db.update(liveBroadcasts).set(data).where(eq(liveBroadcasts.id, id));
+}
+
+export async function updateBroadcastSlideState(id: number, slideIndex: number, isAudioPlaying: boolean, audioPosition: number) {
+  const db = await getDb(); if (!db) return;
+  await db.update(liveBroadcasts).set({
+    currentSlideIndex: slideIndex,
+    isAudioPlaying,
+    audioPosition,
+    stateUpdatedAt: new Date(),
+  }).where(eq(liveBroadcasts.id, id));
+}
+
+export async function getBroadcastState(id: number) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.select({
+    currentSlideIndex: liveBroadcasts.currentSlideIndex,
+    isAudioPlaying: liveBroadcasts.isAudioPlaying,
+    audioPosition: liveBroadcasts.audioPosition,
+    stateUpdatedAt: liveBroadcasts.stateUpdatedAt,
+    status: liveBroadcasts.status,
+    currentViewers: liveBroadcasts.currentViewers,
+  }).from(liveBroadcasts).where(eq(liveBroadcasts.id, id)).limit(1);
+  return result[0] || null;
+}
+
+// Viewer helpers
+export async function joinBroadcast(broadcastId: number, userId: number, displayName: string) {
+  const db = await getDb(); if (!db) return 0;
+  // Check if already joined
+  const existing = await db.select().from(broadcastViewers)
+    .where(and(eq(broadcastViewers.broadcastId, broadcastId), eq(broadcastViewers.userId, userId)))
+    .limit(1);
+  if (existing[0]) {
+    await db.update(broadcastViewers).set({ isActive: true, lastHeartbeat: new Date(), leftAt: null })
+      .where(eq(broadcastViewers.id, existing[0].id));
+    return existing[0].id;
+  }
+  const result = await db.insert(broadcastViewers).values({ broadcastId, userId, displayName, isActive: true });
+  // Update viewer count
+  const activeCount = await db.select({ count: sql<number>`COUNT(*)` }).from(broadcastViewers)
+    .where(and(eq(broadcastViewers.broadcastId, broadcastId), eq(broadcastViewers.isActive, true)));
+  const count = activeCount[0]?.count || 0;
+  await db.update(liveBroadcasts).set({
+    currentViewers: count,
+    peakViewers: sql`GREATEST(peakViewers, ${count})`,
+  }).where(eq(liveBroadcasts.id, broadcastId));
+  return result[0].insertId;
+}
+
+export async function leaveBroadcast(broadcastId: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.update(broadcastViewers).set({ isActive: false, leftAt: new Date() })
+    .where(and(eq(broadcastViewers.broadcastId, broadcastId), eq(broadcastViewers.userId, userId)));
+  const activeCount = await db.select({ count: sql<number>`COUNT(*)` }).from(broadcastViewers)
+    .where(and(eq(broadcastViewers.broadcastId, broadcastId), eq(broadcastViewers.isActive, true)));
+  const count = activeCount[0]?.count || 0;
+  await db.update(liveBroadcasts).set({ currentViewers: count }).where(eq(liveBroadcasts.id, broadcastId));
+}
+
+export async function heartbeatViewer(broadcastId: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.update(broadcastViewers).set({ lastHeartbeat: new Date() })
+    .where(and(eq(broadcastViewers.broadcastId, broadcastId), eq(broadcastViewers.userId, userId)));
+}
+
+export async function getActiveViewers(broadcastId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(broadcastViewers)
+    .where(and(eq(broadcastViewers.broadcastId, broadcastId), eq(broadcastViewers.isActive, true)))
+    .orderBy(desc(broadcastViewers.joinedAt));
+}
+
+// Chat helpers
+export async function createBroadcastChat(data: InsertBroadcastChat) {
+  const db = await getDb(); if (!db) return 0;
+  const result = await db.insert(broadcastChats).values(data);
+  return result[0].insertId;
+}
+
+export async function getBroadcastChats(broadcastId: number, afterId?: number, limit = 50) {
+  const db = await getDb(); if (!db) return [];
+  const conditions = [eq(broadcastChats.broadcastId, broadcastId)];
+  if (afterId) {
+    conditions.push(sql`${broadcastChats.id} > ${afterId}` as any);
+  }
+  return db.select().from(broadcastChats)
+    .where(and(...conditions))
+    .orderBy(broadcastChats.id)
+    .limit(limit);
+}
+
+export async function pinBroadcastChat(chatId: number, isPinned: boolean) {
+  const db = await getDb(); if (!db) return;
+  await db.update(broadcastChats).set({ isPinned }).where(eq(broadcastChats.id, chatId));
 }

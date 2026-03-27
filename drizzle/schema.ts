@@ -615,3 +615,96 @@ export const contentAnalyses = mysqlTable("contentAnalyses", {
 
 export type ContentAnalysis = typeof contentAnalyses.$inferSelect;
 export type InsertContentAnalysis = typeof contentAnalyses.$inferInsert;
+
+// ============ v2.5 NEW TABLES ============
+
+/**
+ * Live Broadcasts - group broadcast sessions
+ * Instructor creates a broadcast from a script, viewers join via unique room code
+ * Slide state is synced via polling - instructor controls slide progression
+ */
+export const liveBroadcasts = mysqlTable("liveBroadcasts", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Instructor who owns this broadcast */
+  instructorId: int("instructorId").notNull(),
+  /** Script used for this broadcast */
+  scriptId: int("scriptId").notNull(),
+  /** Broadcast title */
+  title: varchar("title", { length: 500 }).notNull(),
+  /** Broadcast description */
+  description: text("description"),
+  /** Unique room code for viewers to join */
+  roomCode: varchar("roomCode", { length: 32 }).notNull().unique(),
+  /** Broadcast status */
+  status: mysqlEnum("status", ["scheduled", "live", "paused", "ended"]).default("scheduled").notNull(),
+  /** Current slide index (0-based) */
+  currentSlideIndex: int("currentSlideIndex").default(0),
+  /** Whether TTS audio is currently playing */
+  isAudioPlaying: boolean("isAudioPlaying").default(false),
+  /** Audio playback position in seconds */
+  audioPosition: int("audioPosition").default(0),
+  /** Last state update timestamp (for sync) */
+  stateUpdatedAt: timestamp("stateUpdatedAt").defaultNow().notNull(),
+  /** TTS voice ID to use */
+  ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).default("alloy"),
+  /** Voice profile ID */
+  voiceProfileId: int("voiceProfileId"),
+  /** Scheduled start time */
+  scheduledAt: timestamp("scheduledAt"),
+  /** Actual start time */
+  startedAt: timestamp("startedAt"),
+  /** End time */
+  endedAt: timestamp("endedAt"),
+  /** Peak viewer count */
+  peakViewers: int("peakViewers").default(0),
+  /** Current viewer count */
+  currentViewers: int("currentViewers").default(0),
+  /** Generated TTS audio URLs as JSON array (per section) */
+  audioUrls: text("audioUrls"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LiveBroadcast = typeof liveBroadcasts.$inferSelect;
+export type InsertLiveBroadcast = typeof liveBroadcasts.$inferInsert;
+
+/**
+ * Broadcast Viewers - tracks who is watching a broadcast
+ */
+export const broadcastViewers = mysqlTable("broadcastViewers", {
+  id: int("id").autoincrement().primaryKey(),
+  broadcastId: int("broadcastId").notNull(),
+  userId: int("userId").notNull(),
+  /** Display name in chat */
+  displayName: varchar("displayName", { length: 255 }),
+  /** Whether currently connected */
+  isActive: boolean("isActive").default(true),
+  /** Last heartbeat timestamp */
+  lastHeartbeat: timestamp("lastHeartbeat").defaultNow().notNull(),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+  leftAt: timestamp("leftAt"),
+});
+
+export type BroadcastViewer = typeof broadcastViewers.$inferSelect;
+export type InsertBroadcastViewer = typeof broadcastViewers.$inferInsert;
+
+/**
+ * Broadcast Chats - real-time chat messages during broadcasts
+ */
+export const broadcastChats = mysqlTable("broadcastChats", {
+  id: int("id").autoincrement().primaryKey(),
+  broadcastId: int("broadcastId").notNull(),
+  userId: int("userId").notNull(),
+  /** Sender display name */
+  displayName: varchar("displayName", { length: 255 }),
+  /** Chat message content */
+  message: text("message").notNull(),
+  /** Message type */
+  messageType: mysqlEnum("messageType", ["chat", "question", "system"]).default("chat").notNull(),
+  /** Whether this is pinned by instructor */
+  isPinned: boolean("isPinned").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BroadcastChat = typeof broadcastChats.$inferSelect;
+export type InsertBroadcastChat = typeof broadcastChats.$inferInsert;

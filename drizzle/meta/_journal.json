@@ -57,6 +57,13 @@
       "when": 1774636792529,
       "tag": "0007_little_cassandra_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1774647470011,
+      "tag": "0008_youthful_landau",
+      "breakpoints": true
     }
   ]
 }

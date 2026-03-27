@@ -300,3 +300,57 @@
 - [x] 미리보기 플레이어 테스트 (2개)
 - [x] 콘텐츠 분석 테스트 (2개)
 - [x] 전체 178개 테스트 통과
+
+## 단체 방송 시스템 (v2.5)
+
+### DB 스키마
+- [x] liveBroadcasts 테이블 (방송 세션 관리)태, 슬라이드 동기화)
+- [x] broadcastViewers 테이블 (시청자 참여 기록)
+- [x] broadcastChats 테이블 (실시간 채팅)
+
+### 백엔드 라우터
+- [x] broadcast.create - 방송방 생성 (스크립트 기반)
+- [x] broadcast.start - 방송 시작
+- [x] broadcast.end - 방송 종료
+- [x] broadcast.list - 내 방송 목록
+- [x] broadcast.liveList - 현재 진행중인 방송 목록 (공개)
+- [x] broadcast.get - 방송 상세 정보
+- [x] broadcast.updateSlide - 슬라이드 전환 (강사)
+- [x] broadcast.syncState - 현재 방송 상태 폴링 (시청자)
+- [x] broadcast.join - 시청자 입장
+- [x] broadcast.leave - 시청자 퇴장
+- [x] broadcast.chat - 채팅 메시지 전송
+- [x] broadcast.chatHistory - 채팅 이력 조회
+
+### 프론트엔드 - 방송 관리
+- [x] 방송 관리 대시보드 (BroadcastManager 페이지)
+- [x] 방송 생성 다이얼로그 (스크립트 선택, 제목, 설명)
+- [x] 방송 목록 (예정/진행중/종료)
+
+### 프론트엔드 - 강사 방송 스튜디오
+- [x] BroadcastStudio 페이지 (강사 전용)
+- [x] 슬라이드 뷰어 (현재 섹션 내용 표시)
+- [x] 슬라이드 네비게이션 (이전/다음)
+- [x] TTS 오디오 자동 재생 (섹션별)
+- [x] 시청자 수 실시간 표시
+- [x] 채팅 패널 (시청자 메시지 확인)
+- [x] 방송 시작/종료 컨트롤
+
+### 프론트엔드 - 시청자 라이브 뷰어
+- [x] BroadcastViewer 페이지 (시청자용)
+- [x] 슬라이드 실시간 동기화 (200ms 폴링)
+- [x] TTS 오디오 동기화 재생
+- [x] 채팅 패널 (메시지 전송/수신)
+- [x] 시청자 수 표시
+- [x] 방송 종료 시 안내
+
+### 네비게이션 연동
+- [x] App.tsx 라우트 추가 (3개)
+- [x] InstructorDashboard v2.5 카드 추가
+- [x] Navbar 라이브 방송 링크 추가
+
+### 테스트
+- [x] 방송 CRUD 테스트
+- [x] 슬라이드 동기화 테스트
+- [x] 채팅 테스트
+- [x] 전체 200개 테스트 통과

@@ -2017,6 +2017,227 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         };
       }),
   }),
+
+  // ============ Live Broadcast (v2.5) ============
+  broadcast: router({
+    /** Create a new broadcast from a script */
+    create: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        title: z.string().min(1),
+        description: z.string().optional(),
+        ttsVoiceId: z.string().optional(),
+        voiceProfileId: z.number().optional(),
+        scheduledAt: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const script = await db.getLectureScriptById(input.scriptId);
+        if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "스크립트가 준비되지 않았습니다." });
+        const roomCode = nanoid(8).toUpperCase();
+        const id = await db.createBroadcast({
+          instructorId: ctx.user.id,
+          scriptId: input.scriptId,
+          title: input.title,
+          description: input.description || null,
+          roomCode,
+          status: input.scheduledAt ? "scheduled" : "scheduled",
+          ttsVoiceId: input.ttsVoiceId || "alloy",
+          voiceProfileId: input.voiceProfileId || null,
+          scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
+        });
+        return { id, roomCode };
+      }),
+
+    /** List instructor's broadcasts */
+    list: instructorProcedure.query(async ({ ctx }) => {
+      return db.getInstructorBroadcasts(ctx.user.id);
+    }),
+
+    /** Get broadcast details */
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const broadcast = await db.getBroadcastById(input.id);
+        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "방송을 찾을 수 없습니다." });
+        const script = await db.getLectureScriptById(broadcast.scriptId);
+        return { ...broadcast, script };
+      }),
+
+    /** Get broadcast by room code (public for joining) */
+    getByRoom: publicProcedure
+      .input(z.object({ roomCode: z.string() }))
+      .query(async ({ input }) => {
+        const broadcast = await db.getBroadcastByRoomCode(input.roomCode);
+        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "방송방을 찾을 수 없습니다." });
+        const script = await db.getLectureScriptById(broadcast.scriptId);
+        return { ...broadcast, script };
+      }),
+
+    /** List currently live broadcasts (public) */
+    liveList: publicProcedure.query(async () => {
+      return db.getLiveBroadcasts();
+    }),
+
+    /** Start broadcasting */
+    start: instructorProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND" });
+        if (broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        await db.updateBroadcast(input.broadcastId, {
+          status: "live",
+          startedAt: new Date(),
+          currentSlideIndex: 0,
+          isAudioPlaying: false,
+          audioPosition: 0,
+        });
+        return { success: true };
+      }),
+
+    /** Pause broadcasting */
+    pause: instructorProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        await db.updateBroadcast(input.broadcastId, { status: "paused", isAudioPlaying: false });
+        return { success: true };
+      }),
+
+    /** Resume broadcasting */
+    resume: instructorProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        await db.updateBroadcast(input.broadcastId, { status: "live" });
+        return { success: true };
+      }),
+
+    /** End broadcasting */
+    end: instructorProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        await db.updateBroadcast(input.broadcastId, {
+          status: "ended",
+          endedAt: new Date(),
+          isAudioPlaying: false,
+        });
+        return { success: true };
+      }),
+
+    /** Update slide state (instructor controls) */
+    updateSlide: instructorProcedure
+      .input(z.object({
+        broadcastId: z.number(),
+        slideIndex: z.number(),
+        isAudioPlaying: z.boolean(),
+        audioPosition: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        await db.updateBroadcastSlideState(input.broadcastId, input.slideIndex, input.isAudioPlaying, input.audioPosition);
+        return { success: true };
+      }),
+
+    /** Sync state polling (viewers call this frequently) */
+    syncState: publicProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .query(async ({ input }) => {
+        const state = await db.getBroadcastState(input.broadcastId);
+        if (!state) throw new TRPCError({ code: "NOT_FOUND" });
+        return state;
+      }),
+
+    /** Save generated audio URLs for the broadcast */
+    saveAudioUrls: instructorProcedure
+      .input(z.object({
+        broadcastId: z.number(),
+        audioUrls: z.array(z.string()),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        await db.updateBroadcast(input.broadcastId, { audioUrls: JSON.stringify(input.audioUrls) });
+        return { success: true };
+      }),
+
+    /** Join broadcast as viewer */
+    join: protectedProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND" });
+        const displayName = ctx.user.name || "시청자";
+        await db.joinBroadcast(input.broadcastId, ctx.user.id, displayName);
+        return { success: true };
+      }),
+
+    /** Leave broadcast */
+    leave: protectedProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.leaveBroadcast(input.broadcastId, ctx.user.id);
+        return { success: true };
+      }),
+
+    /** Heartbeat to keep viewer active */
+    heartbeat: protectedProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.heartbeatViewer(input.broadcastId, ctx.user.id);
+        return { success: true };
+      }),
+
+    /** Get active viewers */
+    viewers: protectedProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getActiveViewers(input.broadcastId);
+      }),
+
+    /** Send chat message */
+    chat: protectedProcedure
+      .input(z.object({
+        broadcastId: z.number(),
+        message: z.string().min(1).max(500),
+        messageType: z.enum(["chat", "question"]).default("chat"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const displayName = ctx.user.name || "시청자";
+        const id = await db.createBroadcastChat({
+          broadcastId: input.broadcastId,
+          userId: ctx.user.id,
+          displayName,
+          message: input.message,
+          messageType: input.messageType,
+        });
+        return { id };
+      }),
+
+    /** Get chat messages (with polling support via afterId) */
+    chatHistory: publicProcedure
+      .input(z.object({
+        broadcastId: z.number(),
+        afterId: z.number().optional(),
+        limit: z.number().default(50),
+      }))
+      .query(async ({ input }) => {
+        return db.getBroadcastChats(input.broadcastId, input.afterId, input.limit);
+      }),
+
+    /** Pin/unpin a chat message (instructor only) */
+    pinChat: instructorProcedure
+      .input(z.object({ chatId: z.number(), isPinned: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await db.pinBroadcastChat(input.chatId, input.isPinned);
+        return { success: true };
+      }),
+  }),
 });
 
 // SRT time formatter
