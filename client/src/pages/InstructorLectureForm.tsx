@@ -128,8 +128,8 @@ export default function InstructorLectureForm() {
       uploadMutation.mutate({
         lectureId,
         title: file.name,
-        fileBase64: base64,
-        filename: file.name,
+        fileData: base64,
+        fileName: file.name,
         fileType,
       });
     };

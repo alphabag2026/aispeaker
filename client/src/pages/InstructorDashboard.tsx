@@ -15,6 +15,9 @@ import {
   ArrowRight,
   Loader2,
   Video,
+  User2,
+  Volume2,
+  Monitor as MonitorIcon,
 } from "lucide-react";
 
 export default function InstructorDashboard() {
@@ -28,9 +31,10 @@ export default function InstructorDashboard() {
   const { data: stats, isLoading } = trpc.lecture.stats.useQuery(undefined, {
     enabled: isInstructor,
   });
-  const { data: myLectures } = trpc.lecture.myLectures.useQuery(undefined, {
-    enabled: isInstructor,
-  });
+  const { data: myLectures } = trpc.lecture.list.useQuery(
+    { instructorId: user?.id },
+    { enabled: isInstructor && !!user }
+  );
 
   if (!isAuthenticated) {
     return (
@@ -203,12 +207,64 @@ export default function InstructorDashboard() {
           </Link>
         </div>
 
+        {/* v2.0 Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Link href="/instructor/face-swap">
+            <Card className="bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
+                    <User2 className="h-5 w-5 text-pink-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">딥페이크 얼굴</h3>
+                    <p className="text-sm text-muted-foreground">AI 얼굴 변환 프로필 관리</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/instructor/voice-mod">
+            <Card className="bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <Volume2 className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">음성 변조</h3>
+                    <p className="text-sm text-muted-foreground">목소리 톤/말투 변환 관리</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/instructor/platforms">
+            <Card className="bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                    <MonitorIcon className="h-5 w-5 text-cyan-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">외부 플랫폼</h3>
+                    <p className="text-sm text-muted-foreground">Zoom/Meet/Webex 연동</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
         {/* Recent Lectures */}
         {myLectures && myLectures.length > 0 && (
           <div>
             <h2 className="text-xl font-bold mb-4">최근 강의</h2>
             <div className="space-y-3">
-              {myLectures.slice(0, 5).map((lecture) => (
+              {myLectures.slice(0, 5).map((lecture: any) => (
                 <Link key={lecture.id} href={`/instructor/lectures/${lecture.id}/edit`}>
                   <Card className="bg-card hover:border-primary/30 transition-colors cursor-pointer">
                     <CardContent className="p-4 flex items-center justify-between">

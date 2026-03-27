@@ -12,8 +12,12 @@ import InstructorLectures from "./pages/InstructorLectures";
 import InstructorLectureForm from "./pages/InstructorLectureForm";
 import InstructorVoiceProfiles from "./pages/InstructorVoiceProfiles";
 import InstructorTemplates from "./pages/InstructorTemplates";
+import InstructorFaceSwap from "./pages/InstructorFaceSwap";
+import InstructorVoiceMod from "./pages/InstructorVoiceMod";
+import InstructorPlatforms from "./pages/InstructorPlatforms";
 import MyEnrollments from "./pages/MyEnrollments";
 import StudentDashboard from "./pages/StudentDashboard";
+import Certificates from "./pages/Certificates";
 import VodList from "./pages/VodList";
 import VodPlayer from "./pages/VodPlayer";
 
@@ -25,6 +29,7 @@ function Router() {
       <Route path="/lecture/:id" component={LectureRoom} />
       <Route path="/my-lectures" component={MyEnrollments} />
       <Route path="/my-dashboard" component={StudentDashboard} />
+      <Route path="/certificates" component={Certificates} />
       <Route path="/vod" component={VodList} />
       <Route path="/vod/:id" component={VodPlayer} />
       <Route path="/instructor" component={InstructorDashboard} />
@@ -33,6 +38,9 @@ function Router() {
       <Route path="/instructor/lectures/:id/edit" component={InstructorLectureForm} />
       <Route path="/instructor/voice-profiles" component={InstructorVoiceProfiles} />
       <Route path="/instructor/templates" component={InstructorTemplates} />
+      <Route path="/instructor/face-swap" component={InstructorFaceSwap} />
+      <Route path="/instructor/voice-mod" component={InstructorVoiceMod} />
+      <Route path="/instructor/platforms" component={InstructorPlatforms} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

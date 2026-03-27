@@ -14,8 +14,6 @@ import {
   StopCircle,
   BookOpen,
   ArrowLeft,
-  Loader2,
-  Upload,
 } from "lucide-react";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -27,29 +25,37 @@ const statusLabels: Record<string, { label: string; color: string }> = {
 };
 
 export default function InstructorLectures() {
-  const { data: lectures, refetch } = trpc.lecture.myLectures.useQuery();
+  const { user } = useAuth();
+  const { data: lectures, refetch } = trpc.lecture.list.useQuery(
+    { instructorId: user?.id },
+    { enabled: !!user }
+  );
   const utils = trpc.useUtils();
 
   const deleteMutation = trpc.lecture.delete.useMutation({
     onSuccess: () => {
       toast.success("강의가 삭제되었습니다.");
-      utils.lecture.myLectures.invalidate();
+      refetch();
     },
   });
 
-  const goLiveMutation = trpc.lecture.goLive.useMutation({
+  const updateMutation = trpc.lecture.update.useMutation({
     onSuccess: () => {
-      toast.success("강의가 시작되었습니다!");
-      utils.lecture.myLectures.invalidate();
+      refetch();
     },
   });
 
-  const endLectureMutation = trpc.lecture.endLecture.useMutation({
-    onSuccess: () => {
-      toast.success("강의가 종료되었습니다.");
-      utils.lecture.myLectures.invalidate();
-    },
-  });
+  const handleGoLive = (id: number) => {
+    updateMutation.mutate({ id, status: "live" }, {
+      onSuccess: () => toast.success("강의가 시작되었습니다!"),
+    });
+  };
+
+  const handleEndLecture = (id: number) => {
+    updateMutation.mutate({ id, status: "completed" }, {
+      onSuccess: () => toast.success("강의가 종료되었습니다."),
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,7 +84,7 @@ export default function InstructorLectures() {
 
         {lectures && lectures.length > 0 ? (
           <div className="space-y-3">
-            {lectures.map((lecture) => {
+            {lectures.map((lecture: any) => {
               const status = statusLabels[lecture.status] || statusLabels.draft;
               return (
                 <Card key={lecture.id} className="bg-card">
@@ -101,8 +107,8 @@ export default function InstructorLectures() {
                             variant="outline"
                             size="sm"
                             className="gap-1 text-green-400"
-                            onClick={() => goLiveMutation.mutate({ id: lecture.id })}
-                            disabled={goLiveMutation.isPending}
+                            onClick={() => handleGoLive(lecture.id)}
+                            disabled={updateMutation.isPending}
                           >
                             <Radio className="h-3.5 w-3.5" />
                             시작
@@ -113,8 +119,8 @@ export default function InstructorLectures() {
                             variant="outline"
                             size="sm"
                             className="gap-1 text-destructive"
-                            onClick={() => endLectureMutation.mutate({ id: lecture.id })}
-                            disabled={endLectureMutation.isPending}
+                            onClick={() => handleEndLecture(lecture.id)}
+                            disabled={updateMutation.isPending}
                           >
                             <StopCircle className="h-3.5 w-3.5" />
                             종료

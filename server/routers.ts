@@ -1,21 +1,16 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
-import { TRPCError } from "@trpc/server";
+import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
-import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut } from "./storage";
+import { transcribeAudio } from "./_core/voiceTranscription";
 import { nanoid } from "nanoid";
 
-// ============ Auth helpers ============
-const protectedProcedure = publicProcedure.use(({ ctx, next }) => {
-  if (!ctx.user) throw new TRPCError({ code: "UNAUTHORIZED" });
-  return next({ ctx: { ...ctx, user: ctx.user } });
-});
-
+// Instructor-only procedure
 const instructorProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.platformRole !== "instructor" && ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "강사 권한이 필요합니다." });
@@ -23,7 +18,7 @@ const instructorProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
-// ============ Supported Languages ============
+// Supported languages
 const SUPPORTED_LANGUAGES = [
   { code: "ko", name: "한국어", flag: "🇰🇷" },
   { code: "en", name: "English", flag: "🇺🇸" },
@@ -40,11 +35,21 @@ const SUPPORTED_LANGUAGES = [
   { code: "th", name: "ไทย", flag: "🇹🇭" },
   { code: "id", name: "Bahasa Indonesia", flag: "🇮🇩" },
   { code: "tr", name: "Türkçe", flag: "🇹🇷" },
-  { code: "it", name: "Italiano", flag: "🇮🇹" },
-  { code: "nl", name: "Nederlands", flag: "🇳🇱" },
   { code: "pl", name: "Polski", flag: "🇵🇱" },
+  { code: "nl", name: "Nederlands", flag: "🇳🇱" },
+  { code: "it", name: "Italiano", flag: "🇮🇹" },
   { code: "uk", name: "Українська", flag: "🇺🇦" },
   { code: "sv", name: "Svenska", flag: "🇸🇪" },
+];
+
+// TTS voice options
+const TTS_VOICES = [
+  { id: "alloy", name: "Alloy", desc: "중성적, 균형잡힌 톤" },
+  { id: "echo", name: "Echo", desc: "남성적, 깊은 톤" },
+  { id: "fable", name: "Fable", desc: "영국식, 따뜻한 톤" },
+  { id: "onyx", name: "Onyx", desc: "남성적, 권위있는 톤" },
+  { id: "nova", name: "Nova", desc: "여성적, 밝은 톤" },
+  { id: "shimmer", name: "Shimmer", desc: "여성적, 부드러운 톤" },
 ];
 
 export const appRouter = router({
@@ -59,7 +64,7 @@ export const appRouter = router({
     }),
   }),
 
-  // ============ User / Profile ============
+  // ============ User & Role ============
   user: router({
     setRole: protectedProcedure
       .input(z.object({ platformRole: z.enum(["instructor", "student"]) }))
@@ -67,254 +72,82 @@ export const appRouter = router({
         await db.updateUserPlatformRole(ctx.user.id, input.platformRole);
         return { success: true };
       }),
-
     updateProfile: protectedProcedure
-      .input(z.object({
-        name: z.string().optional(),
-        bio: z.string().optional(),
-        avatarUrl: z.string().optional(),
-        preferredLang: z.string().optional(),
-      }))
+      .input(z.object({ name: z.string().optional(), bio: z.string().optional(), avatarUrl: z.string().optional(), preferredLang: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
         await db.updateUserProfile(ctx.user.id, input);
         return { success: true };
-      }),
-
-    setPreferredLang: protectedProcedure
-      .input(z.object({ lang: z.string().min(2).max(10) }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateUserPreferredLang(ctx.user.id, input.lang);
-        return { success: true };
-      }),
-  }),
-
-  // ============ Voice Profile ============
-  voiceProfile: router({
-    list: instructorProcedure.query(async ({ ctx }) => {
-      return db.getVoiceProfiles(ctx.user.id);
-    }),
-
-    create: instructorProcedure
-      .input(z.object({
-        name: z.string().min(1),
-        voiceDescription: z.string().optional(),
-        teachingStyle: z.string().optional(),
-        systemPrompt: z.string().optional(),
-        ttsVoiceId: z.string().optional(),
-        avatarImageUrl: z.string().optional(),
-        avatarStyle: z.string().optional(),
-        didApiKey: z.string().optional(),
-        isDefault: z.boolean().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const id = await db.createVoiceProfile({ ...input, userId: ctx.user.id });
-        return { id };
-      }),
-
-    update: instructorProcedure
-      .input(z.object({
-        id: z.number(),
-        name: z.string().optional(),
-        voiceDescription: z.string().optional(),
-        teachingStyle: z.string().optional(),
-        systemPrompt: z.string().optional(),
-        ttsVoiceId: z.string().optional(),
-        avatarImageUrl: z.string().optional(),
-        avatarStyle: z.string().optional(),
-        didApiKey: z.string().optional(),
-        isDefault: z.boolean().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const { id, ...data } = input;
-        await db.updateVoiceProfile(id, ctx.user.id, data);
-        return { success: true };
-      }),
-
-    delete: instructorProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.deleteVoiceProfile(input.id, ctx.user.id);
-        return { success: true };
-      }),
-
-    uploadSample: instructorProcedure
-      .input(z.object({
-        id: z.number(),
-        audioBase64: z.string(),
-        filename: z.string(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const buffer = Buffer.from(input.audioBase64, 'base64');
-        const fileKey = `voice-samples/${ctx.user.id}/${nanoid()}-${input.filename}`;
-        const { url } = await storagePut(fileKey, buffer, 'audio/mpeg');
-        await db.updateVoiceProfile(input.id, ctx.user.id, { sampleUrl: url });
-        return { url };
       }),
   }),
 
   // ============ Lectures ============
   lecture: router({
     list: publicProcedure
-      .input(z.object({
-        category: z.string().optional(),
-        status: z.string().optional(),
-        search: z.string().optional(),
-      }).optional())
-      .query(async ({ input }) => {
-        return db.getLectures(input ?? {});
-      }),
-
+      .input(z.object({ category: z.string().optional(), status: z.string().optional(), instructorId: z.number().optional(), search: z.string().optional() }).optional())
+      .query(async ({ input }) => db.getLectures(input ?? {})),
     getById: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const lecture = await db.getLectureById(input.id);
-        if (!lecture) throw new TRPCError({ code: 'NOT_FOUND', message: '강의를 찾을 수 없습니다.' });
+        if (!lecture) throw new TRPCError({ code: "NOT_FOUND", message: "강의를 찾을 수 없습니다." });
         return lecture;
       }),
-
-    myLectures: instructorProcedure.query(async ({ ctx }) => {
-      return db.getLectures({ instructorId: ctx.user.id });
-    }),
-
     create: instructorProcedure
       .input(z.object({
-        title: z.string().min(1),
-        description: z.string().optional(),
+        title: z.string().min(1), description: z.string().optional(),
         category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).optional(),
         aiMode: z.enum(["voice", "text", "avatar"]).optional(),
-        voiceProfileId: z.number().optional(),
-        maxParticipants: z.number().optional(),
-        aiContext: z.string().optional(),
-        autoRecord: z.boolean().optional(),
+        voiceProfileId: z.number().optional(), maxParticipants: z.number().optional(),
+        aiContext: z.string().optional(), scheduledAt: z.string().optional(),
+        faceSwapProfileId: z.number().optional(), voiceModProfileId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const id = await db.createLecture({ ...input, instructorId: ctx.user.id });
+        const id = await db.createLecture({
+          ...input, instructorId: ctx.user.id,
+          scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : undefined,
+        });
         return { id };
       }),
-
     update: instructorProcedure
       .input(z.object({
-        id: z.number(),
-        title: z.string().optional(),
-        description: z.string().optional(),
+        id: z.number(), title: z.string().optional(), description: z.string().optional(),
         category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).optional(),
         aiMode: z.enum(["voice", "text", "avatar"]).optional(),
-        voiceProfileId: z.number().optional(),
-        status: z.enum(["draft", "scheduled", "live", "completed", "archived"]).optional(),
-        aiContext: z.string().optional(),
-        maxParticipants: z.number().optional(),
-        autoRecord: z.boolean().optional(),
+        voiceProfileId: z.number().optional(), maxParticipants: z.number().optional(),
+        aiContext: z.string().optional(), status: z.enum(["draft", "scheduled", "live", "completed", "archived"]).optional(),
+        faceSwapProfileId: z.number().optional(), voiceModProfileId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
-        await db.updateLecture(id, ctx.user.id, data as any);
+        await db.updateLecture(id, ctx.user.id, data);
         return { success: true };
       }),
-
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await db.deleteLecture(input.id, ctx.user.id);
         return { success: true };
       }),
-
-    goLive: instructorProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateLectureStatus(input.id, 'live');
-        return { success: true };
-      }),
-
-    endLecture: instructorProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateLectureStatus(input.id, 'completed');
-        const lecture = await db.getLectureById(input.id);
-        if (lecture?.autoRecord) {
-          const messages = await db.getQaMessages(input.id);
-          const snapshots = await db.getWhiteboardSnapshots(input.id);
-          const vodId = await db.createVodRecording({
-            lectureId: input.id,
-            title: `${lecture.title} - 녹화본`,
-            description: lecture.description,
-            messageCount: messages.length,
-            snapshotCount: snapshots.length,
-            status: "processing",
-            startedAt: lecture.createdAt,
-            endedAt: new Date(),
-          });
-          if (vodId) {
-            let offsetSec = 0;
-            for (const msg of messages) {
-              await db.createVodTimelineEvent({
-                vodId,
-                eventType: msg.message.messageType === 'question' ? 'qa_question' : 'qa_answer',
-                offsetSeconds: offsetSec,
-                content: msg.message.content,
-                userId: msg.message.userId,
-                audioUrl: msg.message.audioUrl,
-                avatarVideoUrl: msg.message.avatarVideoUrl,
-              });
-              offsetSec += 10;
-            }
-            for (let i = 0; i < snapshots.length; i++) {
-              await db.createVodTimelineEvent({
-                vodId,
-                eventType: 'whiteboard_snapshot',
-                offsetSeconds: i * 30,
-                content: snapshots[i].snapshotData,
-              });
-            }
-            const duration = messages.length * 10 + snapshots.length * 30;
-            await db.updateVodRecording(vodId, { status: "ready", duration });
-          }
-        }
-        return { success: true };
-      }),
-
-    stats: instructorProcedure.query(async ({ ctx }) => {
-      return db.getLectureStats(ctx.user.id);
-    }),
+    stats: instructorProcedure.query(async ({ ctx }) => db.getLectureStats(ctx.user.id)),
   }),
 
-  // ============ Lecture Materials ============
+  // ============ Materials ============
   material: router({
     list: protectedProcedure
       .input(z.object({ lectureId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getLectureMaterials(input.lectureId);
-      }),
-
+      .query(async ({ input }) => db.getLectureMaterials(input.lectureId)),
     upload: instructorProcedure
-      .input(z.object({
-        lectureId: z.number(),
-        title: z.string(),
-        fileBase64: z.string(),
-        filename: z.string(),
-        fileType: z.enum(["pdf", "ppt", "image", "video", "other"]),
-        pageCount: z.number().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const buffer = Buffer.from(input.fileBase64, 'base64');
-        const fileKey = `materials/${input.lectureId}/${nanoid()}-${input.filename}`;
-        const mimeMap: Record<string, string> = {
-          pdf: 'application/pdf', ppt: 'application/vnd.ms-powerpoint',
-          image: 'image/png', video: 'video/mp4', other: 'application/octet-stream',
-        };
-        const { url } = await storagePut(fileKey, buffer, mimeMap[input.fileType] || 'application/octet-stream');
-        const id = await db.createLectureMaterial({
-          lectureId: input.lectureId, title: input.title, fileType: input.fileType,
-          fileUrl: url, fileKey, pageCount: input.pageCount ?? 0,
-        });
+      .input(z.object({ lectureId: z.number(), title: z.string(), fileType: z.enum(["pdf", "ppt", "image", "video", "other"]), fileData: z.string(), fileName: z.string(), pageCount: z.number().optional() }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.fileData, "base64");
+        const fileKey = `materials/${input.lectureId}/${Date.now()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.fileType === "pdf" ? "application/pdf" : "application/octet-stream");
+        const id = await db.createLectureMaterial({ lectureId: input.lectureId, title: input.title, fileType: input.fileType, fileUrl: url, fileKey, pageCount: input.pageCount });
         return { id, url };
       }),
-
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteLectureMaterial(input.id);
-        return { success: true };
-      }),
+      .mutation(async ({ input }) => { await db.deleteLectureMaterial(input.id); return { success: true }; }),
   }),
 
   // ============ Enrollment ============
@@ -325,262 +158,239 @@ export const appRouter = router({
         const id = await db.enrollInLecture(input.lectureId, ctx.user.id);
         return { id };
       }),
-
+    list: protectedProcedure
+      .input(z.object({ lectureId: z.number() }))
+      .query(async ({ input }) => db.getLectureEnrollments(input.lectureId)),
+    myEnrollments: protectedProcedure.query(async ({ ctx }) => db.getUserEnrollments(ctx.user.id)),
     isEnrolled: protectedProcedure
       .input(z.object({ lectureId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        return db.isEnrolled(input.lectureId, ctx.user.id);
-      }),
-
-    myEnrollments: protectedProcedure.query(async ({ ctx }) => {
-      return db.getUserEnrollments(ctx.user.id);
-    }),
-
-    participants: protectedProcedure
-      .input(z.object({ lectureId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getLectureEnrollments(input.lectureId);
-      }),
+      .query(async ({ ctx, input }) => db.isEnrolled(input.lectureId, ctx.user.id)),
   }),
 
-  // ============ Q&A / AI Chat ============
+  // ============ Q&A ============
   qa: router({
     messages: protectedProcedure
       .input(z.object({ lectureId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getQaMessages(input.lectureId);
-      }),
-
+      .query(async ({ input }) => db.getQaMessages(input.lectureId)),
     ask: protectedProcedure
-      .input(z.object({
-        lectureId: z.number(),
-        content: z.string().min(1),
-        inputMethod: z.enum(["text", "voice"]).optional(),
-      }))
+      .input(z.object({ lectureId: z.number(), content: z.string().min(1), inputMethod: z.enum(["text", "voice"]).optional() }))
       .mutation(async ({ ctx, input }) => {
-        await db.createQaMessage({
-          lectureId: input.lectureId, userId: ctx.user.id,
-          messageType: "question", inputMethod: input.inputMethod ?? "text",
-          content: input.content,
-        });
-
-        // Track learning progress
+        const questionId = await db.createQaMessage({ lectureId: input.lectureId, userId: ctx.user.id, messageType: "question", inputMethod: input.inputMethod || "text", content: input.content });
         await db.incrementQuestionCount(ctx.user.id, input.lectureId);
-
         const lecture = await db.getLectureById(input.lectureId);
-        let voiceProfile = null;
-        if (lecture?.voiceProfileId) {
-          voiceProfile = await db.getVoiceProfileById(lecture.voiceProfileId);
+        const systemPrompt = lecture?.aiContext || "당신은 Web3와 AI 전문 강사입니다. 학생의 질문에 정확하고 이해하기 쉽게 답변합니다.";
+
+        // Apply voice modulation style if configured
+        let styleInstruction = "";
+        if (lecture?.voiceModProfileId) {
+          const voiceMod = await db.getVoiceModProfileById(lecture.voiceModProfileId);
+          if (voiceMod?.stylePrompt) {
+            styleInstruction = `\n\n말투 지시: ${voiceMod.stylePrompt}`;
+          }
+          if (voiceMod?.speakingStyle) {
+            const styleMap: Record<string, string> = {
+              formal: "격식체로 정중하게", casual: "친근하고 편안하게", academic: "학술적이고 전문적으로",
+              friendly: "따뜻하고 친절하게", authoritative: "권위있고 확신에 찬 어조로"
+            };
+            styleInstruction += `\n답변 스타일: ${styleMap[voiceMod.speakingStyle] || "자연스럽게"} 답변하세요.`;
+          }
         }
-
-        const recentMessages = await db.getQaMessages(input.lectureId, 20);
-        const chatHistory = recentMessages.map(m => ({
-          role: m.message.messageType === 'question' ? 'user' as const : 'assistant' as const,
-          content: m.message.content,
-        }));
-
-        const basePrompt = voiceProfile?.systemPrompt ||
-          `당신은 전문적인 AI 강사입니다. ${lecture?.category || 'Web3'} 분야의 전문가로서 학생들의 질문에 친절하고 상세하게 답변합니다.`;
-
-        const systemPrompt = `${basePrompt}\n\n강의 제목: ${lecture?.title || '알 수 없음'}\n강의 설명: ${lecture?.description || ''}\n${lecture?.aiContext ? `추가 컨텍스트: ${lecture.aiContext}` : ''}\n\n학생의 질문에 한국어로 답변하세요. 답변은 명확하고 교육적이어야 합니다.`;
 
         const response = await invokeLLM({
           messages: [
-            { role: "system", content: systemPrompt },
-            ...chatHistory.slice(-10),
+            { role: "system", content: systemPrompt + styleInstruction },
             { role: "user", content: input.content },
           ],
         });
-
-        const rawContent = response.choices?.[0]?.message?.content;
-        const aiAnswer = typeof rawContent === 'string' ? rawContent : "죄송합니다. 답변을 생성할 수 없습니다.";
-
-        const answerId = await db.createQaMessage({
-          lectureId: input.lectureId, userId: null,
-          messageType: "answer", inputMethod: "text", content: aiAnswer,
-        });
-
-        // Track answer received
+        const rawAnswer = response.choices?.[0]?.message?.content;
+        const answerContent = typeof rawAnswer === "string" ? rawAnswer : "죄송합니다, 답변을 생성하지 못했습니다.";
+        const answerId = await db.createQaMessage({ lectureId: input.lectureId, messageType: "answer", inputMethod: "text", content: answerContent });
         await db.incrementAnswerCount(ctx.user.id, input.lectureId);
-
-        return { answer: aiAnswer, answerId };
-      }),
-
-    transcribe: protectedProcedure
-      .input(z.object({
-        audioUrl: z.string(),
-        language: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const result = await transcribeAudio({
-          audioUrl: input.audioUrl,
-          language: input.language || "ko",
-        });
-        if ('error' in result) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: result.error });
-        }
-        return { text: result.text };
+        return { questionId, answerId, answer: answerContent };
       }),
   }),
 
-  // ============ TTS (Text-to-Speech) ============
+  // ============ Voice Profile ============
+  voiceProfile: router({
+    list: instructorProcedure.query(async ({ ctx }) => db.getVoiceProfiles(ctx.user.id)),
+    create: instructorProcedure
+      .input(z.object({ name: z.string().min(1), ttsVoiceId: z.string().optional(), voiceDescription: z.string().optional(), teachingStyle: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createVoiceProfile({ ...input, userId: ctx.user.id });
+        return { id };
+      }),
+    update: instructorProcedure
+      .input(z.object({ id: z.number(), name: z.string().optional(), ttsVoiceId: z.string().optional(), voiceDescription: z.string().optional(), teachingStyle: z.string().optional(), avatarImageUrl: z.string().optional(), avatarStyle: z.string().optional(), didApiKey: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateVoiceProfile(id, ctx.user.id, data);
+        return { success: true };
+      }),
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => { await db.deleteVoiceProfile(input.id, ctx.user.id); return { success: true }; }),
+    uploadSample: instructorProcedure
+      .input(z.object({ profileId: z.number(), audioData: z.string(), fileName: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.audioData, "base64");
+        const fileKey = `voice-samples/${ctx.user.id}/${Date.now()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, "audio/webm");
+        await db.updateVoiceProfile(input.profileId, ctx.user.id, { sampleUrl: url });
+        return { url };
+      }),
+  }),
+
+  // ============ TTS ============
   tts: router({
+    voices: publicProcedure.query(() => TTS_VOICES),
     generate: protectedProcedure
-      .input(z.object({
-        text: z.string().min(1).max(4096),
-        voiceId: z.string().optional(),
-      }))
+      .input(z.object({ text: z.string().min(1), voiceId: z.string().optional(), voiceProfileId: z.number().optional(), voiceModProfileId: z.number().optional() }))
       .mutation(async ({ input }) => {
-        const forgeUrl = process.env.BUILT_IN_FORGE_API_URL;
-        const forgeKey = process.env.BUILT_IN_FORGE_API_KEY;
-        if (!forgeUrl || !forgeKey) {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'TTS 서비스가 설정되지 않았습니다.' });
+        let effectiveVoiceId = input.voiceId || "alloy";
+        let textToSpeak = input.text;
+
+        // Apply voice modulation if specified
+        if (input.voiceModProfileId) {
+          const voiceMod = await db.getVoiceModProfileById(input.voiceModProfileId);
+          if (voiceMod) {
+            if (voiceMod.customTtsVoiceId) effectiveVoiceId = voiceMod.customTtsVoiceId;
+            else {
+              const charVoiceMap: Record<string, string> = {
+                male_deep: "onyx", male_bright: "echo", female_warm: "nova", female_clear: "shimmer", neutral: "alloy"
+              };
+              effectiveVoiceId = charVoiceMap[voiceMod.voiceCharacter] || effectiveVoiceId;
+            }
+            // Apply style transformation via LLM
+            if (voiceMod.stylePrompt) {
+              const styleResponse = await invokeLLM({
+                messages: [
+                  { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 내용은 유지하되 말투만 변경합니다. 변환 지시: ${voiceMod.stylePrompt}\n스타일: ${voiceMod.speakingStyle}` },
+                  { role: "user", content: input.text },
+                ],
+              });
+              const rawStyled = styleResponse.choices?.[0]?.message?.content;
+              if (typeof rawStyled === "string") textToSpeak = rawStyled;
+            }
+          }
         }
-        const response = await fetch(`${forgeUrl}/v1/audio/speech`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${forgeKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'tts-1', input: input.text, voice: input.voiceId || 'alloy', response_format: 'mp3' }),
+
+        if (input.voiceProfileId) {
+          const profile = await db.getVoiceProfileById(input.voiceProfileId);
+          if (profile?.ttsVoiceId && !input.voiceModProfileId) effectiveVoiceId = profile.ttsVoiceId;
+        }
+
+        const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "tts-1", voice: effectiveVoiceId, input: textToSpeak }),
         });
-        if (!response.ok) {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'TTS 생성에 실패했습니다.' });
-        }
-        const audioBuffer = Buffer.from(await response.arrayBuffer());
-        const fileKey = `tts/${nanoid()}.mp3`;
-        const { url } = await storagePut(fileKey, audioBuffer, 'audio/mpeg');
-        return { audioUrl: url };
+        if (!ttsResponse.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "TTS 생성 실패" });
+        const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+        const fileKey = `tts/${Date.now()}-${nanoid(6)}.mp3`;
+        const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+        return { audioUrl: url, voiceId: effectiveVoiceId, transformedText: textToSpeak !== input.text ? textToSpeak : undefined };
       }),
   }),
 
-  // ============ AI Avatar (D-ID Integration) ============
-  avatar: router({
-    /** Generate avatar video using D-ID API or fallback to TTS + animated avatar */
-    generate: protectedProcedure
-      .input(z.object({
-        text: z.string().min(1).max(4096),
-        voiceProfileId: z.number().optional(),
-        lectureId: z.number().optional(),
-        /** If true, attempt D-ID API for real avatar video */
-        useDid: z.boolean().optional(),
-      }))
+  // ============ STT (Speech to Text) ============
+  stt: router({
+    transcribe: protectedProcedure
+      .input(z.object({ audioUrl: z.string(), language: z.string().optional() }))
       .mutation(async ({ input }) => {
-        const forgeUrl = process.env.BUILT_IN_FORGE_API_URL;
-        const forgeKey = process.env.BUILT_IN_FORGE_API_KEY;
-        if (!forgeUrl || !forgeKey) {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'TTS 서비스가 설정되지 않았습니다.' });
+        const result = await transcribeAudio({ audioUrl: input.audioUrl, language: input.language });
+        if ('error' in result) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error });
         }
+        return { text: result.text, language: result.language };
+      }),
+  }),
 
+  // ============ Avatar (D-ID) ============
+  avatar: router({
+    generate: instructorProcedure
+      .input(z.object({ text: z.string().min(1), voiceProfileId: z.number().optional(), useDid: z.boolean().optional(), faceSwapProfileId: z.number().optional(), voiceModProfileId: z.number().optional() }))
+      .mutation(async ({ input }) => {
         let voiceId = "alloy";
         let avatarImageUrl: string | null = null;
-        let didApiKey: string | null = null;
         let avatarStyle = "rectangular";
+        let didApiKey: string | null = null;
 
         if (input.voiceProfileId) {
           const profile = await db.getVoiceProfileById(input.voiceProfileId);
           if (profile) {
             voiceId = profile.ttsVoiceId || "alloy";
             avatarImageUrl = profile.avatarImageUrl;
-            didApiKey = profile.didApiKey;
             avatarStyle = profile.avatarStyle || "rectangular";
+            didApiKey = profile.didApiKey;
           }
         }
 
-        // Step 1: Generate TTS audio
-        const ttsResponse = await fetch(`${forgeUrl}/v1/audio/speech`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${forgeKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'tts-1', input: input.text, voice: voiceId, response_format: 'mp3' }),
-        });
-        if (!ttsResponse.ok) {
-          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'TTS 생성에 실패했습니다.' });
+        // Apply voice modulation
+        if (input.voiceModProfileId) {
+          const voiceMod = await db.getVoiceModProfileById(input.voiceModProfileId);
+          if (voiceMod) {
+            const charVoiceMap: Record<string, string> = { male_deep: "onyx", male_bright: "echo", female_warm: "nova", female_clear: "shimmer", neutral: "alloy" };
+            voiceId = voiceMod.customTtsVoiceId || charVoiceMap[voiceMod.voiceCharacter] || voiceId;
+          }
         }
-        const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
-        const audioKey = `avatar-audio/${nanoid()}.mp3`;
-        const { url: audioUrl } = await storagePut(audioKey, audioBuffer, 'audio/mpeg');
 
-        // Step 2: If D-ID is requested and API key is available, create talking head video
+        // Use face swap target face as avatar if specified
+        if (input.faceSwapProfileId) {
+          const faceSwap = await db.getFaceSwapProfileById(input.faceSwapProfileId);
+          if (faceSwap?.targetFaceUrl) avatarImageUrl = faceSwap.targetFaceUrl;
+        }
+
+        // Generate TTS audio
+        const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "tts-1", voice: voiceId, input: input.text }),
+        });
+        if (!ttsResponse.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "TTS 생성 실패" });
+        const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+        const audioKey = `avatar-audio/${Date.now()}-${nanoid(6)}.mp3`;
+        const { url: audioUrl } = await storagePut(audioKey, audioBuffer, "audio/mpeg");
+
+        // Generate D-ID video if enabled
         let videoUrl: string | null = null;
         const globalDidKey = process.env.DID_API_KEY;
         const effectiveDidKey = didApiKey || globalDidKey;
 
         if (input.useDid && effectiveDidKey && avatarImageUrl) {
           try {
-            // Create D-ID talk
-            const didResponse = await fetch('https://api.d-id.com/talks', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Basic ${effectiveDidKey}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                source_url: avatarImageUrl,
-                script: {
-                  type: 'audio',
-                  audio_url: audioUrl,
-                },
-                config: {
-                  stitch: true,
-                  result_format: 'mp4',
-                },
-              }),
+            const didResponse = await fetch("https://api.d-id.com/talks", {
+              method: "POST",
+              headers: { "Authorization": `Basic ${effectiveDidKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ source_url: avatarImageUrl, script: { type: "audio", audio_url: audioUrl }, config: { stitch: true, result_format: "mp4" } }),
             });
-
             if (didResponse.ok) {
               const didData = await didResponse.json() as any;
               const talkId = didData.id;
-
-              // Poll for result (max 60 seconds)
               let attempts = 0;
               while (attempts < 30) {
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                const statusResponse = await fetch(`https://api.d-id.com/talks/${talkId}`, {
-                  headers: { 'Authorization': `Basic ${effectiveDidKey}` },
-                });
+                const statusResponse = await fetch(`https://api.d-id.com/talks/${talkId}`, { headers: { "Authorization": `Basic ${effectiveDidKey}` } });
                 if (statusResponse.ok) {
                   const statusData = await statusResponse.json() as any;
-                  if (statusData.status === 'done' && statusData.result_url) {
-                    videoUrl = statusData.result_url;
-                    break;
-                  } else if (statusData.status === 'error') {
-                    console.error('[D-ID] Video generation failed:', statusData);
-                    break;
-                  }
+                  if (statusData.status === "done" && statusData.result_url) { videoUrl = statusData.result_url; break; }
+                  else if (statusData.status === "error") break;
                 }
                 attempts++;
               }
             }
-          } catch (error) {
-            console.error('[D-ID] API error:', error);
-            // Fall back to audio-only avatar
-          }
+          } catch (error) { console.error("[D-ID] API error:", error); }
         }
 
-        return {
-          audioUrl,
-          videoUrl,
-          avatarImageUrl,
-          avatarStyle,
-          voiceId,
-          text: input.text,
-          usedDid: !!videoUrl,
-        };
+        return { audioUrl, videoUrl, avatarImageUrl, avatarStyle, voiceId, text: input.text, usedDid: !!videoUrl };
       }),
-
-    /** Check D-ID API key validity */
     checkDidKey: instructorProcedure
       .input(z.object({ apiKey: z.string() }))
       .mutation(async ({ input }) => {
         try {
-          const response = await fetch('https://api.d-id.com/credits', {
-            headers: { 'Authorization': `Basic ${input.apiKey}` },
-          });
-          if (response.ok) {
-            const data = await response.json() as any;
-            return { valid: true, credits: data.remaining || 0 };
-          }
+          const response = await fetch("https://api.d-id.com/credits", { headers: { "Authorization": `Basic ${input.apiKey}` } });
+          if (response.ok) { const data = await response.json() as any; return { valid: true, credits: data.remaining || 0 }; }
           return { valid: false, credits: 0 };
-        } catch {
-          return { valid: false, credits: 0 };
-        }
+        } catch { return { valid: false, credits: 0 }; }
       }),
   }),
 
@@ -588,89 +398,47 @@ export const appRouter = router({
   whiteboard: router({
     save: instructorProcedure
       .input(z.object({ lectureId: z.number(), snapshotData: z.string() }))
-      .mutation(async ({ input }) => {
-        await db.saveWhiteboardSnapshot(input.lectureId, input.snapshotData);
-        return { success: true };
-      }),
-
+      .mutation(async ({ input }) => { await db.saveWhiteboardSnapshot(input.lectureId, input.snapshotData); return { success: true }; }),
     load: protectedProcedure
       .input(z.object({ lectureId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getLatestWhiteboardSnapshot(input.lectureId);
-      }),
+      .query(async ({ input }) => db.getLatestWhiteboardSnapshot(input.lectureId)),
   }),
 
-  // ============ VOD (Video on Demand) ============
+  // ============ VOD ============
   vod: router({
     list: publicProcedure
-      .input(z.object({
-        lectureId: z.number().optional(),
-        status: z.string().optional(),
-      }).optional())
-      .query(async ({ input }) => {
-        return db.getVodRecordings(input ?? {});
-      }),
-
+      .input(z.object({ lectureId: z.number().optional(), status: z.string().optional() }).optional())
+      .query(async ({ input }) => db.getVodRecordings(input ?? {})),
     getById: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const vod = await db.getVodById(input.id);
-        if (!vod) throw new TRPCError({ code: 'NOT_FOUND', message: 'VOD를 찾을 수 없습니다.' });
+        if (!vod) throw new TRPCError({ code: "NOT_FOUND", message: "VOD를 찾을 수 없습니다." });
         await db.incrementVodViewCount(input.id);
         return vod;
       }),
-
     timeline: publicProcedure
       .input(z.object({ vodId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getVodTimelineEvents(input.vodId);
-      }),
-
+      .query(async ({ input }) => db.getVodTimelineEvents(input.vodId)),
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteVodRecording(input.id);
-        return { success: true };
-      }),
-
+      .mutation(async ({ input }) => { await db.deleteVodRecording(input.id); return { success: true }; }),
     createFromLecture: instructorProcedure
       .input(z.object({ lectureId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const lecture = await db.getLectureById(input.lectureId);
-        if (!lecture) throw new TRPCError({ code: 'NOT_FOUND' });
+        if (!lecture) throw new TRPCError({ code: "NOT_FOUND" });
         const messages = await db.getQaMessages(input.lectureId);
         const snapshots = await db.getWhiteboardSnapshots(input.lectureId);
-        const vodId = await db.createVodRecording({
-          lectureId: input.lectureId,
-          title: `${lecture.title} - 녹화본`,
-          description: lecture.description,
-          messageCount: messages.length,
-          snapshotCount: snapshots.length,
-          status: "processing",
-          startedAt: lecture.createdAt,
-          endedAt: new Date(),
-        });
+        const vodId = await db.createVodRecording({ lectureId: input.lectureId, title: `${lecture.title} - 녹화본`, description: lecture.description, messageCount: messages.length, snapshotCount: snapshots.length, status: "processing", startedAt: lecture.createdAt, endedAt: new Date() });
         if (vodId) {
           let offsetSec = 0;
           for (const msg of messages) {
-            await db.createVodTimelineEvent({
-              vodId,
-              eventType: msg.message.messageType === 'question' ? 'qa_question' : 'qa_answer',
-              offsetSeconds: offsetSec,
-              content: msg.message.content,
-              userId: msg.message.userId,
-              audioUrl: msg.message.audioUrl,
-              avatarVideoUrl: msg.message.avatarVideoUrl,
-            });
+            await db.createVodTimelineEvent({ vodId, eventType: msg.message.messageType === "question" ? "qa_question" : "qa_answer", offsetSeconds: offsetSec, content: msg.message.content, userId: msg.message.userId, audioUrl: msg.message.audioUrl, avatarVideoUrl: msg.message.avatarVideoUrl });
             offsetSec += 10;
           }
           for (let i = 0; i < snapshots.length; i++) {
-            await db.createVodTimelineEvent({
-              vodId,
-              eventType: 'whiteboard_snapshot',
-              offsetSeconds: i * 30,
-              content: snapshots[i].snapshotData,
-            });
+            await db.createVodTimelineEvent({ vodId, eventType: "whiteboard_snapshot", offsetSeconds: i * 30, content: snapshots[i].snapshotData });
           }
           const duration = messages.length * 10 + snapshots.length * 30;
           await db.updateVodRecording(vodId, { status: "ready", duration });
@@ -682,122 +450,48 @@ export const appRouter = router({
   // ============ Translation ============
   translation: router({
     languages: publicProcedure.query(() => SUPPORTED_LANGUAGES),
-
     translate: protectedProcedure
-      .input(z.object({
-        text: z.string().min(1),
-        targetLang: z.string().min(2).max(10),
-        sourceLang: z.string().optional(),
-        sourceType: z.enum(["qa_message", "lecture_title", "lecture_description"]).optional(),
-        sourceId: z.number().optional(),
-      }))
+      .input(z.object({ text: z.string().min(1), targetLang: z.string().min(2).max(10), sourceLang: z.string().optional(), sourceType: z.enum(["qa_message", "lecture_title", "lecture_description"]).optional(), sourceId: z.number().optional() }))
       .mutation(async ({ input }) => {
         if (input.sourceType && input.sourceId) {
           const cached = await db.getTranslation(input.sourceType, input.sourceId, input.targetLang);
           if (cached) return { translatedText: cached.translatedText, cached: true };
         }
-        const sourceLang = input.sourceLang || "ko";
         const targetLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === input.targetLang);
-        const targetLangName = targetLangInfo?.name || input.targetLang;
-        const response = await invokeLLM({
-          messages: [
-            { role: "system", content: `You are a professional translator. Translate the following text to ${targetLangName} (${input.targetLang}). Only output the translated text, nothing else.` },
-            { role: "user", content: input.text },
-          ],
-        });
-        const rawTranslation = response.choices?.[0]?.message?.content;
-        const translatedText = typeof rawTranslation === 'string' ? rawTranslation : input.text;
+        const response = await invokeLLM({ messages: [{ role: "system", content: `Translate to ${targetLangInfo?.name || input.targetLang}. Output only the translation.` }, { role: "user", content: input.text }] });
+        const rawT = response.choices?.[0]?.message?.content;
+        const translatedText = typeof rawT === "string" ? rawT : input.text;
         if (input.sourceType && input.sourceId) {
-          await db.createTranslation({
-            sourceType: input.sourceType, sourceId: input.sourceId,
-            sourceLang, targetLang: input.targetLang,
-            originalText: input.text, translatedText,
-          });
+          await db.createTranslation({ sourceType: input.sourceType, sourceId: input.sourceId, sourceLang: input.sourceLang || "ko", targetLang: input.targetLang, originalText: input.text, translatedText });
         }
         return { translatedText, cached: false };
-      }),
-
-    translateMessages: protectedProcedure
-      .input(z.object({ lectureId: z.number(), targetLang: z.string().min(2).max(10) }))
-      .mutation(async ({ input }) => {
-        const messages = await db.getQaMessages(input.lectureId);
-        const results: { messageId: number; translatedText: string }[] = [];
-        for (const msg of messages) {
-          const cached = await db.getTranslation("qa_message", msg.message.id, input.targetLang);
-          if (cached) {
-            results.push({ messageId: msg.message.id, translatedText: cached.translatedText });
-            continue;
-          }
-          const targetLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === input.targetLang);
-          const response = await invokeLLM({
-            messages: [
-              { role: "system", content: `Translate to ${targetLangInfo?.name || input.targetLang}. Output only the translation.` },
-              { role: "user", content: msg.message.content }
-            ],
-          });
-          const rawT = response.choices?.[0]?.message?.content;
-          const translated = typeof rawT === 'string' ? rawT : msg.message.content;
-          await db.createTranslation({
-            sourceType: "qa_message", sourceId: msg.message.id,
-            sourceLang: "ko", targetLang: input.targetLang,
-            originalText: msg.message.content, translatedText: translated,
-          });
-          results.push({ messageId: msg.message.id, translatedText: translated });
-        }
-        return { translations: results };
       }),
   }),
 
   // ============ Learning Progress ============
   progress: router({
-    get: protectedProcedure
-      .input(z.object({ lectureId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        return db.getLearningProgressForLecture(ctx.user.id, input.lectureId);
-      }),
-
+    get: protectedProcedure.input(z.object({ lectureId: z.number() })).query(async ({ ctx, input }) => db.getLearningProgressForLecture(ctx.user.id, input.lectureId)),
     update: protectedProcedure
-      .input(z.object({
-        lectureId: z.number(),
-        timeSpentSeconds: z.number().optional(),
-        lastSlideIndex: z.number().optional(),
-        completionPercent: z.number().optional(),
-      }))
+      .input(z.object({ lectureId: z.number(), timeSpentSeconds: z.number().optional(), lastSlideIndex: z.number().optional(), completionPercent: z.number().optional() }))
       .mutation(async ({ ctx, input }) => {
         const { lectureId, ...data } = input;
         await db.getOrCreateLearningProgress(ctx.user.id, lectureId);
         await db.updateLearningProgress(ctx.user.id, lectureId, data);
         return { success: true };
       }),
-
-    myProgress: protectedProcedure.query(async ({ ctx }) => {
-      return db.getUserLearningProgress(ctx.user.id);
-    }),
-
+    myProgress: protectedProcedure.query(async ({ ctx }) => db.getUserLearningProgress(ctx.user.id)),
     dashboard: protectedProcedure.query(async ({ ctx }) => {
       const progressList = await db.getUserLearningProgress(ctx.user.id);
       const vodHistory = await db.getUserVodWatchHistory(ctx.user.id);
       const bookmarks = await db.getUserQaBookmarks(ctx.user.id);
       const enrollments = await db.getUserEnrollments(ctx.user.id);
-
+      const certs = await db.getUserCertificates(ctx.user.id);
       const totalTimeSpent = progressList.reduce((sum, p) => sum + (p.progress.timeSpentSeconds || 0), 0);
       const totalQuestionsAsked = progressList.reduce((sum, p) => sum + (p.progress.questionsAsked || 0), 0);
-      const avgCompletion = progressList.length > 0
-        ? Math.round(progressList.reduce((sum, p) => sum + (p.progress.completionPercent || 0), 0) / progressList.length)
-        : 0;
-
+      const avgCompletion = progressList.length > 0 ? Math.round(progressList.reduce((sum, p) => sum + (p.progress.completionPercent || 0), 0) / progressList.length) : 0;
       return {
-        stats: {
-          totalEnrollments: enrollments.length,
-          totalTimeSpent,
-          totalQuestionsAsked,
-          avgCompletion,
-          totalVodsWatched: vodHistory.length,
-          totalBookmarks: bookmarks.length,
-        },
-        recentProgress: progressList.slice(0, 5),
-        recentVodHistory: vodHistory.slice(0, 5),
-        recentBookmarks: bookmarks.slice(0, 5),
+        stats: { totalEnrollments: enrollments.length, totalTimeSpent, totalQuestionsAsked, avgCompletion, totalVodsWatched: vodHistory.length, totalBookmarks: bookmarks.length, totalCertificates: certs.length },
+        recentProgress: progressList.slice(0, 5), recentVodHistory: vodHistory.slice(0, 5), recentBookmarks: bookmarks.slice(0, 5),
       };
     }),
   }),
@@ -805,131 +499,324 @@ export const appRouter = router({
   // ============ VOD Watch History ============
   vodHistory: router({
     update: protectedProcedure
-      .input(z.object({
-        vodId: z.number(),
-        watchedSeconds: z.number(),
-        totalSeconds: z.number(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        await db.updateVodWatchProgress(ctx.user.id, input.vodId, input.watchedSeconds, input.totalSeconds);
-        return { success: true };
-      }),
-
-    myHistory: protectedProcedure.query(async ({ ctx }) => {
-      return db.getUserVodWatchHistory(ctx.user.id);
-    }),
+      .input(z.object({ vodId: z.number(), watchedSeconds: z.number(), totalSeconds: z.number() }))
+      .mutation(async ({ ctx, input }) => { await db.updateVodWatchProgress(ctx.user.id, input.vodId, input.watchedSeconds, input.totalSeconds); return { success: true }; }),
+    myHistory: protectedProcedure.query(async ({ ctx }) => db.getUserVodWatchHistory(ctx.user.id)),
   }),
 
   // ============ Q&A Bookmarks ============
   bookmark: router({
     add: protectedProcedure
-      .input(z.object({
-        messageId: z.number(),
-        lectureId: z.number(),
-        note: z.string().optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const id = await db.createQaBookmark({
-          userId: ctx.user.id,
-          messageId: input.messageId,
-          lectureId: input.lectureId,
-          note: input.note,
-        });
-        return { id };
-      }),
-
+      .input(z.object({ messageId: z.number(), lectureId: z.number(), note: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => { const id = await db.createQaBookmark({ userId: ctx.user.id, ...input }); return { id }; }),
     remove: protectedProcedure
       .input(z.object({ messageId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        await db.deleteQaBookmark(ctx.user.id, input.messageId);
-        return { success: true };
-      }),
-
-    isBookmarked: protectedProcedure
-      .input(z.object({ messageId: z.number() }))
-      .query(async ({ ctx, input }) => {
-        return db.isBookmarked(ctx.user.id, input.messageId);
-      }),
-
-    myBookmarks: protectedProcedure.query(async ({ ctx }) => {
-      return db.getUserQaBookmarks(ctx.user.id);
-    }),
+      .mutation(async ({ ctx, input }) => { await db.deleteQaBookmark(ctx.user.id, input.messageId); return { success: true }; }),
+    isBookmarked: protectedProcedure.input(z.object({ messageId: z.number() })).query(async ({ ctx, input }) => db.isBookmarked(ctx.user.id, input.messageId)),
+    myBookmarks: protectedProcedure.query(async ({ ctx }) => db.getUserQaBookmarks(ctx.user.id)),
   }),
 
   // ============ AI Context Templates ============
   template: router({
-    list: publicProcedure
-      .input(z.object({ category: z.string().optional() }).optional())
-      .query(async ({ input }) => {
-        return db.getAiContextTemplates(input?.category);
-      }),
-
-    getById: publicProcedure
-      .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
-        const template = await db.getAiContextTemplateById(input.id);
-        if (!template) throw new TRPCError({ code: 'NOT_FOUND', message: '템플릿을 찾을 수 없습니다.' });
-        return template;
-      }),
-
+    list: publicProcedure.input(z.object({ category: z.string().optional() }).optional()).query(async ({ input }) => db.getAiContextTemplates(input?.category)),
+    getById: publicProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+      const template = await db.getAiContextTemplateById(input.id);
+      if (!template) throw new TRPCError({ code: "NOT_FOUND" });
+      return template;
+    }),
     create: instructorProcedure
-      .input(z.object({
-        category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]),
-        name: z.string().min(1),
-        description: z.string().optional(),
-        systemPrompt: z.string().min(1),
-        topics: z.string().optional(),
-        difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
-      }))
-      .mutation(async ({ ctx, input }) => {
-        const id = await db.createAiContextTemplate({
-          ...input, isBuiltIn: false, creatorId: ctx.user.id,
-        });
-        return { id };
-      }),
-
+      .input(z.object({ category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]), name: z.string().min(1), description: z.string().optional(), systemPrompt: z.string().min(1), topics: z.string().optional(), difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional() }))
+      .mutation(async ({ ctx, input }) => { const id = await db.createAiContextTemplate({ ...input, isBuiltIn: false, creatorId: ctx.user.id }); return { id }; }),
     update: instructorProcedure
-      .input(z.object({
-        id: z.number(),
-        name: z.string().optional(),
-        description: z.string().optional(),
-        systemPrompt: z.string().optional(),
-        topics: z.string().optional(),
-        difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        await db.updateAiContextTemplate(id, data);
-        return { success: true };
-      }),
-
-    delete: instructorProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await db.deleteAiContextTemplate(input.id);
-        return { success: true };
-      }),
-
-    /** Apply a template to a lecture */
+      .input(z.object({ id: z.number(), name: z.string().optional(), description: z.string().optional(), systemPrompt: z.string().optional(), topics: z.string().optional(), difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional() }))
+      .mutation(async ({ input }) => { const { id, ...data } = input; await db.updateAiContextTemplate(id, data); return { success: true }; }),
+    delete: instructorProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => { await db.deleteAiContextTemplate(input.id); return { success: true }; }),
     applyToLecture: instructorProcedure
       .input(z.object({ templateId: z.number(), lectureId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const template = await db.getAiContextTemplateById(input.templateId);
-        if (!template) throw new TRPCError({ code: 'NOT_FOUND' });
-        await db.updateLecture(input.lectureId, ctx.user.id, {
-          aiContext: template.systemPrompt,
-          category: template.category as any,
-        });
+        if (!template) throw new TRPCError({ code: "NOT_FOUND" });
+        await db.updateLecture(input.lectureId, ctx.user.id, { aiContext: template.systemPrompt, category: template.category as any });
         await db.incrementTemplateUsage(input.templateId);
         return { success: true };
       }),
+    seed: publicProcedure.mutation(async () => { await db.seedBuiltInTemplates(); return { success: true }; }),
+  }),
 
-    /** Seed built-in templates */
-    seed: publicProcedure.mutation(async () => {
-      await db.seedBuiltInTemplates();
-      return { success: true };
-    }),
+  // ============ Face Swap Profiles (v2.0) ============
+  faceSwap: router({
+    list: instructorProcedure.query(async ({ ctx }) => db.getFaceSwapProfiles(ctx.user.id)),
+    create: instructorProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        sourceFaceUrl: z.string().optional(),
+        targetFaceUrl: z.string().optional(),
+        method: z.enum(["did", "heygen", "builtin"]).optional(),
+        settings: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createFaceSwapProfile({ ...input, userId: ctx.user.id });
+        return { id };
+      }),
+    update: instructorProcedure
+      .input(z.object({
+        id: z.number(), name: z.string().optional(),
+        sourceFaceUrl: z.string().optional(), targetFaceUrl: z.string().optional(),
+        method: z.enum(["did", "heygen", "builtin"]).optional(),
+        settings: z.string().optional(), previewUrl: z.string().optional(),
+        isDefault: z.boolean().optional(), isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateFaceSwapProfile(id, ctx.user.id, data);
+        return { success: true };
+      }),
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => { await db.deleteFaceSwapProfile(input.id, ctx.user.id); return { success: true }; }),
+    uploadFace: instructorProcedure
+      .input(z.object({ imageData: z.string(), fileName: z.string(), type: z.enum(["source", "target"]) }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.imageData, "base64");
+        const fileKey = `face-swap/${ctx.user.id}/${input.type}-${Date.now()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, "image/png");
+        return { url };
+      }),
+    /** Generate face swap preview using AI image generation */
+    generatePreview: instructorProcedure
+      .input(z.object({ profileId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await db.getFaceSwapProfileById(input.profileId);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND" });
+        // For builtin method, generate an AI avatar based on settings
+        const settings = profile.settings ? JSON.parse(profile.settings) : {};
+        const { generateImage } = await import("./_core/imageGeneration");
+        const prompt = `Professional headshot portrait of a ${settings.gender || "person"}, ${settings.age || "30s"}, ${settings.ethnicity || ""}, wearing business attire, neutral background, high quality, photorealistic`;
+        const { url: previewUrl } = await generateImage({ prompt });
+        await db.updateFaceSwapProfile(input.profileId, ctx.user.id, { previewUrl });
+        return { previewUrl };
+      }),
+  }),
+
+  // ============ Voice Modulation Profiles (v2.0) ============
+  voiceMod: router({
+    list: instructorProcedure.query(async ({ ctx }) => db.getVoiceModProfiles(ctx.user.id)),
+    create: instructorProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        pitchShift: z.number().min(-12).max(12).optional(),
+        speedPercent: z.number().min(50).max(200).optional(),
+        toneWarmth: z.number().min(-100).max(100).optional(),
+        speakingStyle: z.enum(["formal", "casual", "academic", "friendly", "authoritative"]).optional(),
+        voiceCharacter: z.enum(["male_deep", "male_bright", "female_warm", "female_clear", "neutral"]).optional(),
+        customTtsVoiceId: z.string().optional(),
+        stylePrompt: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createVoiceModProfile({ ...input, userId: ctx.user.id });
+        return { id };
+      }),
+    update: instructorProcedure
+      .input(z.object({
+        id: z.number(), name: z.string().optional(),
+        pitchShift: z.number().min(-12).max(12).optional(),
+        speedPercent: z.number().min(50).max(200).optional(),
+        toneWarmth: z.number().min(-100).max(100).optional(),
+        speakingStyle: z.enum(["formal", "casual", "academic", "friendly", "authoritative"]).optional(),
+        voiceCharacter: z.enum(["male_deep", "male_bright", "female_warm", "female_clear", "neutral"]).optional(),
+        customTtsVoiceId: z.string().optional(), stylePrompt: z.string().optional(),
+        isDefault: z.boolean().optional(), isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateVoiceModProfile(id, ctx.user.id, data);
+        return { success: true };
+      }),
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => { await db.deleteVoiceModProfile(input.id, ctx.user.id); return { success: true }; }),
+    /** Preview voice modulation - generate sample audio with applied settings */
+    preview: instructorProcedure
+      .input(z.object({ profileId: z.number(), sampleText: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const profile = await db.getVoiceModProfileById(input.profileId);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND" });
+        const sampleText = input.sampleText || "안녕하세요, 저는 AI 강사입니다. 오늘 Web3에 대해 알아보겠습니다.";
+        let textToSpeak = sampleText;
+        // Apply style transformation
+        if (profile.stylePrompt) {
+          const styleResponse = await invokeLLM({
+            messages: [
+              { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${profile.stylePrompt}\n스타일: ${profile.speakingStyle}` },
+              { role: "user", content: sampleText },
+            ],
+          });
+          const rawStyled = styleResponse.choices?.[0]?.message?.content;
+          if (typeof rawStyled === "string") textToSpeak = rawStyled;
+        }
+        const charVoiceMap: Record<string, string> = { male_deep: "onyx", male_bright: "echo", female_warm: "nova", female_clear: "shimmer", neutral: "alloy" };
+        const voiceId = profile.customTtsVoiceId || charVoiceMap[profile.voiceCharacter] || "alloy";
+        const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "tts-1", voice: voiceId, input: textToSpeak, speed: (profile.speedPercent || 100) / 100 }),
+        });
+        if (!ttsResponse.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "TTS 미리듣기 실패" });
+        const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+        const fileKey = `voice-mod-preview/${Date.now()}-${nanoid(6)}.mp3`;
+        const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+        await db.updateVoiceModProfile(input.profileId, 0, { previewAudioUrl: url });
+        return { audioUrl: url, transformedText: textToSpeak, voiceId };
+      }),
+  }),
+
+  // ============ Platform Integrations (v2.0) ============
+  platform: router({
+    list: instructorProcedure.query(async ({ ctx }) => db.getPlatformIntegrations(ctx.user.id)),
+    create: instructorProcedure
+      .input(z.object({
+        platform: z.enum(["zoom", "google_meet", "webex", "tencent", "obs"]),
+        name: z.string().min(1),
+        apiKey: z.string().optional(), apiSecret: z.string().optional(),
+        meetingUrl: z.string().optional(), config: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createPlatformIntegration({ ...input, userId: ctx.user.id });
+        return { id };
+      }),
+    update: instructorProcedure
+      .input(z.object({
+        id: z.number(), name: z.string().optional(),
+        apiKey: z.string().optional(), apiSecret: z.string().optional(),
+        meetingUrl: z.string().optional(), config: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updatePlatformIntegration(id, ctx.user.id, data);
+        return { success: true };
+      }),
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => { await db.deletePlatformIntegration(input.id, ctx.user.id); return { success: true }; }),
+    /** Generate meeting link for external platform */
+    createMeeting: instructorProcedure
+      .input(z.object({ integrationId: z.number(), lectureId: z.number(), topic: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const integration = await db.getPlatformIntegrationById(input.integrationId);
+        if (!integration) throw new TRPCError({ code: "NOT_FOUND" });
+        // For now, return the configured meeting URL or generate a placeholder
+        const meetingUrl = integration.meetingUrl || `https://${integration.platform}.example.com/meeting/${nanoid(10)}`;
+        return { meetingUrl, platform: integration.platform };
+      }),
+  }),
+
+  // ============ Certificates (v2.0) ============
+  certificate: router({
+    /** Issue a certificate for a completed lecture */
+    issue: protectedProcedure
+      .input(z.object({ lectureId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // Check if already issued
+        const existing = await db.getCertificateForLecture(ctx.user.id, input.lectureId);
+        if (existing) return { certificateCode: existing.certificateCode, pdfUrl: existing.pdfUrl, alreadyIssued: true };
+        // Check completion
+        const progress = await db.getLearningProgressForLecture(ctx.user.id, input.lectureId);
+        if (!progress || (progress.completionPercent || 0) < 70) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "강의 진도 70% 이상 달성해야 수료증을 발급받을 수 있습니다." });
+        }
+        const lecture = await db.getLectureById(input.lectureId);
+        if (!lecture) throw new TRPCError({ code: "NOT_FOUND" });
+        const certificateCode = `CERT-${nanoid(12).toUpperCase()}`;
+        const studentName = ctx.user.name || "수강생";
+        // Generate certificate HTML and store as PDF placeholder
+        const certHtml = generateCertificateHtml(studentName, lecture.title, certificateCode, progress.completionPercent || 100);
+        const certBuffer = Buffer.from(certHtml, "utf-8");
+        const fileKey = `certificates/${certificateCode}.html`;
+        const { url: pdfUrl } = await storagePut(fileKey, certBuffer, "text/html");
+        const id = await db.createCertificate({
+          userId: ctx.user.id, lectureId: input.lectureId, certificateCode,
+          studentName, lectureTitle: lecture.title, completionPercent: progress.completionPercent || 100, pdfUrl,
+        });
+        return { certificateCode, pdfUrl, alreadyIssued: false };
+      }),
+    /** Verify a certificate by code */
+    verify: publicProcedure
+      .input(z.object({ code: z.string() }))
+      .query(async ({ input }) => {
+        const cert = await db.getCertificateByCode(input.code);
+        if (!cert) return { valid: false };
+        return { valid: true, certificate: cert };
+      }),
+    /** Get user's certificates */
+    myCertificates: protectedProcedure.query(async ({ ctx }) => db.getUserCertificates(ctx.user.id)),
+  }),
+
+  // ============ Lecture Sessions (v2.0) ============
+  session: router({
+    /** Start a new live session */
+    start: instructorProcedure
+      .input(z.object({
+        lectureId: z.number(),
+        faceSwapProfileId: z.number().optional(),
+        voiceModProfileId: z.number().optional(),
+        platformIntegrationId: z.number().optional(),
+        externalMeetingUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const webrtcRoomId = `room-${nanoid(10)}`;
+        const id = await db.createLectureSession({
+          ...input, instructorId: ctx.user.id, status: "live",
+          webrtcRoomId, startedAt: new Date(),
+        });
+        await db.updateLectureStatus(input.lectureId, "live");
+        return { sessionId: id, webrtcRoomId };
+      }),
+    /** End a live session */
+    end: instructorProcedure
+      .input(z.object({ sessionId: z.number(), lectureId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.endLectureSession(input.sessionId);
+        await db.updateLectureStatus(input.lectureId, "completed");
+        return { success: true };
+      }),
+    /** Get current session for a lecture */
+    current: protectedProcedure
+      .input(z.object({ lectureId: z.number() }))
+      .query(async ({ input }) => db.getLectureSession(input.lectureId)),
+    /** Get active sessions for instructor */
+    activeSessions: instructorProcedure.query(async ({ ctx }) => db.getActiveSessions(ctx.user.id)),
+    /** Get session history */
+    history: instructorProcedure.query(async ({ ctx }) => db.getSessionHistory(ctx.user.id)),
   }),
 });
+
+// Certificate HTML generator
+function generateCertificateHtml(studentName: string, lectureTitle: string, code: string, completion: number): string {
+  const date = new Date().toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+    body{margin:0;padding:40px;font-family:'Noto Sans KR',sans-serif;background:#f8f9fa}
+    .cert{max-width:800px;margin:0 auto;background:white;border:3px solid #1a1a2e;padding:60px;text-align:center;position:relative}
+    .cert::before{content:'';position:absolute;top:10px;left:10px;right:10px;bottom:10px;border:1px solid #e0e0e0}
+    h1{color:#1a1a2e;font-size:36px;margin-bottom:10px;letter-spacing:4px}
+    .subtitle{color:#6c63ff;font-size:14px;letter-spacing:8px;margin-bottom:40px}
+    .name{font-size:32px;color:#1a1a2e;border-bottom:2px solid #6c63ff;display:inline-block;padding:10px 40px;margin:20px 0}
+    .lecture{font-size:18px;color:#444;margin:20px 0}
+    .completion{font-size:16px;color:#6c63ff;margin:10px 0}
+    .date{color:#888;margin-top:30px}
+    .code{font-family:monospace;color:#aaa;font-size:12px;margin-top:20px}
+    .badge{display:inline-block;background:#6c63ff;color:white;padding:8px 24px;border-radius:20px;margin-top:20px;font-size:14px}
+  </style></head><body><div class="cert">
+    <h1>수료증</h1>
+    <div class="subtitle">CERTIFICATE OF COMPLETION</div>
+    <p>아래의 수강생이 다음 강의를 성공적으로 수료하였음을 증명합니다.</p>
+    <div class="name">${studentName}</div>
+    <div class="lecture">「${lectureTitle}」</div>
+    <div class="completion">수료율: ${completion}%</div>
+    <div class="badge">AI Lecture Platform</div>
+    <div class="date">${date}</div>
+    <div class="code">인증코드: ${code}</div>
+  </div></body></html>`;
+}
 
 export type AppRouter = typeof appRouter;

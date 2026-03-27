@@ -29,6 +29,13 @@
       "when": 1774606590106,
       "tag": "0003_premium_falcon",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1774612728234,
+      "tag": "0004_shallow_the_twelve",
+      "breakpoints": true
     }
   ]
 }

@@ -162,9 +162,9 @@ export default function InstructorVoiceProfiles() {
         reader.onload = () => {
           const base64 = (reader.result as string).split(",")[1];
           uploadSampleMutation.mutate({
-            id: profileId,
-            audioBase64: base64,
-            filename: `sample-${Date.now()}.webm`,
+            profileId: profileId,
+            audioData: base64,
+            fileName: `sample-${Date.now()}.webm`,
           });
         };
         reader.readAsDataURL(audioBlob);

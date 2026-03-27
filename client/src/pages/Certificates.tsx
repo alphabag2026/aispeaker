@@ -1,0 +1,99 @@
+import { useAuth } from "@/_core/hooks/useAuth";
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Navbar from "@/components/Navbar";
+import { Award, Download, ExternalLink, Loader2 } from "lucide-react";
+import { getLoginUrl } from "@/const";
+
+export default function Certificates() {
+  const { user, isAuthenticated } = useAuth();
+  const { data: certificates, isLoading } = trpc.certificate.myCertificates.useQuery(undefined, {
+    enabled: !!user,
+  });
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="container py-16 text-center">
+          <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
+          <Button asChild><a href={getLoginUrl()}>로그인</a></Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      <div className="container max-w-4xl py-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Award className="h-6 w-6 text-primary" /> 내 수료증
+          </h1>
+          <p className="text-muted-foreground mt-1">완료한 강의의 수료증을 확인하고 다운로드하세요</p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+        ) : certificates && certificates.length > 0 ? (
+          <div className="grid gap-4">
+            {certificates.map((cert: any) => (
+              <Card key={cert.id} className="overflow-hidden">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Award className="h-7 w-7 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{cert.lectureTitle || `강의 #${cert.lectureId}`}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {cert.completionPercent}% 완료
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            발급일: {new Date(cert.issuedAt).toLocaleDateString("ko-KR")}
+                          </span>
+                        </div>
+                        {cert.certificateNumber && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            인증번호: {cert.certificateNumber}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {cert.pdfUrl && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={cert.pdfUrl} target="_blank" rel="noopener noreferrer">
+                            <Download className="h-4 w-4 mr-1" /> PDF
+                          </a>
+                        </Button>
+                      )}
+                      {cert.verifyUrl && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={cert.verifyUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4 mr-1" /> 검증
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="py-16 text-center text-muted-foreground">
+            <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p className="text-lg font-medium">아직 수료증이 없습니다</p>
+            <p className="text-sm mt-1">강의를 완료하면 자동으로 수료증이 발급됩니다</p>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -13,7 +13,6 @@ export const users = mysqlTable("users", {
   platformRole: mysqlEnum("platformRole", ["instructor", "student"]).default("student").notNull(),
   bio: text("bio"),
   avatarUrl: text("avatarUrl"),
-  /** Preferred language for translations */
   preferredLang: varchar("preferredLang", { length: 10 }).default("ko"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -35,11 +34,8 @@ export const voiceProfiles = mysqlTable("voiceProfiles", {
   teachingStyle: text("teachingStyle"),
   systemPrompt: text("systemPrompt"),
   ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).default("alloy"),
-  /** D-ID avatar image URL for avatar mode */
   avatarImageUrl: text("avatarImageUrl"),
-  /** D-ID presenter style */
   avatarStyle: varchar("avatarStyle", { length: 64 }).default("rectangular"),
-  /** D-ID API key for this profile (optional, falls back to global) */
   didApiKey: text("didApiKey"),
   isDefault: boolean("isDefault").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -65,8 +61,11 @@ export const lectures = mysqlTable("lectures", {
   coverImageUrl: text("coverImageUrl"),
   maxParticipants: int("maxParticipants").default(0),
   aiContext: text("aiContext"),
-  /** Enable auto-recording for VOD */
   autoRecord: boolean("autoRecord").default(true),
+  /** Face swap profile to use for this lecture */
+  faceSwapProfileId: int("faceSwapProfileId"),
+  /** Voice modulation profile to use */
+  voiceModProfileId: int("voiceModProfileId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -117,7 +116,6 @@ export const qaMessages = mysqlTable("qaMessages", {
   inputMethod: mysqlEnum("inputMethod", ["text", "voice"]).default("text").notNull(),
   content: text("content").notNull(),
   audioUrl: text("audioUrl"),
-  /** Avatar video URL (D-ID generated) */
   avatarVideoUrl: text("avatarVideoUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -196,8 +194,6 @@ export const translations = mysqlTable("translations", {
 export type Translation = typeof translations.$inferSelect;
 export type InsertTranslation = typeof translations.$inferInsert;
 
-// ============ v1.2 NEW TABLES ============
-
 /**
  * Learning progress - tracks student engagement per lecture
  */
@@ -205,17 +201,11 @@ export const learningProgress = mysqlTable("learningProgress", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   lectureId: int("lectureId").notNull(),
-  /** Number of Q&A questions asked */
   questionsAsked: int("questionsAsked").default(0),
-  /** Number of Q&A answers received */
   answersReceived: int("answersReceived").default(0),
-  /** Total time spent in lecture (seconds) */
   timeSpentSeconds: int("timeSpentSeconds").default(0),
-  /** Last slide index viewed */
   lastSlideIndex: int("lastSlideIndex").default(0),
-  /** Completion percentage (0-100) */
   completionPercent: int("completionPercent").default(0),
-  /** Last activity timestamp */
   lastActivityAt: timestamp("lastActivityAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -225,19 +215,15 @@ export type LearningProgress = typeof learningProgress.$inferSelect;
 export type InsertLearningProgress = typeof learningProgress.$inferInsert;
 
 /**
- * VOD watch history - tracks student VOD viewing
+ * VOD watch history
  */
 export const vodWatchHistory = mysqlTable("vodWatchHistory", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   vodId: int("vodId").notNull(),
-  /** Watch progress in seconds */
   watchedSeconds: int("watchedSeconds").default(0),
-  /** Total duration of VOD */
   totalSeconds: int("totalSeconds").default(0),
-  /** Watch completion percentage (0-100) */
   completionPercent: int("completionPercent").default(0),
-  /** Number of times watched */
   watchCount: int("watchCount").default(1),
   lastWatchedAt: timestamp("lastWatchedAt").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -248,14 +234,13 @@ export type VodWatchHistory = typeof vodWatchHistory.$inferSelect;
 export type InsertVodWatchHistory = typeof vodWatchHistory.$inferInsert;
 
 /**
- * Q&A Bookmarks - students can bookmark useful Q&A exchanges
+ * Q&A Bookmarks
  */
 export const qaBookmarks = mysqlTable("qaBookmarks", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   messageId: int("messageId").notNull(),
   lectureId: int("lectureId").notNull(),
-  /** Optional note from the student */
   note: text("note"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -264,27 +249,18 @@ export type QaBookmark = typeof qaBookmarks.$inferSelect;
 export type InsertQaBookmark = typeof qaBookmarks.$inferInsert;
 
 /**
- * AI Context Templates - pre-built templates for different lecture categories
+ * AI Context Templates
  */
 export const aiContextTemplates = mysqlTable("aiContextTemplates", {
   id: int("id").autoincrement().primaryKey(),
-  /** Category this template belongs to */
   category: mysqlEnum("category", ["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).notNull(),
-  /** Template name */
   name: varchar("name", { length: 255 }).notNull(),
-  /** Description of what this template covers */
   description: text("description"),
-  /** The AI system prompt template */
   systemPrompt: text("systemPrompt").notNull(),
-  /** Key topics covered */
   topics: text("topics"),
-  /** Difficulty level */
   difficulty: mysqlEnum("difficulty", ["beginner", "intermediate", "advanced"]).default("beginner").notNull(),
-  /** Is this a built-in template (not deletable) */
   isBuiltIn: boolean("isBuiltIn").default(true),
-  /** Creator user ID (null for built-in) */
   creatorId: int("creatorId"),
-  /** Usage count */
   usageCount: int("usageCount").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -292,3 +268,159 @@ export const aiContextTemplates = mysqlTable("aiContextTemplates", {
 
 export type AiContextTemplate = typeof aiContextTemplates.$inferSelect;
 export type InsertAiContextTemplate = typeof aiContextTemplates.$inferInsert;
+
+// ============ v2.0 NEW TABLES ============
+
+/**
+ * Face Swap Profiles - deepfake face transformation settings
+ * Stores source face image and target face for D-ID/HeyGen face swap
+ */
+export const faceSwapProfiles = mysqlTable("faceSwapProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Original face image URL (instructor's real face) */
+  sourceFaceUrl: text("sourceFaceUrl"),
+  /** Target face image URL (the face to transform into) */
+  targetFaceUrl: text("targetFaceUrl"),
+  /** Face swap method: did (D-ID), heygen, or built-in simulation */
+  method: mysqlEnum("method", ["did", "heygen", "builtin"]).default("builtin").notNull(),
+  /** Additional settings JSON (age adjustment, gender, ethnicity hints) */
+  settings: text("settings"),
+  /** Preview image URL showing the face swap result */
+  previewUrl: text("previewUrl"),
+  isDefault: boolean("isDefault").default(false),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type FaceSwapProfile = typeof faceSwapProfiles.$inferSelect;
+export type InsertFaceSwapProfile = typeof faceSwapProfiles.$inferInsert;
+
+/**
+ * Voice Modulation Profiles - voice disguise settings
+ * Transforms pitch, speed, tone, and speaking style
+ */
+export const voiceModProfiles = mysqlTable("voiceModProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Pitch shift in semitones (-12 to +12) */
+  pitchShift: int("pitchShift").default(0),
+  /** Speed multiplier (50-200, where 100 = normal) */
+  speedPercent: int("speedPercent").default(100),
+  /** Tone warmth (-100 cold to +100 warm) */
+  toneWarmth: int("toneWarmth").default(0),
+  /** Speaking style: formal, casual, academic, friendly, authoritative */
+  speakingStyle: mysqlEnum("speakingStyle", ["formal", "casual", "academic", "friendly", "authoritative"]).default("formal").notNull(),
+  /** Target voice character: male_deep, male_bright, female_warm, female_clear, neutral */
+  voiceCharacter: mysqlEnum("voiceCharacter", ["male_deep", "male_bright", "female_warm", "female_clear", "neutral"]).default("neutral").notNull(),
+  /** Custom TTS voice ID override */
+  customTtsVoiceId: varchar("customTtsVoiceId", { length: 128 }),
+  /** AI prompt for speaking style transformation */
+  stylePrompt: text("stylePrompt"),
+  /** Preview audio URL */
+  previewAudioUrl: text("previewAudioUrl"),
+  isDefault: boolean("isDefault").default(false),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type VoiceModProfile = typeof voiceModProfiles.$inferSelect;
+export type InsertVoiceModProfile = typeof voiceModProfiles.$inferInsert;
+
+/**
+ * Platform Integrations - external meeting platform settings
+ * Stores credentials and settings for Zoom, Google Meet, Webex, Tencent Meeting
+ */
+export const platformIntegrations = mysqlTable("platformIntegrations", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Platform type */
+  platform: mysqlEnum("platform", ["zoom", "google_meet", "webex", "tencent", "obs"]).notNull(),
+  /** Display name for this integration */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** API key or access token (encrypted) */
+  apiKey: text("apiKey"),
+  /** API secret */
+  apiSecret: text("apiSecret"),
+  /** Meeting URL template or default meeting link */
+  meetingUrl: text("meetingUrl"),
+  /** Additional config JSON (e.g., OBS scene settings, virtual camera config) */
+  config: text("config"),
+  /** Whether this integration is active */
+  isActive: boolean("isActive").default(true),
+  /** Last successful connection test */
+  lastTestedAt: timestamp("lastTestedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PlatformIntegration = typeof platformIntegrations.$inferSelect;
+export type InsertPlatformIntegration = typeof platformIntegrations.$inferInsert;
+
+/**
+ * Certificates - auto-generated completion certificates
+ */
+export const certificates = mysqlTable("certificates", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  lectureId: int("lectureId").notNull(),
+  /** Certificate unique code for verification */
+  certificateCode: varchar("certificateCode", { length: 64 }).notNull().unique(),
+  /** Student name on certificate */
+  studentName: varchar("studentName", { length: 255 }).notNull(),
+  /** Lecture title on certificate */
+  lectureTitle: varchar("lectureTitle", { length: 500 }).notNull(),
+  /** Instructor name on certificate */
+  instructorName: varchar("instructorName", { length: 255 }),
+  /** Completion percentage at time of issue */
+  completionPercent: int("completionPercent").default(100),
+  /** Certificate PDF URL (stored in S3) */
+  pdfUrl: text("pdfUrl"),
+  /** Certificate design template name */
+  templateName: varchar("templateName", { length: 128 }).default("default"),
+  /** Issue date */
+  issuedAt: timestamp("issuedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Certificate = typeof certificates.$inferSelect;
+export type InsertCertificate = typeof certificates.$inferInsert;
+
+/**
+ * Lecture Sessions - tracks live streaming sessions with face/voice mods
+ * Used for WebRTC and external platform streaming
+ */
+export const lectureSessions = mysqlTable("lectureSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  lectureId: int("lectureId").notNull(),
+  instructorId: int("instructorId").notNull(),
+  /** Session status */
+  status: mysqlEnum("status", ["preparing", "live", "paused", "ended"]).default("preparing").notNull(),
+  /** Face swap profile used in this session */
+  faceSwapProfileId: int("faceSwapProfileId"),
+  /** Voice modulation profile used */
+  voiceModProfileId: int("voiceModProfileId"),
+  /** External platform being streamed to */
+  platformIntegrationId: int("platformIntegrationId"),
+  /** External meeting URL for this session */
+  externalMeetingUrl: text("externalMeetingUrl"),
+  /** WebRTC room ID for internal streaming */
+  webrtcRoomId: varchar("webrtcRoomId", { length: 128 }),
+  /** Session start time */
+  startedAt: timestamp("startedAt"),
+  /** Session end time */
+  endedAt: timestamp("endedAt"),
+  /** Duration in seconds */
+  durationSeconds: int("durationSeconds").default(0),
+  /** Number of viewers */
+  viewerCount: int("viewerCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LectureSession = typeof lectureSessions.$inferSelect;
+export type InsertLectureSession = typeof lectureSessions.$inferInsert;

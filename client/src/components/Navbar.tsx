@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Award,
   BarChart3,
   BookOpen,
   GraduationCap,
@@ -39,6 +40,7 @@ export default function Navbar() {
     ...(isAuthenticated ? [
       { href: "/my-lectures", label: "내 수강", icon: GraduationCap },
       { href: "/my-dashboard", label: "학습 현황", icon: BarChart3 },
+      { href: "/certificates", label: "수료증", icon: Award },
     ] : []),
     ...(isInstructor ? [{ href: "/instructor", label: "강사 대시보드", icon: Monitor }] : []),
   ];
