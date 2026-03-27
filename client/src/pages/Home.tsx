@@ -115,30 +115,37 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
-        <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+      <section className="relative overflow-hidden min-h-[90vh] flex items-center">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img
+            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/virtual-speaker-hero-bg2-D35XzmvCUDfR85vTDzYkGw.webp"
+            alt="Virtual AI Instructor"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
+        </div>
 
         <div className="container relative py-24 md:py-32 lg:py-40">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-6">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm px-4 py-1.5 text-sm text-primary mb-6">
               <Sparkles className="h-3.5 w-3.5" />
               Virtual Speaker v2.5
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 drop-shadow-lg">
               AI가 당신 대신
               <br />
               <span className="text-primary">온라인 강의</span>를 진행합니다
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-2xl">
+            <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-xl">
               프롬프트만 입력하면 AI가 강의 콘텐츠를 생성하고, 딥페이크 얼굴 변환과 음성 변조로
               완전히 다른 강사로 변신하여 Zoom, Google Meet 등에서 실시간 강의를 진행합니다.
             </p>
 
-            <p className="text-sm text-muted-foreground mb-8 max-w-2xl">
+            <p className="text-sm text-muted-foreground mb-8 max-w-xl">
               강사의 얼굴, 목소리, 말투를 AI로 변환 · 외부 회의 플랫폼 직접 송출 · 20개 이상 다국어 지원
             </p>
 
