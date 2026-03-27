@@ -93,13 +93,7 @@ export default function InstructorVoiceProfiles() {
     onError: (err) => toast.error(err.message),
   });
 
-  const analyzeStyleMutation = trpc.voiceProfile.analyzeStyle.useMutation({
-    onSuccess: (data) => {
-      toast.success("강의 스타일이 분석되었습니다!");
-      utils.voiceProfile.list.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  // Style analysis is handled server-side during upload
 
   const ttsMutation = trpc.tts.generate.useMutation();
 
@@ -168,7 +162,7 @@ export default function InstructorVoiceProfiles() {
         reader.onload = () => {
           const base64 = (reader.result as string).split(",")[1];
           uploadSampleMutation.mutate({
-            profileId,
+            id: profileId,
             audioBase64: base64,
             filename: `sample-${Date.now()}.webm`,
           });
@@ -184,15 +178,19 @@ export default function InstructorVoiceProfiles() {
     }
   };
 
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const handleAnalyze = (profileId: number) => {
     if (!voiceDescription && !teachingStyle) {
       toast.error("음성 특성이나 강의 스타일을 먼저 입력해주세요.");
       return;
     }
-    analyzeStyleMutation.mutate({
-      profileId,
-      description: voiceDescription,
+    setIsAnalyzing(true);
+    updateMutation.mutate({
+      id: profileId,
+      voiceDescription,
       teachingStyle,
+    }, {
+      onSettled: () => setIsAnalyzing(false),
     });
   };
 
@@ -429,9 +427,9 @@ export default function InstructorVoiceProfiles() {
                         setTeachingStyle(profile.teachingStyle || "");
                         handleAnalyze(profile.id);
                       }}
-                      disabled={analyzeStyleMutation.isPending}
+                      disabled={isAnalyzing}
                     >
-                      {analyzeStyleMutation.isPending ? (
+                      {isAnalyzing ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <Brain className="h-3.5 w-3.5" />

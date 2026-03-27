@@ -17,6 +17,7 @@ import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  Brain,
   Save,
   Loader2,
   Upload,
@@ -46,6 +47,7 @@ export default function InstructorLectureForm() {
   );
 
   const { data: voiceProfiles } = trpc.voiceProfile.list.useQuery();
+  const { data: templates } = trpc.template.list.useQuery({ category });
   const { data: materials, refetch: refetchMaterials } = trpc.material.list.useQuery(
     { lectureId: lectureId! },
     { enabled: !!lectureId }
@@ -243,9 +245,45 @@ export default function InstructorLectureForm() {
           {/* AI Context */}
           <Card className="bg-card">
             <CardHeader>
-              <CardTitle className="text-lg">AI 컨텍스트</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Brain className="h-5 w-5 text-purple-400" />
+                AI 컨텍스트
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Template selector */}
+              {templates && templates.length > 0 && (
+                <div>
+                  <Label>템플릿에서 불러오기</Label>
+                  <Select
+                    value=""
+                    onValueChange={(val) => {
+                      const tpl = templates.find((t: any) => t.id.toString() === val);
+                      if (tpl) {
+                        setAiContext((prev) => prev ? prev + "\n\n" + tpl.systemPrompt : tpl.systemPrompt);
+                        toast.success(`"${tpl.name}" 템플릿이 적용되었습니다.`);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="템플릿 선택..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {templates.map((tpl: any) => (
+                        <SelectItem key={tpl.id} value={tpl.id.toString()}>
+                          {tpl.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    카테고리별 사전 정의된 템플릿을 불러와 컨텍스트에 추가합니다.
+                    <Link href="/instructor/templates" className="text-primary underline ml-1">
+                      템플릿 관리
+                    </Link>
+                  </p>
+                </div>
+              )}
               <div>
                 <Label>AI 강사 추가 지식</Label>
                 <Textarea

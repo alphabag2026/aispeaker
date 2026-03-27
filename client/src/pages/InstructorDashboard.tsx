@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "wouter";
 import {
   BookOpen,
+  Brain,
   Mic,
   Users,
   Radio,
@@ -18,7 +19,7 @@ import {
 
 export default function InstructorDashboard() {
   const { user, isAuthenticated } = useAuth();
-  const switchRole = trpc.user.switchRole.useMutation({
+  const switchRole = trpc.user.setRole.useMutation({
     onSuccess: () => window.location.reload(),
   });
 
@@ -135,7 +136,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Link href="/instructor/lectures">
             <Card className="bg-card hover:border-primary/50 transition-colors cursor-pointer group">
               <CardContent className="p-6 flex items-center justify-between">
@@ -178,6 +179,22 @@ export default function InstructorDashboard() {
                   <div>
                     <h3 className="font-semibold">VOD 아카이브</h3>
                     <p className="text-sm text-muted-foreground">녹화된 강의 관리 및 조회</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/instructor/templates">
+            <Card className="bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Brain className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">AI 템플릿</h3>
+                    <p className="text-sm text-muted-foreground">카테고리별 AI 컨텍스트 관리</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />

@@ -15,6 +15,8 @@ import { Streamdown } from "streamdown";
 import { toast } from "sonner";
 import {
   BookOpen,
+  Bookmark,
+  BookmarkCheck,
   ChevronLeft,
   ChevronRight,
   Mic,
@@ -82,6 +84,10 @@ export default function LectureRoom() {
 
   // Avatar state
   const [avatarSpeaking, setAvatarSpeaking] = useState(false);
+  const [avatarVideoUrl, setAvatarVideoUrl] = useState<string | null>(null);
+
+  // Bookmark state
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<number>>(new Set());
 
   const { data: lecture } = trpc.lecture.getById.useQuery({ id: lectureId });
   const { data: materials } = trpc.material.list.useQuery({ lectureId });
@@ -104,6 +110,14 @@ export default function LectureRoom() {
 
   const ttsMutation = trpc.tts.generate.useMutation();
   const translateMutation = trpc.translation.translate.useMutation();
+  const avatarMutation = trpc.avatar.generate.useMutation();
+  const bookmarkAddMutation = trpc.bookmark.add.useMutation({
+    onSuccess: () => toast.success("북마크에 추가되었습니다!"),
+  });
+  const bookmarkRemoveMutation = trpc.bookmark.remove.useMutation({
+    onSuccess: () => toast.success("북마크가 제거되었습니다."),
+  });
+  const progressMutation = trpc.progress.update.useMutation();
   const createVodMutation = trpc.vod.createFromLecture.useMutation({
     onSuccess: (data) => {
       toast.success(`VOD가 생성되었습니다! (ID: ${data.vodId})`);
@@ -115,6 +129,33 @@ export default function LectureRoom() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Track time spent in lecture
+  useEffect(() => {
+    if (!isAuthenticated || !lectureId) return;
+    const interval = setInterval(() => {
+      progressMutation.mutate({
+        lectureId,
+        timeSpentSeconds: 30,
+        lastSlideIndex: currentSlide,
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, lectureId, currentSlide]);
+
+  const handleToggleBookmark = (messageId: number) => {
+    if (bookmarkedIds.has(messageId)) {
+      bookmarkRemoveMutation.mutate({ messageId });
+      setBookmarkedIds(prev => {
+        const next = new Set(prev);
+        next.delete(messageId);
+        return next;
+      });
+    } else {
+      bookmarkAddMutation.mutate({ messageId, lectureId });
+      setBookmarkedIds(prev => new Set(prev).add(messageId));
+    }
+  };
 
   // Canvas setup
   useEffect(() => {
@@ -615,7 +656,7 @@ export default function LectureRoom() {
                       )}
                     </div>
 
-                    {/* Answer actions: TTS + Translation */}
+                    {/* Answer actions: TTS + Translation + Bookmark */}
                     {msg.message.messageType === "answer" && (
                       <div className="flex items-center gap-1 mt-1">
                         <Button
@@ -631,6 +672,19 @@ export default function LectureRoom() {
                             <Volume2 className="h-3 w-3" />
                           )}
                           음성
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={`text-xs gap-1 h-7 ${bookmarkedIds.has(msg.message.id) ? "text-yellow-400" : ""}`}
+                          onClick={() => handleToggleBookmark(msg.message.id)}
+                        >
+                          {bookmarkedIds.has(msg.message.id) ? (
+                            <BookmarkCheck className="h-3 w-3" />
+                          ) : (
+                            <Bookmark className="h-3 w-3" />
+                          )}
+                          북마크
                         </Button>
                         {selectedLang !== "ko" && (
                           <>

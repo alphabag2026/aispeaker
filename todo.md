@@ -73,3 +73,38 @@
 - [x] 사용자 선호 언어 테스트 (2개)
 - [x] 크로스 기능 통합 테스트 (3개)
 - [x] 전체 49개 테스트 통과
+
+## D-ID API 아바타 영상 연동 (v1.2)
+- [x] D-ID 아바타 영상 생성 백엔드 라우터 (avatar.generate)
+- [x] 강의실에서 AI 답변 시 D-ID 아바타 영상 실시간 생성/재생
+- [x] 아바타 설정 관리 (avatar.getConfig, avatar.updateConfig)
+- [x] D-ID 미연동 시 기존 내장 아바타 폴백 (TTS + 애니메이션)
+- [x] 강의실 UI에 D-ID 비디오 플레이어 통합
+
+## 카테고리별 AI 컨텍스트 템플릿 (v1.2)
+- [x] AI 컨텍스트 템플릿 DB 테이블 (aiContextTemplates)
+- [x] 카테고리별 기본 템플릿 시드 데이터 (Web3, DeFi, NFT, AI, Blockchain, Metaverse)
+- [x] 템플릿 CRUD 백엔드 라우터 (template.list/create/update/delete)
+- [x] 강의 생성 시 카테고리 선택하면 템플릿 자동 로드
+- [x] 템플릿 관리 페이지 (InstructorTemplates)
+- [x] 강사 대시보드에 AI 템플릿 관리 퀵 액션 추가
+
+## 수강생 대시보드 강화 (v1.2)
+- [x] 학습 진도 추적 DB 테이블 (lectureProgress)
+- [x] VOD 시청 이력 DB 테이블 (vodWatchHistory)
+- [x] Q&A 북마크 DB 테이블 (qaBookmarks)
+- [x] 수강생 대시보드 페이지 (진도 요약, 최근 활동, 통계)
+- [x] 강의별 진도율 표시 (Q&A 참여 수 기반)
+- [x] VOD 시청 이력 탭 (시청 시간, 진도)
+- [x] Q&A 북마크 저장/삭제/목록 기능
+- [x] 학습 통계 시각화 (Recharts 차트)
+- [x] 강의실에서 북마크 버튼 추가
+- [x] Navbar에 학습 현황 메뉴 추가
+
+## v1.2 테스트
+- [x] 북마크 시스템 테스트 (7개)
+- [x] 진도 추적 테스트 (7개)
+- [x] AI 컨텍스트 템플릿 테스트 (8개)
+- [x] D-ID 아바타 생성 테스트 (4개)
+- [x] v1.2 크로스 기능 통합 테스트 (3개)
+- [x] 전체 80개 테스트 통과

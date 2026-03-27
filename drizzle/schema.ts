@@ -39,6 +39,8 @@ export const voiceProfiles = mysqlTable("voiceProfiles", {
   avatarImageUrl: text("avatarImageUrl"),
   /** D-ID presenter style */
   avatarStyle: varchar("avatarStyle", { length: 64 }).default("rectangular"),
+  /** D-ID API key for this profile (optional, falls back to global) */
+  didApiKey: text("didApiKey"),
   isDefault: boolean("isDefault").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -144,19 +146,12 @@ export const vodRecordings = mysqlTable("vodRecordings", {
   lectureId: int("lectureId").notNull(),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
-  /** Duration in seconds */
   duration: int("duration").default(0),
-  /** Total Q&A messages archived */
   messageCount: int("messageCount").default(0),
-  /** Total whiteboard snapshots */
   snapshotCount: int("snapshotCount").default(0),
-  /** Status of VOD processing */
   status: mysqlEnum("status", ["processing", "ready", "failed"]).default("processing").notNull(),
-  /** Thumbnail URL */
   thumbnailUrl: text("thumbnailUrl"),
-  /** View count */
   viewCount: int("viewCount").default(0),
-  /** Recording start/end timestamps */
   startedAt: timestamp("startedAt"),
   endedAt: timestamp("endedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -166,24 +161,17 @@ export type VodRecording = typeof vodRecordings.$inferSelect;
 export type InsertVodRecording = typeof vodRecordings.$inferInsert;
 
 /**
- * VOD Timeline Events - Q&A messages and whiteboard snapshots with timestamps for replay
+ * VOD Timeline Events
  */
 export const vodTimelineEvents = mysqlTable("vodTimelineEvents", {
   id: int("id").autoincrement().primaryKey(),
   vodId: int("vodId").notNull(),
-  /** Event type: qa_question, qa_answer, whiteboard_snapshot, slide_change */
   eventType: mysqlEnum("eventType", ["qa_question", "qa_answer", "whiteboard_snapshot", "slide_change"]).default("qa_question").notNull(),
-  /** Offset in seconds from recording start */
   offsetSeconds: int("offsetSeconds").default(0),
-  /** Event content (message text, snapshot data, slide index) */
   content: text("content"),
-  /** Optional: user who triggered the event */
   userId: int("userId"),
-  /** Optional: audio URL for TTS answers */
   audioUrl: text("audioUrl"),
-  /** Optional: avatar video URL */
   avatarVideoUrl: text("avatarVideoUrl"),
-  /** Optional: slide index for slide_change events */
   slideIndex: int("slideIndex"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -192,24 +180,115 @@ export type VodTimelineEvent = typeof vodTimelineEvents.$inferSelect;
 export type InsertVodTimelineEvent = typeof vodTimelineEvents.$inferInsert;
 
 /**
- * Translations - cached AI translations for Q&A answers and lecture content
+ * Translations - cached AI translations
  */
 export const translations = mysqlTable("translations", {
   id: int("id").autoincrement().primaryKey(),
-  /** Source type: qa_message, lecture_title, lecture_description */
   sourceType: mysqlEnum("sourceType", ["qa_message", "lecture_title", "lecture_description"]).default("qa_message").notNull(),
-  /** Source record ID */
   sourceId: int("sourceId").notNull(),
-  /** Source language (ISO 639-1) */
   sourceLang: varchar("sourceLang", { length: 10 }).default("ko").notNull(),
-  /** Target language (ISO 639-1) */
   targetLang: varchar("targetLang", { length: 10 }).notNull(),
-  /** Original text */
   originalText: text("originalText").notNull(),
-  /** Translated text */
   translatedText: text("translatedText").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export type Translation = typeof translations.$inferSelect;
 export type InsertTranslation = typeof translations.$inferInsert;
+
+// ============ v1.2 NEW TABLES ============
+
+/**
+ * Learning progress - tracks student engagement per lecture
+ */
+export const learningProgress = mysqlTable("learningProgress", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  lectureId: int("lectureId").notNull(),
+  /** Number of Q&A questions asked */
+  questionsAsked: int("questionsAsked").default(0),
+  /** Number of Q&A answers received */
+  answersReceived: int("answersReceived").default(0),
+  /** Total time spent in lecture (seconds) */
+  timeSpentSeconds: int("timeSpentSeconds").default(0),
+  /** Last slide index viewed */
+  lastSlideIndex: int("lastSlideIndex").default(0),
+  /** Completion percentage (0-100) */
+  completionPercent: int("completionPercent").default(0),
+  /** Last activity timestamp */
+  lastActivityAt: timestamp("lastActivityAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LearningProgress = typeof learningProgress.$inferSelect;
+export type InsertLearningProgress = typeof learningProgress.$inferInsert;
+
+/**
+ * VOD watch history - tracks student VOD viewing
+ */
+export const vodWatchHistory = mysqlTable("vodWatchHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  vodId: int("vodId").notNull(),
+  /** Watch progress in seconds */
+  watchedSeconds: int("watchedSeconds").default(0),
+  /** Total duration of VOD */
+  totalSeconds: int("totalSeconds").default(0),
+  /** Watch completion percentage (0-100) */
+  completionPercent: int("completionPercent").default(0),
+  /** Number of times watched */
+  watchCount: int("watchCount").default(1),
+  lastWatchedAt: timestamp("lastWatchedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type VodWatchHistory = typeof vodWatchHistory.$inferSelect;
+export type InsertVodWatchHistory = typeof vodWatchHistory.$inferInsert;
+
+/**
+ * Q&A Bookmarks - students can bookmark useful Q&A exchanges
+ */
+export const qaBookmarks = mysqlTable("qaBookmarks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  messageId: int("messageId").notNull(),
+  lectureId: int("lectureId").notNull(),
+  /** Optional note from the student */
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type QaBookmark = typeof qaBookmarks.$inferSelect;
+export type InsertQaBookmark = typeof qaBookmarks.$inferInsert;
+
+/**
+ * AI Context Templates - pre-built templates for different lecture categories
+ */
+export const aiContextTemplates = mysqlTable("aiContextTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Category this template belongs to */
+  category: mysqlEnum("category", ["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).notNull(),
+  /** Template name */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Description of what this template covers */
+  description: text("description"),
+  /** The AI system prompt template */
+  systemPrompt: text("systemPrompt").notNull(),
+  /** Key topics covered */
+  topics: text("topics"),
+  /** Difficulty level */
+  difficulty: mysqlEnum("difficulty", ["beginner", "intermediate", "advanced"]).default("beginner").notNull(),
+  /** Is this a built-in template (not deletable) */
+  isBuiltIn: boolean("isBuiltIn").default(true),
+  /** Creator user ID (null for built-in) */
+  creatorId: int("creatorId"),
+  /** Usage count */
+  usageCount: int("usageCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AiContextTemplate = typeof aiContextTemplates.$inferSelect;
+export type InsertAiContextTemplate = typeof aiContextTemplates.$inferInsert;

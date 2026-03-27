@@ -11,7 +11,9 @@ import InstructorDashboard from "./pages/InstructorDashboard";
 import InstructorLectures from "./pages/InstructorLectures";
 import InstructorLectureForm from "./pages/InstructorLectureForm";
 import InstructorVoiceProfiles from "./pages/InstructorVoiceProfiles";
+import InstructorTemplates from "./pages/InstructorTemplates";
 import MyEnrollments from "./pages/MyEnrollments";
+import StudentDashboard from "./pages/StudentDashboard";
 import VodList from "./pages/VodList";
 import VodPlayer from "./pages/VodPlayer";
 
@@ -22,6 +24,7 @@ function Router() {
       <Route path="/lectures" component={LectureList} />
       <Route path="/lecture/:id" component={LectureRoom} />
       <Route path="/my-lectures" component={MyEnrollments} />
+      <Route path="/my-dashboard" component={StudentDashboard} />
       <Route path="/vod" component={VodList} />
       <Route path="/vod/:id" component={VodPlayer} />
       <Route path="/instructor" component={InstructorDashboard} />
@@ -29,6 +32,7 @@ function Router() {
       <Route path="/instructor/lectures/new" component={InstructorLectureForm} />
       <Route path="/instructor/lectures/:id/edit" component={InstructorLectureForm} />
       <Route path="/instructor/voice-profiles" component={InstructorVoiceProfiles} />
+      <Route path="/instructor/templates" component={InstructorTemplates} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
