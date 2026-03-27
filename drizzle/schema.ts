@@ -512,3 +512,39 @@ export const productionPipelines = mysqlTable("productionPipelines", {
 
 export type ProductionPipeline = typeof productionPipelines.$inferSelect;
 export type InsertProductionPipeline = typeof productionPipelines.$inferInsert;
+
+// ============ v2.3 NEW TABLES ============
+
+/**
+ * Script Templates - reusable lecture structure templates
+ * Stores predefined section structures that can be applied when creating new scripts
+ */
+export const scriptTemplates = mysqlTable("scriptTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  /** Template name */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Template description */
+  description: text("description"),
+  /** Category for context */
+  category: mysqlEnum("category", ["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).default("general").notNull(),
+  /** Target difficulty */
+  difficulty: mysqlEnum("difficulty", ["beginner", "intermediate", "advanced"]).default("beginner").notNull(),
+  /** Template structure as JSON array [{title, description, durationPercent, slideNotes}] */
+  structure: text("structure").notNull(),
+  /** Number of sections in the template */
+  sectionCount: int("sectionCount").default(0),
+  /** Target duration in minutes */
+  targetDurationMin: int("targetDurationMin").default(10),
+  /** Whether this is a built-in system template */
+  isBuiltIn: boolean("isBuiltIn").default(false),
+  /** Tags for search (comma-separated) */
+  tags: text("tags"),
+  /** Usage count */
+  usageCount: int("usageCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ScriptTemplate = typeof scriptTemplates.$inferSelect;
+export type InsertScriptTemplate = typeof scriptTemplates.$inferInsert;

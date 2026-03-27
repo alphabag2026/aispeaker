@@ -22,6 +22,7 @@ import {
   lectureSessions, InsertLectureSession,
   lectureScripts, InsertLectureScript,
   productionPipelines, InsertProductionPipeline,
+  scriptTemplates, InsertScriptTemplate,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -664,4 +665,72 @@ export async function getPipelineStats(userId: number) {
     categoryDistribution, monthlyProduction, difficultyDistribution,
     successRate: totalPipelines > 0 ? Math.round((completedPipelines / totalPipelines) * 100) : 0,
   };
+}
+
+// ============ Script Templates (v2.3) ============
+
+export async function getScriptTemplates(category?: string, userId?: number) {
+  const db = await getDb(); if (!db) return [];
+  if (category) {
+    return db.select().from(scriptTemplates).where(eq(scriptTemplates.category, category as any)).orderBy(desc(scriptTemplates.usageCount));
+  }
+  return db.select().from(scriptTemplates).orderBy(desc(scriptTemplates.usageCount));
+}
+
+export async function getScriptTemplateById(id: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(scriptTemplates).where(eq(scriptTemplates.id, id));
+  return rows[0] || null;
+}
+
+export async function createScriptTemplate(data: InsertScriptTemplate) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(scriptTemplates).values(data);
+  return result[0].insertId;
+}
+
+export async function updateScriptTemplate(id: number, data: Partial<InsertScriptTemplate>) {
+  const db = await getDb(); if (!db) return;
+  await db.update(scriptTemplates).set(data).where(eq(scriptTemplates.id, id));
+}
+
+export async function deleteScriptTemplate(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(scriptTemplates).where(and(eq(scriptTemplates.id, id), eq(scriptTemplates.userId, userId)));
+}
+
+export async function incrementScriptTemplateUsage(id: number) {
+  const db = await getDb(); if (!db) return;
+  const existing = await db.select().from(scriptTemplates).where(eq(scriptTemplates.id, id));
+  if (existing[0]) {
+    await db.update(scriptTemplates).set({ usageCount: (existing[0].usageCount || 0) + 1 }).where(eq(scriptTemplates.id, id));
+  }
+}
+
+export async function saveScriptAsTemplate(scriptId: number, userId: number, name: string, description?: string, tags?: string) {
+  const db = await getDb(); if (!db) return null;
+  const script = await db.select().from(lectureScripts).where(eq(lectureScripts.id, scriptId));
+  if (!script[0]) return null;
+  const s = script[0];
+  const sections = s.sections ? JSON.parse(s.sections) : [];
+  // Convert sections to template structure (remove content, keep structure)
+  const structure = sections.map((sec: any) => ({
+    title: sec.title,
+    description: sec.slideNotes || "",
+    durationPercent: Math.round((sec.durationSec / (s.estimatedDurationSec || 1)) * 100),
+    slideNotes: sec.slideNotes || "",
+  }));
+  const templateId = await createScriptTemplate({
+    userId,
+    name,
+    description: description || `"${s.title}" 스크립트에서 생성된 템플릿`,
+    category: s.category || "general",
+    difficulty: s.difficulty || "beginner",
+    structure: JSON.stringify(structure),
+    sectionCount: sections.length,
+    targetDurationMin: s.targetDurationMin || 10,
+    isBuiltIn: false,
+    tags,
+  });
+  return templateId;
 }

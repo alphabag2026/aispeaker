@@ -24,6 +24,7 @@ import ProductionStudio from "./pages/ProductionStudio";
 import ObsTutorial from "./pages/ObsTutorial";
 import ScriptEditor from "./pages/ScriptEditor";
 import PipelineDashboard from "./pages/PipelineDashboard";
+import ScriptTemplateLibrary from "./pages/ScriptTemplateLibrary";
 
 function Router() {
   return (
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/studio" component={ProductionStudio} />
       <Route path="/script/:id" component={ScriptEditor} />
       <Route path="/pipeline-dashboard" component={PipelineDashboard} />
+      <Route path="/script-templates" component={ScriptTemplateLibrary} />
       <Route path="/obs-tutorial" component={ObsTutorial} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

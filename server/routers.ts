@@ -8,6 +8,7 @@ import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
 import { storagePut } from "./storage";
 import { transcribeAudio } from "./_core/voiceTranscription";
+import { generateImage } from "./_core/imageGeneration";
 import { nanoid } from "nanoid";
 
 // Instructor-only procedure
@@ -790,6 +791,320 @@ export const appRouter = router({
     history: instructorProcedure.query(async ({ ctx }) => db.getSessionHistory(ctx.user.id)),
   }),
 
+  // ============ Script Templates (v2.3) ============
+  scriptTemplate: router({
+    /** List all script templates */
+    list: instructorProcedure
+      .input(z.object({ category: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => db.getScriptTemplates(input?.category)),
+
+    /** Get template by ID */
+    getById: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const template = await db.getScriptTemplateById(input.id);
+        if (!template) throw new TRPCError({ code: "NOT_FOUND" });
+        return template;
+      }),
+
+    /** Create a new script template */
+    create: instructorProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).optional(),
+        difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+        structure: z.string().min(2),
+        sectionCount: z.number().optional(),
+        targetDurationMin: z.number().optional(),
+        tags: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createScriptTemplate({
+          userId: ctx.user.id,
+          name: input.name,
+          description: input.description,
+          category: input.category || "general",
+          difficulty: input.difficulty || "beginner",
+          structure: input.structure,
+          sectionCount: input.sectionCount || 0,
+          targetDurationMin: input.targetDurationMin || 10,
+          isBuiltIn: false,
+          tags: input.tags,
+        });
+        return { id, success: true };
+      }),
+
+    /** Update a script template */
+    update: instructorProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).optional(),
+        difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+        structure: z.string().optional(),
+        sectionCount: z.number().optional(),
+        targetDurationMin: z.number().optional(),
+        tags: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateScriptTemplate(id, data as any);
+        return { success: true };
+      }),
+
+    /** Delete a script template */
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteScriptTemplate(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    /** Save an existing script as a template */
+    saveFromScript: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        name: z.string().min(1),
+        description: z.string().optional(),
+        tags: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const templateId = await db.saveScriptAsTemplate(input.scriptId, ctx.user.id, input.name, input.description, input.tags);
+        if (!templateId) throw new TRPCError({ code: "NOT_FOUND", message: "스크립트를 찾을 수 없습니다." });
+        return { id: templateId, success: true };
+      }),
+
+    /** Generate a script using a template structure */
+    generateFromTemplate: instructorProcedure
+      .input(z.object({
+        templateId: z.number(),
+        title: z.string().min(1),
+        prompt: z.string().min(10),
+        language: z.string().optional(),
+        targetDurationMin: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const template = await db.getScriptTemplateById(input.templateId);
+        if (!template) throw new TRPCError({ code: "NOT_FOUND", message: "템플릿을 찾을 수 없습니다." });
+
+        // Increment usage
+        await db.incrementScriptTemplateUsage(input.templateId);
+
+        const structure = JSON.parse(template.structure);
+        const durationMin = input.targetDurationMin || template.targetDurationMin || 10;
+        const langMap: Record<string, string> = { ko: "한국어", en: "English", ja: "日本語", zh: "中文" };
+        const lang = langMap[input.language || "ko"] || "한국어";
+
+        // Create script record first
+        const scriptId = await db.createLectureScript({
+          userId: ctx.user.id,
+          title: input.title,
+          prompt: input.prompt,
+          category: template.category || "web3",
+          difficulty: template.difficulty || "beginner",
+          language: input.language || "ko",
+          targetDurationMin: durationMin,
+          status: "generating",
+        });
+        if (!scriptId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        try {
+          // Build section prompts from template structure
+          const sectionPrompts = structure.map((s: any, i: number) => {
+            const secDuration = Math.round(durationMin * 60 * (s.durationPercent || (100 / structure.length)) / 100);
+            return `섹션 ${i + 1}: "${s.title}" - ${s.description || ""} (약 ${secDuration}초)`;
+          }).join("\n");
+
+          const response = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content: `당신은 전문 강의 스크립트 작성가입니다. ${lang}로 작성하세요.
+주어진 템플릿 구조에 맞춰 ${durationMin}분 분량의 강의 스크립트를 작성합니다.
+
+템플릿 구조:\n${sectionPrompts}
+
+반드시 아래 JSON 형식으로만 응답하세요:
+{
+  "sections": [
+    {
+      "title": "섹션 제목",
+      "content": "강사가 말할 전체 스크립트 텍스트 (자연스러운 구어체로)",
+      "durationSec": 예상_초,
+      "slideNotes": "이 섹션의 슬라이드에 표시할 핵심 키워드/요약"
+    }
+  ]
+}`
+              },
+              { role: "user", content: `주제: ${input.title}\n상세 요청: ${input.prompt}\n카테고리: ${template.category}\n난이도: ${template.difficulty}\n목표 시간: ${durationMin}분` },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "lecture_script",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    sections: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          title: { type: "string" },
+                          content: { type: "string" },
+                          durationSec: { type: "integer" },
+                          slideNotes: { type: "string" },
+                        },
+                        required: ["title", "content", "durationSec", "slideNotes"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["sections"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+
+          const rawContent = response.choices?.[0]?.message?.content;
+          if (typeof rawContent !== "string") throw new Error("LLM returned no content");
+
+          const parsed = JSON.parse(rawContent);
+          const sections = parsed.sections || [];
+          const fullScript = sections.map((s: any) => `## ${s.title}\n\n${s.content}`).join("\n\n");
+          const totalDuration = sections.reduce((sum: number, s: any) => sum + (s.durationSec || 0), 0);
+
+          await db.updateLectureScript(scriptId, {
+            scriptContent: fullScript,
+            sections: JSON.stringify(sections),
+            estimatedDurationSec: totalDuration,
+            sectionCount: sections.length,
+            status: "ready",
+          });
+
+          return { id: scriptId, status: "ready", sectionCount: sections.length, estimatedDurationSec: totalDuration };
+        } catch (error) {
+          await db.updateLectureScript(scriptId, { status: "error" });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "템플릿 기반 스크립트 생성에 실패했습니다." });
+        }
+      }),
+
+    /** Seed built-in script templates */
+    seedBuiltIn: instructorProcedure.mutation(async () => {
+      const builtInTemplates = [
+        {
+          name: "기본 강의 (도입-본론-결론)",
+          description: "가장 기본적인 3단계 강의 구조. 도입부에서 주제를 소개하고, 본론에서 핵심 내용을 전달하며, 결론에서 요약합니다.",
+          category: "general" as const,
+          difficulty: "beginner" as const,
+          structure: JSON.stringify([
+            { title: "도입 - 주제 소개", description: "강의 주제와 학습 목표를 소개합니다.", durationPercent: 15, slideNotes: "주제 소개, 학습 목표" },
+            { title: "본론 - 핵심 내용", description: "주요 개념과 이론을 상세히 설명합니다.", durationPercent: 60, slideNotes: "핵심 개념, 이론 설명" },
+            { title: "결론 - 요약 및 정리", description: "핵심 내용을 요약하고 다음 학습 방향을 안내합니다.", durationPercent: 25, slideNotes: "요약, 핵심 포인트" },
+          ]),
+          sectionCount: 3,
+          targetDurationMin: 10,
+          tags: "기본,입문,3단계",
+        },
+        {
+          name: "Q&A 포함 강의",
+          description: "도입, 본론, 중간 Q&A, 심화 내용, 최종 Q&A 및 정리를 포함한 인터랙티브 강의 구조.",
+          category: "general" as const,
+          difficulty: "intermediate" as const,
+          structure: JSON.stringify([
+            { title: "도입 - 배경 설명", description: "주제의 배경과 중요성을 설명합니다.", durationPercent: 10, slideNotes: "배경, 중요성" },
+            { title: "핵심 개념 설명", description: "기본 개념과 원리를 설명합니다.", durationPercent: 25, slideNotes: "기본 개념" },
+            { title: "중간 Q&A - 개념 확인", description: "학습자의 이해도를 확인하는 질문과 답변 시간.", durationPercent: 10, slideNotes: "Q&A, 이해도 확인" },
+            { title: "심화 내용", description: "고급 개념과 실제 적용 사례를 다룹니다.", durationPercent: 30, slideNotes: "심화, 사례" },
+            { title: "최종 Q&A 및 정리", description: "전체 내용 요약과 최종 질의응답.", durationPercent: 25, slideNotes: "요약, 최종 Q&A" },
+          ]),
+          sectionCount: 5,
+          targetDurationMin: 20,
+          tags: "Q&A,인터랙티브,5단계",
+        },
+        {
+          name: "실습형 워크숍",
+          description: "이론 설명 후 단계별 실습을 진행하는 핸즈온 워크숍 구조.",
+          category: "ai" as const,
+          difficulty: "intermediate" as const,
+          structure: JSON.stringify([
+            { title: "개요 및 환경 설정", description: "실습 목표와 필요한 도구/환경을 안내합니다.", durationPercent: 10, slideNotes: "환경 설정, 도구 안내" },
+            { title: "이론 배경", description: "실습에 필요한 핵심 이론을 간략히 설명합니다.", durationPercent: 15, slideNotes: "핵심 이론" },
+            { title: "실습 Step 1", description: "첫 번째 실습 단계를 진행합니다.", durationPercent: 20, slideNotes: "실습 1단계" },
+            { title: "실습 Step 2", description: "두 번째 실습 단계를 진행합니다.", durationPercent: 20, slideNotes: "실습 2단계" },
+            { title: "실습 Step 3", description: "세 번째 실습 단계를 진행합니다.", durationPercent: 20, slideNotes: "실습 3단계" },
+            { title: "결과 확인 및 마무리", description: "실습 결과를 확인하고 추가 학습 자료를 안내합니다.", durationPercent: 15, slideNotes: "결과 확인, 추가 자료" },
+          ]),
+          sectionCount: 6,
+          targetDurationMin: 30,
+          tags: "실습,워크숍,핸즈온,6단계",
+        },
+        {
+          name: "Web3 프로젝트 분석",
+          description: "Web3 프로젝트를 체계적으로 분석하는 구조. 프로젝트 개요, 기술 스택, 토크노믹스, 로드맵, 투자 관점 분석.",
+          category: "web3" as const,
+          difficulty: "advanced" as const,
+          structure: JSON.stringify([
+            { title: "프로젝트 개요", description: "프로젝트의 비전, 미션, 팀 소개.", durationPercent: 15, slideNotes: "비전, 미션, 팀" },
+            { title: "기술 스택 분석", description: "사용된 블록체인, 합의 메커니즘, 스마트 컨트랙트 구조.", durationPercent: 20, slideNotes: "기술, 블록체인, 컨트랙트" },
+            { title: "토크노믹스", description: "토큰 분배, 유틸리티, 인플레이션/디플레이션 메커니즘.", durationPercent: 20, slideNotes: "토큰, 분배, 유틸리티" },
+            { title: "로드맵 및 파트너십", description: "개발 로드맵, 주요 파트너십, 생태계 확장 계획.", durationPercent: 20, slideNotes: "로드맵, 파트너" },
+            { title: "투자 관점 분석", description: "SWOT 분석, 리스크 요인, 경쟁사 비교.", durationPercent: 25, slideNotes: "SWOT, 리스크, 경쟁" },
+          ]),
+          sectionCount: 5,
+          targetDurationMin: 15,
+          tags: "Web3,프로젝트분석,토크노믹스,5단계",
+        },
+        {
+          name: "DeFi 프로토콜 튜토리얼",
+          description: "DeFi 프로토콜 사용법을 단계별로 안내하는 튜토리얼 구조.",
+          category: "defi" as const,
+          difficulty: "beginner" as const,
+          structure: JSON.stringify([
+            { title: "DeFi 기초 개념", description: "DeFi의 기본 개념과 전통 금융과의 차이점.", durationPercent: 15, slideNotes: "DeFi 기초, 차이점" },
+            { title: "지갑 연결 및 준비", description: "메타마스크 설정, 네트워크 추가, 토큰 준비.", durationPercent: 15, slideNotes: "지갑, 메타마스크" },
+            { title: "프로토콜 사용법", description: "스왑, 유동성 공급, 스테이킹 등 핵심 기능 사용법.", durationPercent: 30, slideNotes: "스왑, 유동성, 스테이킹" },
+            { title: "수익률 계산 및 리스크", description: "APY/APR 이해, 임시 손실, 스마트 컨트랙트 리스크.", durationPercent: 25, slideNotes: "수익률, 리스크" },
+            { title: "보안 팁 및 마무리", description: "피싱 방지, 승인 관리, 안전한 DeFi 사용법.", durationPercent: 15, slideNotes: "보안, 피싱 방지" },
+          ]),
+          sectionCount: 5,
+          targetDurationMin: 15,
+          tags: "DeFi,튜토리얼,프로토콜,5단계",
+        },
+        {
+          name: "뉴스 브리핑 형식",
+          description: "최신 뉴스를 빠르게 전달하는 브리핑 형식. 헤드라인, 상세 분석, 시장 영향, 전망.",
+          category: "blockchain" as const,
+          difficulty: "beginner" as const,
+          structure: JSON.stringify([
+            { title: "오늘의 헤드라인", description: "주요 뉴스 3-5개를 간략히 소개합니다.", durationPercent: 20, slideNotes: "헤드라인, 주요 뉴스" },
+            { title: "심층 분석", description: "가장 중요한 뉴스를 상세히 분석합니다.", durationPercent: 35, slideNotes: "심층 분석" },
+            { title: "시장 영향", description: "뉴스가 시장에 미치는 영향을 분석합니다.", durationPercent: 25, slideNotes: "시장 영향, 가격" },
+            { title: "전망 및 정리", description: "향후 전망과 투자자 시사점을 정리합니다.", durationPercent: 20, slideNotes: "전망, 시사점" },
+          ]),
+          sectionCount: 4,
+          targetDurationMin: 10,
+          tags: "뉴스,브리핑,시장분석,4단계",
+        },
+      ];
+
+      let created = 0;
+      for (const t of builtInTemplates) {
+        const existing = await db.getScriptTemplates();
+        const exists = existing.find(e => e.name === t.name && e.isBuiltIn);
+        if (!exists) {
+          await db.createScriptTemplate({ ...t, isBuiltIn: true });
+          created++;
+        }
+      }
+      return { created, total: builtInTemplates.length };
+    }),
+  }),
+
   // ============ Lecture Scripts (v2.1) ============
   script: router({
     /** Generate a lecture script from a prompt */
@@ -1175,6 +1490,168 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => { await db.deleteProductionPipeline(input.id, ctx.user.id); return { success: true }; }),
+
+    /** Batch start multiple pipelines at once */
+    batchStart: instructorProcedure
+      .input(z.object({
+        items: z.array(z.object({
+          scriptId: z.number(),
+          title: z.string().min(1),
+          ttsVoiceId: z.string().optional(),
+          voiceModProfileId: z.number().optional(),
+          faceSwapProfileId: z.number().optional(),
+        })).min(1).max(10),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const results: { scriptId: number; pipelineId: number | null; status: string; error?: string }[] = [];
+
+        for (const item of input.items) {
+          try {
+            const script = await db.getLectureScriptById(item.scriptId);
+            if (!script || script.status !== "ready") {
+              results.push({ scriptId: item.scriptId, pipelineId: null, status: "skipped", error: "스크립트가 준비되지 않았습니다." });
+              continue;
+            }
+
+            const pipelineId = await db.createProductionPipeline({
+              userId: ctx.user.id,
+              scriptId: item.scriptId,
+              title: item.title,
+              status: "tts_gen",
+              progressPercent: 10,
+              currentStep: "TTS 음성 생성 중...",
+              voiceModProfileId: item.voiceModProfileId,
+              faceSwapProfileId: item.faceSwapProfileId,
+              ttsVoiceId: item.ttsVoiceId || "alloy",
+              startedAt: new Date(),
+            });
+            if (!pipelineId) {
+              results.push({ scriptId: item.scriptId, pipelineId: null, status: "failed", error: "파이프라인 생성 실패" });
+              continue;
+            }
+
+            // Process TTS for each section
+            const sections = script.sections ? JSON.parse(script.sections) : [];
+            const audioUrls: string[] = [];
+            let voiceId = item.ttsVoiceId || "alloy";
+
+            if (item.voiceModProfileId) {
+              const voiceMod = await db.getVoiceModProfileById(item.voiceModProfileId);
+              if (voiceMod?.customTtsVoiceId) voiceId = voiceMod.customTtsVoiceId;
+              else if (voiceMod?.voiceCharacter) {
+                const charMap: Record<string, string> = { male_deep: "onyx", male_bright: "echo", female_warm: "nova", female_clear: "shimmer", neutral: "alloy" };
+                voiceId = charMap[voiceMod.voiceCharacter] || "alloy";
+              }
+            }
+
+            let totalDuration = 0;
+            for (let i = 0; i < sections.length; i++) {
+              const section = sections[i];
+              let textToSpeak = section.content;
+
+              if (item.voiceModProfileId) {
+                const voiceMod = await db.getVoiceModProfileById(item.voiceModProfileId);
+                if (voiceMod?.stylePrompt) {
+                  const styleResponse = await invokeLLM({
+                    messages: [
+                      { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${voiceMod.stylePrompt}\n스타일: ${voiceMod.speakingStyle}` },
+                      { role: "user", content: textToSpeak },
+                    ],
+                  });
+                  const rawStyled = styleResponse.choices?.[0]?.message?.content;
+                  if (typeof rawStyled === "string") textToSpeak = rawStyled;
+                }
+              }
+
+              const speed = item.voiceModProfileId
+                ? ((await db.getVoiceModProfileById(item.voiceModProfileId))?.speedPercent || 100) / 100
+                : 1;
+
+              const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ model: "tts-1", voice: voiceId, input: textToSpeak, speed }),
+              });
+
+              if (!ttsResponse.ok) throw new Error(`TTS failed for section ${i}`);
+              const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+              const fileKey = `pipeline/${pipelineId}/section-${i}-${nanoid(6)}.mp3`;
+              const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+              audioUrls.push(url);
+              totalDuration += section.durationSec || 0;
+
+              const progress = Math.round(10 + (70 * (i + 1) / sections.length));
+              await db.updateProductionPipeline(pipelineId, {
+                progressPercent: progress,
+                currentStep: `TTS 생성 중... (${i + 1}/${sections.length})`,
+              });
+            }
+
+            await db.updateProductionPipeline(pipelineId, {
+              status: "completed",
+              progressPercent: 100,
+              currentStep: "완료",
+              audioUrls: JSON.stringify(audioUrls),
+              totalDurationSec: totalDuration,
+              completedAt: new Date(),
+            });
+
+            results.push({ scriptId: item.scriptId, pipelineId, status: "completed" });
+          } catch (error) {
+            results.push({ scriptId: item.scriptId, pipelineId: null, status: "failed", error: error instanceof Error ? error.message : "Unknown error" });
+          }
+        }
+
+        const completed = results.filter(r => r.status === "completed").length;
+        const failed = results.filter(r => r.status === "failed").length;
+        const skipped = results.filter(r => r.status === "skipped").length;
+        return { results, summary: { total: input.items.length, completed, failed, skipped } };
+      }),
+
+    /** Generate AI thumbnail for a pipeline */
+    generateThumbnail: instructorProcedure
+      .input(z.object({
+        pipelineId: z.number(),
+        customPrompt: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const pipelineData = await db.getProductionPipelineById(input.pipelineId);
+        if (!pipelineData) throw new TRPCError({ code: "NOT_FOUND" });
+        if (pipelineData.pipeline.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+
+        // Build thumbnail prompt from script content
+        const script = pipelineData.script;
+        const category = script.category || "general";
+        const title = script.title || pipelineData.pipeline.title;
+
+        const categoryStyles: Record<string, string> = {
+          web3: "futuristic digital art with blockchain nodes, neon blue and purple colors, Web3 technology theme",
+          ai: "artificial intelligence concept art, neural networks, glowing circuits, modern tech aesthetic",
+          blockchain: "blockchain visualization, connected blocks, cryptographic patterns, dark tech background",
+          defi: "decentralized finance concept, digital coins, liquidity pools, modern fintech design",
+          nft: "digital art gallery, NFT marketplace, colorful digital collectibles, creative art style",
+          metaverse: "virtual reality world, 3D avatar, immersive digital landscape, metaverse concept",
+          general: "professional educational content, modern lecture design, clean academic style",
+        };
+
+        const styleHint = categoryStyles[category] || categoryStyles.general;
+        const thumbnailPrompt = input.customPrompt || `Professional lecture thumbnail for "${title}". Style: ${styleHint}. Clean, modern design suitable for online education platform. Include subtle text area for title overlay. High quality, 16:9 aspect ratio.`;
+
+        try {
+          const { url } = await generateImage({ prompt: thumbnailPrompt });
+          if (!url) throw new Error("Image generation returned no URL");
+
+          // Save thumbnail URL to pipeline
+          await db.updateProductionPipeline(input.pipelineId, { thumbnailUrl: url });
+
+          return { thumbnailUrl: url, success: true };
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `썸네일 생성에 실패했습니다: ${error instanceof Error ? error.message : "Unknown error"}`,
+          });
+        }
+      }),
 
     /** Get pipeline statistics dashboard */
     stats: instructorProcedure.query(async ({ ctx }) => {

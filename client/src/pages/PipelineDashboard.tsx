@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import {
   BarChart3, Clock, CheckCircle2, XCircle, FileText, Film, Download,
-  Loader2, Subtitles, ArrowLeft, TrendingUp, PieChart,
+  Loader2, Subtitles, ArrowLeft, TrendingUp, PieChart, Image,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -45,6 +45,23 @@ export default function PipelineDashboard() {
   });
 
   const [generatingSubtitleId, setGeneratingSubtitleId] = useState<number | null>(null);
+  const [generatingThumbnailId, setGeneratingThumbnailId] = useState<number | null>(null);
+
+  const generateThumbnailMutation = trpc.pipeline.generateThumbnail.useMutation({
+    onSuccess: (data) => {
+      toast.success("썸네일이 생성되었습니다!");
+      setGeneratingThumbnailId(null);
+    },
+    onError: (e) => {
+      toast.error(e.message);
+      setGeneratingThumbnailId(null);
+    },
+  });
+
+  const handleGenerateThumbnail = async (pipelineId: number) => {
+    setGeneratingThumbnailId(pipelineId);
+    await generateThumbnailMutation.mutateAsync({ pipelineId });
+  };
 
   if (!user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">로그인이 필요합니다.</div>;
 
@@ -276,6 +293,27 @@ export default function PipelineDashboard() {
                                 <a href={audioUrls[0]} download>
                                   <Download className="h-3 w-3 mr-1" /> 오디오
                                 </a>
+                              </Button>
+                            )}
+                            {p.thumbnailUrl ? (
+                              <Button variant="outline" size="sm" asChild>
+                                <a href={p.thumbnailUrl} target="_blank" rel="noopener noreferrer">
+                                  <Image className="h-3 w-3 mr-1" /> 썸네일
+                                </a>
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleGenerateThumbnail(p.id)}
+                                disabled={generatingThumbnailId === p.id}
+                              >
+                                {generatingThumbnailId === p.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                ) : (
+                                  <Image className="h-3 w-3 mr-1" />
+                                )}
+                                썸네일 생성
                               </Button>
                             )}
                           </>

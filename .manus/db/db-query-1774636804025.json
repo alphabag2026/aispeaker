@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `scriptTemplates` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int,\n\t`name` varchar(255) NOT NULL,\n\t`description` text,\n\t`category` enum('web3','ai','blockchain','defi','nft','metaverse','general') NOT NULL DEFAULT 'general',\n\t`difficulty` enum('beginner','intermediate','advanced') NOT NULL DEFAULT 'beginner',\n\t`structure` text NOT NULL,\n\t`sectionCount` int DEFAULT 0,\n\t`targetDurationMin` int DEFAULT 10,\n\t`isBuiltIn` boolean DEFAULT false,\n\t`tags` text,\n\t`usageCount` int DEFAULT 0,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `scriptTemplates_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZhmXq2fuwbq2e6E.3b045a7fef56 --database JNDtxB2WrDuBzbhLtHkGn8 --execute CREATE TABLE `scriptTemplates` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int,\n\t`name` varchar(255) NOT NULL,\n\t`description` text,\n\t`category` enum('web3','ai','blockchain','defi','nft','metaverse','general') NOT NULL DEFAULT 'general',\n\t`difficulty` enum('beginner','intermediate','advanced') NOT NULL DEFAULT 'beginner',\n\t`structure` text NOT NULL,\n\t`sectionCount` int DEFAULT 0,\n\t`targetDurationMin` int DEFAULT 10,\n\t`isBuiltIn` boolean DEFAULT false,\n\t`tags` text,\n\t`usageCount` int DEFAULT 0,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `scriptTemplates_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1804
+}

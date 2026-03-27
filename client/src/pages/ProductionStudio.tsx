@@ -12,11 +12,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useSearch } from "wouter";
 import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
-  Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, Settings2, Edit3, History
+  Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, Settings2, Edit3, History,
+  BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare
 } from "lucide-react";
 
 const CATEGORIES = [
@@ -63,6 +64,24 @@ export default function ProductionStudio() {
   const [selectedVoiceModId, setSelectedVoiceModId] = useState<string>("none");
   const [selectedFaceSwapId, setSelectedFaceSwapId] = useState<string>("none");
 
+  // Batch processing state
+  const [batchSelectedIds, setBatchSelectedIds] = useState<Set<number>>(new Set());
+  const [batchTtsVoiceId, setBatchTtsVoiceId] = useState("alloy");
+  const [batchVoiceModId, setBatchVoiceModId] = useState<string>("none");
+  const [batchFaceSwapId, setBatchFaceSwapId] = useState<string>("none");
+  const [batchResults, setBatchResults] = useState<any>(null);
+
+  // Template from URL
+  const searchString = useSearch();
+  const templateId = useMemo(() => {
+    const params = new URLSearchParams(searchString);
+    return params.get("templateId") ? parseInt(params.get("templateId")!) : null;
+  }, [searchString]);
+  const selectedTemplateQuery = trpc.scriptTemplate.getById.useQuery(
+    { id: templateId! },
+    { enabled: !!templateId }
+  );
+
   // Data queries
   const scriptsQuery = trpc.script.list.useQuery(undefined, { enabled: !!user });
   const pipelinesQuery = trpc.pipeline.list.useQuery(undefined, { enabled: !!user });
@@ -96,9 +115,81 @@ export default function ProductionStudio() {
     onSuccess: () => { toast.success("파이프라인 삭제됨"); pipelinesQuery.refetch(); },
   });
 
+  // Template-based script generation
+  const generateFromTemplate = trpc.scriptTemplate.generateFromTemplate.useMutation({
+    onSuccess: (data) => {
+      toast.success(`템플릿 기반 스크립트 생성 완료! ${data.sectionCount}개 섹션`);
+      scriptsQuery.refetch();
+      setActiveTab("scripts");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Batch pipeline
+  const batchStart = trpc.pipeline.batchStart.useMutation({
+    onSuccess: (data) => {
+      setBatchResults(data);
+      toast.success(`배치 완료: ${data.summary.completed}건 성공, ${data.summary.failed}건 실패`);
+      pipelinesQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Thumbnail generation
+  const generateThumbnail = trpc.pipeline.generateThumbnail.useMutation({
+    onSuccess: (data) => {
+      toast.success("썸네일이 생성되었습니다!");
+      pipelinesQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Apply template if coming from template library
+  useEffect(() => {
+    if (templateId && selectedTemplateQuery.data) {
+      setActiveTab("create");
+    }
+  }, [templateId, selectedTemplateQuery.data]);
+
   const handleGenerateScript = () => {
     if (!title.trim() || !prompt.trim()) { toast.error("제목과 프롬프트를 입력하세요."); return; }
-    generateScript.mutate({ title, prompt, category: category as any, difficulty: difficulty as any, language, targetDurationMin: durationMin });
+    if (templateId) {
+      generateFromTemplate.mutate({ templateId, title, prompt, language, targetDurationMin: durationMin });
+    } else {
+      generateScript.mutate({ title, prompt, category: category as any, difficulty: difficulty as any, language, targetDurationMin: durationMin });
+    }
+  };
+
+  const handleBatchStart = () => {
+    if (batchSelectedIds.size === 0) { toast.error("스크립트를 선택하세요."); return; }
+    const readyScripts = scriptsQuery.data?.filter(s => s.status === "ready" && batchSelectedIds.has(s.id)) || [];
+    if (readyScripts.length === 0) { toast.error("준비된 스크립트가 없습니다."); return; }
+    batchStart.mutate({
+      items: readyScripts.map(s => ({
+        scriptId: s.id,
+        title: s.title,
+        ttsVoiceId: batchTtsVoiceId,
+        voiceModProfileId: batchVoiceModId !== "none" ? parseInt(batchVoiceModId) : undefined,
+        faceSwapProfileId: batchFaceSwapId !== "none" ? parseInt(batchFaceSwapId) : undefined,
+      })),
+    });
+  };
+
+  const toggleBatchSelect = (id: number) => {
+    setBatchSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const readyScripts = scriptsQuery.data?.filter(s => s.status === "ready") || [];
+    if (batchSelectedIds.size === readyScripts.length) {
+      setBatchSelectedIds(new Set());
+    } else {
+      setBatchSelectedIds(new Set(readyScripts.map(s => s.id)));
+    }
   };
 
   const handleStartPipeline = () => {
@@ -166,6 +257,7 @@ export default function ProductionStudio() {
             <TabsTrigger value="create"><Wand2 className="w-4 h-4 mr-2" />스크립트 생성</TabsTrigger>
             <TabsTrigger value="scripts"><FileText className="w-4 h-4 mr-2" />내 스크립트 ({scriptsQuery.data?.length || 0})</TabsTrigger>
             <TabsTrigger value="produce"><Play className="w-4 h-4 mr-2" />영상 제작</TabsTrigger>
+            <TabsTrigger value="batch"><ListChecks className="w-4 h-4 mr-2" />배치 제작</TabsTrigger>
             <TabsTrigger value="pipelines"><Layers className="w-4 h-4 mr-2" />제작 이력 ({pipelinesQuery.data?.length || 0})</TabsTrigger>
           </TabsList>
 
@@ -225,8 +317,23 @@ export default function ProductionStudio() {
                         <Input type="number" min={1} max={120} value={durationMin} onChange={(e) => setDurationMin(parseInt(e.target.value) || 10)} className="mt-1" />
                       </div>
                     </div>
-                    <Button onClick={handleGenerateScript} disabled={generateScript.isPending} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
-                      {generateScript.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />AI가 스크립트를 작성하고 있습니다...</> : <><Sparkles className="w-4 h-4 mr-2" />AI 스크립트 생성</>}
+                    {/* Template indicator */}
+                    {templateId && selectedTemplateQuery.data && (
+                      <Card className="bg-amber-500/10 border-amber-500/30">
+                        <CardContent className="py-3">
+                          <div className="flex items-center gap-2">
+                            <BookTemplate className="w-4 h-4 text-amber-400" />
+                            <span className="text-sm font-medium text-amber-300">템플릿 적용: {selectedTemplateQuery.data.name}</span>
+                            <Badge variant="outline" className="text-xs">{selectedTemplateQuery.data.sectionCount}섹션</Badge>
+                            <Link href="/studio">
+                              <Button size="sm" variant="ghost" className="text-xs ml-auto">템플릿 해제</Button>
+                            </Link>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                    <Button onClick={handleGenerateScript} disabled={generateScript.isPending || generateFromTemplate.isPending} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+                      {(generateScript.isPending || generateFromTemplate.isPending) ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />AI가 스크립트를 작성하고 있습니다...</> : <><Sparkles className="w-4 h-4 mr-2" />{templateId ? "템플릿 기반 스크립트 생성" : "AI 스크립트 생성"}</>}
                     </Button>
                   </CardContent>
                 </Card>
@@ -505,6 +612,26 @@ export default function ProductionStudio() {
                               </div>
                             </div>
                           )}
+                          {p.status === "completed" && (
+                            <div className="mt-3 flex items-center gap-2">
+                              {p.thumbnailUrl ? (
+                                <div className="flex items-center gap-2">
+                                  <img src={p.thumbnailUrl} alt="썸네일" className="w-24 h-14 object-cover rounded border border-border/50" />
+                                  <a href={p.thumbnailUrl} target="_blank" rel="noopener noreferrer">
+                                    <Button size="sm" variant="outline"><Download className="w-3 h-3 mr-1" />썸네일 다운로드</Button>
+                                  </a>
+                                  <Button size="sm" variant="ghost" onClick={() => generateThumbnail.mutate({ pipelineId: p.id })} disabled={generateThumbnail.isPending}>
+                                    <RefreshCw className="w-3 h-3 mr-1" />재생성
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button size="sm" variant="outline" onClick={() => generateThumbnail.mutate({ pipelineId: p.id })} disabled={generateThumbnail.isPending}>
+                                  {generateThumbnail.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Image className="w-3 h-3 mr-1" />}
+                                  AI 썸네일 생성
+                                </Button>
+                              )}
+                            </div>
+                          )}
                           {p.errorMessage && <p className="text-sm text-red-400 mt-2">오류: {p.errorMessage}</p>}
                         </div>
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deletePipeline.mutate({ id: p.id })}>
@@ -515,6 +642,147 @@ export default function ProductionStudio() {
                   </Card>
                 );
               })}
+            </div>
+          </TabsContent>
+          {/* Tab 5: Batch Production */}
+          <TabsContent value="batch">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><ListChecks className="w-5 h-5 text-violet-400" /> 배치 영상 제작</CardTitle>
+                    <CardDescription>여러 스크립트를 선택하여 한번에 일괄 영상을 생성합니다. (최대 10개)</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Select All */}
+                    <div className="flex items-center justify-between">
+                      <Button variant="outline" size="sm" onClick={toggleSelectAll}>
+                        <CheckSquare className="w-4 h-4 mr-2" />
+                        {batchSelectedIds.size === (scriptsQuery.data?.filter(s => s.status === "ready").length || 0) ? "전체 해제" : "전체 선택"}
+                      </Button>
+                      <Badge variant="outline">{batchSelectedIds.size}개 선택됨</Badge>
+                    </div>
+
+                    {/* Script list with checkboxes */}
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {scriptsQuery.data?.filter(s => s.status === "ready").map((script) => (
+                        <div key={script.id}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                            batchSelectedIds.has(script.id) ? "border-violet-500/50 bg-violet-500/10" : "border-border/50 hover:border-violet-500/30"
+                          }`}
+                          onClick={() => toggleBatchSelect(script.id)}
+                        >
+                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
+                            batchSelectedIds.has(script.id) ? "border-violet-500 bg-violet-500" : "border-muted-foreground"
+                          }`}>
+                            {batchSelectedIds.has(script.id) && <CheckCircle2 className="w-3 h-3 text-white" />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{script.title}</p>
+                            <p className="text-xs text-muted-foreground">{script.sectionCount}섹션 / ~{Math.round((script.estimatedDurationSec || 0) / 60)}분</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            {CATEGORIES.find(c => c.value === script.category)?.label}
+                          </Badge>
+                        </div>
+                      ))}
+                      {(!scriptsQuery.data || scriptsQuery.data.filter(s => s.status === "ready").length === 0) && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <FileText className="w-8 h-8 mx-auto mb-2" />
+                          <p className="text-sm">준비된 스크립트가 없습니다.</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <Separator />
+
+                    {/* Batch voice settings */}
+                    <div>
+                      <Label className="flex items-center gap-2 mb-3"><Volume2 className="w-4 h-4 text-violet-400" />공통 음성 설정</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-sm text-muted-foreground">TTS 음성</Label>
+                          <Select value={batchTtsVoiceId} onValueChange={setBatchTtsVoiceId}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-sm text-muted-foreground">음성 변조</Label>
+                          <Select value={batchVoiceModId} onValueChange={setBatchVoiceModId}>
+                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">변조 없음</SelectItem>
+                              {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={v.id.toString()}>{v.name}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button onClick={handleBatchStart} disabled={batchStart.isPending || batchSelectedIds.size === 0} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+                      {batchStart.isPending ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />배치 처리 중... ({batchSelectedIds.size}건)</>  
+                      ) : (
+                        <><ListChecks className="w-4 h-4 mr-2" />{batchSelectedIds.size}건 일괄 영상 제작 시작</>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Batch Results */}
+              <div>
+                <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20">
+                  <CardHeader>
+                    <CardTitle className="text-lg">배치 결과</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!batchResults ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <ListChecks className="w-8 h-8 mx-auto mb-2" />
+                        <p className="text-sm">배치 제작을 시작하면 결과가 여기에 표시됩니다.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Summary */}
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="p-3 bg-green-500/10 rounded-lg text-center">
+                            <CheckCircle2 className="w-5 h-5 text-green-400 mx-auto mb-1" />
+                            <p className="text-lg font-bold text-green-400">{batchResults.summary.completed}</p>
+                            <p className="text-xs text-muted-foreground">성공</p>
+                          </div>
+                          <div className="p-3 bg-red-500/10 rounded-lg text-center">
+                            <XCircle className="w-5 h-5 text-red-400 mx-auto mb-1" />
+                            <p className="text-lg font-bold text-red-400">{batchResults.summary.failed}</p>
+                            <p className="text-xs text-muted-foreground">실패</p>
+                          </div>
+                          <div className="p-3 bg-gray-500/10 rounded-lg text-center">
+                            <SkipForward className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+                            <p className="text-lg font-bold text-gray-400">{batchResults.summary.skipped}</p>
+                            <p className="text-xs text-muted-foreground">건너뜀</p>
+                          </div>
+                        </div>
+
+                        {/* Individual results */}
+                        <div className="space-y-2">
+                          {batchResults.results.map((r: any, i: number) => (
+                            <div key={i} className={`p-2 rounded-lg text-sm flex items-center gap-2 ${
+                              r.status === "completed" ? "bg-green-500/10" : r.status === "failed" ? "bg-red-500/10" : "bg-gray-500/10"
+                            }`}>
+                              {r.status === "completed" ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : r.status === "failed" ? <XCircle className="w-4 h-4 text-red-400" /> : <SkipForward className="w-4 h-4 text-gray-400" />}
+                              <span className="flex-1">스크립트 #{r.scriptId}</span>
+                              {r.error && <span className="text-xs text-red-400">{r.error}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

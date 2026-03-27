@@ -21,6 +21,9 @@ import {
   Play,
   HelpCircle,
   History,
+  BookTemplate,
+  ListChecks,
+  Image,
 } from "lucide-react";
 
 export default function InstructorDashboard() {
@@ -310,6 +313,59 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* v2.3 Quick Actions */}
+        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">v2.3 신규 도구</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Link href="/script-templates">
+            <Card className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30 hover:border-amber-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <BookTemplate className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">스크립트 템플릿 라이브러리</h3>
+                    <p className="text-sm text-muted-foreground">강의 구조 템플릿 저장 및 재사용</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/studio?tab=batch">
+            <Card className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/30 hover:border-blue-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <ListChecks className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">배치 영상 제작</h3>
+                    <p className="text-sm text-muted-foreground">여러 스크립트 일괄 영상 생성</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-blue-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/pipeline-dashboard">
+            <Card className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 border-pink-500/30 hover:border-pink-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-pink-500/20 flex items-center justify-center">
+                    <Image className="h-5 w-5 text-pink-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">AI 썸네일 생성</h3>
+                    <p className="text-sm text-muted-foreground">강의 주제 기반 썸네일 자동 생성</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-pink-400 transition-colors" />
               </CardContent>
             </Card>
           </Link>
