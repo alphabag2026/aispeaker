@@ -548,3 +548,70 @@ export const scriptTemplates = mysqlTable("scriptTemplates", {
 
 export type ScriptTemplate = typeof scriptTemplates.$inferSelect;
 export type InsertScriptTemplate = typeof scriptTemplates.$inferInsert;
+
+
+// ============ v2.4 NEW TABLES ============
+
+/**
+ * Script Versions - automatic version history for lecture scripts
+ * Every edit creates a snapshot so users can rollback to any previous version
+ */
+export const scriptVersions = mysqlTable("scriptVersions", {
+  id: int("id").autoincrement().primaryKey(),
+  scriptId: int("scriptId").notNull(),
+  userId: int("userId").notNull(),
+  /** Version number (auto-incremented per script) */
+  versionNumber: int("versionNumber").notNull(),
+  /** Snapshot of script title at this version */
+  title: varchar("title", { length: 500 }).notNull(),
+  /** Snapshot of full script content */
+  scriptContent: text("scriptContent"),
+  /** Snapshot of sections JSON */
+  sections: text("sections"),
+  /** Number of sections */
+  sectionCount: int("sectionCount").default(0),
+  /** Estimated duration */
+  estimatedDurationSec: int("estimatedDurationSec").default(0),
+  /** What changed in this version */
+  changeDescription: text("changeDescription"),
+  /** Change type: auto (from edit), manual (explicit save), rollback */
+  changeType: mysqlEnum("changeType", ["auto", "manual", "rollback"]).default("auto").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ScriptVersion = typeof scriptVersions.$inferSelect;
+export type InsertScriptVersion = typeof scriptVersions.$inferInsert;
+
+/**
+ * Content Analyses - AI-powered script quality analysis reports
+ * Stores readability, difficulty, keyword density, and improvement suggestions
+ */
+export const contentAnalyses = mysqlTable("contentAnalyses", {
+  id: int("id").autoincrement().primaryKey(),
+  scriptId: int("scriptId").notNull(),
+  userId: int("userId").notNull(),
+  /** Overall quality score (0-100) */
+  overallScore: int("overallScore").default(0),
+  /** Readability score (0-100) */
+  readabilityScore: int("readabilityScore").default(0),
+  /** Difficulty appropriateness score (0-100) */
+  difficultyScore: int("difficultyScore").default(0),
+  /** Keyword density score (0-100) */
+  keywordScore: int("keywordScore").default(0),
+  /** Structure balance score (0-100) */
+  structureScore: int("structureScore").default(0),
+  /** Engagement score (0-100) */
+  engagementScore: int("engagementScore").default(0),
+  /** Detailed analysis JSON */
+  analysisDetail: text("analysisDetail"),
+  /** AI improvement suggestions as JSON array */
+  suggestions: text("suggestions"),
+  /** Key metrics JSON */
+  metrics: text("metrics"),
+  /** Analysis status */
+  status: mysqlEnum("status", ["analyzing", "completed", "failed"]).default("analyzing").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ContentAnalysis = typeof contentAnalyses.$inferSelect;
+export type InsertContentAnalysis = typeof contentAnalyses.$inferInsert;

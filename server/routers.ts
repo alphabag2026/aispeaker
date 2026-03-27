@@ -1353,6 +1353,233 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => { await db.deleteLectureScript(input.id, ctx.user.id); return { success: true }; }),
+
+    // ============ v2.4: Script Version Management ============
+
+    /** Get version history for a script */
+    versions: instructorProcedure
+      .input(z.object({ scriptId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getScriptVersions(input.scriptId, ctx.user.id);
+      }),
+
+    /** Save current script state as a version snapshot */
+    saveVersion: instructorProcedure
+      .input(z.object({ scriptId: z.number(), changeDescription: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const versionId = await db.autoSaveScriptVersion(input.scriptId, ctx.user.id, input.changeDescription);
+        if (!versionId) throw new TRPCError({ code: "NOT_FOUND", message: "스크립트를 찾을 수 없습니다." });
+        return { versionId };
+      }),
+
+    /** Rollback script to a specific version */
+    rollback: instructorProcedure
+      .input(z.object({ scriptId: z.number(), versionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const result = await db.rollbackScriptToVersion(input.scriptId, input.versionId, ctx.user.id);
+        if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "버전을 찾을 수 없습니다." });
+        return { success: true };
+      }),
+
+    /** Get a specific version detail */
+    versionDetail: instructorProcedure
+      .input(z.object({ versionId: z.number() }))
+      .query(async ({ input }) => {
+        const version = await db.getScriptVersionById(input.versionId);
+        if (!version) throw new TRPCError({ code: "NOT_FOUND" });
+        return version;
+      }),
+
+    // ============ v2.4: Content Analysis ============
+
+    /** Analyze script content quality with AI */
+    analyze: instructorProcedure
+      .input(z.object({ scriptId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // Get script
+        const scripts = await db.getLectureScripts(ctx.user.id);
+        const script = scripts.find((s: any) => s.id === input.scriptId);
+        if (!script) throw new TRPCError({ code: "NOT_FOUND" });
+        if (!script.scriptContent) throw new TRPCError({ code: "BAD_REQUEST", message: "스크립트 내용이 없습니다." });
+
+        // Create analysis record
+        const analysisId = await db.createContentAnalysis({
+          scriptId: input.scriptId,
+          userId: ctx.user.id,
+          status: "analyzing",
+        });
+
+        try {
+          const sections = script.sections ? JSON.parse(script.sections as string) : [];
+          const response = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content: `당신은 교육 콘텐츠 품질 분석 전문가입니다. 강의 스크립트를 분석하여 다음 항목을 0-100점으로 평가하고 개선 제안을 제공하세요.
+
+반드시 아래 JSON 형식으로만 응답하세요:
+{
+  "scores": {
+    "readability": 0-100,
+    "difficulty": 0-100,
+    "keyword": 0-100,
+    "structure": 0-100,
+    "engagement": 0-100
+  },
+  "analysis": {
+    "readability": { "avgSentenceLength": number, "complexWords": number, "summary": "설명" },
+    "difficulty": { "level": "beginner|intermediate|advanced", "appropriateness": "설명" },
+    "keywords": { "topKeywords": ["키워드1", "키워드2", ...], "density": number, "summary": "설명" },
+    "structure": { "sectionBalance": "설명", "hasIntro": boolean, "hasConclusion": boolean },
+    "engagement": { "questionCount": number, "exampleCount": number, "summary": "설명" }
+  },
+  "metrics": {
+    "totalWords": number,
+    "uniqueWords": number,
+    "avgSentenceLength": number,
+    "sectionCount": number,
+    "estimatedReadingTime": number
+  },
+  "suggestions": [
+    { "category": "readability|difficulty|keyword|structure|engagement", "suggestion": "구체적 개선 제안", "priority": "high|medium|low" }
+  ]
+}`
+              },
+              {
+                role: "user",
+                content: `제목: ${script.title}\n카테고리: ${script.category}\n난이도: ${script.difficulty}\n섹션 수: ${sections.length}\n\n스크립트 내용:\n${script.scriptContent}`
+              },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "content_analysis",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    scores: {
+                      type: "object",
+                      properties: {
+                        readability: { type: "number" },
+                        difficulty: { type: "number" },
+                        keyword: { type: "number" },
+                        structure: { type: "number" },
+                        engagement: { type: "number" },
+                      },
+                      required: ["readability", "difficulty", "keyword", "structure", "engagement"],
+                      additionalProperties: false,
+                    },
+                    analysis: {
+                      type: "object",
+                      properties: {
+                        readability: {
+                          type: "object",
+                          properties: { avgSentenceLength: { type: "number" }, complexWords: { type: "number" }, summary: { type: "string" } },
+                          required: ["avgSentenceLength", "complexWords", "summary"],
+                          additionalProperties: false,
+                        },
+                        difficulty: {
+                          type: "object",
+                          properties: { level: { type: "string" }, appropriateness: { type: "string" } },
+                          required: ["level", "appropriateness"],
+                          additionalProperties: false,
+                        },
+                        keywords: {
+                          type: "object",
+                          properties: { topKeywords: { type: "array", items: { type: "string" } }, density: { type: "number" }, summary: { type: "string" } },
+                          required: ["topKeywords", "density", "summary"],
+                          additionalProperties: false,
+                        },
+                        structure: {
+                          type: "object",
+                          properties: { sectionBalance: { type: "string" }, hasIntro: { type: "boolean" }, hasConclusion: { type: "boolean" } },
+                          required: ["sectionBalance", "hasIntro", "hasConclusion"],
+                          additionalProperties: false,
+                        },
+                        engagement: {
+                          type: "object",
+                          properties: { questionCount: { type: "number" }, exampleCount: { type: "number" }, summary: { type: "string" } },
+                          required: ["questionCount", "exampleCount", "summary"],
+                          additionalProperties: false,
+                        },
+                      },
+                      required: ["readability", "difficulty", "keywords", "structure", "engagement"],
+                      additionalProperties: false,
+                    },
+                    metrics: {
+                      type: "object",
+                      properties: {
+                        totalWords: { type: "number" },
+                        uniqueWords: { type: "number" },
+                        avgSentenceLength: { type: "number" },
+                        sectionCount: { type: "number" },
+                        estimatedReadingTime: { type: "number" },
+                      },
+                      required: ["totalWords", "uniqueWords", "avgSentenceLength", "sectionCount", "estimatedReadingTime"],
+                      additionalProperties: false,
+                    },
+                    suggestions: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          category: { type: "string" },
+                          suggestion: { type: "string" },
+                          priority: { type: "string" },
+                        },
+                        required: ["category", "suggestion", "priority"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["scores", "analysis", "metrics", "suggestions"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+
+          const result = JSON.parse((response.choices[0].message.content as string) || "{}");
+          const overall = Math.round(
+            (result.scores.readability + result.scores.difficulty + result.scores.keyword + result.scores.structure + result.scores.engagement) / 5
+          );
+
+          await db.updateContentAnalysis(analysisId, {
+            overallScore: overall,
+            readabilityScore: result.scores.readability,
+            difficultyScore: result.scores.difficulty,
+            keywordScore: result.scores.keyword,
+            structureScore: result.scores.structure,
+            engagementScore: result.scores.engagement,
+            analysisDetail: JSON.stringify(result.analysis),
+            suggestions: JSON.stringify(result.suggestions),
+            metrics: JSON.stringify(result.metrics),
+            status: "completed",
+          });
+
+          return { analysisId, overall, scores: result.scores, suggestions: result.suggestions, metrics: result.metrics, analysis: result.analysis };
+        } catch (error) {
+          await db.updateContentAnalysis(analysisId, { status: "failed" });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "분석 중 오류가 발생했습니다." });
+        }
+      }),
+
+    /** Get analysis history for a script */
+    analysisHistory: instructorProcedure
+      .input(z.object({ scriptId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getContentAnalyses(input.scriptId, ctx.user.id);
+      }),
+
+    /** Get a specific analysis detail */
+    analysisDetail: instructorProcedure
+      .input(z.object({ analysisId: z.number() }))
+      .query(async ({ input }) => {
+        const analysis = await db.getContentAnalysisById(input.analysisId);
+        if (!analysis) throw new TRPCError({ code: "NOT_FOUND" });
+        return analysis;
+      }),
   }),
 
   // ============ Production Pipeline (v2.1) ============
@@ -1749,6 +1976,45 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         });
 
         return { srtUrl, vttUrl, subtitleCount: subtitleIndex - 1 };
+      }),
+    // ============ v2.4: Pipeline Preview ============
+
+    /** Get preview data for a completed pipeline */
+    preview: instructorProcedure
+      .input(z.object({ pipelineId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const pipelines = await db.getProductionPipelines(ctx.user.id);
+        const row = pipelines.find((p: any) => p.pipeline.id === input.pipelineId);
+        if (!row) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const p = row.pipeline;
+        const s = row.script;
+        const sections = s?.sections ? JSON.parse(s.sections as string) : [];
+        const audioUrls = p.audioUrls ? JSON.parse(p.audioUrls as string) : [];
+
+        return {
+          pipeline: {
+            id: p.id,
+            title: p.title,
+            status: p.status,
+            totalDurationSec: p.totalDurationSec || 0,
+            thumbnailUrl: p.thumbnailUrl,
+          },
+          script: s ? {
+            id: s.id,
+            title: s.title,
+            category: s.category,
+            difficulty: s.difficulty,
+          } : null,
+          sections: sections.map((sec: any, idx: number) => ({
+            index: idx,
+            title: sec.title,
+            content: sec.content,
+            durationSec: sec.durationSec || 0,
+            slideNotes: sec.slideNotes || "",
+            audioUrl: audioUrls[idx] || null,
+          })),
+        };
       }),
   }),
 });

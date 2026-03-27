@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import {
   BarChart3, Clock, CheckCircle2, XCircle, FileText, Film, Download,
-  Loader2, Subtitles, ArrowLeft, TrendingUp, PieChart, Image,
+  Loader2, Subtitles, ArrowLeft, TrendingUp, PieChart, Image, Play,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -295,6 +295,13 @@ export default function PipelineDashboard() {
                                 </a>
                               </Button>
                             )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/preview/${p.id}`)}
+                            >
+                              <Play className="h-3 w-3 mr-1" /> 미리보기
+                            </Button>
                             {p.thumbnailUrl ? (
                               <Button variant="outline" size="sm" asChild>
                                 <a href={p.thumbnailUrl} target="_blank" rel="noopener noreferrer">

@@ -60,7 +60,7 @@ export default function Navbar() {
           <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <Mic className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="hidden sm:inline">AI Lecture</span>
+          <span className="hidden sm:inline">Virtual Speaker</span>
         </Link>
 
         {/* Desktop nav */}

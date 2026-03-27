@@ -24,6 +24,9 @@ import {
   BookTemplate,
   ListChecks,
   Image,
+  GitBranch,
+  BarChart3,
+  PlayCircle,
 } from "lucide-react";
 
 export default function InstructorDashboard() {
@@ -366,6 +369,59 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-pink-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* v2.4 Quick Actions */}
+        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">v2.4 신규 도구</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Link href="/studio">
+            <Card className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/30 hover:border-emerald-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <GitBranch className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">스크립트 버전 관리</h3>
+                    <p className="text-sm text-muted-foreground">수정 이력 자동 기록 및 롤백</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-emerald-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/pipeline-dashboard">
+            <Card className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-500/30 hover:border-violet-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                    <PlayCircle className="h-5 w-5 text-violet-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">통합 미리보기 플레이어</h3>
+                    <p className="text-sm text-muted-foreground">슬라이드 + 오디오 동기화 재생</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/studio">
+            <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 hover:border-orange-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                    <BarChart3 className="h-5 w-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">AI 콘텐츠 분석</h3>
+                    <p className="text-sm text-muted-foreground">가독성/난이도/키워드 분석 리포트</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-orange-400 transition-colors" />
               </CardContent>
             </Card>
           </Link>

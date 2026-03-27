@@ -23,6 +23,8 @@ import {
   lectureScripts, InsertLectureScript,
   productionPipelines, InsertProductionPipeline,
   scriptTemplates, InsertScriptTemplate,
+  scriptVersions, InsertScriptVersion,
+  contentAnalyses, InsertContentAnalysis,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -733,4 +735,175 @@ export async function saveScriptAsTemplate(scriptId: number, userId: number, nam
     tags,
   });
   return templateId;
+}
+
+
+// ============ v2.4: Script Version Management ============
+
+export async function createScriptVersion(data: {
+  scriptId: number;
+  userId: number;
+  versionNumber: number;
+  title: string;
+  scriptContent?: string | null;
+  sections?: string | null;
+  sectionCount?: number;
+  estimatedDurationSec?: number;
+  changeDescription?: string | null;
+  changeType?: "auto" | "manual" | "rollback";
+}) {
+  const db = await getDb();
+  const result = await db!.insert(scriptVersions).values({
+    scriptId: data.scriptId,
+    userId: data.userId,
+    versionNumber: data.versionNumber,
+    title: data.title,
+    scriptContent: data.scriptContent,
+    sections: data.sections,
+    sectionCount: data.sectionCount || 0,
+    estimatedDurationSec: data.estimatedDurationSec || 0,
+    changeDescription: data.changeDescription,
+    changeType: data.changeType || "auto",
+  });
+  return (result as any)[0].insertId as number;
+}
+
+export async function getScriptVersions(scriptId: number, userId: number) {
+  const db = await getDb();
+  return db!.select().from(scriptVersions)
+    .where(and(eq(scriptVersions.scriptId, scriptId), eq(scriptVersions.userId, userId)))
+    .orderBy(desc(scriptVersions.versionNumber));
+}
+
+export async function getScriptVersionById(id: number) {
+  const db = await getDb();
+  const rows = await db!.select().from(scriptVersions).where(eq(scriptVersions.id, id));
+  return rows[0] || null;
+}
+
+export async function getLatestVersionNumber(scriptId: number) {
+  const db = await getDb();
+  const rows = await db!.select({ maxVer: sql<number>`COALESCE(MAX(${scriptVersions.versionNumber}), 0)` })
+    .from(scriptVersions)
+    .where(eq(scriptVersions.scriptId, scriptId));
+  return rows[0]?.maxVer || 0;
+}
+
+export async function autoSaveScriptVersion(scriptId: number, userId: number, changeDescription?: string) {
+  const db = await getDb();
+  // Get current script data
+  const scripts = await db!.select().from(lectureScripts).where(eq(lectureScripts.id, scriptId));
+  const script = scripts[0];
+  if (!script) return null;
+
+  const latestVer = await getLatestVersionNumber(scriptId);
+  const newVer = latestVer + 1;
+
+  return createScriptVersion({
+    scriptId,
+    userId,
+    versionNumber: newVer,
+    title: script.title,
+    scriptContent: script.scriptContent,
+    sections: script.sections,
+    sectionCount: script.sectionCount || 0,
+    estimatedDurationSec: script.estimatedDurationSec || 0,
+    changeDescription: changeDescription || `버전 ${newVer} 자동 저장`,
+    changeType: "auto",
+  });
+}
+
+export async function rollbackScriptToVersion(scriptId: number, versionId: number, userId: number) {
+  const db = await getDb();
+  const version = await getScriptVersionById(versionId);
+  if (!version || version.scriptId !== scriptId) return null;
+
+  // Update the script with version data
+  await db!.update(lectureScripts).set({
+    title: version.title,
+    scriptContent: version.scriptContent,
+    sections: version.sections,
+    sectionCount: version.sectionCount || 0,
+    estimatedDurationSec: version.estimatedDurationSec || 0,
+  }).where(eq(lectureScripts.id, scriptId));
+
+  // Create a new version recording the rollback
+  const latestVer = await getLatestVersionNumber(scriptId);
+  await createScriptVersion({
+    scriptId,
+    userId,
+    versionNumber: latestVer + 1,
+    title: version.title,
+    scriptContent: version.scriptContent,
+    sections: version.sections,
+    sectionCount: version.sectionCount || 0,
+    estimatedDurationSec: version.estimatedDurationSec || 0,
+    changeDescription: `버전 ${version.versionNumber}으로 롤백`,
+    changeType: "rollback",
+  });
+
+  return true;
+}
+
+// ============ v2.4: Content Analysis ============
+
+export async function createContentAnalysis(data: {
+  scriptId: number;
+  userId: number;
+  overallScore?: number;
+  readabilityScore?: number;
+  difficultyScore?: number;
+  keywordScore?: number;
+  structureScore?: number;
+  engagementScore?: number;
+  analysisDetail?: string | null;
+  suggestions?: string | null;
+  metrics?: string | null;
+  status?: "analyzing" | "completed" | "failed";
+}) {
+  const db = await getDb();
+  const result = await db!.insert(contentAnalyses).values({
+    scriptId: data.scriptId,
+    userId: data.userId,
+    overallScore: data.overallScore || 0,
+    readabilityScore: data.readabilityScore || 0,
+    difficultyScore: data.difficultyScore || 0,
+    keywordScore: data.keywordScore || 0,
+    structureScore: data.structureScore || 0,
+    engagementScore: data.engagementScore || 0,
+    analysisDetail: data.analysisDetail,
+    suggestions: data.suggestions,
+    metrics: data.metrics,
+    status: data.status || "analyzing",
+  });
+  return (result as any)[0].insertId as number;
+}
+
+export async function getContentAnalyses(scriptId: number, userId: number) {
+  const db = await getDb();
+  return db!.select().from(contentAnalyses)
+    .where(and(eq(contentAnalyses.scriptId, scriptId), eq(contentAnalyses.userId, userId)))
+    .orderBy(desc(contentAnalyses.createdAt));
+}
+
+export async function getContentAnalysisById(id: number) {
+  const db = await getDb();
+  const rows = await db!.select().from(contentAnalyses).where(eq(contentAnalyses.id, id));
+  return rows[0] || null;
+}
+
+export async function updateContentAnalysis(id: number, data: Partial<{
+  overallScore: number;
+  readabilityScore: number;
+  difficultyScore: number;
+  keywordScore: number;
+  structureScore: number;
+  engagementScore: number;
+  analysisDetail: string | null;
+  suggestions: string | null;
+  metrics: string | null;
+  status: "analyzing" | "completed" | "failed";
+}>) {
+  const db = await getDb();
+  await db!.update(contentAnalyses).set(data).where(eq(contentAnalyses.id, id));
 }
