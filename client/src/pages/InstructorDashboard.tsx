@@ -18,6 +18,8 @@ import {
   User2,
   Volume2,
   Monitor as MonitorIcon,
+  Play,
+  HelpCircle,
 } from "lucide-react";
 
 export default function InstructorDashboard() {
@@ -254,6 +256,42 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* v2.1 Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Link href="/studio">
+            <Card className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-500/30 hover:border-violet-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                    <Play className="h-5 w-5 text-violet-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">원클릭 스튜디오</h3>
+                    <p className="text-sm text-muted-foreground">프롬프트 → 스크립트 → TTS → 아바타 영상 자동 생성</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/obs-tutorial">
+            <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:border-green-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                    <HelpCircle className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">OBS 가상 카메라 가이드</h3>
+                    <p className="text-sm text-muted-foreground">딥페이크 + 음성 변조를 Zoom/Meet에서 사용하는 방법</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-green-400 transition-colors" />
               </CardContent>
             </Card>
           </Link>

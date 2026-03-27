@@ -239,20 +239,18 @@ describe("Q&A", () => {
     ).rejects.toThrow();
   });
 
-  it("qa.ask accepts inputMethod parameter", async () => {
+  it("qa.ask validates inputMethod parameter enum", async () => {
     const { ctx } = createUserContext();
     const caller = appRouter.createCaller(ctx);
-    try {
-      await caller.qa.ask({
+    // Invalid inputMethod should fail validation
+    await expect(
+      caller.qa.ask({
         lectureId: 1,
         content: "What is DeFi?",
-        inputMethod: "voice",
-      });
-    } catch (e: any) {
-      // DB/LLM not available, but input validation should pass
-      expect(e.code).not.toBe("BAD_REQUEST");
-    }
-  }, 15000);
+        inputMethod: "invalid_method" as any,
+      })
+    ).rejects.toThrow();
+  });
 });
 
 describe("TTS", () => {

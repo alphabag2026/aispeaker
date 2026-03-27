@@ -20,6 +20,8 @@ import StudentDashboard from "./pages/StudentDashboard";
 import Certificates from "./pages/Certificates";
 import VodList from "./pages/VodList";
 import VodPlayer from "./pages/VodPlayer";
+import ProductionStudio from "./pages/ProductionStudio";
+import ObsTutorial from "./pages/ObsTutorial";
 
 function Router() {
   return (
@@ -41,6 +43,8 @@ function Router() {
       <Route path="/instructor/face-swap" component={InstructorFaceSwap} />
       <Route path="/instructor/voice-mod" component={InstructorVoiceMod} />
       <Route path="/instructor/platforms" component={InstructorPlatforms} />
+      <Route path="/studio" component={ProductionStudio} />
+      <Route path="/obs-tutorial" component={ObsTutorial} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

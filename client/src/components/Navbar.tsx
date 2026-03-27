@@ -23,6 +23,8 @@ import {
   Menu,
   X,
   Video,
+  Play,
+  HelpCircle,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -42,7 +44,11 @@ export default function Navbar() {
       { href: "/my-dashboard", label: "학습 현황", icon: BarChart3 },
       { href: "/certificates", label: "수료증", icon: Award },
     ] : []),
-    ...(isInstructor ? [{ href: "/instructor", label: "강사 대시보드", icon: Monitor }] : []),
+    ...(isInstructor ? [
+      { href: "/studio", label: "스튜디오", icon: Play },
+      { href: "/instructor", label: "강사 대시보드", icon: Monitor },
+      { href: "/obs-tutorial", label: "OBS 가이드", icon: HelpCircle },
+    ] : []),
   ];
 
   return (

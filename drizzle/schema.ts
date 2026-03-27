@@ -424,3 +424,89 @@ export const lectureSessions = mysqlTable("lectureSessions", {
 
 export type LectureSession = typeof lectureSessions.$inferSelect;
 export type InsertLectureSession = typeof lectureSessions.$inferInsert;
+
+// ============ v2.1 NEW TABLES ============
+
+/**
+ * Lecture Scripts - AI-generated lecture scripts
+ * Stores auto-generated scripts from prompts, used for TTS + avatar video production
+ */
+export const lectureScripts = mysqlTable("lectureScripts", {
+  id: int("id").autoincrement().primaryKey(),
+  lectureId: int("lectureId"),
+  userId: int("userId").notNull(),
+  /** Script title */
+  title: varchar("title", { length: 500 }).notNull(),
+  /** Original prompt used to generate the script */
+  prompt: text("prompt").notNull(),
+  /** Category for context */
+  category: mysqlEnum("category", ["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).default("web3").notNull(),
+  /** Target audience level */
+  difficulty: mysqlEnum("difficulty", ["beginner", "intermediate", "advanced"]).default("beginner").notNull(),
+  /** Target language */
+  language: varchar("language", { length: 10 }).default("ko"),
+  /** Target duration in minutes */
+  targetDurationMin: int("targetDurationMin").default(10),
+  /** Generated full script text */
+  scriptContent: text("scriptContent"),
+  /** Script sections as JSON array [{title, content, durationSec, slideNotes}] */
+  sections: text("sections"),
+  /** Total estimated duration in seconds */
+  estimatedDurationSec: int("estimatedDurationSec").default(0),
+  /** Number of sections/slides */
+  sectionCount: int("sectionCount").default(0),
+  /** Generation status */
+  status: mysqlEnum("status", ["generating", "ready", "error"]).default("generating").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LectureScript = typeof lectureScripts.$inferSelect;
+export type InsertLectureScript = typeof lectureScripts.$inferInsert;
+
+/**
+ * Production Pipelines - one-click lecture video production jobs
+ * Orchestrates script -> TTS -> avatar -> final video pipeline
+ */
+export const productionPipelines = mysqlTable("productionPipelines", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  scriptId: int("scriptId").notNull(),
+  /** Pipeline title */
+  title: varchar("title", { length: 500 }).notNull(),
+  /** Current pipeline status */
+  status: mysqlEnum("status", ["queued", "script_gen", "tts_gen", "avatar_gen", "compositing", "completed", "failed"]).default("queued").notNull(),
+  /** Overall progress percentage (0-100) */
+  progressPercent: int("progressPercent").default(0),
+  /** Current step description */
+  currentStep: varchar("currentStep", { length: 255 }),
+  /** Voice profile to use for TTS */
+  voiceProfileId: int("voiceProfileId"),
+  /** Voice modulation profile */
+  voiceModProfileId: int("voiceModProfileId"),
+  /** Face swap profile for avatar */
+  faceSwapProfileId: int("faceSwapProfileId"),
+  /** TTS voice ID override */
+  ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).default("alloy"),
+  /** Generated audio URLs as JSON array */
+  audioUrls: text("audioUrls"),
+  /** Generated avatar video URLs as JSON array */
+  avatarVideoUrls: text("avatarVideoUrls"),
+  /** Final combined video URL */
+  finalVideoUrl: text("finalVideoUrl"),
+  /** Thumbnail URL */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** Total duration in seconds */
+  totalDurationSec: int("totalDurationSec").default(0),
+  /** Error message if failed */
+  errorMessage: text("errorMessage"),
+  /** Pipeline config JSON (quality, resolution, etc.) */
+  config: text("config"),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ProductionPipeline = typeof productionPipelines.$inferSelect;
+export type InsertProductionPipeline = typeof productionPipelines.$inferInsert;

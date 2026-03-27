@@ -20,6 +20,8 @@ import {
   platformIntegrations, InsertPlatformIntegration,
   certificates, InsertCertificate,
   lectureSessions, InsertLectureSession,
+  lectureScripts, InsertLectureScript,
+  productionPipelines, InsertProductionPipeline,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -560,4 +562,54 @@ export async function getSessionHistory(instructorId: number) {
     .from(lectureSessions).innerJoin(lectures, eq(lectureSessions.lectureId, lectures.id))
     .where(eq(lectureSessions.instructorId, instructorId))
     .orderBy(desc(lectureSessions.createdAt));
+}
+
+// ============ Lecture Script helpers (v2.1) ============
+export async function createLectureScript(data: InsertLectureScript) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(lectureScripts).values(data); return result[0].insertId;
+}
+export async function getLectureScripts(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(lectureScripts).where(eq(lectureScripts.userId, userId)).orderBy(desc(lectureScripts.createdAt));
+}
+export async function getLectureScriptById(id: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(lectureScripts).where(eq(lectureScripts.id, id)).limit(1);
+  return result[0];
+}
+export async function updateLectureScript(id: number, data: Partial<InsertLectureScript>) {
+  const db = await getDb(); if (!db) return;
+  await db.update(lectureScripts).set(data).where(eq(lectureScripts.id, id));
+}
+export async function deleteLectureScript(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(lectureScripts).where(and(eq(lectureScripts.id, id), eq(lectureScripts.userId, userId)));
+}
+
+// ============ Production Pipeline helpers (v2.1) ============
+export async function createProductionPipeline(data: InsertProductionPipeline) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(productionPipelines).values(data); return result[0].insertId;
+}
+export async function getProductionPipelines(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select({ pipeline: productionPipelines, script: lectureScripts })
+    .from(productionPipelines).innerJoin(lectureScripts, eq(productionPipelines.scriptId, lectureScripts.id))
+    .where(eq(productionPipelines.userId, userId)).orderBy(desc(productionPipelines.createdAt));
+}
+export async function getProductionPipelineById(id: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select({ pipeline: productionPipelines, script: lectureScripts })
+    .from(productionPipelines).innerJoin(lectureScripts, eq(productionPipelines.scriptId, lectureScripts.id))
+    .where(eq(productionPipelines.id, id)).limit(1);
+  return result[0];
+}
+export async function updateProductionPipeline(id: number, data: Partial<InsertProductionPipeline>) {
+  const db = await getDb(); if (!db) return;
+  await db.update(productionPipelines).set(data).where(eq(productionPipelines.id, id));
+}
+export async function deleteProductionPipeline(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(productionPipelines).where(and(eq(productionPipelines.id, id), eq(productionPipelines.userId, userId)));
 }

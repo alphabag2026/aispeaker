@@ -789,6 +789,277 @@ export const appRouter = router({
     /** Get session history */
     history: instructorProcedure.query(async ({ ctx }) => db.getSessionHistory(ctx.user.id)),
   }),
+
+  // ============ Lecture Scripts (v2.1) ============
+  script: router({
+    /** Generate a lecture script from a prompt */
+    generate: instructorProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        prompt: z.string().min(10),
+        category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).optional(),
+        difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+        language: z.string().optional(),
+        targetDurationMin: z.number().min(1).max(120).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const scriptId = await db.createLectureScript({
+          userId: ctx.user.id,
+          title: input.title,
+          prompt: input.prompt,
+          category: input.category || "web3",
+          difficulty: input.difficulty || "beginner",
+          language: input.language || "ko",
+          targetDurationMin: input.targetDurationMin || 10,
+          status: "generating",
+        });
+        if (!scriptId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        // Generate script using LLM
+        const durationMin = input.targetDurationMin || 10;
+        const sectionCount = Math.max(3, Math.ceil(durationMin / 3));
+        const langMap: Record<string, string> = { ko: "한국어", en: "English", ja: "日本語", zh: "中文" };
+        const lang = langMap[input.language || "ko"] || "한국어";
+
+        try {
+          const response = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content: `당신은 전문 강의 스크립트 작성가입니다. ${lang}로 작성하세요.
+주어진 주제에 대해 ${durationMin}분 분량의 강의 스크립트를 작성합니다.
+${sectionCount}개의 섹션으로 나누어 작성하세요.
+
+반드시 아래 JSON 형식으로만 응답하세요:
+{
+  "sections": [
+    {
+      "title": "섹션 제목",
+      "content": "강사가 말할 전체 스크립트 텍스트 (자연스러운 구어체로)",
+      "durationSec": 예상_초,
+      "slideNotes": "이 섹션의 슬라이드에 표시할 핵심 키워드/요약"
+    }
+  ]
+}`
+              },
+              { role: "user", content: `주제: ${input.title}\n상세 요청: ${input.prompt}\n카테고리: ${input.category || "web3"}\n난이도: ${input.difficulty || "beginner"}\n목표 시간: ${durationMin}분` },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "lecture_script",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    sections: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          title: { type: "string" },
+                          content: { type: "string" },
+                          durationSec: { type: "integer" },
+                          slideNotes: { type: "string" },
+                        },
+                        required: ["title", "content", "durationSec", "slideNotes"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["sections"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+
+          const rawContent = response.choices?.[0]?.message?.content;
+          if (typeof rawContent !== "string") throw new Error("LLM returned no content");
+
+          const parsed = JSON.parse(rawContent);
+          const sections = parsed.sections || [];
+          const fullScript = sections.map((s: any) => `## ${s.title}\n\n${s.content}`).join("\n\n");
+          const totalDuration = sections.reduce((sum: number, s: any) => sum + (s.durationSec || 0), 0);
+
+          await db.updateLectureScript(scriptId, {
+            scriptContent: fullScript,
+            sections: JSON.stringify(sections),
+            estimatedDurationSec: totalDuration,
+            sectionCount: sections.length,
+            status: "ready",
+          });
+
+          return { id: scriptId, status: "ready", sectionCount: sections.length, estimatedDurationSec: totalDuration };
+        } catch (error) {
+          await db.updateLectureScript(scriptId, { status: "error" });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "스크립트 생성에 실패했습니다." });
+        }
+      }),
+
+    /** List user's scripts */
+    list: instructorProcedure.query(async ({ ctx }) => db.getLectureScripts(ctx.user.id)),
+
+    /** Get script by ID */
+    getById: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const script = await db.getLectureScriptById(input.id);
+        if (!script) throw new TRPCError({ code: "NOT_FOUND" });
+        return script;
+      }),
+
+    /** Update script content */
+    update: instructorProcedure
+      .input(z.object({ id: z.number(), title: z.string().optional(), scriptContent: z.string().optional(), sections: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateLectureScript(id, data);
+        return { success: true };
+      }),
+
+    /** Delete a script */
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => { await db.deleteLectureScript(input.id, ctx.user.id); return { success: true }; }),
+  }),
+
+  // ============ Production Pipeline (v2.1) ============
+  pipeline: router({
+    /** Start a one-click production pipeline */
+    start: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        title: z.string().min(1),
+        voiceProfileId: z.number().optional(),
+        voiceModProfileId: z.number().optional(),
+        faceSwapProfileId: z.number().optional(),
+        ttsVoiceId: z.string().optional(),
+        config: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const script = await db.getLectureScriptById(input.scriptId);
+        if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "스크립트가 준비되지 않았습니다." });
+
+        const pipelineId = await db.createProductionPipeline({
+          userId: ctx.user.id,
+          scriptId: input.scriptId,
+          title: input.title,
+          status: "tts_gen",
+          progressPercent: 10,
+          currentStep: "TTS 음성 생성 중...",
+          voiceProfileId: input.voiceProfileId,
+          voiceModProfileId: input.voiceModProfileId,
+          faceSwapProfileId: input.faceSwapProfileId,
+          ttsVoiceId: input.ttsVoiceId || "alloy",
+          config: input.config,
+          startedAt: new Date(),
+        });
+        if (!pipelineId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        // Process TTS for each section
+        const sections = script.sections ? JSON.parse(script.sections) : [];
+        const audioUrls: string[] = [];
+
+        // Determine voice
+        let voiceId = input.ttsVoiceId || "alloy";
+        if (input.voiceModProfileId) {
+          const voiceMod = await db.getVoiceModProfileById(input.voiceModProfileId);
+          if (voiceMod?.customTtsVoiceId) voiceId = voiceMod.customTtsVoiceId;
+          else if (voiceMod?.voiceCharacter) {
+            const charMap: Record<string, string> = { male_deep: "onyx", male_bright: "echo", female_warm: "nova", female_clear: "shimmer", neutral: "alloy" };
+            voiceId = charMap[voiceMod.voiceCharacter] || "alloy";
+          }
+        } else if (input.voiceProfileId) {
+          const voiceProfile = await db.getVoiceProfileById(input.voiceProfileId);
+          if (voiceProfile?.ttsVoiceId) voiceId = voiceProfile.ttsVoiceId;
+        }
+
+        let totalDuration = 0;
+        try {
+          for (let i = 0; i < sections.length; i++) {
+            const section = sections[i];
+            let textToSpeak = section.content;
+
+            // Apply voice modulation style if configured
+            if (input.voiceModProfileId) {
+              const voiceMod = await db.getVoiceModProfileById(input.voiceModProfileId);
+              if (voiceMod?.stylePrompt) {
+                const styleResponse = await invokeLLM({
+                  messages: [
+                    { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${voiceMod.stylePrompt}\n스타일: ${voiceMod.speakingStyle}` },
+                    { role: "user", content: textToSpeak },
+                  ],
+                });
+                const rawStyled = styleResponse.choices?.[0]?.message?.content;
+                if (typeof rawStyled === "string") textToSpeak = rawStyled;
+              }
+            }
+
+            // Generate TTS audio
+            const speed = input.voiceModProfileId
+              ? ((await db.getVoiceModProfileById(input.voiceModProfileId))?.speedPercent || 100) / 100
+              : 1;
+
+            const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ model: "tts-1", voice: voiceId, input: textToSpeak, speed }),
+            });
+
+            if (!ttsResponse.ok) throw new Error(`TTS failed for section ${i}`);
+            const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+            const fileKey = `pipeline/${pipelineId}/section-${i}-${nanoid(6)}.mp3`;
+            const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+            audioUrls.push(url);
+            totalDuration += section.durationSec || 0;
+
+            // Update progress
+            const progress = Math.round(10 + (70 * (i + 1) / sections.length));
+            await db.updateProductionPipeline(pipelineId, {
+              progressPercent: progress,
+              currentStep: `TTS 생성 중... (${i + 1}/${sections.length})`,
+            });
+          }
+
+          // Mark as completed
+          await db.updateProductionPipeline(pipelineId, {
+            status: "completed",
+            progressPercent: 100,
+            currentStep: "완료",
+            audioUrls: JSON.stringify(audioUrls),
+            totalDurationSec: totalDuration,
+            completedAt: new Date(),
+          });
+
+          return { id: pipelineId, status: "completed", audioUrls, totalDurationSec: totalDuration };
+        } catch (error) {
+          await db.updateProductionPipeline(pipelineId, {
+            status: "failed",
+            currentStep: "오류 발생",
+            errorMessage: error instanceof Error ? error.message : "Unknown error",
+          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "파이프라인 실행에 실패했습니다." });
+        }
+      }),
+
+    /** List user's pipelines */
+    list: instructorProcedure.query(async ({ ctx }) => db.getProductionPipelines(ctx.user.id)),
+
+    /** Get pipeline by ID */
+    getById: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const pipeline = await db.getProductionPipelineById(input.id);
+        if (!pipeline) throw new TRPCError({ code: "NOT_FOUND" });
+        return pipeline;
+      }),
+
+    /** Delete a pipeline */
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => { await db.deleteProductionPipeline(input.id, ctx.user.id); return { success: true }; }),
+  }),
 });
 
 // Certificate HTML generator
