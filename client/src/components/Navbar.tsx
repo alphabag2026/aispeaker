@@ -25,6 +25,7 @@ import {
   Video,
   Play,
   HelpCircle,
+  History,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -47,6 +48,7 @@ export default function Navbar() {
     ...(isInstructor ? [
       { href: "/studio", label: "스튜디오", icon: Play },
       { href: "/instructor", label: "강사 대시보드", icon: Monitor },
+      { href: "/pipeline-dashboard", label: "제작 히스토리", icon: History },
       { href: "/obs-tutorial", label: "OBS 가이드", icon: HelpCircle },
     ] : []),
   ];

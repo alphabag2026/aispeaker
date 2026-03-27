@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
-  Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, Settings2
+  Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, Settings2, Edit3, History
 } from "lucide-react";
 
 const CATEGORIES = [
@@ -307,6 +307,11 @@ export default function ProductionStudio() {
                           )}
                         </div>
                         <div className="flex gap-2 ml-4">
+                          <Link href={`/script/${script.id}`}>
+                            <Button size="sm" variant="outline">
+                              <Edit3 className="w-4 h-4 mr-1" />편집
+                            </Button>
+                          </Link>
                           <Button size="sm" variant="default" onClick={() => { setSelectedScriptId(script.id); setPipelineTitle(script.title); setActiveTab("produce"); }} disabled={script.status !== "ready"}>
                             <Play className="w-4 h-4 mr-1" />영상 제작
                           </Button>

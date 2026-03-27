@@ -200,3 +200,32 @@
 - [x] D-ID API 설정 테스트 (3개) - env, 권한
 - [x] 라우트 구조 검증 테스트 (2개)
 - [x] 전체 138개 테스트 통과
+
+## 스크립트 편집기 강화 (v2.2)
+- [x] 섹션별 드래그&드롭 재배치 기능 (reorderSections 라우터 + UI)
+- [x] 개별 섹션 인라인 편집 (updateSection 라우터 + 인라인 편집 UI)
+- [x] 개별 섹션만 AI로 재생성하는 기능 (regenerateSection + 커스텀 프롬프트)
+- [x] 섹션 추가/삭제 기능 (UI에서 섹션 삭제 버튼)
+- [x] 섹션별 예상 시간 자동 계산 (총 예상 시간 표시)
+- [x] 스크립트 편집기 전용 페이지 (ScriptEditor)
+
+## 파이프라인 히스토리 대시보드 (v2.2)
+- [x] 파이프라인 통계 백엔드 라우터 (pipeline.stats)
+- [x] 월별 생성 추이 차트 (Recharts BarChart)
+- [x] 카테고리별 분포 파이 차트 (Recharts PieChart)
+- [x] 최근 파이프라인 목록 (상태별 필터)
+- [x] 파이프라인 히스토리 대시보드 페이지 (PipelineDashboard)
+
+## 자동 자막 생성 (v2.2)
+- [x] 파이프라인에서 생성된 음성 → STT 자동 변환 (pipeline.generateSubtitles)
+- [x] SRT 자막 파일 자동 생성 (LLM 기반 SRT 포맷)
+- [x] 자막 미리보기 및 다운로드 (PipelineDashboard에서)
+- [x] 자막 파일 다운로드 (SRT 형식)
+- [x] 파이프라인 완료 시 자막 생성 버튼
+
+## v2.2 테스트
+- [x] 스크립트 편집기 테스트 (7개) - updateSection, regenerateSection, reorderSections
+- [x] 파이프라인 통계 테스트 (5개) - stats, generateSubtitles
+- [x] 라우트 구조 검증 테스트 (5개)
+- [x] 권한 검증 테스트 (2개)
+- [x] 전체 157개 테스트 통과

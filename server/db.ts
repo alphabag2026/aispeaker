@@ -613,3 +613,55 @@ export async function deleteProductionPipeline(id: number, userId: number) {
   const db = await getDb(); if (!db) return;
   await db.delete(productionPipelines).where(and(eq(productionPipelines.id, id), eq(productionPipelines.userId, userId)));
 }
+
+// ============ Pipeline Statistics helpers (v2.2) ============
+export async function getPipelineStats(userId: number) {
+  const db = await getDb(); if (!db) return null;
+  const allPipelines = await db.select().from(productionPipelines).where(eq(productionPipelines.userId, userId));
+  const allScripts = await db.select().from(lectureScripts).where(eq(lectureScripts.userId, userId));
+
+  const totalPipelines = allPipelines.length;
+  const completedPipelines = allPipelines.filter(p => p.status === "completed").length;
+  const failedPipelines = allPipelines.filter(p => p.status === "failed").length;
+  const totalDurationSec = allPipelines.reduce((sum, p) => sum + (p.totalDurationSec || 0), 0);
+  const totalScripts = allScripts.length;
+
+  // Category distribution from scripts
+  const categoryMap: Record<string, number> = {};
+  for (const s of allScripts) {
+    const cat = s.category || "general";
+    categoryMap[cat] = (categoryMap[cat] || 0) + 1;
+  }
+  const categoryDistribution = Object.entries(categoryMap).map(([category, count]) => ({ category, count }));
+
+  // Monthly production counts (last 6 months)
+  const monthlyProduction: { month: string; count: number; durationSec: number }[] = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const monthPipelines = allPipelines.filter(p => {
+      const created = new Date(p.createdAt);
+      return created.getFullYear() === d.getFullYear() && created.getMonth() === d.getMonth();
+    });
+    monthlyProduction.push({
+      month: monthStr,
+      count: monthPipelines.length,
+      durationSec: monthPipelines.reduce((sum, p) => sum + (p.totalDurationSec || 0), 0),
+    });
+  }
+
+  // Difficulty distribution from scripts
+  const difficultyMap: Record<string, number> = {};
+  for (const s of allScripts) {
+    const diff = s.difficulty || "beginner";
+    difficultyMap[diff] = (difficultyMap[diff] || 0) + 1;
+  }
+  const difficultyDistribution = Object.entries(difficultyMap).map(([difficulty, count]) => ({ difficulty, count }));
+
+  return {
+    totalPipelines, completedPipelines, failedPipelines, totalDurationSec, totalScripts,
+    categoryDistribution, monthlyProduction, difficultyDistribution,
+    successRate: totalPipelines > 0 ? Math.round((completedPipelines / totalPipelines) * 100) : 0,
+  };
+}

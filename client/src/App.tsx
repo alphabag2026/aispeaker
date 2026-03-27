@@ -22,6 +22,8 @@ import VodList from "./pages/VodList";
 import VodPlayer from "./pages/VodPlayer";
 import ProductionStudio from "./pages/ProductionStudio";
 import ObsTutorial from "./pages/ObsTutorial";
+import ScriptEditor from "./pages/ScriptEditor";
+import PipelineDashboard from "./pages/PipelineDashboard";
 
 function Router() {
   return (
@@ -44,6 +46,8 @@ function Router() {
       <Route path="/instructor/voice-mod" component={InstructorVoiceMod} />
       <Route path="/instructor/platforms" component={InstructorPlatforms} />
       <Route path="/studio" component={ProductionStudio} />
+      <Route path="/script/:id" component={ScriptEditor} />
+      <Route path="/pipeline-dashboard" component={PipelineDashboard} />
       <Route path="/obs-tutorial" component={ObsTutorial} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

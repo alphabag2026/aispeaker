@@ -20,6 +20,7 @@ import {
   Monitor as MonitorIcon,
   Play,
   HelpCircle,
+  History,
 } from "lucide-react";
 
 export default function InstructorDashboard() {
@@ -292,6 +293,23 @@ export default function InstructorDashboard() {
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-green-400 transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/pipeline-dashboard">
+            <Card className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <History className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">제작 히스토리 대시보드</h3>
+                    <p className="text-sm text-muted-foreground">강의 영상 제작 통계 및 히스토리 확인</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-400 transition-colors" />
               </CardContent>
             </Card>
           </Link>

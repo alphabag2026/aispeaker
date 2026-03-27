@@ -918,6 +918,122 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { success: true };
       }),
 
+    /** Regenerate a single section of a script */
+    regenerateSection: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        sectionIndex: z.number().min(0),
+        customPrompt: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const script = await db.getLectureScriptById(input.scriptId);
+        if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const sections = script.sections ? JSON.parse(script.sections) : [];
+        if (input.sectionIndex >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "잘못된 섹션 인덱스" });
+
+        const section = sections[input.sectionIndex];
+        const langMap: Record<string, string> = { ko: "한국어", en: "English", ja: "日本語", zh: "中文" };
+        const lang = langMap[script.language || "ko"] || "한국어";
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: `당신은 전문 강의 스크립트 작성가입니다. ${lang}로 작성하세요.\n기존 섹션을 개선하여 다시 작성합니다.\n반드시 아래 JSON 형식으로만 응답하세요:\n{"title":"섹션 제목","content":"강사가 말할 스크립트","durationSec":예상초,"slideNotes":"핵심 키워드"}` },
+            { role: "user", content: `기존 섹션 제목: ${section.title}\n기존 내용: ${section.content}\n${input.customPrompt ? `수정 요청: ${input.customPrompt}` : "더 자연스럽고 전문적으로 개선해주세요."}` },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "section_regen",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  content: { type: "string" },
+                  durationSec: { type: "integer" },
+                  slideNotes: { type: "string" },
+                },
+                required: ["title", "content", "durationSec", "slideNotes"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        const rawContent = response.choices?.[0]?.message?.content;
+        if (typeof rawContent !== "string") throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "LLM 응답 오류" });
+        const newSection = JSON.parse(rawContent);
+        sections[input.sectionIndex] = newSection;
+
+        const fullScript = sections.map((s: any) => `## ${s.title}\n\n${s.content}`).join("\n\n");
+        const totalDuration = sections.reduce((sum: number, s: any) => sum + (s.durationSec || 0), 0);
+
+        await db.updateLectureScript(input.scriptId, {
+          scriptContent: fullScript,
+          sections: JSON.stringify(sections),
+          estimatedDurationSec: totalDuration,
+        });
+
+        return { success: true, section: newSection, totalDuration };
+      }),
+
+    /** Reorder sections of a script */
+    reorderSections: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        newOrder: z.array(z.number()),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const script = await db.getLectureScriptById(input.scriptId);
+        if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const sections = script.sections ? JSON.parse(script.sections) : [];
+        if (input.newOrder.length !== sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "섹션 수가 일치하지 않습니다." });
+
+        const reordered = input.newOrder.map(idx => {
+          if (idx < 0 || idx >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "잘못된 인덱스" });
+          return sections[idx];
+        });
+
+        const fullScript = reordered.map((s: any) => `## ${s.title}\n\n${s.content}`).join("\n\n");
+        await db.updateLectureScript(input.scriptId, {
+          scriptContent: fullScript,
+          sections: JSON.stringify(reordered),
+        });
+        return { success: true };
+      }),
+
+    /** Update a single section inline */
+    updateSection: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        sectionIndex: z.number().min(0),
+        title: z.string().optional(),
+        content: z.string().optional(),
+        durationSec: z.number().optional(),
+        slideNotes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const script = await db.getLectureScriptById(input.scriptId);
+        if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const sections = script.sections ? JSON.parse(script.sections) : [];
+        if (input.sectionIndex >= sections.length) throw new TRPCError({ code: "BAD_REQUEST" });
+
+        if (input.title !== undefined) sections[input.sectionIndex].title = input.title;
+        if (input.content !== undefined) sections[input.sectionIndex].content = input.content;
+        if (input.durationSec !== undefined) sections[input.sectionIndex].durationSec = input.durationSec;
+        if (input.slideNotes !== undefined) sections[input.sectionIndex].slideNotes = input.slideNotes;
+
+        const fullScript = sections.map((s: any) => `## ${s.title}\n\n${s.content}`).join("\n\n");
+        const totalDuration = sections.reduce((sum: number, s: any) => sum + (s.durationSec || 0), 0);
+
+        await db.updateLectureScript(input.scriptId, {
+          scriptContent: fullScript,
+          sections: JSON.stringify(sections),
+          estimatedDurationSec: totalDuration,
+        });
+        return { success: true };
+      }),
+
     /** Delete a script */
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
@@ -1059,8 +1175,115 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => { await db.deleteProductionPipeline(input.id, ctx.user.id); return { success: true }; }),
+
+    /** Get pipeline statistics dashboard */
+    stats: instructorProcedure.query(async ({ ctx }) => {
+      const stats = await db.getPipelineStats(ctx.user.id);
+      if (!stats) return { totalPipelines: 0, completedPipelines: 0, failedPipelines: 0, totalDurationSec: 0, totalScripts: 0, categoryDistribution: [], monthlyProduction: [], difficultyDistribution: [], successRate: 0 };
+      return stats;
+    }),
+
+    /** Generate SRT subtitles from pipeline audio */
+    generateSubtitles: instructorProcedure
+      .input(z.object({ pipelineId: z.number(), language: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const pipelineData = await db.getProductionPipelineById(input.pipelineId);
+        if (!pipelineData) throw new TRPCError({ code: "NOT_FOUND" });
+        if (pipelineData.pipeline.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        if (pipelineData.pipeline.status !== "completed") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "파이프라인이 완료되지 않았습니다." });
+
+        const audioUrls = pipelineData.pipeline.audioUrls ? JSON.parse(pipelineData.pipeline.audioUrls) : [];
+        if (audioUrls.length === 0) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "오디오 파일이 없습니다." });
+
+        let srtContent = "";
+        let subtitleIndex = 1;
+        let timeOffsetSec = 0;
+
+        // Get sections for reference
+        const sections = pipelineData.script.sections ? JSON.parse(pipelineData.script.sections) : [];
+
+        for (let i = 0; i < audioUrls.length; i++) {
+          try {
+            const result = await transcribeAudio({
+              audioUrl: audioUrls[i],
+              language: input.language || pipelineData.script.language || "ko",
+              prompt: sections[i]?.title || "강의 내용",
+            });
+
+            if ("error" in result) {
+              // Fallback: use section content as subtitle
+              if (sections[i]) {
+                const sectionDur = sections[i].durationSec || 60;
+                const startTime = formatSrtTime(timeOffsetSec);
+                const endTime = formatSrtTime(timeOffsetSec + sectionDur);
+                srtContent += `${subtitleIndex}\n${startTime} --> ${endTime}\n${sections[i].content.substring(0, 200)}\n\n`;
+                subtitleIndex++;
+                timeOffsetSec += sectionDur;
+              }
+              continue;
+            }
+
+            // Use Whisper segments for precise timestamps
+            if (result.segments && result.segments.length > 0) {
+              for (const segment of result.segments) {
+                const startTime = formatSrtTime(timeOffsetSec + segment.start);
+                const endTime = formatSrtTime(timeOffsetSec + segment.end);
+                srtContent += `${subtitleIndex}\n${startTime} --> ${endTime}\n${segment.text.trim()}\n\n`;
+                subtitleIndex++;
+              }
+              const lastSeg = result.segments[result.segments.length - 1];
+              timeOffsetSec += lastSeg.end;
+            } else if (result.text) {
+              // Fallback: whole text as one subtitle
+              const sectionDur = sections[i]?.durationSec || 60;
+              const startTime = formatSrtTime(timeOffsetSec);
+              const endTime = formatSrtTime(timeOffsetSec + sectionDur);
+              srtContent += `${subtitleIndex}\n${startTime} --> ${endTime}\n${result.text.trim()}\n\n`;
+              subtitleIndex++;
+              timeOffsetSec += sectionDur;
+            }
+          } catch {
+            // Skip failed transcription, use section content
+            if (sections[i]) {
+              const sectionDur = sections[i].durationSec || 60;
+              const startTime = formatSrtTime(timeOffsetSec);
+              const endTime = formatSrtTime(timeOffsetSec + sectionDur);
+              srtContent += `${subtitleIndex}\n${startTime} --> ${endTime}\n${sections[i].title}\n\n`;
+              subtitleIndex++;
+              timeOffsetSec += sectionDur;
+            }
+          }
+        }
+
+        // Upload SRT file to S3
+        const srtBuffer = Buffer.from(srtContent, "utf-8");
+        const fileKey = `subtitles/${input.pipelineId}-${nanoid(6)}.srt`;
+        const { url: srtUrl } = await storagePut(fileKey, srtBuffer, "text/plain");
+
+        // Also generate VTT format
+        const vttContent = "WEBVTT\n\n" + srtContent.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
+        const vttBuffer = Buffer.from(vttContent, "utf-8");
+        const vttKey = `subtitles/${input.pipelineId}-${nanoid(6)}.vtt`;
+        const { url: vttUrl } = await storagePut(vttKey, vttBuffer, "text/vtt");
+
+        // Store subtitle URL in pipeline
+        await db.updateProductionPipeline(input.pipelineId, {
+          subtitleUrl: srtUrl,
+        });
+
+        return { srtUrl, vttUrl, subtitleCount: subtitleIndex - 1 };
+      }),
   }),
 });
+
+// SRT time formatter
+function formatSrtTime(totalSec: number): string {
+  const hours = Math.floor(totalSec / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = Math.floor(totalSec % 60);
+  const ms = Math.round((totalSec % 1) * 1000);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")},${String(ms).padStart(3, "0")}`;
+}
 
 // Certificate HTML generator
 function generateCertificateHtml(studentName: string, lectureTitle: string, code: string, completion: number): string {

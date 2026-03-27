@@ -496,6 +496,8 @@ export const productionPipelines = mysqlTable("productionPipelines", {
   finalVideoUrl: text("finalVideoUrl"),
   /** Thumbnail URL */
   thumbnailUrl: text("thumbnailUrl"),
+  /** Subtitle file URL (SRT) */
+  subtitleUrl: text("subtitleUrl"),
   /** Total duration in seconds */
   totalDurationSec: int("totalDurationSec").default(0),
   /** Error message if failed */
