@@ -13,6 +13,7 @@ import {
   Plus,
   ArrowRight,
   Loader2,
+  Video,
 } from "lucide-react";
 
 export default function InstructorDashboard() {
@@ -134,7 +135,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Link href="/instructor/lectures">
             <Card className="bg-card hover:border-primary/50 transition-colors cursor-pointer group">
               <CardContent className="p-6 flex items-center justify-between">
@@ -161,6 +162,22 @@ export default function InstructorDashboard() {
                   <div>
                     <h3 className="font-semibold">음성 프로필</h3>
                     <p className="text-sm text-muted-foreground">음성 클로닝 및 강의 스타일 설정</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/vod">
+            <Card className="bg-card hover:border-primary/50 transition-colors cursor-pointer group">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                    <Video className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">VOD 아카이브</h3>
+                    <p className="text-sm text-muted-foreground">녹화된 강의 관리 및 조회</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />

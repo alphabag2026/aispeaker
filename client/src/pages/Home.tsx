@@ -14,6 +14,9 @@ import {
   Sparkles,
   Volume2,
   ArrowRight,
+  Video,
+  Globe,
+  User,
 } from "lucide-react";
 
 const features = [
@@ -23,9 +26,9 @@ const features = [
     desc: "강사의 목소리와 강의 습관을 AI가 학습하여 자연스러운 강의를 진행합니다.",
   },
   {
-    icon: Volume2,
-    title: "AI TTS",
-    desc: "OpenAI TTS 기반으로 텍스트를 자연스러운 음성으로 변환합니다.",
+    icon: User,
+    title: "AI 아바타",
+    desc: "AI 아바타가 화면에 등장하여 실시간으로 강의를 진행하고 질문에 답변합니다.",
   },
   {
     icon: MessageSquare,
@@ -43,9 +46,24 @@ const features = [
     desc: "실시간 칠판 기능으로 개념을 시각적으로 설명합니다.",
   },
   {
+    icon: Video,
+    title: "VOD 아카이브",
+    desc: "강의 내용을 자동 녹화하여 VOD로 다시 볼 수 있습니다.",
+  },
+  {
+    icon: Globe,
+    title: "다국어 번역",
+    desc: "AI 자동 번역으로 20개 이상의 언어로 Q&A 답변을 제공합니다.",
+  },
+  {
+    icon: Volume2,
+    title: "AI TTS",
+    desc: "OpenAI TTS 기반으로 텍스트를 자연스러운 음성으로 변환합니다.",
+  },
+  {
     icon: Brain,
-    title: "AI 강사 모드",
-    desc: "음성, 텍스트, 아바타 중 원하는 표현 방식을 선택할 수 있습니다.",
+    title: "강사 모드 선택",
+    desc: "음성, 텍스트, 아바타 중 원하는 AI 표현 방식을 선택할 수 있습니다.",
   },
 ];
 
@@ -86,7 +104,7 @@ export default function Home() {
 
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl">
               강사의 음성과 강의 스타일을 학습한 AI가 Web3, AI 등 최신 기술을 가르칩니다.
-              수강생은 텍스트와 음성으로 실시간 질문이 가능합니다.
+              수강생은 텍스트와 음성으로 실시간 질문이 가능합니다. 20개 이상의 언어로 자동 번역됩니다.
             </p>
 
             <div className="flex flex-wrap gap-4">
@@ -95,6 +113,12 @@ export default function Home() {
                   <BookOpen className="h-5 w-5" />
                   강의 둘러보기
                   <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/vod">
+                <Button size="lg" variant="outline" className="gap-2">
+                  <Video className="h-5 w-5" />
+                  VOD 보기
                 </Button>
               </Link>
               {!isAuthenticated && (
@@ -165,6 +189,7 @@ export default function Home() {
             </h2>
             <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
               강사로 등록하고 AI가 당신의 목소리로 강의하는 경험을 만들어보세요.
+              강의는 자동으로 녹화되어 VOD로 제공됩니다.
             </p>
             <Link href={isAuthenticated ? "/instructor" : "/lectures"}>
               <Button size="lg" className="gap-2">

@@ -18,6 +18,30 @@ const instructorProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+// Supported languages for translation
+const SUPPORTED_LANGUAGES = [
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "ja", name: "日本語", flag: "🇯🇵" },
+  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "pt", name: "Português", flag: "🇧🇷" },
+  { code: "ru", name: "Русский", flag: "🇷🇺" },
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
+  { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "th", name: "ไทย", flag: "🇹🇭" },
+  { code: "id", name: "Bahasa Indonesia", flag: "🇮🇩" },
+  { code: "tr", name: "Türkçe", flag: "🇹🇷" },
+  { code: "it", name: "Italiano", flag: "🇮🇹" },
+  { code: "nl", name: "Nederlands", flag: "🇳🇱" },
+  { code: "pl", name: "Polski", flag: "🇵🇱" },
+  { code: "uk", name: "Українська", flag: "🇺🇦" },
+  { code: "sv", name: "Svenska", flag: "🇸🇪" },
+];
+
 export const appRouter = router({
   system: systemRouter,
 
@@ -37,6 +61,7 @@ export const appRouter = router({
         name: z.string().optional(),
         bio: z.string().optional(),
         avatarUrl: z.string().optional(),
+        preferredLang: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await db.updateUserProfile(ctx.user.id, input);
@@ -47,6 +72,13 @@ export const appRouter = router({
       .input(z.object({ platformRole: z.enum(["instructor", "student"]) }))
       .mutation(async ({ ctx, input }) => {
         await db.updateUserPlatformRole(ctx.user.id, input.platformRole);
+        return { success: true };
+      }),
+
+    setLanguage: protectedProcedure
+      .input(z.object({ lang: z.string().min(2).max(10) }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateUserPreferredLang(ctx.user.id, input.lang);
         return { success: true };
       }),
   }),
@@ -63,6 +95,8 @@ export const appRouter = router({
         voiceDescription: z.string().optional(),
         teachingStyle: z.string().optional(),
         ttsVoiceId: z.string().optional(),
+        avatarImageUrl: z.string().optional(),
+        avatarStyle: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await db.createVoiceProfile({
@@ -71,6 +105,8 @@ export const appRouter = router({
           voiceDescription: input.voiceDescription ?? null,
           teachingStyle: input.teachingStyle ?? null,
           ttsVoiceId: input.ttsVoiceId ?? "alloy",
+          avatarImageUrl: input.avatarImageUrl ?? null,
+          avatarStyle: input.avatarStyle ?? "rectangular",
         });
         return { id };
       }),
@@ -84,6 +120,8 @@ export const appRouter = router({
         systemPrompt: z.string().optional(),
         ttsVoiceId: z.string().optional(),
         isDefault: z.boolean().optional(),
+        avatarImageUrl: z.string().optional(),
+        avatarStyle: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
@@ -110,7 +148,6 @@ export const appRouter = router({
         const { url } = await storagePut(fileKey, buffer, 'audio/webm');
         await db.updateVoiceProfile(input.profileId, ctx.user.id, { sampleUrl: url });
 
-        // Analyze voice and generate system prompt
         const analysisResponse = await invokeLLM({
           messages: [
             {
@@ -128,6 +165,20 @@ export const appRouter = router({
         await db.updateVoiceProfile(input.profileId, ctx.user.id, { systemPrompt });
 
         return { url, systemPrompt };
+      }),
+
+    uploadAvatarImage: instructorProcedure
+      .input(z.object({
+        profileId: z.number(),
+        imageBase64: z.string(),
+        filename: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.imageBase64, 'base64');
+        const fileKey = `avatars/${ctx.user.id}/${input.profileId}/${nanoid()}-${input.filename}`;
+        const { url } = await storagePut(fileKey, buffer, 'image/png');
+        await db.updateVoiceProfile(input.profileId, ctx.user.id, { avatarImageUrl: url });
+        return { url };
       }),
 
     analyzeStyle: instructorProcedure
@@ -193,6 +244,7 @@ export const appRouter = router({
         voiceProfileId: z.number().optional(),
         aiContext: z.string().optional(),
         maxParticipants: z.number().optional(),
+        autoRecord: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await db.createLecture({
@@ -204,6 +256,7 @@ export const appRouter = router({
           voiceProfileId: input.voiceProfileId ?? null,
           aiContext: input.aiContext ?? null,
           maxParticipants: input.maxParticipants ?? 0,
+          autoRecord: input.autoRecord ?? true,
         });
         return { id };
       }),
@@ -219,6 +272,7 @@ export const appRouter = router({
         status: z.enum(["draft", "scheduled", "live", "completed", "archived"]).optional(),
         aiContext: z.string().optional(),
         maxParticipants: z.number().optional(),
+        autoRecord: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
@@ -243,7 +297,58 @@ export const appRouter = router({
     endLecture: instructorProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
+        // End the lecture
         await db.updateLectureStatus(input.id, 'completed');
+
+        // Auto-create VOD recording from lecture data
+        const lecture = await db.getLectureById(input.id);
+        if (lecture?.autoRecord) {
+          const messages = await db.getQaMessages(input.id);
+          const snapshots = await db.getWhiteboardSnapshots(input.id);
+
+          const vodId = await db.createVodRecording({
+            lectureId: input.id,
+            title: `${lecture.title} - 녹화본`,
+            description: lecture.description,
+            messageCount: messages.length,
+            snapshotCount: snapshots.length,
+            status: "processing",
+            startedAt: lecture.createdAt,
+            endedAt: new Date(),
+          });
+
+          if (vodId) {
+            // Archive Q&A messages as timeline events
+            let offsetSec = 0;
+            for (const msg of messages) {
+              await db.createVodTimelineEvent({
+                vodId,
+                eventType: msg.message.messageType === 'question' ? 'qa_question' : 'qa_answer',
+                offsetSeconds: offsetSec,
+                content: msg.message.content,
+                userId: msg.message.userId,
+                audioUrl: msg.message.audioUrl,
+                avatarVideoUrl: msg.message.avatarVideoUrl,
+              });
+              offsetSec += 10; // approximate spacing
+            }
+
+            // Archive whiteboard snapshots
+            for (let i = 0; i < snapshots.length; i++) {
+              await db.createVodTimelineEvent({
+                vodId,
+                eventType: 'whiteboard_snapshot',
+                offsetSeconds: i * 30,
+                content: snapshots[i].snapshotData,
+              });
+            }
+
+            // Calculate duration
+            const duration = messages.length * 10 + snapshots.length * 30;
+            await db.updateVodRecording(vodId, { status: "ready", duration });
+          }
+        }
+
         return { success: true };
       }),
 
@@ -340,7 +445,6 @@ export const appRouter = router({
         inputMethod: z.enum(["text", "voice"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Save user question
         await db.createQaMessage({
           lectureId: input.lectureId,
           userId: ctx.user.id,
@@ -349,27 +453,23 @@ export const appRouter = router({
           content: input.content,
         });
 
-        // Get lecture context
         const lecture = await db.getLectureById(input.lectureId);
         let voiceProfile = null;
         if (lecture?.voiceProfileId) {
           voiceProfile = await db.getVoiceProfileById(lecture.voiceProfileId);
         }
 
-        // Get recent Q&A history for context
         const recentMessages = await db.getQaMessages(input.lectureId, 20);
         const chatHistory = recentMessages.map(m => ({
           role: m.message.messageType === 'question' ? 'user' as const : 'assistant' as const,
           content: m.message.content,
         }));
 
-        // Build system prompt
         const basePrompt = voiceProfile?.systemPrompt ||
           `당신은 전문적인 AI 강사입니다. ${lecture?.category || 'Web3'} 분야의 전문가로서 학생들의 질문에 친절하고 상세하게 답변합니다.`;
 
         const systemPrompt = `${basePrompt}\n\n강의 제목: ${lecture?.title || '알 수 없음'}\n강의 설명: ${lecture?.description || ''}\n${lecture?.aiContext ? `추가 컨텍스트: ${lecture.aiContext}` : ''}\n\n학생의 질문에 한국어로 답변하세요. 답변은 명확하고 교육적이어야 합니다.`;
 
-        // Generate AI answer
         const response = await invokeLLM({
           messages: [
             { role: "system", content: systemPrompt },
@@ -381,8 +481,7 @@ export const appRouter = router({
         const rawContent = response.choices?.[0]?.message?.content;
         const aiAnswer = typeof rawContent === 'string' ? rawContent : "죄송합니다. 답변을 생성할 수 없습니다.";
 
-        // Save AI answer
-        await db.createQaMessage({
+        const answerId = await db.createQaMessage({
           lectureId: input.lectureId,
           userId: null,
           messageType: "answer",
@@ -390,7 +489,7 @@ export const appRouter = router({
           content: aiAnswer,
         });
 
-        return { answer: aiAnswer };
+        return { answer: aiAnswer, answerId };
       }),
 
     transcribe: protectedProcedure
@@ -418,7 +517,6 @@ export const appRouter = router({
         voiceId: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        // Use the built-in Forge API for TTS
         const forgeUrl = process.env.BUILT_IN_FORGE_API_URL;
         const forgeKey = process.env.BUILT_IN_FORGE_API_KEY;
 
@@ -452,6 +550,67 @@ export const appRouter = router({
       }),
   }),
 
+  // ============ AI Avatar ============
+  avatar: router({
+    /** Generate avatar video from text using TTS + animated avatar */
+    generate: protectedProcedure
+      .input(z.object({
+        text: z.string().min(1).max(4096),
+        voiceProfileId: z.number().optional(),
+        lectureId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Step 1: Generate TTS audio
+        const forgeUrl = process.env.BUILT_IN_FORGE_API_URL;
+        const forgeKey = process.env.BUILT_IN_FORGE_API_KEY;
+
+        if (!forgeUrl || !forgeKey) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'TTS 서비스가 설정되지 않았습니다.' });
+        }
+
+        let voiceId = "alloy";
+        let avatarImageUrl: string | null = null;
+
+        if (input.voiceProfileId) {
+          const profile = await db.getVoiceProfileById(input.voiceProfileId);
+          if (profile) {
+            voiceId = profile.ttsVoiceId || "alloy";
+            avatarImageUrl = profile.avatarImageUrl;
+          }
+        }
+
+        const ttsResponse = await fetch(`${forgeUrl}/v1/audio/speech`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${forgeKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'tts-1',
+            input: input.text,
+            voice: voiceId,
+            response_format: 'mp3',
+          }),
+        });
+
+        if (!ttsResponse.ok) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'TTS 생성에 실패했습니다.' });
+        }
+
+        const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+        const audioKey = `avatar-audio/${nanoid()}.mp3`;
+        const { url: audioUrl } = await storagePut(audioKey, audioBuffer, 'audio/mpeg');
+
+        // Return audio + avatar image info for frontend to render animated avatar
+        return {
+          audioUrl,
+          avatarImageUrl,
+          voiceId,
+          text: input.text,
+        };
+      }),
+  }),
+
   // ============ Whiteboard ============
   whiteboard: router({
     save: instructorProcedure
@@ -468,6 +627,199 @@ export const appRouter = router({
       .input(z.object({ lectureId: z.number() }))
       .query(async ({ input }) => {
         return db.getLatestWhiteboardSnapshot(input.lectureId);
+      }),
+  }),
+
+  // ============ VOD (Video on Demand) ============
+  vod: router({
+    list: publicProcedure
+      .input(z.object({
+        lectureId: z.number().optional(),
+        status: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getVodRecordings(input ?? {});
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const vod = await db.getVodById(input.id);
+        if (!vod) throw new TRPCError({ code: 'NOT_FOUND', message: 'VOD를 찾을 수 없습니다.' });
+        // Increment view count
+        await db.incrementVodViewCount(input.id);
+        return vod;
+      }),
+
+    timeline: publicProcedure
+      .input(z.object({ vodId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getVodTimelineEvents(input.vodId);
+      }),
+
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteVodRecording(input.id);
+        return { success: true };
+      }),
+
+    /** Manually create VOD from a completed lecture */
+    createFromLecture: instructorProcedure
+      .input(z.object({ lectureId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const lecture = await db.getLectureById(input.lectureId);
+        if (!lecture) throw new TRPCError({ code: 'NOT_FOUND' });
+
+        const messages = await db.getQaMessages(input.lectureId);
+        const snapshots = await db.getWhiteboardSnapshots(input.lectureId);
+
+        const vodId = await db.createVodRecording({
+          lectureId: input.lectureId,
+          title: `${lecture.title} - 녹화본`,
+          description: lecture.description,
+          messageCount: messages.length,
+          snapshotCount: snapshots.length,
+          status: "processing",
+          startedAt: lecture.createdAt,
+          endedAt: new Date(),
+        });
+
+        if (vodId) {
+          let offsetSec = 0;
+          for (const msg of messages) {
+            await db.createVodTimelineEvent({
+              vodId,
+              eventType: msg.message.messageType === 'question' ? 'qa_question' : 'qa_answer',
+              offsetSeconds: offsetSec,
+              content: msg.message.content,
+              userId: msg.message.userId,
+              audioUrl: msg.message.audioUrl,
+              avatarVideoUrl: msg.message.avatarVideoUrl,
+            });
+            offsetSec += 10;
+          }
+
+          for (let i = 0; i < snapshots.length; i++) {
+            await db.createVodTimelineEvent({
+              vodId,
+              eventType: 'whiteboard_snapshot',
+              offsetSeconds: i * 30,
+              content: snapshots[i].snapshotData,
+            });
+          }
+
+          const duration = messages.length * 10 + snapshots.length * 30;
+          await db.updateVodRecording(vodId, { status: "ready", duration });
+        }
+
+        return { vodId };
+      }),
+  }),
+
+  // ============ Translation ============
+  translation: router({
+    languages: publicProcedure.query(() => {
+      return SUPPORTED_LANGUAGES;
+    }),
+
+    translate: protectedProcedure
+      .input(z.object({
+        text: z.string().min(1),
+        targetLang: z.string().min(2).max(10),
+        sourceLang: z.string().optional(),
+        sourceType: z.enum(["qa_message", "lecture_title", "lecture_description"]).optional(),
+        sourceId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Check cache first
+        if (input.sourceType && input.sourceId) {
+          const cached = await db.getTranslation(input.sourceType, input.sourceId, input.targetLang);
+          if (cached) {
+            return { translatedText: cached.translatedText, cached: true };
+          }
+        }
+
+        const sourceLang = input.sourceLang || "ko";
+        const targetLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === input.targetLang);
+        const targetLangName = targetLangInfo?.name || input.targetLang;
+
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional translator. Translate the following text to ${targetLangName} (${input.targetLang}). Only output the translated text, nothing else. Maintain the original formatting and technical terms where appropriate.`
+            },
+            {
+              role: "user",
+              content: input.text,
+            }
+          ],
+        });
+
+        const rawTranslation = response.choices?.[0]?.message?.content;
+        const translatedText = typeof rawTranslation === 'string' ? rawTranslation : input.text;
+
+        // Cache the translation
+        if (input.sourceType && input.sourceId) {
+          await db.createTranslation({
+            sourceType: input.sourceType,
+            sourceId: input.sourceId,
+            sourceLang,
+            targetLang: input.targetLang,
+            originalText: input.text,
+            translatedText,
+          });
+        }
+
+        return { translatedText, cached: false };
+      }),
+
+    /** Batch translate Q&A messages for a lecture */
+    translateMessages: protectedProcedure
+      .input(z.object({
+        lectureId: z.number(),
+        targetLang: z.string().min(2).max(10),
+      }))
+      .mutation(async ({ input }) => {
+        const messages = await db.getQaMessages(input.lectureId);
+        const results: { messageId: number; translatedText: string }[] = [];
+
+        for (const msg of messages) {
+          // Check cache
+          const cached = await db.getTranslation("qa_message", msg.message.id, input.targetLang);
+          if (cached) {
+            results.push({ messageId: msg.message.id, translatedText: cached.translatedText });
+            continue;
+          }
+
+          const targetLangInfo = SUPPORTED_LANGUAGES.find(l => l.code === input.targetLang);
+          const response = await invokeLLM({
+            messages: [
+              {
+                role: "system",
+                content: `Translate to ${targetLangInfo?.name || input.targetLang}. Output only the translation.`
+              },
+              { role: "user", content: msg.message.content }
+            ],
+          });
+
+          const rawT = response.choices?.[0]?.message?.content;
+          const translated = typeof rawT === 'string' ? rawT : msg.message.content;
+
+          await db.createTranslation({
+            sourceType: "qa_message",
+            sourceId: msg.message.id,
+            sourceLang: "ko",
+            targetLang: input.targetLang,
+            originalText: msg.message.content,
+            translatedText: translated,
+          });
+
+          results.push({ messageId: msg.message.id, translatedText: translated });
+        }
+
+        return { translations: results };
       }),
   }),
 });

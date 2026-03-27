@@ -10,10 +10,11 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  /** Platform role: instructor or student */
   platformRole: mysqlEnum("platformRole", ["instructor", "student"]).default("student").notNull(),
   bio: text("bio"),
   avatarUrl: text("avatarUrl"),
+  /** Preferred language for translations */
+  preferredLang: varchar("preferredLang", { length: 10 }).default("ko"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -29,16 +30,15 @@ export const voiceProfiles = mysqlTable("voiceProfiles", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  /** URL to the uploaded voice sample */
   sampleUrl: text("sampleUrl"),
-  /** Description of voice characteristics */
   voiceDescription: text("voiceDescription"),
-  /** Teaching style notes (pace, tone, habits) */
   teachingStyle: text("teachingStyle"),
-  /** System prompt for AI to mimic this instructor */
   systemPrompt: text("systemPrompt"),
-  /** OpenAI TTS voice ID or custom voice ID */
   ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).default("alloy"),
+  /** D-ID avatar image URL for avatar mode */
+  avatarImageUrl: text("avatarImageUrl"),
+  /** D-ID presenter style */
+  avatarStyle: varchar("avatarStyle", { length: 64 }).default("rectangular"),
   isDefault: boolean("isDefault").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -56,20 +56,15 @@ export const lectures = mysqlTable("lectures", {
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   category: mysqlEnum("category", ["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).default("web3").notNull(),
-  /** AI presentation mode */
   aiMode: mysqlEnum("aiMode", ["voice", "text", "avatar"]).default("voice").notNull(),
-  /** Voice profile to use for this lecture */
   voiceProfileId: int("voiceProfileId"),
-  /** Lecture status */
   status: mysqlEnum("status", ["draft", "scheduled", "live", "completed", "archived"]).default("draft").notNull(),
-  /** Scheduled start time */
   scheduledAt: timestamp("scheduledAt"),
-  /** Cover image URL */
   coverImageUrl: text("coverImageUrl"),
-  /** Max participants (0 = unlimited) */
   maxParticipants: int("maxParticipants").default(0),
-  /** AI knowledge base / context for Q&A */
   aiContext: text("aiContext"),
+  /** Enable auto-recording for VOD */
+  autoRecord: boolean("autoRecord").default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -84,14 +79,10 @@ export const lectureMaterials = mysqlTable("lectureMaterials", {
   id: int("id").autoincrement().primaryKey(),
   lectureId: int("lectureId").notNull(),
   title: varchar("title", { length: 500 }).notNull(),
-  /** File type */
   fileType: mysqlEnum("fileType", ["pdf", "ppt", "image", "video", "other"]).default("pdf").notNull(),
-  /** S3 file URL */
   fileUrl: text("fileUrl").notNull(),
   fileKey: text("fileKey").notNull(),
-  /** Number of pages/slides */
   pageCount: int("pageCount").default(0),
-  /** Sort order */
   sortOrder: int("sortOrder").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
@@ -107,7 +98,6 @@ export const lectureEnrollments = mysqlTable("lectureEnrollments", {
   lectureId: int("lectureId").notNull(),
   userId: int("userId").notNull(),
   joinedAt: timestamp("joinedAt").defaultNow().notNull(),
-  /** Last active timestamp */
   lastActiveAt: timestamp("lastActiveAt").defaultNow().notNull(),
 });
 
@@ -121,13 +111,12 @@ export const qaMessages = mysqlTable("qaMessages", {
   id: int("id").autoincrement().primaryKey(),
   lectureId: int("lectureId").notNull(),
   userId: int("userId"),
-  /** Question or answer */
   messageType: mysqlEnum("messageType", ["question", "answer", "system"]).default("question").notNull(),
-  /** Input method */
   inputMethod: mysqlEnum("inputMethod", ["text", "voice"]).default("text").notNull(),
   content: text("content").notNull(),
-  /** AI-generated audio URL for the answer */
   audioUrl: text("audioUrl"),
+  /** Avatar video URL (D-ID generated) */
+  avatarVideoUrl: text("avatarVideoUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -140,10 +129,87 @@ export type InsertQaMessage = typeof qaMessages.$inferInsert;
 export const whiteboardSnapshots = mysqlTable("whiteboardSnapshots", {
   id: int("id").autoincrement().primaryKey(),
   lectureId: int("lectureId").notNull(),
-  /** tldraw snapshot data (JSON) */
   snapshotData: text("snapshotData"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
 export type WhiteboardSnapshot = typeof whiteboardSnapshots.$inferSelect;
 export type InsertWhiteboardSnapshot = typeof whiteboardSnapshots.$inferInsert;
+
+/**
+ * VOD Recordings - archived lecture sessions
+ */
+export const vodRecordings = mysqlTable("vodRecordings", {
+  id: int("id").autoincrement().primaryKey(),
+  lectureId: int("lectureId").notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  /** Duration in seconds */
+  duration: int("duration").default(0),
+  /** Total Q&A messages archived */
+  messageCount: int("messageCount").default(0),
+  /** Total whiteboard snapshots */
+  snapshotCount: int("snapshotCount").default(0),
+  /** Status of VOD processing */
+  status: mysqlEnum("status", ["processing", "ready", "failed"]).default("processing").notNull(),
+  /** Thumbnail URL */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** View count */
+  viewCount: int("viewCount").default(0),
+  /** Recording start/end timestamps */
+  startedAt: timestamp("startedAt"),
+  endedAt: timestamp("endedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VodRecording = typeof vodRecordings.$inferSelect;
+export type InsertVodRecording = typeof vodRecordings.$inferInsert;
+
+/**
+ * VOD Timeline Events - Q&A messages and whiteboard snapshots with timestamps for replay
+ */
+export const vodTimelineEvents = mysqlTable("vodTimelineEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  vodId: int("vodId").notNull(),
+  /** Event type: qa_question, qa_answer, whiteboard_snapshot, slide_change */
+  eventType: mysqlEnum("eventType", ["qa_question", "qa_answer", "whiteboard_snapshot", "slide_change"]).default("qa_question").notNull(),
+  /** Offset in seconds from recording start */
+  offsetSeconds: int("offsetSeconds").default(0),
+  /** Event content (message text, snapshot data, slide index) */
+  content: text("content"),
+  /** Optional: user who triggered the event */
+  userId: int("userId"),
+  /** Optional: audio URL for TTS answers */
+  audioUrl: text("audioUrl"),
+  /** Optional: avatar video URL */
+  avatarVideoUrl: text("avatarVideoUrl"),
+  /** Optional: slide index for slide_change events */
+  slideIndex: int("slideIndex"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VodTimelineEvent = typeof vodTimelineEvents.$inferSelect;
+export type InsertVodTimelineEvent = typeof vodTimelineEvents.$inferInsert;
+
+/**
+ * Translations - cached AI translations for Q&A answers and lecture content
+ */
+export const translations = mysqlTable("translations", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Source type: qa_message, lecture_title, lecture_description */
+  sourceType: mysqlEnum("sourceType", ["qa_message", "lecture_title", "lecture_description"]).default("qa_message").notNull(),
+  /** Source record ID */
+  sourceId: int("sourceId").notNull(),
+  /** Source language (ISO 639-1) */
+  sourceLang: varchar("sourceLang", { length: 10 }).default("ko").notNull(),
+  /** Target language (ISO 639-1) */
+  targetLang: varchar("targetLang", { length: 10 }).notNull(),
+  /** Original text */
+  originalText: text("originalText").notNull(),
+  /** Translated text */
+  translatedText: text("translatedText").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Translation = typeof translations.$inferSelect;
+export type InsertTranslation = typeof translations.$inferInsert;

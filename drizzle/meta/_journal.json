@@ -15,6 +15,13 @@
       "when": 1774602467625,
       "tag": "0001_lush_meteorite",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774604857017,
+      "tag": "0002_sleepy_lake",
+      "breakpoints": true
     }
   ]
 }

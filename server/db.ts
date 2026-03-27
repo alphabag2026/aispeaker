@@ -8,6 +8,9 @@ import {
   lectureEnrollments, InsertLectureEnrollment,
   qaMessages, InsertQaMessage,
   whiteboardSnapshots,
+  vodRecordings, InsertVodRecording,
+  vodTimelineEvents, InsertVodTimelineEvent,
+  translations, InsertTranslation,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -86,10 +89,16 @@ export async function updateUserPlatformRole(userId: number, platformRole: "inst
   await db.update(users).set({ platformRole }).where(eq(users.id, userId));
 }
 
-export async function updateUserProfile(userId: number, data: { name?: string; bio?: string; avatarUrl?: string }) {
+export async function updateUserProfile(userId: number, data: { name?: string; bio?: string; avatarUrl?: string; preferredLang?: string }) {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set(data).where(eq(users.id, userId));
+}
+
+export async function updateUserPreferredLang(userId: number, lang: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ preferredLang: lang }).where(eq(users.id, userId));
 }
 
 // ============ Voice Profile helpers ============
@@ -261,6 +270,12 @@ export async function createQaMessage(data: InsertQaMessage) {
   return result[0].insertId;
 }
 
+export async function updateQaMessageAvatar(id: number, avatarVideoUrl: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(qaMessages).set({ avatarVideoUrl }).where(eq(qaMessages.id, id));
+}
+
 // ============ Whiteboard helpers ============
 
 export async function saveWhiteboardSnapshot(lectureId: number, snapshotData: string) {
@@ -279,13 +294,20 @@ export async function getLatestWhiteboardSnapshot(lectureId: number) {
   return result[0];
 }
 
+export async function getWhiteboardSnapshots(lectureId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(whiteboardSnapshots)
+    .where(eq(whiteboardSnapshots.lectureId, lectureId))
+    .orderBy(whiteboardSnapshots.createdAt);
+}
+
 // ============ Stats helpers ============
 
 export async function getLectureStats(instructorId: number) {
   const db = await getDb();
-  if (!db) return { totalLectures: 0, totalStudents: 0, liveLectures: 0 };
+  if (!db) return { totalLectures: 0, totalStudents: 0, liveLectures: 0, totalVods: 0 };
   const lectureList = await db.select().from(lectures).where(eq(lectures.instructorId, instructorId));
-  const lectureIds = lectureList.map(l => l.id);
   let totalStudents = 0;
   let liveLectures = 0;
   for (const l of lectureList) {
@@ -293,5 +315,120 @@ export async function getLectureStats(instructorId: number) {
     const enrollments = await db.select().from(lectureEnrollments).where(eq(lectureEnrollments.lectureId, l.id));
     totalStudents += enrollments.length;
   }
-  return { totalLectures: lectureList.length, totalStudents, liveLectures };
+  const vods = await db.select().from(vodRecordings)
+    .innerJoin(lectures, eq(vodRecordings.lectureId, lectures.id))
+    .where(eq(lectures.instructorId, instructorId));
+  return { totalLectures: lectureList.length, totalStudents, liveLectures, totalVods: vods.length };
+}
+
+// ============ VOD Recording helpers ============
+
+export async function createVodRecording(data: InsertVodRecording) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(vodRecordings).values(data);
+  return result[0].insertId;
+}
+
+export async function getVodRecordings(filters?: { lectureId?: number; status?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (filters?.lectureId) conditions.push(eq(vodRecordings.lectureId, filters.lectureId));
+  if (filters?.status) conditions.push(eq(vodRecordings.status, filters.status as any));
+
+  const query = conditions.length > 0
+    ? db.select({ vod: vodRecordings, lecture: lectures })
+      .from(vodRecordings)
+      .innerJoin(lectures, eq(vodRecordings.lectureId, lectures.id))
+      .where(and(...conditions))
+      .orderBy(desc(vodRecordings.createdAt))
+    : db.select({ vod: vodRecordings, lecture: lectures })
+      .from(vodRecordings)
+      .innerJoin(lectures, eq(vodRecordings.lectureId, lectures.id))
+      .orderBy(desc(vodRecordings.createdAt));
+  return query;
+}
+
+export async function getVodById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select({ vod: vodRecordings, lecture: lectures })
+    .from(vodRecordings)
+    .innerJoin(lectures, eq(vodRecordings.lectureId, lectures.id))
+    .where(eq(vodRecordings.id, id))
+    .limit(1);
+  return result[0];
+}
+
+export async function updateVodRecording(id: number, data: Partial<InsertVodRecording>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(vodRecordings).set(data).where(eq(vodRecordings.id, id));
+}
+
+export async function incrementVodViewCount(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(vodRecordings).set({ viewCount: sql`${vodRecordings.viewCount} + 1` }).where(eq(vodRecordings.id, id));
+}
+
+export async function deleteVodRecording(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(vodTimelineEvents).where(eq(vodTimelineEvents.vodId, id));
+  await db.delete(vodRecordings).where(eq(vodRecordings.id, id));
+}
+
+// ============ VOD Timeline Event helpers ============
+
+export async function createVodTimelineEvent(data: InsertVodTimelineEvent) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(vodTimelineEvents).values(data);
+  return result[0].insertId;
+}
+
+export async function getVodTimelineEvents(vodId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    event: vodTimelineEvents,
+    user: { id: users.id, name: users.name },
+  }).from(vodTimelineEvents)
+    .leftJoin(users, eq(vodTimelineEvents.userId, users.id))
+    .where(eq(vodTimelineEvents.vodId, vodId))
+    .orderBy(vodTimelineEvents.offsetSeconds);
+}
+
+// ============ Translation helpers ============
+
+export async function getTranslation(sourceType: string, sourceId: number, targetLang: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(translations)
+    .where(and(
+      eq(translations.sourceType, sourceType as any),
+      eq(translations.sourceId, sourceId),
+      eq(translations.targetLang, targetLang),
+    ))
+    .limit(1);
+  return result[0];
+}
+
+export async function createTranslation(data: InsertTranslation) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(translations).values(data);
+  return result[0].insertId;
+}
+
+export async function getTranslationsForSource(sourceType: string, sourceId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(translations)
+    .where(and(
+      eq(translations.sourceType, sourceType as any),
+      eq(translations.sourceId, sourceId),
+    ));
 }

@@ -20,6 +20,7 @@ import {
   User,
   Menu,
   X,
+  Video,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -33,6 +34,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "홈", icon: Home },
     { href: "/lectures", label: "강의 목록", icon: BookOpen },
+    { href: "/vod", label: "VOD", icon: Video },
     ...(isAuthenticated ? [{ href: "/my-lectures", label: "내 수강", icon: GraduationCap }] : []),
     ...(isInstructor ? [{ href: "/instructor", label: "강사 대시보드", icon: Monitor }] : []),
   ];

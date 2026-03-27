@@ -3,7 +3,7 @@ import { getLoginUrl } from "@/const";
 import Navbar from "@/components/Navbar";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useParams } from "wouter";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Streamdown } from "streamdown";
+import { toast } from "sonner";
 import {
   BookOpen,
   ChevronLeft,
@@ -25,13 +26,37 @@ import {
   StopCircle,
   Eraser,
   PenTool,
-  Square,
-  Circle,
-  Type,
   Undo2,
-  Download,
   MessageSquare,
+  Globe,
+  Video,
+  User,
+  Bot,
+  Save,
 } from "lucide-react";
+
+const LANGUAGES = [
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "ja", name: "日本語", flag: "🇯🇵" },
+  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "es", name: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" },
+  { code: "pt", name: "Português", flag: "🇧🇷" },
+  { code: "ru", name: "Русский", flag: "🇷🇺" },
+  { code: "ar", name: "العربية", flag: "🇸🇦" },
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
+  { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "th", name: "ไทย", flag: "🇹🇭" },
+  { code: "id", name: "Bahasa Indonesia", flag: "🇮🇩" },
+  { code: "tr", name: "Türkçe", flag: "🇹🇷" },
+  { code: "pl", name: "Polski", flag: "🇵🇱" },
+  { code: "nl", name: "Nederlands", flag: "🇳🇱" },
+  { code: "it", name: "Italiano", flag: "🇮🇹" },
+  { code: "sv", name: "Svenska", flag: "🇸🇪" },
+  { code: "uk", name: "Українська", flag: "🇺🇦" },
+];
 
 export default function LectureRoom() {
   const params = useParams<{ id: string }>();
@@ -43,13 +68,20 @@ export default function LectureRoom() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isGeneratingTTS, setIsGeneratingTTS] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawTool, setDrawTool] = useState<"pen" | "eraser">("pen");
   const [drawColor, setDrawColor] = useState("#3b82f6");
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Translation state
+  const [selectedLang, setSelectedLang] = useState("ko");
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  const [translatedMessages, setTranslatedMessages] = useState<Record<number, string>>({});
+
+  // Avatar state
+  const [avatarSpeaking, setAvatarSpeaking] = useState(false);
 
   const { data: lecture } = trpc.lecture.getById.useQuery({ id: lectureId });
   const { data: materials } = trpc.material.list.useQuery({ lectureId });
@@ -60,9 +92,7 @@ export default function LectureRoom() {
   );
 
   const enrollMutation = trpc.enrollment.enroll.useMutation({
-    onSuccess: () => {
-      window.location.reload();
-    },
+    onSuccess: () => window.location.reload(),
   });
 
   const askMutation = trpc.qa.ask.useMutation({
@@ -73,6 +103,13 @@ export default function LectureRoom() {
   });
 
   const ttsMutation = trpc.tts.generate.useMutation();
+  const translateMutation = trpc.translation.translate.useMutation();
+  const createVodMutation = trpc.vod.createFromLecture.useMutation({
+    onSuccess: (data) => {
+      toast.success(`VOD가 생성되었습니다! (ID: ${data.vodId})`);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -154,20 +191,9 @@ export default function LectureRoom() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (e) => {
-        audioChunksRef.current.push(e.data);
-      };
-
-      mediaRecorder.onstop = async () => {
+      mediaRecorder.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-
-        // Use Web Speech API for STT as a fallback
-        if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-          // Already handled via SpeechRecognition below
-        }
       };
 
       // Use Web Speech API for real-time STT
@@ -175,7 +201,7 @@ export default function LectureRoom() {
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         const recognition = new SpeechRecognition();
-        recognition.lang = "ko-KR";
+        recognition.lang = selectedLang === "ko" ? "ko-KR" : selectedLang === "en" ? "en-US" : selectedLang === "ja" ? "ja-JP" : "ko-KR";
         recognition.continuous = false;
         recognition.interimResults = false;
 
@@ -184,14 +210,8 @@ export default function LectureRoom() {
           setQuestion(transcript);
         };
 
-        recognition.onerror = () => {
-          setIsRecording(false);
-        };
-
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
-
+        recognition.onerror = () => setIsRecording(false);
+        recognition.onend = () => setIsRecording(false);
         recognition.start();
       }
 
@@ -199,11 +219,13 @@ export default function LectureRoom() {
       setIsRecording(true);
     } catch (err) {
       console.error("Microphone access denied:", err);
+      toast.error("마이크 접근이 거부되었습니다.");
     }
   };
 
   const handlePlayTTS = async (text: string) => {
     setIsGeneratingTTS(true);
+    setAvatarSpeaking(true);
     try {
       const result = await ttsMutation.mutateAsync({
         text,
@@ -211,14 +233,39 @@ export default function LectureRoom() {
       });
       if (result.audioUrl) {
         const audio = new Audio(result.audioUrl);
+        audio.onended = () => setAvatarSpeaking(false);
         audio.play();
+      } else {
+        setAvatarSpeaking(false);
       }
     } catch (err) {
       console.error("TTS error:", err);
+      setAvatarSpeaking(false);
     } finally {
       setIsGeneratingTTS(false);
     }
   };
+
+  const handleTranslateMessage = async (messageId: number, content: string) => {
+    if (translatedMessages[messageId] || selectedLang === "ko") return;
+    try {
+      const result = await translateMutation.mutateAsync({
+        text: content,
+        targetLang: selectedLang,
+        sourceLang: "ko",
+        sourceType: "qa_message",
+        sourceId: messageId,
+      });
+      setTranslatedMessages((prev) => ({
+        ...prev,
+        [messageId]: result.translatedText,
+      }));
+    } catch {
+      // ignore
+    }
+  };
+
+  const isAvatarMode = lecture?.aiMode === "avatar";
 
   if (!lecture) {
     return (
@@ -254,7 +301,7 @@ export default function LectureRoom() {
 
       {/* Lecture Header */}
       <div className="border-b border-border bg-card/50">
-        <div className="container py-4 flex items-center justify-between">
+        <div className="container py-3 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold">{lecture.title}</h1>
             <div className="flex items-center gap-2 mt-1">
@@ -271,20 +318,85 @@ export default function LectureRoom() {
               >
                 {lecture.status === "live" ? "LIVE" : lecture.status}
               </Badge>
+              <Badge variant="outline" className="text-xs gap-1">
+                {lecture.aiMode === "avatar" ? (
+                  <><User className="h-3 w-3" /> 아바타</>
+                ) : lecture.aiMode === "voice" ? (
+                  <><Volume2 className="h-3 w-3" /> 음성</>
+                ) : (
+                  <><MessageSquare className="h-3 w-3" /> 텍스트</>
+                )}
+              </Badge>
             </div>
           </div>
-          {!isEnrolled && (
-            <Button
-              onClick={() => enrollMutation.mutate({ lectureId })}
-              disabled={enrollMutation.isPending}
-            >
-              {enrollMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "수강 신청"
+          <div className="flex items-center gap-2">
+            {/* Language selector */}
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setShowLangPicker(!showLangPicker)}
+              >
+                <Globe className="h-3.5 w-3.5" />
+                {LANGUAGES.find((l) => l.code === selectedLang)?.flag}
+              </Button>
+              {showLangPicker && (
+                <div className="absolute right-0 top-full mt-2 z-50 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-2 w-64 max-h-80 overflow-y-auto">
+                  <div className="grid grid-cols-2 gap-1">
+                    {LANGUAGES.map((lang) => (
+                      <button
+                        key={lang.code}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${
+                          selectedLang === lang.code ? "bg-accent text-accent-foreground" : ""
+                        }`}
+                        onClick={() => {
+                          setSelectedLang(lang.code);
+                          setShowLangPicker(false);
+                          setTranslatedMessages({});
+                        }}
+                      >
+                        <span className="text-base">{lang.flag}</span>
+                        <span className="truncate">{lang.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
-            </Button>
-          )}
+            </div>
+
+            {/* Save as VOD button (instructor only) */}
+            {(user?.platformRole === "instructor" || user?.role === "admin") && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => createVodMutation.mutate({ lectureId })}
+                disabled={createVodMutation.isPending}
+              >
+                {createVodMutation.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
+                VOD 저장
+              </Button>
+            )}
+
+            {!isEnrolled && (
+              <Button
+                size="sm"
+                onClick={() => enrollMutation.mutate({ lectureId })}
+                disabled={enrollMutation.isPending}
+              >
+                {enrollMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  "수강 신청"
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -292,6 +404,39 @@ export default function LectureRoom() {
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Left: Content Area */}
         <div className="flex-1 flex flex-col">
+          {/* Avatar Panel (shown in avatar mode) */}
+          {isAvatarMode && (
+            <div className="border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 p-4">
+              <div className="flex items-center gap-4">
+                <div className={`relative h-20 w-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ${avatarSpeaking ? "ring-4 ring-primary/50 ring-offset-2 ring-offset-background" : ""} transition-all`}>
+                  <Bot className="h-10 w-10 text-white" />
+                  {avatarSpeaking && (
+                    <div className="absolute -bottom-1 -right-1">
+                      <div className="flex gap-0.5">
+                        <div className="w-1.5 h-3 bg-primary rounded-full animate-pulse" />
+                        <div className="w-1.5 h-4 bg-primary rounded-full animate-pulse delay-75" />
+                        <div className="w-1.5 h-2 bg-primary rounded-full animate-pulse delay-150" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold flex items-center gap-2">
+                    AI 강사 아바타
+                    {avatarSpeaking && (
+                      <Badge className="bg-green-500/20 text-green-400 border-0 text-xs animate-pulse">
+                        말하는 중...
+                      </Badge>
+                    )}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {lecture.title} - AI가 실시간으로 답변합니다
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <div className="border-b border-border px-4">
               <TabsList className="bg-transparent">
@@ -309,7 +454,6 @@ export default function LectureRoom() {
             <TabsContent value="slides" className="flex-1 m-0 p-4">
               {materials && materials.length > 0 ? (
                 <div className="h-full flex flex-col">
-                  {/* Slide Viewer */}
                   <div className="flex-1 bg-muted rounded-lg flex items-center justify-center relative overflow-hidden min-h-[400px]">
                     {materials[currentSlide]?.fileUrl ? (
                       materials[currentSlide].fileType === "image" ? (
@@ -333,8 +477,6 @@ export default function LectureRoom() {
                       </div>
                     )}
                   </div>
-
-                  {/* Slide Controls */}
                   <div className="flex items-center justify-center gap-4 mt-4">
                     <Button
                       variant="outline"
@@ -371,7 +513,6 @@ export default function LectureRoom() {
             </TabsContent>
 
             <TabsContent value="whiteboard" className="flex-1 m-0 flex flex-col">
-              {/* Whiteboard Toolbar */}
               <div className="flex items-center gap-2 p-3 border-b border-border">
                 <Button
                   variant={drawTool === "pen" ? "default" : "outline"}
@@ -406,8 +547,6 @@ export default function LectureRoom() {
                   <Undo2 className="h-4 w-4" />
                 </Button>
               </div>
-
-              {/* Canvas */}
               <div className="flex-1 relative">
                 <canvas
                   ref={canvasRef}
@@ -431,6 +570,11 @@ export default function LectureRoom() {
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
               텍스트 또는 음성으로 질문하세요
+              {selectedLang !== "ko" && (
+                <span className="ml-1">
+                  · {LANGUAGES.find((l) => l.code === selectedLang)?.flag} 번역 활성화
+                </span>
+              )}
             </p>
           </div>
 
@@ -449,7 +593,7 @@ export default function LectureRoom() {
                       <span className="text-xs text-muted-foreground">
                         {msg.message.messageType === "question"
                           ? msg.user?.name || "수강생"
-                          : "AI 강사"}
+                          : isAvatarMode ? "AI 아바타" : "AI 강사"}
                       </span>
                       {msg.message.inputMethod === "voice" && (
                         <Mic className="h-3 w-3 text-muted-foreground" />
@@ -470,21 +614,54 @@ export default function LectureRoom() {
                         <p className="text-sm">{msg.message.content}</p>
                       )}
                     </div>
+
+                    {/* Answer actions: TTS + Translation */}
                     {msg.message.messageType === "answer" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-1 text-xs gap-1"
-                        onClick={() => handlePlayTTS(msg.message.content)}
-                        disabled={isGeneratingTTS}
-                      >
-                        {isGeneratingTTS ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <Volume2 className="h-3 w-3" />
+                      <div className="flex items-center gap-1 mt-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs gap-1 h-7"
+                          onClick={() => handlePlayTTS(msg.message.content)}
+                          disabled={isGeneratingTTS}
+                        >
+                          {isGeneratingTTS ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Volume2 className="h-3 w-3" />
+                          )}
+                          음성
+                        </Button>
+                        {selectedLang !== "ko" && (
+                          <>
+                            {translatedMessages[msg.message.id] ? (
+                              <div className="ml-2 p-2 rounded bg-accent/20 text-xs max-w-[85%]">
+                                <span className="text-muted-foreground">
+                                  {LANGUAGES.find((l) => l.code === selectedLang)?.flag}{" "}
+                                </span>
+                                <Streamdown>{translatedMessages[msg.message.id]}</Streamdown>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs gap-1 h-7"
+                                onClick={() =>
+                                  handleTranslateMessage(msg.message.id, msg.message.content)
+                                }
+                                disabled={translateMutation.isPending}
+                              >
+                                {translateMutation.isPending ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Globe className="h-3 w-3" />
+                                )}
+                                번역
+                              </Button>
+                            )}
+                          </>
                         )}
-                        음성으로 듣기
-                      </Button>
+                      </div>
                     )}
                   </div>
                 ))
