@@ -28,13 +28,26 @@ export default function Certificates() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
-      <div className="container max-w-4xl py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Award className="h-6 w-6 text-primary" /> 내 수료증
-          </h1>
-          <p className="text-muted-foreground mt-1">완료한 강의의 수료증을 확인하고 다운로드하세요</p>
+
+      {/* Hero Banner */}
+      <div className="relative h-44 md:h-52 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-certificates-T9TgM2dLxDnDqVRu6aaZZA.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-2">
+              <Award className="h-8 w-8" /> 내 수료증
+            </h1>
+            <p className="text-white/70 text-lg mt-2">완료한 강의의 수료증을 확인하고 다운로드하세요</p>
+          </div>
         </div>
+      </div>
+
+      <div className="container max-w-4xl py-8">
 
         {isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>

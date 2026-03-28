@@ -98,21 +98,34 @@ export default function BroadcastManager() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container py-8 max-w-6xl mx-auto px-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/instructor")}>
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold flex items-center gap-3">
-                <Tv className="w-8 h-8 text-red-500" />
-                라이브 방송 관리
-              </h1>
-              <p className="text-muted-foreground mt-1">AI 강사가 슬라이드를 보여주며 실시간 강의를 진행합니다</p>
+
+      {/* Hero Banner */}
+      <div className="relative h-48 md:h-56 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-broadcast-VqgzPLgr6PKLpmSfakoS73.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center gap-3 mb-3">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => navigate("/instructor")}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
             </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+              <Tv className="w-8 h-8" />
+              라이브 방송 관리
+            </h1>
+            <p className="text-white/70 text-lg mt-2">AI 강사가 슬라이드를 보여주며 실시간 강의를 진행합니다</p>
           </div>
+        </div>
+      </div>
+
+      <div className="container py-8 max-w-6xl mx-auto px-4">
+        {/* Header Actions */}
+        <div className="flex items-center justify-end mb-8">
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
               <Button className="gap-2">

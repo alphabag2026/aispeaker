@@ -157,14 +157,26 @@ export default function InstructorVoiceMod() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container max-w-5xl py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Link href="/instructor"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2"><Volume2 className="h-6 w-6 text-primary" /> 음성 변조 관리</h1>
-            <p className="text-muted-foreground">목소리 톤, 말투, 속도를 변환하여 완전히 다른 사람처럼 강의합니다</p>
+      {/* Hero Banner */}
+      <div className="relative h-44 md:h-52 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-studio-HS5V7dEHhBG4GbPuHinSnZ.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center gap-3 mb-2">
+              <Link href="/instructor"><Button variant="ghost" size="icon" className="text-white hover:bg-white/20"><ArrowLeft className="h-5 w-5" /></Button></Link>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2"><Volume2 className="h-6 w-6" /> 음성 변조 관리</h1>
+            <p className="text-white/70 mt-1">목소리 톤, 말투, 속도를 변환하여 완전히 다른 사람처럼 강의합니다</p>
           </div>
         </div>
+      </div>
+
+      <div className="container max-w-5xl py-8">
 
         <Card className="mb-6 border-primary/20 bg-primary/5">
           <CardContent className="py-4">

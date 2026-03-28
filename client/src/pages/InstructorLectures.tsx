@@ -61,26 +61,40 @@ export default function InstructorLectures() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/instructor">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold">강의 관리</h1>
-              <p className="text-muted-foreground text-sm">강의를 생성하고 관리하세요</p>
+      {/* Hero Banner */}
+      <div className="relative h-44 md:h-52 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-instructor-5bFzgmsZjjbs7sd8CyMpsR.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Link href="/instructor">
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-white">강의 관리</h1>
+                  <p className="text-white/70">강의를 생성하고 관리하세요</p>
+                </div>
+              </div>
+              <Link href="/instructor/lectures/new">
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  새 강의
+                </Button>
+              </Link>
             </div>
           </div>
-          <Link href="/instructor/lectures/new">
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              새 강의
-            </Button>
-          </Link>
         </div>
+      </div>
+
+      <div className="container py-8">
 
         {lectures && lectures.length > 0 ? (
           <div className="space-y-3">

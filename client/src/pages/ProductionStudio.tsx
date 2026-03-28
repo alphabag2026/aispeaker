@@ -205,21 +205,29 @@ export default function ProductionStudio() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
-        <div className="container py-6">
-          <div className="flex items-center gap-3 mb-2">
-            <Link href="/instructor">
-              <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> 대시보드</Button>
-            </Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-violet-500/20 to-purple-500/20 rounded-xl">
-              <Sparkles className="w-8 h-8 text-violet-400" />
+      {/* Hero Banner */}
+      <div className="relative h-48 md:h-56 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-studio-HS5V7dEHhBG4GbPuHinSnZ.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center gap-3 mb-3">
+              <Link href="/instructor">
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20"><ArrowLeft className="w-4 h-4 mr-1" /> 대시보드</Button>
+              </Link>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">원클릭 강의 제작 스튜디오</h1>
-              <p className="text-muted-foreground mt-1">프롬프트 입력 → AI 스크립트 생성 → TTS 음성 → 강의 영상 자동 제작</p>
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-white">원클릭 강의 제작 스튜디오</h1>
+                <p className="text-white/70 mt-1">프롬프트 입력 → AI 스크립트 생성 → TTS 음성 → 강의 영상 자동 제작</p>
+              </div>
             </div>
           </div>
         </div>

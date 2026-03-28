@@ -187,48 +187,87 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="container py-16 md:py-20">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">작동 방식</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            3단계로 AI 강의를 생성하고 외부 플랫폼에서 송출합니다
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="bg-card border-border text-center">
-            <CardContent className="p-8">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-primary">1</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">AI 강사 설정</h3>
-              <p className="text-muted-foreground text-sm">
-                딥페이크 얼굴, 음성 변조, 말투 스타일을 설정하여 원하는 AI 강사 페르소나를 만듭니다
+      {/* How it works - with visual images */}
+      <section className="py-16 md:py-24">
+        <div className="container">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">작동 방식</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              3단계로 AI 강의를 생성하고 외부 플랫폼에서 송출합니다
+            </p>
+          </div>
+
+          {/* Step 1 - Left image, Right text */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-20">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border">
+              <img
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-studio-HS5V7dEHhBG4GbPuHinSnZ.webp"
+                alt="AI 콘텐츠 제작 스튜디오"
+                className="w-full h-auto"
+              />
+              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">Step 1</div>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-2xl md:text-3xl font-bold">AI 강사 설정</h3>
+              <p className="text-muted-foreground text-lg leading-relaxed">
+                딥페이크 얼굴 변환, 음성 변조, 말투 스타일을 설정하여 원하는 AI 강사 페르소나를 만듭니다.
+                실제 사람과 구분할 수 없는 자연스러운 강의를 제공합니다.
               </p>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border text-center">
-            <CardContent className="p-8">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-primary">2</span>
+              <div className="flex flex-wrap gap-3">
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">딥페이크 얼굴</span>
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">음성 클론</span>
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">말투 변환</span>
               </div>
-              <h3 className="text-lg font-semibold mb-2">강의 콘텐츠 생성</h3>
-              <p className="text-muted-foreground text-sm">
-                프롬프트 또는 교안을 입력하면 AI가 자동으로 강의 콘텐츠와 PPT를 생성합니다
+            </div>
+          </div>
+
+          {/* Step 2 - Right image, Left text */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-20">
+            <div className="space-y-4 order-2 lg:order-1">
+              <h3 className="text-2xl md:text-3xl font-bold">강의 콘텐츠 생성</h3>
+              <p className="text-muted-foreground text-lg leading-relaxed">
+                프롬프트 또는 교안을 입력하면 AI가 자동으로 강의 스크립트, PPT 슬라이드,
+                TTS 오디오를 생성합니다. 템플릿으로 빠르게 제작할 수도 있습니다.
               </p>
-            </CardContent>
-          </Card>
-          <Card className="bg-card border-border text-center">
-            <CardContent className="p-8">
-              <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl font-bold text-primary">3</span>
+              <div className="flex flex-wrap gap-3">
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">AI 스크립트</span>
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">자동 PPT</span>
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">TTS 음성</span>
               </div>
-              <h3 className="text-lg font-semibold mb-2">외부 플랫폼 송출</h3>
-              <p className="text-muted-foreground text-sm">
-                Zoom, Google Meet, Webex 등에서 AI 강사가 실시간으로 강의를 진행합니다
+            </div>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border order-1 lg:order-2">
+              <img
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-script-R59hKy4f2UyZt7RXjFfw6Y.webp"
+                alt="AI 스크립트 에디터"
+                className="w-full h-auto"
+              />
+              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">Step 2</div>
+            </div>
+          </div>
+
+          {/* Step 3 - Left image, Right text */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border">
+              <img
+                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-broadcast-VqgzPLgr6PKLpmSfakoS73.webp"
+                alt="라이브 방송 스튜디오"
+                className="w-full h-auto"
+              />
+              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">Step 3</div>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-2xl md:text-3xl font-bold">외부 플랫폼 송출 & 라이브 방송</h3>
+              <p className="text-muted-foreground text-lg leading-relaxed">
+                Zoom, Google Meet, Webex 등에서 AI 강사가 실시간으로 강의를 진행합니다.
+                라이브 방송으로 다수의 수강생에게 동시 송출할 수 있습니다.
               </p>
-            </CardContent>
-          </Card>
+              <div className="flex flex-wrap gap-3">
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">라이브 방송</span>
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">실시간 채팅</span>
+                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">다중 플랫폼</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -290,25 +329,31 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="container py-16 md:py-24">
-        <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
-          <CardContent className="p-8 md:p-12 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              AI 강사로 변신하세요
-            </h2>
-            <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-              얼굴과 목소리를 AI로 변환하고, Zoom에서 바로 강의를 시작하세요.
-              프롬프트 하나로 전문적인 강의 콘텐츠가 자동 생성됩니다.
-            </p>
-            <Link href={isAuthenticated ? "/instructor" : "/lectures"}>
-              <Button size="lg" className="gap-2">
-                시작하기
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      {/* CTA - with background image */}
+      <section className="relative py-24 md:py-32 overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-lectures-PTXLJUWi5wyEuuxqyK7CgL.webp"
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+        </div>
+        <div className="container relative z-10 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white">
+            AI 강사로 변신하세요
+          </h2>
+          <p className="text-white/70 mb-8 max-w-xl mx-auto text-lg">
+            얼굴과 목소리를 AI로 변환하고, Zoom에서 바로 강의를 시작하세요.
+            프롬프트 하나로 전문적인 강의 콘텐츠가 자동 생성됩니다.
+          </p>
+          <Link href={isAuthenticated ? "/instructor" : "/lectures"}>
+            <Button size="lg" className="gap-2">
+              시작하기
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </section>
 
       {/* Footer */}

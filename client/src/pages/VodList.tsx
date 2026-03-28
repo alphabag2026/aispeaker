@@ -37,17 +37,27 @@ export default function VodList() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Video className="h-8 w-8 text-primary" />
+      {/* Hero Banner */}
+      <div className="relative h-44 md:h-52 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-vod-5MBcp4MkvohcdHGwNvTLjT.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+              <Video className="h-8 w-8" />
               VOD 아카이브
             </h1>
-            <p className="text-muted-foreground mt-1">
-              지난 강의 녹화본을 다시 볼 수 있습니다
-            </p>
+            <p className="text-white/70 text-lg mt-2">지난 강의 녹화본을 다시 볼 수 있습니다</p>
           </div>
+        </div>
+      </div>
+
+      <div className="container py-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-end gap-4 mb-8">
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input

@@ -83,17 +83,23 @@ export default function PipelineDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/instructor")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">제작 히스토리 대시보드</h1>
-              <p className="text-sm text-muted-foreground">강의 영상 제작 통계 및 히스토리</p>
+      {/* Hero Banner */}
+      <div className="relative h-44 md:h-52 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-vod-5MBcp4MkvohcdHGwNvTLjT.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center gap-3 mb-2">
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => navigate("/instructor")}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
             </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">제작 히스토리 대시보드</h1>
+            <p className="text-white/70 mt-1">강의 영상 제작 통계 및 히스토리</p>
           </div>
         </div>
       </div>

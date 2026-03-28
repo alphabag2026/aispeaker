@@ -213,21 +213,31 @@ export default function InstructorVoiceProfiles() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Link href="/instructor">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold">음성 프로필 관리</h1>
-              <p className="text-muted-foreground text-sm">
-                AI가 사용할 음성과 강의 스타일을 설정하세요
-              </p>
+      {/* Hero Banner */}
+      <div className="relative h-44 md:h-52 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-studio-HS5V7dEHhBG4GbPuHinSnZ.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center gap-3 mb-2">
+              <Link href="/instructor">
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </Link>
             </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">음성 프로필 관리</h1>
+            <p className="text-white/70 mt-1">AI가 사용할 음성과 강의 스타일을 설정하세요</p>
           </div>
+        </div>
+      </div>
+
+      <div className="container py-8 max-w-4xl">
+        <div className="flex items-center justify-end mb-8">
 
           <Dialog open={dialogOpen} onOpenChange={(open) => {
             setDialogOpen(open);

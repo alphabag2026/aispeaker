@@ -139,22 +139,34 @@ export default function InstructorTemplates() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* Hero Banner */}
+      <div className="relative h-44 md:h-52 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-script-R59hKy4f2UyZt7RXjFfw6Y.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center gap-3 mb-2">
+              <Link href="/instructor">
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20"><ArrowLeft className="h-4 w-4" /></Button>
+              </Link>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+              <Brain className="h-6 w-6" />
+              AI 컨텍스트 템플릿
+            </h1>
+            <p className="text-white/70 mt-1">카테고리별 AI 강사 프롬프트 템플릿 관리</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Actions Bar */}
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/instructor">
-                <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-purple-400" />
-                  AI 컨텍스트 템플릿
-                </h1>
-                <p className="text-sm text-muted-foreground">카테고리별 AI 강사 프롬프트 템플릿 관리</p>
-              </div>
-            </div>
+          <div className="flex items-center justify-end">
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => seedMutation.mutate()} disabled={seedMutation.isPending}>
                 {seedMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}

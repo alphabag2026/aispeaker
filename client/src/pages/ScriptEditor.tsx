@@ -156,6 +156,21 @@ export default function ScriptEditor() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Hero Banner */}
+      <div className="relative h-32 md:h-40 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-script-R59hKy4f2UyZt7RXjFfw6Y.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <p className="text-white/70 text-sm">스크립트 에디터</p>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container py-4">

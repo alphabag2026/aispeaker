@@ -32,12 +32,23 @@ export default function MyEnrollments() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">내 수강 목록</h1>
-          <p className="text-muted-foreground">수강 신청한 강의를 확인하세요</p>
+      {/* Hero Banner */}
+      <div className="relative h-48 md:h-56 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-my-courses-2ZXexYSrAS9FTAXsurEWdN.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">내 수강 목록</h1>
+            <p className="text-white/70 text-lg">수강 신청한 강의를 확인하세요</p>
+          </div>
         </div>
+      </div>
 
+      <div className="container py-8">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (

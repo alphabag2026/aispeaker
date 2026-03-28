@@ -60,21 +60,29 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/">
-              <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                학습 대시보드
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                안녕하세요, {user?.name || "학습자"}님! 학습 현황을 확인하세요.
-              </p>
+      {/* Hero Banner */}
+      <div className="relative h-44 md:h-52 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-learning-progress-2fYgZ3w9ho5GQ9toRA33fm.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center gap-3">
+              <Link href="/">
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20"><ArrowLeft className="h-4 w-4" /></Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6" />
+                  학습 대시보드
+                </h1>
+                <p className="text-white/70">
+                  안녕하세요, {user?.name || "학습자"}님! 학습 현황을 확인하세요.
+                </p>
+              </div>
             </div>
           </div>
         </div>

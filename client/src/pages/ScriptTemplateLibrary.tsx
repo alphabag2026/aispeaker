@@ -272,32 +272,40 @@ export default function ScriptTemplateLibrary() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Header */}
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
-        <div className="container py-6">
-          <div className="flex items-center gap-3 mb-2">
-            <Link href="/studio">
-              <Button variant="ghost" size="sm"><ArrowLeft className="w-4 h-4 mr-1" /> 스튜디오</Button>
-            </Link>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-xl">
-                <BookTemplate className="w-8 h-8 text-amber-400" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">스크립트 템플릿 라이브러리</h1>
-                <p className="text-muted-foreground mt-1">자주 사용하는 강의 구조를 템플릿으로 저장하고 재사용하세요.</p>
-              </div>
+      {/* Hero Banner */}
+      <div className="relative h-48 md:h-56 overflow-hidden">
+        <img
+          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-script-R59hKy4f2UyZt7RXjFfw6Y.webp"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="container">
+            <div className="flex items-center gap-3 mb-3">
+              <Link href="/studio">
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20"><ArrowLeft className="w-4 h-4 mr-1" /> 스튜디오</Button>
+              </Link>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => seedBuiltIn.mutate()} disabled={seedBuiltIn.isPending}>
-                {seedBuiltIn.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                기본 템플릿 추가
-              </Button>
-              <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700">
-                <Plus className="w-4 h-4 mr-2" />새 템플릿
-              </Button>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl">
+                  <BookTemplate className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold text-white">스크립트 템플릿 라이브러리</h1>
+                  <p className="text-white/70 mt-1">자주 사용하는 강의 구조를 템플릿으로 저장하고 재사용하세요.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="border-white/30 text-white hover:bg-white/10" onClick={() => seedBuiltIn.mutate()} disabled={seedBuiltIn.isPending}>
+                  {seedBuiltIn.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+                  기본 템플릿 추가
+                </Button>
+                <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700">
+                  <Plus className="w-4 h-4 mr-2" />새 템플릿
+                </Button>
+              </div>
             </div>
           </div>
         </div>
