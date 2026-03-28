@@ -33,6 +33,9 @@ import {
   subscriptionPlans, InsertSubscriptionPlan,
   userSubscriptions, InsertUserSubscription,
   creditTransactions, InsertCreditTransaction,
+  payments, InsertPayment,
+  cryptoPayments, InsertCryptoPayment,
+  creditUsageLogs, InsertCreditUsageLog,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1236,4 +1239,147 @@ export async function deductCredits(userId: number, amount: number, description:
     resourceId,
   });
   return remaining;
+}
+
+// ========== Payments ==========
+
+export async function createPayment(data: InsertPayment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(payments).values(data).$returningId();
+  return result;
+}
+
+export async function getPaymentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(payments).where(eq(payments.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function getPaymentByExternalId(externalId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(payments).where(eq(payments.externalId, externalId)).limit(1);
+  return rows[0] || null;
+}
+
+export async function updatePaymentStatus(id: number, status: string, externalId?: string) {
+  const db = await getDb();
+  if (!db) return;
+  const updateData: Record<string, unknown> = { status };
+  if (externalId) updateData.externalId = externalId;
+  if (status === "completed") updateData.completedAt = new Date();
+  await db.update(payments).set(updateData).where(eq(payments.id, id));
+}
+
+export async function getUserPayments(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(payments).where(eq(payments.userId, userId)).orderBy(desc(payments.createdAt)).limit(limit);
+}
+
+export async function getAllPayments(limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(payments).orderBy(desc(payments.createdAt)).limit(limit);
+}
+
+export async function getPaymentStats() {
+  const db = await getDb();
+  if (!db) return { totalRevenue: 0, totalPayments: 0, completedPayments: 0 };
+  const allPayments = await db.select().from(payments).where(eq(payments.status, "completed"));
+  const totalRevenue = allPayments.reduce((sum, p) => sum + p.amountCents, 0);
+  return {
+    totalRevenue,
+    totalPayments: allPayments.length,
+    completedPayments: allPayments.length,
+  };
+}
+
+// ========== Crypto Payments ==========
+
+export async function createCryptoPayment(data: InsertCryptoPayment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(cryptoPayments).values(data).$returningId();
+  return result;
+}
+
+export async function getCryptoPaymentByPaymentId(paymentId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(cryptoPayments).where(eq(cryptoPayments.paymentId, paymentId)).limit(1);
+  return rows[0] || null;
+}
+
+export async function updateCryptoPayment(id: number, data: Partial<InsertCryptoPayment>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(cryptoPayments).set(data).where(eq(cryptoPayments.id, id));
+}
+
+// ========== Credit Usage Logs ==========
+
+export async function createCreditUsageLog(data: InsertCreditUsageLog) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(creditUsageLogs).values(data).$returningId();
+  return result;
+}
+
+export async function getUserCreditUsageLogs(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(creditUsageLogs).where(eq(creditUsageLogs.userId, userId)).orderBy(desc(creditUsageLogs.createdAt)).limit(limit);
+}
+
+export async function getCreditUsageStats() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(creditUsageLogs).orderBy(desc(creditUsageLogs.createdAt));
+}
+
+// ========== Revenue Dashboard Helpers ==========
+
+export async function getMonthlyRevenue() {
+  const db = await getDb();
+  if (!db) return [];
+  const completedPayments = await db.select().from(payments).where(eq(payments.status, "completed"));
+  // Group by month
+  const monthlyMap = new Map<string, number>();
+  for (const p of completedPayments) {
+    const month = p.createdAt.toISOString().slice(0, 7); // YYYY-MM
+    monthlyMap.set(month, (monthlyMap.get(month) || 0) + p.amountCents);
+  }
+  return Array.from(monthlyMap.entries()).map(([month, amount]) => ({ month, amountCents: amount })).sort((a, b) => a.month.localeCompare(b.month));
+}
+
+export async function getPlanDistribution() {
+  const db = await getDb();
+  if (!db) return [];
+  const subs = await db.select().from(userSubscriptions).where(eq(userSubscriptions.status, "active"));
+  const plans = await db.select().from(subscriptionPlans);
+  const planMap = new Map(plans.map(p => [p.id, p.name]));
+  const distribution = new Map<string, number>();
+  for (const sub of subs) {
+    const planName = planMap.get(sub.planId) || "Unknown";
+    distribution.set(planName, (distribution.get(planName) || 0) + 1);
+  }
+  return Array.from(distribution.entries()).map(([name, count]) => ({ name, count }));
+}
+
+export async function getCreditConsumptionTrend() {
+  const db = await getDb();
+  if (!db) return [];
+  const logs = await db.select().from(creditUsageLogs).orderBy(creditUsageLogs.createdAt);
+  const dailyMap = new Map<string, { total: number; byFeature: Record<string, number> }>();
+  for (const log of logs) {
+    const day = log.createdAt.toISOString().slice(0, 10);
+    if (!dailyMap.has(day)) dailyMap.set(day, { total: 0, byFeature: {} });
+    const entry = dailyMap.get(day)!;
+    entry.total += log.creditsUsed;
+    entry.byFeature[log.feature] = (entry.byFeature[log.feature] || 0) + log.creditsUsed;
+  }
+  return Array.from(dailyMap.entries()).map(([date, data]) => ({ date, ...data })).sort((a, b) => a.date.localeCompare(b.date));
 }

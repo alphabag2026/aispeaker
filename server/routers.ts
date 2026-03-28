@@ -2470,6 +2470,356 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .query(async ({ ctx, input }) => {
         return db.getUserCreditHistory(ctx.user.id, input?.limit ?? 50);
       }),
+    usageLogs: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.getUserCreditUsageLogs(ctx.user.id, input?.limit ?? 50);
+      }),
+    // Use credits for a feature
+    useCredits: protectedProcedure
+      .input(z.object({
+        feature: z.enum(["script_generation", "tts_conversion", "avatar_video", "deepfake_transform", "thumbnail_generation", "subtitle_generation", "voice_modulation", "live_broadcast"]),
+        resourceId: z.number().optional(),
+        metadata: z.any().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { CREDIT_COSTS } = await import("./stripe");
+        const cost = CREDIT_COSTS[input.feature];
+        const currentCredits = await db.getUserCredits(ctx.user.id);
+        if (currentCredits < cost) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: `크레딧이 부족합니다. 필요: ${cost}, 보유: ${currentCredits}`,
+          });
+        }
+        // Deduct credits from subscription
+        const sub = await db.getUserSubscription(ctx.user.id);
+        if (sub) {
+          await db.updateUserSubscription(sub.id, {
+            creditsRemaining: (sub.creditsRemaining || 0) - cost,
+          });
+        }
+        // Log usage
+        const balanceAfter = currentCredits - cost;
+        await db.createCreditUsageLog({
+          userId: ctx.user.id,
+          feature: input.feature,
+          creditsUsed: cost,
+          balanceBefore: currentCredits,
+          balanceAfter,
+          resourceId: input.resourceId,
+          metadata: input.metadata,
+        });
+        // Also record in credit transactions
+        await db.addCreditTransaction({
+          userId: ctx.user.id,
+          type: "usage",
+          amount: -cost,
+          balanceAfter,
+          description: `${input.feature} 사용`,
+          resourceType: input.feature,
+          resourceId: input.resourceId,
+        });
+        return { success: true, creditsUsed: cost, remaining: balanceAfter };
+      }),
+  }),
+
+  // ========== Payments (Stripe) ==========
+  payment: router({
+    // Create checkout session for subscription
+    createSubscriptionCheckout: protectedProcedure
+      .input(z.object({
+        planSlug: z.string(),
+        billingCycle: z.enum(["monthly", "yearly"]).default("monthly"),
+        origin: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getStripe, SUBSCRIPTION_PRODUCTS } = await import("./stripe");
+        const stripe = getStripe();
+        if (!stripe) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "결제 시스템이 설정되지 않았습니다." });
+        const product = SUBSCRIPTION_PRODUCTS[input.planSlug as keyof typeof SUBSCRIPTION_PRODUCTS];
+        if (!product) throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 플랜입니다." });
+        const priceCents = input.billingCycle === "yearly" ? product.priceYearly : product.priceMonthly;
+        // Create payment record
+        const paymentRecord = await db.createPayment({
+          userId: ctx.user.id,
+          paymentType: "subscription",
+          paymentMethod: "stripe",
+          amountCents: priceCents,
+          currency: "usd",
+          status: "pending",
+          description: `${product.name} 구독 (${input.billingCycle})`,
+          metadata: { planSlug: input.planSlug, billingCycle: input.billingCycle },
+        });
+        const session = await stripe.checkout.sessions.create({
+          mode: "payment",
+          payment_method_types: ["card"],
+          line_items: [{
+            price_data: {
+              currency: "usd",
+              product_data: { name: `Virtual Speaker ${product.name} (${input.billingCycle === "yearly" ? "연간" : "월간"})` },
+              unit_amount: priceCents,
+            },
+            quantity: 1,
+          }],
+          client_reference_id: ctx.user.id.toString(),
+          customer_email: ctx.user.email || undefined,
+          allow_promotion_codes: true,
+          metadata: {
+            user_id: ctx.user.id.toString(),
+            payment_id: paymentRecord.id.toString(),
+            plan_slug: input.planSlug,
+            billing_cycle: input.billingCycle,
+            type: "subscription",
+          },
+          success_url: `${input.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${input.origin}/pricing`,
+        });
+        await db.updatePaymentStatus(paymentRecord.id, "processing", session.id);
+        return { checkoutUrl: session.url };
+      }),
+
+    // Create checkout session for credit package
+    createCreditCheckout: protectedProcedure
+      .input(z.object({
+        packageId: z.string(),
+        origin: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getStripe, CREDIT_PACKAGES } = await import("./stripe");
+        const stripe = getStripe();
+        if (!stripe) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "결제 시스템이 설정되지 않았습니다." });
+        const pkg = CREDIT_PACKAGES.find(p => p.id === input.packageId);
+        if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 패키지입니다." });
+        const paymentRecord = await db.createPayment({
+          userId: ctx.user.id,
+          paymentType: "credit_package",
+          paymentMethod: "stripe",
+          amountCents: pkg.priceCents,
+          currency: "usd",
+          creditAmount: pkg.credits,
+          status: "pending",
+          description: `${pkg.name} 크레딧 패키지`,
+          metadata: { packageId: input.packageId, credits: pkg.credits },
+        });
+        const session = await stripe.checkout.sessions.create({
+          mode: "payment",
+          payment_method_types: ["card"],
+          line_items: [{
+            price_data: {
+              currency: "usd",
+              product_data: { name: `Virtual Speaker ${pkg.name}` },
+              unit_amount: pkg.priceCents,
+            },
+            quantity: 1,
+          }],
+          client_reference_id: ctx.user.id.toString(),
+          customer_email: ctx.user.email || undefined,
+          allow_promotion_codes: true,
+          metadata: {
+            user_id: ctx.user.id.toString(),
+            payment_id: paymentRecord.id.toString(),
+            package_id: input.packageId,
+            credits: pkg.credits.toString(),
+            type: "credit_package",
+          },
+          success_url: `${input.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${input.origin}/pricing`,
+        });
+        await db.updatePaymentStatus(paymentRecord.id, "processing", session.id);
+        return { checkoutUrl: session.url };
+      }),
+
+    // Get user's payment history
+    myPayments: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.getUserPayments(ctx.user.id, input?.limit ?? 50);
+      }),
+
+    // Verify payment success
+    verifySession: protectedProcedure
+      .input(z.object({ sessionId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const payment = await db.getPaymentByExternalId(input.sessionId);
+        if (!payment) return { status: "not_found" as const };
+        if (payment.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        return { status: payment.status, payment };
+      }),
+
+    // Admin: all payments
+    listAll: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return db.getAllPayments(200);
+    }),
+  }),
+
+  // ========== Crypto Payments ==========
+  crypto: router({
+    // Create crypto payment
+    createPayment: protectedProcedure
+      .input(z.object({
+        type: z.enum(["subscription", "credit_package"]),
+        planSlug: z.string().optional(),
+        billingCycle: z.enum(["monthly", "yearly"]).optional(),
+        packageId: z.string().optional(),
+        cryptoCurrency: z.enum(["USDT", "USDC", "ETH", "BTC"]),
+        network: z.enum(["ethereum", "bsc", "polygon", "tron", "bitcoin"]).default("ethereum"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { SUBSCRIPTION_PRODUCTS, CREDIT_PACKAGES } = await import("./stripe");
+        let amountCents = 0;
+        let creditAmount: number | undefined;
+        let description = "";
+        if (input.type === "subscription" && input.planSlug) {
+          const product = SUBSCRIPTION_PRODUCTS[input.planSlug as keyof typeof SUBSCRIPTION_PRODUCTS];
+          if (!product) throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 플랜" });
+          amountCents = input.billingCycle === "yearly" ? product.priceYearly : product.priceMonthly;
+          description = `${product.name} 구독 (${input.billingCycle || "monthly"}) - 암호화폐`;
+        } else if (input.type === "credit_package" && input.packageId) {
+          const pkg = CREDIT_PACKAGES.find(p => p.id === input.packageId);
+          if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 패키지" });
+          amountCents = pkg.priceCents;
+          creditAmount = pkg.credits;
+          description = `${pkg.name} 크레딧 패키지 - 암호화폐`;
+        } else {
+          throw new TRPCError({ code: "BAD_REQUEST" });
+        }
+        // Generate wallet address (in production, use HD wallet derivation per payment)
+        const walletAddresses: Record<string, Record<string, string>> = {
+          USDT: { ethereum: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", bsc: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", tron: "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9", polygon: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68" },
+          USDC: { ethereum: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", bsc: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", polygon: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68" },
+          ETH: { ethereum: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68" },
+          BTC: { bitcoin: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" },
+        };
+        const walletAddress = walletAddresses[input.cryptoCurrency]?.[input.network] || "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68";
+        // Calculate crypto amount (simplified - in production use real-time price feed)
+        const usdAmount = amountCents / 100;
+        let cryptoAmount = "0";
+        if (input.cryptoCurrency === "USDT" || input.cryptoCurrency === "USDC") {
+          cryptoAmount = usdAmount.toFixed(2);
+        } else if (input.cryptoCurrency === "ETH") {
+          cryptoAmount = (usdAmount / 2000).toFixed(6); // Approximate ETH price
+        } else if (input.cryptoCurrency === "BTC") {
+          cryptoAmount = (usdAmount / 87000).toFixed(8); // Approximate BTC price
+        }
+        // Create payment record
+        const paymentRecord = await db.createPayment({
+          userId: ctx.user.id,
+          paymentType: input.type,
+          paymentMethod: "crypto",
+          amountCents,
+          currency: input.cryptoCurrency.toLowerCase(),
+          creditAmount,
+          status: "pending",
+          description,
+          metadata: { planSlug: input.planSlug, billingCycle: input.billingCycle, packageId: input.packageId, cryptoCurrency: input.cryptoCurrency, network: input.network },
+        });
+        // Create crypto payment detail
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+        await db.createCryptoPayment({
+          paymentId: paymentRecord.id,
+          cryptoCurrency: input.cryptoCurrency,
+          network: input.network,
+          walletAddress,
+          cryptoAmount,
+          usdEquivalent: amountCents,
+          expiresAt,
+        });
+        return {
+          paymentId: paymentRecord.id,
+          walletAddress,
+          cryptoAmount,
+          cryptoCurrency: input.cryptoCurrency,
+          network: input.network,
+          usdAmount: (amountCents / 100).toFixed(2),
+          expiresAt: expiresAt.toISOString(),
+        };
+      }),
+
+    // Check crypto payment status
+    checkStatus: protectedProcedure
+      .input(z.object({ paymentId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const payment = await db.getPaymentById(input.paymentId);
+        if (!payment || payment.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const cryptoDetail = await db.getCryptoPaymentByPaymentId(input.paymentId);
+        return {
+          status: payment.status,
+          cryptoDetail,
+          isExpired: cryptoDetail ? new Date() > cryptoDetail.expiresAt : false,
+        };
+      }),
+
+    // Admin: confirm crypto payment manually
+    confirmPayment: protectedProcedure
+      .input(z.object({ paymentId: z.number(), txHash: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const payment = await db.getPaymentById(input.paymentId);
+        if (!payment) throw new TRPCError({ code: "NOT_FOUND" });
+        // Update payment status
+        await db.updatePaymentStatus(payment.id, "completed", input.txHash);
+        // Update crypto payment
+        const cryptoDetail = await db.getCryptoPaymentByPaymentId(payment.id);
+        if (cryptoDetail) {
+          await db.updateCryptoPayment(cryptoDetail.id, { txHash: input.txHash, confirmations: 3 });
+        }
+        // Fulfill: activate subscription or add credits
+        const metadata = payment.metadata as any;
+        if (payment.paymentType === "subscription" && metadata?.planSlug) {
+          const plans = await db.listSubscriptionPlans();
+          const plan = plans.find((p: any) => p.slug === metadata.planSlug);
+          if (plan) {
+            const periodEnd = new Date();
+            periodEnd.setMonth(periodEnd.getMonth() + (metadata.billingCycle === "yearly" ? 12 : 1));
+            await db.createUserSubscription({
+              userId: payment.userId,
+              planId: plan.id,
+              status: "active",
+              billingCycle: metadata.billingCycle || "monthly",
+              currentPeriodEnd: periodEnd,
+              creditsRemaining: plan.monthlyCredits,
+              externalPaymentId: input.txHash,
+            });
+          }
+        } else if (payment.paymentType === "credit_package" && payment.creditAmount) {
+          const sub = await db.getUserSubscription(payment.userId);
+          if (sub) {
+            await db.updateUserSubscription(sub.id, {
+              creditsRemaining: (sub.creditsRemaining || 0) + payment.creditAmount,
+            });
+          }
+          await db.addCreditTransaction({
+            userId: payment.userId,
+            type: "purchase",
+            amount: payment.creditAmount,
+            balanceAfter: (sub?.creditsRemaining || 0) + payment.creditAmount,
+            description: `크레딧 ${payment.creditAmount}개 구매 (암호화폐)`,
+          });
+        }
+        return { success: true };
+      }),
+  }),
+
+  // ========== Revenue Dashboard (Admin) ==========
+  revenue: router({
+    overview: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const [stats, monthlyRevenue, planDist, creditTrend] = await Promise.all([
+        db.getPaymentStats(),
+        db.getMonthlyRevenue(),
+        db.getPlanDistribution(),
+        db.getCreditConsumptionTrend(),
+      ]);
+      return { stats, monthlyRevenue, planDistribution: planDist, creditConsumptionTrend: creditTrend };
+    }),
+    payments: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getAllPayments(input?.limit ?? 100);
+      }),
   }),
 });
 

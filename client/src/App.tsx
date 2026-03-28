@@ -32,6 +32,9 @@ import VoiceGallery from "./pages/VoiceGallery";
 import Pricing from "./pages/Pricing";
 import MySubscription from "./pages/MySubscription";
 import AdminDashboard from "./pages/AdminDashboard";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PaymentHistory from "./pages/PaymentHistory";
+import AdminRevenue from "./pages/AdminRevenue";
 
 function Router() {
   return (
@@ -65,6 +68,9 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/my-subscription" component={MySubscription} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/revenue" component={AdminRevenue} />
+      <Route path="/payment/success" component={PaymentSuccess} />
+      <Route path="/payments" component={PaymentHistory} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

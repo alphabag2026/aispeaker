@@ -884,3 +884,101 @@ export const creditTransactions = mysqlTable("creditTransactions", {
 
 export type CreditTransaction = typeof creditTransactions.$inferSelect;
 export type InsertCreditTransaction = typeof creditTransactions.$inferInsert;
+
+/**
+ * Payments - unified payment records for all payment methods
+ */
+export const payments = mysqlTable("payments", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Payment type: subscription, credit_package, one_time */
+  paymentType: mysqlEnum("paymentType", ["subscription", "credit_package", "one_time"]).notNull(),
+  /** Payment method: stripe, crypto */
+  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "crypto"]).notNull(),
+  /** Amount in USD cents (e.g., 9900 = $99.00) */
+  amountCents: int("amountCents").notNull(),
+  /** Currency: usd, usdt, usdc, eth, btc */
+  currency: varchar("currency", { length: 10 }).default("usd").notNull(),
+  /** Status: pending, processing, completed, failed, refunded, expired */
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed", "refunded", "expired"]).default("pending").notNull(),
+  /** Stripe payment intent ID or crypto tx hash */
+  externalId: varchar("externalId", { length: 512 }),
+  /** Related plan ID (for subscription payments) */
+  planId: int("planId"),
+  /** Related credit package info */
+  creditAmount: int("creditAmount"),
+  /** Description */
+  description: text("description"),
+  /** Metadata JSON (billing cycle, plan slug, etc.) */
+  metadata: json("metadata"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;
+
+/**
+ * Crypto Payments - detailed crypto payment tracking
+ */
+export const cryptoPayments = mysqlTable("cryptoPayments", {
+  id: int("id").autoincrement().primaryKey(),
+  paymentId: int("paymentId").notNull(),
+  /** Crypto currency: USDT, USDC, ETH, BTC */
+  cryptoCurrency: mysqlEnum("cryptoCurrency", ["USDT", "USDC", "ETH", "BTC"]).notNull(),
+  /** Blockchain network: ethereum, bsc, polygon, tron, bitcoin */
+  network: mysqlEnum("network", ["ethereum", "bsc", "polygon", "tron", "bitcoin"]).default("ethereum").notNull(),
+  /** Wallet address to send payment to */
+  walletAddress: varchar("walletAddress", { length: 255 }).notNull(),
+  /** Amount in crypto (stored as string for precision) */
+  cryptoAmount: varchar("cryptoAmount", { length: 64 }).notNull(),
+  /** USD equivalent at time of creation */
+  usdEquivalent: int("usdEquivalent").notNull(),
+  /** Transaction hash on blockchain */
+  txHash: varchar("txHash", { length: 512 }),
+  /** Number of confirmations */
+  confirmations: int("confirmations").default(0),
+  /** Required confirmations for this network */
+  requiredConfirmations: int("requiredConfirmations").default(3),
+  /** Expiry time for payment (usually 30 minutes) */
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CryptoPayment = typeof cryptoPayments.$inferSelect;
+export type InsertCryptoPayment = typeof cryptoPayments.$inferInsert;
+
+/**
+ * Credit Usage Logs - detailed per-feature credit consumption
+ */
+export const creditUsageLogs = mysqlTable("creditUsageLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Feature that consumed credits */
+  feature: mysqlEnum("feature", [
+    "script_generation",
+    "tts_conversion",
+    "avatar_video",
+    "deepfake_transform",
+    "thumbnail_generation",
+    "subtitle_generation",
+    "voice_modulation",
+    "live_broadcast"
+  ]).notNull(),
+  /** Credits consumed */
+  creditsUsed: int("creditsUsed").notNull(),
+  /** Balance before usage */
+  balanceBefore: int("balanceBefore").notNull(),
+  /** Balance after usage */
+  balanceAfter: int("balanceAfter").notNull(),
+  /** Related resource ID (lecture, script, etc.) */
+  resourceId: int("resourceId"),
+  /** Additional metadata */
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CreditUsageLog = typeof creditUsageLogs.$inferSelect;
+export type InsertCreditUsageLog = typeof creditUsageLogs.$inferInsert;
