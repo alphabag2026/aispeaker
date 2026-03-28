@@ -520,3 +520,31 @@
 - [x] 크레딧 가드 모달 테스트
 - [x] 암호화폐 결제 상태 추적 테스트
 - [x] 전체 267개 테스트 통과 (14개 파일)
+
+## v3.4 결제 가이드 + FAQ + 온보딩 튜토리얼
+
+### Stripe 결제 문제 해결 가이드
+- [x] PaymentTroubleshooting 페이지 생성
+- [x] 테스트 카드 정보 안내 (4242 4242 4242 4242)
+- [x] 일반적인 결제 실패 원인 및 해결 방법
+- [x] 브라우저/쿠키 문제 해결 안내
+- [x] 결제 수단별 트러블슈팅 (카드/암호화폐)
+
+### 암호화폐 결제 FAQ
+- [x] CryptoPayment 페이지에 FAQ 섹션 추가
+- [x] 7개 Q&A 작성 (지원 코인, 활성화 시간, 금액 불일치, 시간 만료, 환불, 네트워크 오류, 정기 구독)
+- [x] 아코디언 UI로 구현
+
+### 결제 성공 후 온보딩 튜토리얼
+- [x] OnboardingTutorial 페이지 생성 (6단계 핵심 기능 안내)
+- [x] PaymentSuccess 페이지에서 온보딩으로 연결 (추천 버튼)
+- [x] AI 얼굴 → 음성 → 스크립트 → 영상 제작 → 라이브 방송 → 크레딧 관리 플로우 안내
+- [x] 진행률 추적, PRO TIP, 빠른 링크 섹션
+
+### 라우트 및 네비게이션
+- [x] App.tsx에 새 라우트 등록 (/payment-troubleshooting, /onboarding)
+- [x] 관련 페이지 간 링크 연결 (Pricing→Troubleshooting, CryptoFAQ→Troubleshooting, PaymentSuccess→Onboarding)
+
+### 테스트
+- [x] 새 페이지 구조 테스트 (17개 - v3.4-pages.test.ts)
+- [x] 전체 284개 테스트 통과 (15개 파일)

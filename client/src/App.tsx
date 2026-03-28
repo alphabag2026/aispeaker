@@ -36,6 +36,8 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentHistory from "./pages/PaymentHistory";
 import AdminRevenue from "./pages/AdminRevenue";
 import CryptoPayment from "./pages/CryptoPayment";
+import PaymentTroubleshooting from "./pages/PaymentTroubleshooting";
+import OnboardingTutorial from "./pages/OnboardingTutorial";
 
 function Router() {
   return (
@@ -73,6 +75,8 @@ function Router() {
       <Route path="/payment/success" component={PaymentSuccess} />
       <Route path="/payments" component={PaymentHistory} />
       <Route path="/crypto-payment/:id" component={CryptoPayment} />
+      <Route path="/payment-troubleshooting" component={PaymentTroubleshooting} />
+      <Route path="/onboarding" component={OnboardingTutorial} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

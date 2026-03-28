@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   ArrowLeft,
   ExternalLink,
+  HelpCircle,
+  ChevronDown,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -283,6 +285,91 @@ export default function CryptoPayment() {
             </div>
           </>
         )}
+
+        {/* FAQ Section */}
+        <CryptoFAQ />
+      </div>
+    </div>
+  );
+}
+
+const faqItems = [
+  {
+    q: "암호화폐 결제는 어떤 코인을 지원하나요?",
+    a: "현재 USDT(ERC20, TRC20, BEP20), USDC(ERC20, BEP20), ETH(Ethereum), BTC(Bitcoin)를 지원합니다. 각 코인별로 지원하는 네트워크가 다르므로, 결제 시 표시되는 네트워크를 반드시 확인하세요. 잘못된 네트워크로 전송하면 자산을 잃을 수 있습니다.",
+  },
+  {
+    q: "결제 후 얼마나 기다려야 서비스가 활성화되나요?",
+    a: "네트워크에 따라 다릅니다. TRC20(Tron)은 약 1~3분, ERC20/BEP20(Ethereum/BSC)은 약 3~5분, BTC(Bitcoin)는 약 10~60분이 소요됩니다. 시스템이 10초마다 자동으로 입금을 확인하며, 블록 컨펌이 완료되면 즉시 서비스가 활성화됩니다. 30분이 지나도 확인되지 않으면 고객지원에 문의하세요.",
+  },
+  {
+    q: "정확한 금액을 보내지 않으면 어떻게 되나요?",
+    a: "자동 확인 시스템은 정확한 금액이 전송되었을 때 작동합니다. 소수점 이하 금액까지 정확히 일치해야 합니다. 금액이 다른 경우 자동 확인이 되지 않으며, 트랜잭션 해시(TxHash)와 함께 고객지원에 문의하시면 수동으로 확인해드립니다. 가스비(수수료)는 별도이므로 전송 금액에 포함하지 마세요.",
+  },
+  {
+    q: "결제 시간(30분)이 만료되면 어떻게 되나요?",
+    a: "30분 이내에 입금이 확인되지 않으면 해당 결제 건은 자동으로 만료됩니다. 이미 전송을 완료했지만 블록 컨펌이 늦어진 경우, 트랜잭션 해시와 함께 고객지원에 문의하시면 수동으로 확인 후 서비스를 활성화해드립니다. 아직 전송하지 않았다면 새로운 결제를 생성하세요.",
+  },
+  {
+    q: "환불은 어떻게 받을 수 있나요?",
+    a: "암호화폐 결제의 환불은 원래 전송한 지갑 주소로 동일한 코인으로 진행됩니다. 환불 요청 시 결제 ID, 전송 지갑 주소, 트랜잭션 해시를 포함하여 고객지원에 문의하세요. 환불 처리에는 영업일 기준 3~5일이 소요되며, 네트워크 수수료(가스비)는 환불 금액에서 차감될 수 있습니다.",
+  },
+  {
+    q: "잘못된 네트워크로 전송했는데 복구할 수 있나요?",
+    a: "안타깝게도 잘못된 네트워크로 전송된 자산은 대부분 복구가 불가능합니다. 예를 들어 ERC20 주소로 TRC20 토큰을 보내거나, BEP20 주소로 ERC20 토큰을 보낸 경우가 이에 해당합니다. 전송 전 반드시 네트워크를 확인하세요. 만약 잘못 전송한 경우 트랜잭션 해시와 함께 즉시 고객지원에 문의하세요.",
+  },
+  {
+    q: "암호화폐로 정기 구독 결제가 가능한가요?",
+    a: "현재 암호화폐 결제는 일회성 결제(크레딧 패키지 구매, 단건 구독)만 지원합니다. 자동 갱신되는 정기 구독은 Stripe(카드 결제)를 통해서만 가능합니다. 구독 만료 전에 암호화폐로 수동 갱신하실 수 있으며, 갱신 알림을 이메일로 보내드립니다.",
+  },
+];
+
+function CryptoFAQ() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  return (
+    <div className="mt-10">
+      <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+        <HelpCircle className="w-5 h-5 text-purple-400" />
+        암호화폐 결제 자주 묻는 질문 (FAQ)
+      </h3>
+      <div className="space-y-2">
+        {faqItems.map((item, i) => (
+          <div
+            key={i}
+            className="border border-border/50 rounded-lg overflow-hidden"
+          >
+            <button
+              className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
+              onClick={() => setOpenIndex(openIndex === i ? null : i)}
+            >
+              <span className="font-medium text-sm text-foreground pr-4">{item.q}</span>
+              <ChevronDown
+                className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${
+                  openIndex === i ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+            {openIndex === i && (
+              <div className="px-4 pb-4">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {item.a}
+                </p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 text-center">
+        <p className="text-xs text-muted-foreground mb-2">
+          더 궁금한 점이 있으신가요?
+        </p>
+        <Link href="/payment-troubleshooting">
+          <Button variant="outline" size="sm" className="text-xs">
+            결제 문제 해결 가이드 보기
+          </Button>
+        </Link>
       </div>
     </div>
   );

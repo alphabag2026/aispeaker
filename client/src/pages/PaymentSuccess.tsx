@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { CheckCircle, Loader2, XCircle, ArrowRight, CreditCard, Coins } from "lucide-react";
+import { CheckCircle, Loader2, XCircle, ArrowRight, CreditCard, Coins, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -92,17 +92,25 @@ export default function PaymentSuccess() {
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/my-subscription" className="flex-1">
-                <Button className="w-full" variant="outline">
-                  내 구독 확인 <ArrowRight className="w-4 h-4 ml-1" />
+            <div className="flex flex-col gap-3">
+              <Link href="/onboarding">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                  <Rocket className="w-4 h-4 mr-2" />
+                  시작 가이드 보기 (추천)
                 </Button>
               </Link>
-              <Link href="/studio" className="flex-1">
-                <Button className="w-full">
-                  스튜디오로 이동 <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/my-subscription" className="flex-1">
+                  <Button className="w-full" variant="outline">
+                    내 구독 확인 <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+                <Link href="/studio" className="flex-1">
+                  <Button className="w-full" variant="outline">
+                    스튜디오로 이동 <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

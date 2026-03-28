@@ -641,6 +641,11 @@ export default function Pricing() {
             </Card>
           ))}
         </div>
+        <div className="text-center mt-6">
+          <a href="/payment-troubleshooting" className="text-sm text-purple-400 hover:text-purple-300 underline underline-offset-4">
+            결제에 문제가 있으신가요? 문제 해결 가이드 보기
+          </a>
+        </div>
       </div>
 
       {/* Bottom CTA */}
