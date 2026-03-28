@@ -2238,6 +2238,239 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { success: true };
       }),
   }),
+
+  // ========== Sample Faces Gallery ==========
+  sampleFace: router({
+    list: publicProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        gender: z.string().optional(),
+        isPremium: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.listSampleFaces(input ?? undefined);
+      }),
+    get: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getSampleFace(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(255),
+        category: z.string().min(1),
+        gender: z.string().min(1),
+        ethnicity: z.string().optional(),
+        ageRange: z.string().optional(),
+        imageUrl: z.string().url(),
+        thumbnailUrl: z.string().url().optional(),
+        description: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        languages: z.array(z.string()).optional(),
+        isPremium: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.createSampleFace(input as any);
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        category: z.string().optional(),
+        gender: z.string().optional(),
+        imageUrl: z.string().url().optional(),
+        description: z.string().optional(),
+        isPremium: z.boolean().optional(),
+        isActive: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { id, ...data } = input;
+        await db.updateSampleFace(id, data as any);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await db.deleteSampleFace(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ========== Sample Voices Gallery ==========
+  sampleVoice: router({
+    list: publicProcedure
+      .input(z.object({
+        language: z.string().optional(),
+        gender: z.string().optional(),
+        tone: z.string().optional(),
+        isPremium: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.listSampleVoices(input ?? undefined);
+      }),
+    get: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getSampleVoice(input.id);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(255),
+        language: z.string().min(1),
+        gender: z.string().min(1),
+        tone: z.string().min(1),
+        ttsVoiceId: z.string().min(1),
+        sampleAudioUrl: z.string().url().optional(),
+        description: z.string().optional(),
+        speed: z.string().optional(),
+        pitch: z.string().optional(),
+        isPremium: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.createSampleVoice(input as any);
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        language: z.string().optional(),
+        gender: z.string().optional(),
+        tone: z.string().optional(),
+        ttsVoiceId: z.string().optional(),
+        description: z.string().optional(),
+        isPremium: z.boolean().optional(),
+        isActive: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { id, ...data } = input;
+        await db.updateSampleVoice(id, data as any);
+        return { success: true };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await db.deleteSampleVoice(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ========== Subscription Plans ==========
+  plan: router({
+    list: publicProcedure.query(async () => {
+      return db.listSubscriptionPlans();
+    }),
+    get: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return db.getSubscriptionPlan(input.id);
+      }),
+    getBySlug: publicProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        return db.getSubscriptionPlanBySlug(input.slug);
+      }),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        priceMonthly: z.number().optional(),
+        priceYearly: z.number().optional(),
+        monthlyCredits: z.number().optional(),
+        description: z.string().optional(),
+        features: z.array(z.string()).optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { id, ...data } = input;
+        await db.updateSubscriptionPlan(id, data as any);
+        return { success: true };
+      }),
+  }),
+
+  // ========== User Subscription ==========
+  subscription: router({
+    my: protectedProcedure.query(async ({ ctx }) => {
+      const sub = await db.getUserSubscription(ctx.user.id);
+      if (!sub) {
+        // Auto-assign free plan
+        const freePlan = await db.getSubscriptionPlanBySlug("free");
+        if (freePlan) {
+          const periodEnd = new Date();
+          periodEnd.setMonth(periodEnd.getMonth() + 1);
+          await db.createUserSubscription({
+            userId: ctx.user.id,
+            planId: freePlan.id,
+            status: "active",
+            billingCycle: "monthly",
+            currentPeriodEnd: periodEnd,
+            creditsRemaining: freePlan.monthlyCredits,
+          });
+          const newSub = await db.getUserSubscription(ctx.user.id);
+          const plan = freePlan;
+          return { subscription: newSub, plan };
+        }
+      }
+      const plan = sub ? await db.getSubscriptionPlan(sub.planId) : null;
+      return { subscription: sub, plan };
+    }),
+    subscribe: protectedProcedure
+      .input(z.object({
+        planSlug: z.string(),
+        billingCycle: z.enum(["monthly", "yearly"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const plan = await db.getSubscriptionPlanBySlug(input.planSlug);
+        if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "플랜을 찾을 수 없습니다." });
+        const periodEnd = new Date();
+        if (input.billingCycle === "yearly") {
+          periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        } else {
+          periodEnd.setMonth(periodEnd.getMonth() + 1);
+        }
+        await db.createUserSubscription({
+          userId: ctx.user.id,
+          planId: plan.id,
+          status: "active",
+          billingCycle: input.billingCycle ?? "monthly",
+          currentPeriodEnd: periodEnd,
+          creditsRemaining: plan.monthlyCredits,
+        });
+        return { success: true, planName: plan.name };
+      }),
+    cancel: protectedProcedure.mutation(async ({ ctx }) => {
+      const sub = await db.getUserSubscription(ctx.user.id);
+      if (!sub) throw new TRPCError({ code: "NOT_FOUND" });
+      await db.updateUserSubscription(sub.id, { cancelAtPeriodEnd: true });
+      return { success: true };
+    }),
+    // Admin: list all subscriptions
+    listAll: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return db.listAllSubscriptions();
+    }),
+  }),
+
+  // ========== Credits ==========
+  credit: router({
+    balance: protectedProcedure.query(async ({ ctx }) => {
+      return { credits: await db.getUserCredits(ctx.user.id) };
+    }),
+    history: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.getUserCreditHistory(ctx.user.id, input?.limit ?? 50);
+      }),
+  }),
 });
 
 // SRT time formatter

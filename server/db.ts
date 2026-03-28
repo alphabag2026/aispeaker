@@ -28,6 +28,11 @@ import {
   liveBroadcasts, InsertLiveBroadcast,
   broadcastViewers, InsertBroadcastViewer,
   broadcastChats, InsertBroadcastChat,
+  sampleFaces, InsertSampleFace,
+  sampleVoices, InsertSampleVoice,
+  subscriptionPlans, InsertSubscriptionPlan,
+  userSubscriptions, InsertUserSubscription,
+  creditTransactions, InsertCreditTransaction,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1046,4 +1051,189 @@ export async function getBroadcastChats(broadcastId: number, afterId?: number, l
 export async function pinBroadcastChat(chatId: number, isPinned: boolean) {
   const db = await getDb(); if (!db) return;
   await db.update(broadcastChats).set({ isPinned }).where(eq(broadcastChats.id, chatId));
+}
+
+
+// ========== Sample Faces ==========
+
+export async function listSampleFaces(filters?: { category?: string; gender?: string; isPremium?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+  let query = db.select().from(sampleFaces).where(eq(sampleFaces.isActive, true));
+  const rows = await query.orderBy(sampleFaces.sortOrder);
+  let result = rows;
+  if (filters?.category) result = result.filter(r => r.category === filters.category);
+  if (filters?.gender) result = result.filter(r => r.gender === filters.gender);
+  if (filters?.isPremium !== undefined) result = result.filter(r => r.isPremium === filters.isPremium);
+  return result;
+}
+
+export async function getSampleFace(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(sampleFaces).where(eq(sampleFaces.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function createSampleFace(data: InsertSampleFace) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(sampleFaces).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updateSampleFace(id: number, data: Partial<InsertSampleFace>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(sampleFaces).set(data).where(eq(sampleFaces.id, id));
+}
+
+export async function deleteSampleFace(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(sampleFaces).set({ isActive: false }).where(eq(sampleFaces.id, id));
+}
+
+// ========== Sample Voices ==========
+
+export async function listSampleVoices(filters?: { language?: string; gender?: string; tone?: string; isPremium?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+  let query = db.select().from(sampleVoices).where(eq(sampleVoices.isActive, true));
+  const rows = await query.orderBy(sampleVoices.sortOrder);
+  let result = rows;
+  if (filters?.language) result = result.filter(r => r.language === filters.language);
+  if (filters?.gender) result = result.filter(r => r.gender === filters.gender);
+  if (filters?.tone) result = result.filter(r => r.tone === filters.tone);
+  if (filters?.isPremium !== undefined) result = result.filter(r => r.isPremium === filters.isPremium);
+  return result;
+}
+
+export async function getSampleVoice(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(sampleVoices).where(eq(sampleVoices.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function createSampleVoice(data: InsertSampleVoice) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(sampleVoices).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updateSampleVoice(id: number, data: Partial<InsertSampleVoice>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(sampleVoices).set(data).where(eq(sampleVoices.id, id));
+}
+
+export async function deleteSampleVoice(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(sampleVoices).set({ isActive: false }).where(eq(sampleVoices.id, id));
+}
+
+// ========== Subscription Plans ==========
+
+export async function listSubscriptionPlans() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(subscriptionPlans).where(eq(subscriptionPlans.isActive, true)).orderBy(subscriptionPlans.sortOrder);
+}
+
+export async function getSubscriptionPlan(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function getSubscriptionPlanBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.slug, slug)).limit(1);
+  return rows[0] || null;
+}
+
+export async function updateSubscriptionPlan(id: number, data: Partial<InsertSubscriptionPlan>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(subscriptionPlans).set(data).where(eq(subscriptionPlans.id, id));
+}
+
+// ========== User Subscriptions ==========
+
+export async function getUserSubscription(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(userSubscriptions).where(eq(userSubscriptions.userId, userId)).limit(1);
+  return rows[0] || null;
+}
+
+export async function createUserSubscription(data: InsertUserSubscription) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Remove existing subscription first
+  await db.delete(userSubscriptions).where(eq(userSubscriptions.userId, data.userId));
+  const result = await db.insert(userSubscriptions).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function updateUserSubscription(id: number, data: Partial<InsertUserSubscription>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(userSubscriptions).set(data).where(eq(userSubscriptions.id, id));
+}
+
+export async function listAllSubscriptions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(userSubscriptions).orderBy(desc(userSubscriptions.createdAt));
+}
+
+// ========== Credit Transactions ==========
+
+export async function getUserCredits(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const sub = await getUserSubscription(userId);
+  return sub?.creditsRemaining ?? 0;
+}
+
+export async function addCreditTransaction(data: InsertCreditTransaction) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(creditTransactions).values(data);
+  return { id: result[0].insertId };
+}
+
+export async function getUserCreditHistory(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(creditTransactions)
+    .where(eq(creditTransactions.userId, userId))
+    .orderBy(desc(creditTransactions.createdAt))
+    .limit(limit);
+}
+
+export async function deductCredits(userId: number, amount: number, description: string, resourceType?: string, resourceId?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const sub = await getUserSubscription(userId);
+  if (!sub) throw new Error("No active subscription");
+  const remaining = (sub.creditsRemaining ?? 0) - amount;
+  if (remaining < 0) throw new Error("Insufficient credits");
+  await db.update(userSubscriptions).set({ creditsRemaining: remaining }).where(eq(userSubscriptions.id, sub.id));
+  await addCreditTransaction({
+    userId,
+    type: "usage",
+    amount: -amount,
+    balanceAfter: remaining,
+    description,
+    resourceType,
+    resourceId,
+  });
+  return remaining;
 }

@@ -26,6 +26,10 @@ import {
   Tv,
   Sun,
   Moon,
+  Users,
+  Volume2,
+  CreditCard,
+  Shield,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -37,16 +41,20 @@ export default function Navbar() {
 
   const isInstructor = user?.platformRole === "instructor" || user?.role === "admin";
 
+  const isAdmin = user?.role === "admin";
+
   const navLinks = [
     { href: "/", label: "홈", icon: Home },
-    { href: "/lectures", label: "강의 목록", icon: BookOpen },
-    { href: "/vod", label: "VOD", icon: Video },
+    { href: "/faces", label: "AI 얼굴", icon: Users },
+    { href: "/voices", label: "AI 목소리", icon: Volume2 },
+    { href: "/pricing", label: "요금제", icon: CreditCard },
     ...(isInstructor ? [
       { href: "/studio", label: "스튜디오", icon: Play },
-      { href: "/instructor", label: "강사 대시보드", icon: Monitor },
-      { href: "/pipeline-dashboard", label: "제작 히스토리", icon: History },
-      { href: "/broadcasts", label: "라이브 방송", icon: Tv },
-      { href: "/obs-tutorial", label: "OBS 가이드", icon: HelpCircle },
+      { href: "/instructor", label: "대시보드", icon: Monitor },
+      { href: "/broadcasts", label: "라이브", icon: Tv },
+    ] : []),
+    ...(isAdmin ? [
+      { href: "/admin", label: "관리자", icon: Shield },
     ] : []),
   ];
 

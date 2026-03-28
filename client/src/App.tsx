@@ -27,6 +27,11 @@ import PreviewPlayer from "./pages/PreviewPlayer";
 import BroadcastManager from "./pages/BroadcastManager";
 import BroadcastStudio from "./pages/BroadcastStudio";
 import BroadcastViewer from "./pages/BroadcastViewer";
+import FaceGallery from "./pages/FaceGallery";
+import VoiceGallery from "./pages/VoiceGallery";
+import Pricing from "./pages/Pricing";
+import MySubscription from "./pages/MySubscription";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function Router() {
   return (
@@ -55,6 +60,11 @@ function Router() {
       <Route path="/broadcast/studio/:id" component={BroadcastStudio} />
       <Route path="/broadcast/view/:roomCode" component={BroadcastViewer} />
       <Route path="/obs-tutorial" component={ObsTutorial} />
+      <Route path="/faces" component={FaceGallery} />
+      <Route path="/voices" component={VoiceGallery} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/my-subscription" component={MySubscription} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

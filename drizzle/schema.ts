@@ -708,3 +708,179 @@ export const broadcastChats = mysqlTable("broadcastChats", {
 
 export type BroadcastChat = typeof broadcastChats.$inferSelect;
 export type InsertBroadcastChat = typeof broadcastChats.$inferInsert;
+
+
+/**
+ * Sample Faces - pre-built AI face presets for instructors to choose from
+ */
+export const sampleFaces = mysqlTable("sampleFaces", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Category: professional, casual, academic, creative, corporate */
+  category: varchar("category", { length: 64 }).notNull(),
+  /** Gender: male, female, neutral */
+  gender: varchar("gender", { length: 20 }).notNull(),
+  /** Ethnicity/region for diversity */
+  ethnicity: varchar("ethnicity", { length: 64 }),
+  /** Age range: 20s, 30s, 40s, 50s */
+  ageRange: varchar("ageRange", { length: 20 }),
+  /** CDN URL to face image */
+  imageUrl: text("imageUrl").notNull(),
+  /** CDN URL to thumbnail */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** Short description */
+  description: text("description"),
+  /** Specialty tags (JSON array of strings) */
+  tags: json("tags"),
+  /** Supported languages (JSON array of strings) */
+  languages: json("languages"),
+  /** Whether this is a premium face (Pro+ only) */
+  isPremium: boolean("isPremium").default(false),
+  /** Sort order */
+  sortOrder: int("sortOrder").default(0),
+  /** Active/inactive */
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SampleFace = typeof sampleFaces.$inferSelect;
+export type InsertSampleFace = typeof sampleFaces.$inferInsert;
+
+/**
+ * Sample Voices - pre-built voice presets for instructors
+ */
+export const sampleVoices = mysqlTable("sampleVoices", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Language code (ko, en, ja, zh, etc.) */
+  language: varchar("language", { length: 10 }).notNull(),
+  /** Gender: male, female */
+  gender: varchar("gender", { length: 20 }).notNull(),
+  /** Voice tone: warm, professional, energetic, calm, authoritative */
+  tone: varchar("tone", { length: 64 }).notNull(),
+  /** TTS voice ID (OpenAI voice ID) */
+  ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).notNull(),
+  /** CDN URL to sample audio clip */
+  sampleAudioUrl: text("sampleAudioUrl"),
+  /** Short description */
+  description: text("description"),
+  /** Speaking speed (0.5 - 2.0) */
+  speed: varchar("speed", { length: 10 }).default("1.0"),
+  /** Pitch adjustment */
+  pitch: varchar("pitch", { length: 10 }).default("0"),
+  /** Whether this is a premium voice */
+  isPremium: boolean("isPremium").default(false),
+  /** Sort order */
+  sortOrder: int("sortOrder").default(0),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SampleVoice = typeof sampleVoices.$inferSelect;
+export type InsertSampleVoice = typeof sampleVoices.$inferInsert;
+
+/**
+ * Subscription Plans - Free / Pro / Enterprise
+ */
+export const subscriptionPlans = mysqlTable("subscriptionPlans", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 64 }).notNull(),
+  /** Slug for URL: free, pro, enterprise */
+  slug: varchar("slug", { length: 32 }).notNull().unique(),
+  /** Monthly price in USD cents (0 for free) */
+  priceMonthly: int("priceMonthly").default(0).notNull(),
+  /** Yearly price in USD cents */
+  priceYearly: int("priceYearly").default(0),
+  /** Monthly credit allowance */
+  monthlyCredits: int("monthlyCredits").default(0).notNull(),
+  /** Max lectures per month (0 = unlimited) */
+  maxLecturesPerMonth: int("maxLecturesPerMonth").default(3),
+  /** Max video quality: 720p, 1080p, 4k */
+  maxVideoQuality: varchar("maxVideoQuality", { length: 10 }).default("720p"),
+  /** Number of face presets allowed */
+  facePresetLimit: int("facePresetLimit").default(3),
+  /** Number of voice presets allowed */
+  voicePresetLimit: int("voicePresetLimit").default(5),
+  /** Can use deepfake face swap */
+  hasDeepfake: boolean("hasDeepfake").default(false),
+  /** Can use voice modulation */
+  hasVoiceMod: boolean("hasVoiceMod").default(false),
+  /** Can use external platform integration */
+  hasPlatformIntegration: boolean("hasPlatformIntegration").default(false),
+  /** Can use live broadcast */
+  hasLiveBroadcast: boolean("hasLiveBroadcast").default(false),
+  /** Priority support */
+  hasPrioritySupport: boolean("hasPrioritySupport").default(false),
+  /** Custom AI model training */
+  hasCustomModel: boolean("hasCustomModel").default(false),
+  /** White label support */
+  hasWhiteLabel: boolean("hasWhiteLabel").default(false),
+  /** Description */
+  description: text("description"),
+  /** Feature list (JSON array of strings) */
+  features: json("features"),
+  /** Sort order */
+  sortOrder: int("sortOrder").default(0),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export type InsertSubscriptionPlan = typeof subscriptionPlans.$inferInsert;
+
+/**
+ * User Subscriptions - tracks which plan each user is on
+ */
+export const userSubscriptions = mysqlTable("userSubscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  planId: int("planId").notNull(),
+  /** Status: active, cancelled, expired, trial */
+  status: mysqlEnum("status", ["active", "cancelled", "expired", "trial"]).default("active").notNull(),
+  /** Billing cycle: monthly, yearly */
+  billingCycle: mysqlEnum("billingCycle", ["monthly", "yearly"]).default("monthly").notNull(),
+  /** Current period start */
+  currentPeriodStart: timestamp("currentPeriodStart").defaultNow().notNull(),
+  /** Current period end */
+  currentPeriodEnd: timestamp("currentPeriodEnd").notNull(),
+  /** Credits remaining this period */
+  creditsRemaining: int("creditsRemaining").default(0),
+  /** Lectures created this period */
+  lecturesUsedThisPeriod: int("lecturesUsedThisPeriod").default(0),
+  /** External payment reference (Stripe, etc.) */
+  externalPaymentId: varchar("externalPaymentId", { length: 255 }),
+  /** Cancel at period end */
+  cancelAtPeriodEnd: boolean("cancelAtPeriodEnd").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type InsertUserSubscription = typeof userSubscriptions.$inferInsert;
+
+/**
+ * Credit Transactions - tracks credit usage and purchases
+ */
+export const creditTransactions = mysqlTable("creditTransactions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Transaction type: usage, purchase, refund, bonus, monthly_reset */
+  type: mysqlEnum("type", ["usage", "purchase", "refund", "bonus", "monthly_reset"]).notNull(),
+  /** Amount (negative for usage, positive for purchase/bonus) */
+  amount: int("amount").notNull(),
+  /** Balance after transaction */
+  balanceAfter: int("balanceAfter").notNull(),
+  /** Description of what the credits were used for */
+  description: text("description"),
+  /** Related resource type: lecture, tts, avatar, deepfake, voicemod */
+  resourceType: varchar("resourceType", { length: 64 }),
+  /** Related resource ID */
+  resourceId: int("resourceId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
+export type InsertCreditTransaction = typeof creditTransactions.$inferInsert;
