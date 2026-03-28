@@ -142,6 +142,91 @@ const testCardInfo = [
   { type: "잔액 부족", number: "4000 0000 0000 9995", desc: "잔액 부족 거절" },
 ];
 
+interface FailScenario {
+  id: string;
+  cardNumber: string;
+  scenario: string;
+  errorMessage: string;
+  description: string;
+  resolution: string;
+  badgeColor: string;
+}
+
+const failureScenarios: FailScenario[] = [
+  {
+    id: "generic-decline",
+    cardNumber: "4000 0000 0000 0002",
+    scenario: "일반 거절 (Generic Decline)",
+    errorMessage: "Your card was declined.",
+    description: "카드사에서 특별한 이유 없이 결제를 거절합니다. 실제 환경에서는 카드사에 직접 문의해야 합니다.",
+    resolution: "다른 카드를 사용하거나, 카드사에 해외 결제 차단 해제를 요청하세요.",
+    badgeColor: "bg-red-500/20 text-red-400 border-red-500/30",
+  },
+  {
+    id: "insufficient-funds",
+    cardNumber: "4000 0000 0000 9995",
+    scenario: "잔액 부족 (Insufficient Funds)",
+    errorMessage: "Your card has insufficient funds.",
+    description: "카드 잔액이 결제 금액보다 부족할 때 발생합니다.",
+    resolution: "카드 잔액을 충전하거나, 한도가 충분한 다른 카드를 사용하세요.",
+    badgeColor: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+  },
+  {
+    id: "lost-card",
+    cardNumber: "4000 0000 0000 9987",
+    scenario: "분실 카드 (Lost Card)",
+    errorMessage: "Your card was declined.",
+    description: "카드가 분실 신고된 상태입니다. 카드사에서 보안상 결제를 차단합니다.",
+    resolution: "카드사에 연락하여 카드 상태를 확인하거나, 새 카드를 발급받으세요.",
+    badgeColor: "bg-red-500/20 text-red-400 border-red-500/30",
+  },
+  {
+    id: "stolen-card",
+    cardNumber: "4000 0000 0000 9979",
+    scenario: "도난 카드 (Stolen Card)",
+    errorMessage: "Your card was declined.",
+    description: "카드가 도난 신고된 상태입니다. 즉시 카드사에 연락해야 합니다.",
+    resolution: "카드사에 즉시 연락하여 카드 상태를 확인하고, 새 카드를 발급받으세요.",
+    badgeColor: "bg-red-500/20 text-red-400 border-red-500/30",
+  },
+  {
+    id: "expired-card",
+    cardNumber: "4000 0000 0000 0069",
+    scenario: "만료된 카드 (Expired Card)",
+    errorMessage: "Your card has expired.",
+    description: "카드 유효기간이 지났습니다. 만료일이 과거인 경우 발생합니다.",
+    resolution: "카드 만료일을 확인하고, 갱신된 카드 정보를 입력하세요.",
+    badgeColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  },
+  {
+    id: "incorrect-cvc",
+    cardNumber: "4000 0000 0000 0127",
+    scenario: "잘못된 CVC (Incorrect CVC)",
+    errorMessage: "Your card's security code is incorrect.",
+    description: "입력한 CVC(보안 코드)가 카드 뒷면의 번호와 일치하지 않습니다.",
+    resolution: "카드 뒷면의 3자리 보안 코드를 다시 확인하고 정확히 입력하세요.",
+    badgeColor: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  },
+  {
+    id: "processing-error",
+    cardNumber: "4000 0000 0000 0119",
+    scenario: "처리 오류 (Processing Error)",
+    errorMessage: "An error occurred while processing your card. Try again.",
+    description: "카드 처리 중 일시적인 시스템 오류가 발생했습니다.",
+    resolution: "잠시 후 다시 시도하세요. 반복되면 다른 카드를 사용하거나 고객지원에 문의하세요.",
+    badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  },
+  {
+    id: "3ds-auth-fail",
+    cardNumber: "4000 0084 0000 1629",
+    scenario: "3D Secure 인증 실패",
+    errorMessage: "We are unable to authenticate your payment method.",
+    description: "3D Secure(본인인증) 과정에서 인증에 실패했습니다. 카드사 앱에서 승인을 거부하거나 시간이 초과된 경우 발생합니다.",
+    resolution: "카드사 앱 알림을 확인하고 인증을 승인하세요. 시간 초과 시 다시 결제를 시도하세요.",
+    badgeColor: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  },
+];
+
 function SeverityBadge({ severity }: { severity: string }) {
   const colors = {
     low: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -277,6 +362,79 @@ export default function PaymentTroubleshooting() {
             <p className="text-xs text-muted-foreground mt-3">
               * 만료일 예시: 12/30 | CVC 예시: 123 | 우편번호: 아무 5자리
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Stripe Test Card Failure Scenarios */}
+        <Card className="mb-8 border-red-500/20 bg-red-500/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              Stripe 테스트 카드 실패 시나리오
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              아래 카드 번호를 사용하면 각 실패 시나리오를 테스트할 수 있습니다. 실제 결제에서 동일한 에러가 발생하면 해결 방법을 참고하세요.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {failureScenarios.map((scenario) => (
+              <div
+                key={scenario.id}
+                className={`rounded-lg border transition-all ${
+                  expandedItems.has(scenario.id)
+                    ? "border-red-500/30 bg-background/80"
+                    : "border-border/30 bg-background/40"
+                }`}
+              >
+                <div
+                  className="flex items-center justify-between p-4 cursor-pointer"
+                  onClick={() => toggleItem(scenario.id)}
+                >
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full border ${scenario.badgeColor}`}
+                    >
+                      {scenario.scenario}
+                    </span>
+                    <code className="text-sm font-mono text-foreground">{scenario.cardNumber}</code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        copyCardNumber(scenario.cardNumber);
+                      }}
+                      className="h-6 w-6 p-0"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  {expandedItems.has(scenario.id) ? (
+                    <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                  )}
+                </div>
+                {expandedItems.has(scenario.id) && (
+                  <div className="px-4 pb-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="rounded-md bg-red-500/10 border border-red-500/20 p-3">
+                      <p className="text-xs font-semibold text-red-400 mb-1">예상 에러 메시지</p>
+                      <code className="text-sm text-red-300">{scenario.errorMessage}</code>
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-muted-foreground mb-1">설명</p>
+                      <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                    </div>
+                    <div className="rounded-md bg-green-500/10 border border-green-500/20 p-3">
+                      <p className="text-xs font-semibold text-green-400 mb-1 flex items-center gap-1">
+                        <CheckCircle className="w-3.5 h-3.5" /> 해결 방법
+                      </p>
+                      <p className="text-sm text-green-300/80">{scenario.resolution}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </CardContent>
         </Card>
 

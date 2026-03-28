@@ -293,34 +293,119 @@ export default function CryptoPayment() {
   );
 }
 
+// SVG crypto logos as inline components
+function UsdtLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="16" fill="#26A17B" />
+      <path d="M17.922 17.383v-.002c-.11.008-.677.042-1.942.042-1.01 0-1.721-.03-1.971-.042v.003c-3.888-.171-6.79-.848-6.79-1.658 0-.809 2.902-1.486 6.79-1.66v2.644c.254.018.982.061 1.988.061 1.207 0 1.812-.05 1.925-.06v-2.643c3.88.173 6.775.85 6.775 1.658 0 .81-2.895 1.485-6.775 1.657m0-3.59v-2.366h5.414V7.819H8.595v3.608h5.414v2.365c-4.4.202-7.709 1.074-7.709 2.118 0 1.044 3.309 1.915 7.709 2.118v7.582h3.913v-7.584c4.393-.202 7.694-1.073 7.694-2.116 0-1.043-3.301-1.914-7.694-2.117" fill="white" />
+    </svg>
+  );
+}
+
+function UsdcLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="16" fill="#2775CA" />
+      <path d="M20.4 18.2c0-2.1-1.3-2.8-3.8-3.1-1.8-.3-2.2-.7-2.2-1.5s.6-1.3 1.8-1.3c1.1 0 1.7.4 2 1.3.1.1.2.2.3.2h1.3c.2 0 .3-.1.3-.3-.3-1.3-1.2-2.3-2.6-2.5v-1.5c0-.2-.1-.3-.3-.3h-1.2c-.2 0-.3.1-.3.3v1.5c-1.8.3-2.9 1.4-2.9 2.8 0 2 1.2 2.7 3.7 3.1 1.7.3 2.3.7 2.3 1.6 0 .9-.8 1.5-1.9 1.5-1.5 0-2-.6-2.2-1.4-.1-.2-.2-.2-.3-.2h-1.4c-.2 0-.3.1-.3.3.3 1.5 1.2 2.5 2.9 2.8v1.5c0 .2.1.3.3.3h1.2c.2 0 .3-.1.3-.3v-1.5c1.8-.3 3-1.5 3-3z" fill="white" />
+    </svg>
+  );
+}
+
+function EthLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="16" fill="#627EEA" />
+      <path d="M16.498 4v8.87l7.497 3.35L16.498 4z" fill="white" fillOpacity="0.6" />
+      <path d="M16.498 4L9 16.22l7.498-3.35V4z" fill="white" />
+      <path d="M16.498 21.968v6.027L24 17.616l-7.502 4.352z" fill="white" fillOpacity="0.6" />
+      <path d="M16.498 27.995v-6.028L9 17.616l7.498 10.379z" fill="white" />
+      <path d="M16.498 20.573l7.497-4.353-7.497-3.348v7.701z" fill="white" fillOpacity="0.2" />
+      <path d="M9 16.22l7.498 4.353v-7.701L9 16.22z" fill="white" fillOpacity="0.6" />
+    </svg>
+  );
+}
+
+function BtcLogo({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="16" fill="#F7931A" />
+      <path d="M22.5 14.1c.3-2.1-1.3-3.2-3.4-3.9l.7-2.8-1.7-.4-.7 2.7c-.4-.1-.9-.2-1.4-.3l.7-2.7-1.7-.4-.7 2.8c-.4-.1-.7-.2-1-.2l-2.4-.6-.5 1.8s1.3.3 1.2.3c.7.2.8.6.8 1l-.8 3.2c0 .1.1.1.1.1l-.1 0-1.1 4.5c-.1.2-.3.5-.7.4 0 0-1.2-.3-1.2-.3l-.8 2 2.2.6c.4.1.8.2 1.2.3l-.7 2.8 1.7.4.7-2.8c.5.1.9.2 1.4.3l-.7 2.8 1.7.4.7-2.8c2.9.5 5.1.3 6-2.3.7-2.1-.04-3.3-1.5-4.1 1.1-.3 1.9-1 2.1-2.5zm-3.8 5.3c-.5 2.1-4.1 1-5.3.7l.9-3.8c1.1.3 4.9.8 4.4 3.1zm.5-5.4c-.5 1.9-3.5.9-4.4.7l.8-3.4c1 .2 4.1.7 3.6 2.7z" fill="white" />
+    </svg>
+  );
+}
+
+function MultiCoinLogo({ className }: { className?: string }) {
+  return (
+    <div className={`flex -space-x-1 ${className}`}>
+      <UsdtLogo className="w-4 h-4" />
+      <EthLogo className="w-4 h-4" />
+      <BtcLogo className="w-4 h-4" />
+    </div>
+  );
+}
+
 const faqItems = [
   {
     q: "암호화폐 결제는 어떤 코인을 지원하나요?",
     a: "현재 USDT(ERC20, TRC20, BEP20), USDC(ERC20, BEP20), ETH(Ethereum), BTC(Bitcoin)를 지원합니다. 각 코인별로 지원하는 네트워크가 다르므로, 결제 시 표시되는 네트워크를 반드시 확인하세요. 잘못된 네트워크로 전송하면 자산을 잃을 수 있습니다.",
+    icons: [
+      <UsdtLogo key="usdt" className="w-5 h-5" />,
+      <UsdcLogo key="usdc" className="w-5 h-5" />,
+      <EthLogo key="eth" className="w-5 h-5" />,
+      <BtcLogo key="btc" className="w-5 h-5" />,
+    ],
   },
   {
     q: "결제 후 얼마나 기다려야 서비스가 활성화되나요?",
-    a: "네트워크에 따라 다릅니다. TRC20(Tron)은 약 1~3분, ERC20/BEP20(Ethereum/BSC)은 약 3~5분, BTC(Bitcoin)는 약 10~60분이 소요됩니다. 시스템이 10초마다 자동으로 입금을 확인하며, 블록 컨펌이 완료되면 즉시 서비스가 활성화됩니다. 30분이 지나도 확인되지 않으면 고객지원에 문의하세요.",
+    a: "네트워크에 따라 다릅니다. TRC20(Tron)은 약 1~3분, ERC20/BEP20(Ethereum/BSC)은 약 3~5분, BTC(Bitcoin)는 약 10~60분이 소요됩니다. 시스템이 10초마다 자동으로 입금을 확인하며, 블록 컨펼이 완료되면 즉시 서비스가 활성화됩니다. 30분이 지나도 확인되지 않으면 고객지원에 문의하세요.",
+    icons: [
+      <EthLogo key="eth" className="w-5 h-5" />,
+      <UsdtLogo key="usdt" className="w-5 h-5" />,
+      <BtcLogo key="btc" className="w-5 h-5" />,
+    ],
   },
   {
     q: "정확한 금액을 보내지 않으면 어떻게 되나요?",
     a: "자동 확인 시스템은 정확한 금액이 전송되었을 때 작동합니다. 소수점 이하 금액까지 정확히 일치해야 합니다. 금액이 다른 경우 자동 확인이 되지 않으며, 트랜잭션 해시(TxHash)와 함께 고객지원에 문의하시면 수동으로 확인해드립니다. 가스비(수수료)는 별도이므로 전송 금액에 포함하지 마세요.",
+    icons: [
+      <UsdtLogo key="usdt" className="w-5 h-5" />,
+      <UsdcLogo key="usdc" className="w-5 h-5" />,
+    ],
   },
   {
     q: "결제 시간(30분)이 만료되면 어떻게 되나요?",
-    a: "30분 이내에 입금이 확인되지 않으면 해당 결제 건은 자동으로 만료됩니다. 이미 전송을 완료했지만 블록 컨펌이 늦어진 경우, 트랜잭션 해시와 함께 고객지원에 문의하시면 수동으로 확인 후 서비스를 활성화해드립니다. 아직 전송하지 않았다면 새로운 결제를 생성하세요.",
+    a: "30분 이내에 입금이 확인되지 않으면 해당 결제 건은 자동으로 만료됩니다. 이미 전송을 완료했지만 블록 컨펼이 늦어진 경우, 트랜잭션 해시와 함께 고객지원에 문의하시면 수동으로 확인 후 서비스를 활성화해드립니다. 아직 전송하지 않았다면 새로운 결제를 생성하세요.",
+    icons: [
+      <UsdtLogo key="usdt" className="w-5 h-5" />,
+      <BtcLogo key="btc" className="w-5 h-5" />,
+    ],
   },
   {
     q: "환불은 어떻게 받을 수 있나요?",
     a: "암호화폐 결제의 환불은 원래 전송한 지갑 주소로 동일한 코인으로 진행됩니다. 환불 요청 시 결제 ID, 전송 지갑 주소, 트랜잭션 해시를 포함하여 고객지원에 문의하세요. 환불 처리에는 영업일 기준 3~5일이 소요되며, 네트워크 수수료(가스비)는 환불 금액에서 차감될 수 있습니다.",
+    icons: [
+      <UsdtLogo key="usdt" className="w-5 h-5" />,
+      <UsdcLogo key="usdc" className="w-5 h-5" />,
+      <EthLogo key="eth" className="w-5 h-5" />,
+    ],
   },
   {
     q: "잘못된 네트워크로 전송했는데 복구할 수 있나요?",
     a: "안타깝게도 잘못된 네트워크로 전송된 자산은 대부분 복구가 불가능합니다. 예를 들어 ERC20 주소로 TRC20 토큰을 보내거나, BEP20 주소로 ERC20 토큰을 보낸 경우가 이에 해당합니다. 전송 전 반드시 네트워크를 확인하세요. 만약 잘못 전송한 경우 트랜잭션 해시와 함께 즉시 고객지원에 문의하세요.",
+    icons: [
+      <EthLogo key="eth" className="w-5 h-5" />,
+      <UsdtLogo key="usdt" className="w-5 h-5" />,
+    ],
   },
   {
     q: "암호화폐로 정기 구독 결제가 가능한가요?",
     a: "현재 암호화폐 결제는 일회성 결제(크레딧 패키지 구매, 단건 구독)만 지원합니다. 자동 갱신되는 정기 구독은 Stripe(카드 결제)를 통해서만 가능합니다. 구독 만료 전에 암호화폐로 수동 갱신하실 수 있으며, 갱신 알림을 이메일로 보내드립니다.",
+    icons: [
+      <BtcLogo key="btc" className="w-5 h-5" />,
+      <EthLogo key="eth" className="w-5 h-5" />,
+      <UsdtLogo key="usdt" className="w-5 h-5" />,
+    ],
   },
 ];
 
@@ -343,7 +428,14 @@ function CryptoFAQ() {
               className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
               onClick={() => setOpenIndex(openIndex === i ? null : i)}
             >
-              <span className="font-medium text-sm text-foreground pr-4">{item.q}</span>
+              <div className="flex items-center gap-2.5 pr-4 min-w-0">
+                <div className="flex items-center gap-1 shrink-0">
+                  {item.icons.map((icon: React.ReactNode, idx: number) => (
+                    <span key={idx}>{icon}</span>
+                  ))}
+                </div>
+                <span className="font-medium text-sm text-foreground">{item.q}</span>
+              </div>
               <ChevronDown
                 className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${
                   openIndex === i ? "rotate-180" : ""

@@ -23,6 +23,11 @@ import {
   Volume2,
   Layers,
   Zap,
+  Clock,
+  PartyPopper,
+  Trophy,
+  Star,
+  X,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Link } from "wouter";
@@ -172,6 +177,20 @@ export default function OnboardingTutorial() {
   };
 
   const progress = Math.round((completedSteps.size / tutorialSteps.length) * 100);
+  const allCompleted = completedSteps.size === tutorialSteps.length;
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Check if all steps just completed
+  const prevCompletedRef = useState({ count: 0 })[0];
+  if (completedSteps.size === tutorialSteps.length && prevCompletedRef.count !== tutorialSteps.length) {
+    prevCompletedRef.count = tutorialSteps.length;
+    if (!showCelebration) {
+      setTimeout(() => setShowCelebration(true), 300);
+    }
+  }
+  if (completedSteps.size < tutorialSteps.length) {
+    prevCompletedRef.count = completedSteps.size;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -196,20 +215,37 @@ export default function OnboardingTutorial() {
             아래 6단계를 따라하면 첫 AI 강의 영상을 제작하고 라이브 방송까지 진행할 수 있습니다.
           </p>
 
+          {/* Total Estimated Time */}
+          <div className="mt-4 flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/25">
+              <Clock className="w-4 h-4 text-amber-400" />
+              <span className="text-sm font-medium text-amber-400">
+                전체 예상 소요 시간: 약 30~42분
+              </span>
+            </div>
+          </div>
+
           {/* Progress Bar */}
-          <div className="mt-6">
+          <div className="mt-4">
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-muted-foreground">진행률</span>
               <span className="font-mono font-bold text-foreground">{progress}%</span>
             </div>
-            <div className="h-2 bg-muted/50 rounded-full overflow-hidden">
+            <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full transition-all duration-500"
+                className={`h-full rounded-full transition-all duration-500 ${
+                  allCompleted
+                    ? "bg-gradient-to-r from-green-500 to-emerald-400"
+                    : "bg-gradient-to-r from-purple-500 to-blue-500"
+                }`}
                 style={{ width: `${progress}%` }}
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               {completedSteps.size}/{tutorialSteps.length} 단계 완료
+              {allCompleted && (
+                <span className="ml-2 text-green-400 font-semibold">모든 단계 완료!</span>
+              )}
             </p>
           </div>
         </div>
@@ -251,7 +287,8 @@ export default function OnboardingTutorial() {
                     >
                       {step.title}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-2.5 h-2.5" />
                       {step.estimatedTime}
                     </div>
                   </div>
@@ -274,9 +311,12 @@ export default function OnboardingTutorial() {
                       <Badge variant="secondary" className="text-xs">
                         Step {step.id}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {step.estimatedTime}
-                      </span>
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/25">
+                        <Clock className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="text-xs font-semibold text-amber-400">
+                          {step.estimatedTime}
+                        </span>
+                      </div>
                     </div>
                     <h2 className="text-2xl font-bold flex items-center gap-3">
                       <div className="p-2 rounded-xl bg-purple-500/15 text-purple-400">
@@ -426,6 +466,62 @@ export default function OnboardingTutorial() {
           </div>
         </div>
       </div>
+
+      {/* Celebration Modal */}
+      {showCelebration && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="relative bg-background border border-border rounded-2xl p-8 max-w-md mx-4 text-center animate-in zoom-in-95 fade-in duration-300">
+            <button
+              onClick={() => setShowCelebration(false)}
+              className="absolute top-3 right-3 p-1 rounded-full hover:bg-muted/50 transition-colors"
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </button>
+
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                  <Trophy className="w-10 h-10 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-green-500 flex items-center justify-center border-2 border-background">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center gap-1 mb-3">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+              ))}
+            </div>
+
+            <h2 className="text-2xl font-bold mb-2">축하합니다!</h2>
+            <p className="text-lg text-purple-400 font-semibold mb-3">
+              모든 온보딩 단계를 완료했습니다
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              이제 Virtual Speaker의 모든 기능을 활용할 준비가 되었습니다.
+              첫 번째 AI 강의 영상을 제작해보세요!
+            </p>
+
+            <div className="flex flex-col gap-2">
+              <Link href="/studio">
+                <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
+                  <Rocket className="w-4 h-4 mr-2" />
+                  제작 스튜디오로 이동
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                onClick={() => setShowCelebration(false)}
+                className="text-muted-foreground"
+              >
+                계속 둘러보기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
