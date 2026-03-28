@@ -20,6 +20,7 @@ import {
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, Settings2, Edit3, History,
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare
 } from "lucide-react";
+import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 
 const CATEGORIES = [
   { value: "web3", label: "Web3" },
@@ -83,6 +84,11 @@ export default function ProductionStudio() {
     { enabled: !!templateId }
   );
 
+  // Credit guard
+  const { modalState, checkCredits, closeModal } = useCreditGuard();
+  const subscriptionQuery = trpc.subscription.my.useQuery(undefined, { enabled: !!user });
+  const currentCredits = subscriptionQuery.data?.subscription?.creditsRemaining ?? 0;
+
   // Data queries
   const scriptsQuery = trpc.script.list.useQuery(undefined, { enabled: !!user });
   const pipelinesQuery = trpc.pipeline.list.useQuery(undefined, { enabled: !!user });
@@ -94,6 +100,7 @@ export default function ProductionStudio() {
     onSuccess: (data) => {
       toast.success(`스크립트 생성 완료! ${data.sectionCount}개 섹션, 약 ${Math.round((data.estimatedDurationSec || 0) / 60)}분`);
       scriptsQuery.refetch();
+      subscriptionQuery.refetch();
       setActiveTab("scripts");
     },
     onError: (err) => toast.error(err.message),
@@ -103,6 +110,7 @@ export default function ProductionStudio() {
     onSuccess: (data) => {
       toast.success("파이프라인 완료! 음성이 생성되었습니다.");
       pipelinesQuery.refetch();
+      subscriptionQuery.refetch();
       setActiveTab("pipelines");
     },
     onError: (err) => toast.error(err.message),
@@ -154,6 +162,8 @@ export default function ProductionStudio() {
 
   const handleGenerateScript = () => {
     if (!title.trim() || !prompt.trim()) { toast.error("제목과 프롬프트를 입력하세요."); return; }
+    // Credit guard: script generation costs 5 credits
+    if (!checkCredits("script_generation", currentCredits)) return;
     if (templateId) {
       generateFromTemplate.mutate({ templateId, title, prompt, language, targetDurationMin: durationMin });
     } else {
@@ -195,6 +205,8 @@ export default function ProductionStudio() {
 
   const handleStartPipeline = () => {
     if (!selectedScriptId || !pipelineTitle.trim()) { toast.error("스크립트를 선택하고 제목을 입력하세요."); return; }
+    // Credit guard: TTS generation costs 10 credits
+    if (!checkCredits("tts_generation", currentCredits)) return;
     startPipeline.mutate({
       scriptId: selectedScriptId,
       title: pipelineTitle,
@@ -796,6 +808,13 @@ export default function ProductionStudio() {
           </TabsContent>
         </Tabs>
       </div>
+      <CreditGuardModal
+        open={modalState.open}
+        onClose={closeModal}
+        featureKey={modalState.featureKey}
+        currentCredits={modalState.currentCredits}
+        requiredCredits={modalState.requiredCredits}
+      />
     </div>
   );
 }

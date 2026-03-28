@@ -35,6 +35,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentHistory from "./pages/PaymentHistory";
 import AdminRevenue from "./pages/AdminRevenue";
+import CryptoPayment from "./pages/CryptoPayment";
 
 function Router() {
   return (
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/admin/revenue" component={AdminRevenue} />
       <Route path="/payment/success" component={PaymentSuccess} />
       <Route path="/payments" component={PaymentHistory} />
+      <Route path="/crypto-payment/:id" component={CryptoPayment} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

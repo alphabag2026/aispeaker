@@ -2685,14 +2685,17 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         } else {
           throw new TRPCError({ code: "BAD_REQUEST" });
         }
-        // Generate wallet address (in production, use HD wallet derivation per payment)
+        // Wallet addresses from environment variables
+        const evmWallet = process.env.CRYPTO_WALLET_EVM || "0x0000000000000000000000000000000000000000";
+        const tronWallet = process.env.CRYPTO_WALLET_TRON || "T0000000000000000000000000000000000";
+        const btcWallet = process.env.CRYPTO_WALLET_BTC || "bc1q0000000000000000000000000000000000000000";
         const walletAddresses: Record<string, Record<string, string>> = {
-          USDT: { ethereum: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", bsc: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", tron: "TN3W4H6rK2ce4vX9YnFQHwKENnHjoxb3m9", polygon: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68" },
-          USDC: { ethereum: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", bsc: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68", polygon: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68" },
-          ETH: { ethereum: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68" },
-          BTC: { bitcoin: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" },
+          USDT: { ethereum: evmWallet, bsc: evmWallet, tron: tronWallet, polygon: evmWallet },
+          USDC: { ethereum: evmWallet, bsc: evmWallet, polygon: evmWallet },
+          ETH: { ethereum: evmWallet },
+          BTC: { bitcoin: btcWallet },
         };
-        const walletAddress = walletAddresses[input.cryptoCurrency]?.[input.network] || "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD68";
+        const walletAddress = walletAddresses[input.cryptoCurrency]?.[input.network] || evmWallet;
         // Calculate crypto amount (simplified - in production use real-time price feed)
         const usdAmount = amountCents / 100;
         let cryptoAmount = "0";

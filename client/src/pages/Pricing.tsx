@@ -19,9 +19,12 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
+  Wallet,
+  Loader2,
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -60,39 +63,110 @@ const CREDIT_PRICING = [
   { action: "라이브 방송 (시간당)", credits: 50, description: "실시간 AI 강의 방송" },
 ];
 
-const CREDIT_PACKAGES = [
-  { name: "Basic", credits: 100, price: 9, perCredit: 0.09 },
-  { name: "Standard", credits: 500, price: 39, perCredit: 0.078 },
-  { name: "Premium", credits: 2000, price: 129, perCredit: 0.065 },
-  { name: "Bulk", credits: 10000, price: 499, perCredit: 0.05 },
+// Matches server-side CREDIT_PACKAGES in stripe.ts
+const CREDIT_PACKAGE_MAP = [
+  { id: "credits_50", name: "Basic", credits: 50, price: 15, perCredit: 0.30 },
+  { id: "credits_200", name: "Standard", credits: 200, price: 50, perCredit: 0.25 },
+  { id: "credits_500", name: "Premium", credits: 500, price: 100, perCredit: 0.20 },
+  { id: "credits_2000", name: "Bulk", credits: 2000, price: 300, perCredit: 0.15 },
 ];
+
+type PaymentMethod = "stripe" | "crypto";
+type CryptoCurrency = "USDT" | "USDC" | "ETH" | "BTC";
 
 export default function Pricing() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [isYearly, setIsYearly] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe");
+  const [selectedCrypto, setSelectedCrypto] = useState<CryptoCurrency>("USDT");
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [loadingPackage, setLoadingPackage] = useState<string | null>(null);
   const { data: plans = [], isLoading } = trpc.plan.list.useQuery();
-  const subscribeMutation = trpc.subscription.subscribe.useMutation();
+
+  // Stripe mutations
+  const stripeSubscription = trpc.payment.createSubscriptionCheckout.useMutation();
+  const stripeCreditPurchase = trpc.payment.createCreditCheckout.useMutation();
+  // Crypto mutation
+  const cryptoPayment = trpc.crypto.createPayment.useMutation();
 
   const handleSubscribe = async (planSlug: string) => {
     if (!user) {
       toast.error("로그인이 필요합니다.");
+      window.location.href = getLoginUrl();
+      return;
+    }
+    if (planSlug === "free") {
+      toast.success("Free 플랜이 활성화되었습니다!");
+      navigate("/my-subscription");
       return;
     }
     if (planSlug === "enterprise") {
       toast.info("Enterprise 플랜은 영업팀에 문의해주세요.\ncontact@virtualspeaker.ai");
       return;
     }
+
+    setLoadingPlan(planSlug);
     try {
-      await subscribeMutation.mutateAsync({
-        planSlug,
-        billingCycle: isYearly ? "yearly" : "monthly",
-      });
-      toast.success("구독이 활성화되었습니다!");
-      navigate("/my-subscription");
+      if (paymentMethod === "stripe") {
+        const result = await stripeSubscription.mutateAsync({
+          planSlug,
+          billingCycle: isYearly ? "yearly" : "monthly",
+          origin: window.location.origin,
+        });
+        if (result.checkoutUrl) {
+          toast.info("Stripe 결제 페이지로 이동합니다...");
+          window.open(result.checkoutUrl, "_blank");
+        }
+      } else {
+        const result = await cryptoPayment.mutateAsync({
+          type: "subscription",
+          planSlug,
+          billingCycle: isYearly ? "yearly" : "monthly",
+          cryptoCurrency: selectedCrypto,
+          network: selectedCrypto === "BTC" ? "bitcoin" : "ethereum",
+        });
+        navigate(`/crypto-payment/${result.paymentId}`);
+      }
     } catch (e: any) {
-      toast.error(e.message || "구독 처리 중 오류가 발생했습니다.");
+      toast.error(e.message || "결제 처리 중 오류가 발생했습니다.");
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const handleBuyCredits = async (packageId: string) => {
+    if (!user) {
+      toast.error("로그인이 필요합니다.");
+      window.location.href = getLoginUrl();
+      return;
+    }
+
+    setLoadingPackage(packageId);
+    try {
+      if (paymentMethod === "stripe") {
+        const result = await stripeCreditPurchase.mutateAsync({
+          packageId,
+          origin: window.location.origin,
+        });
+        if (result.checkoutUrl) {
+          toast.info("Stripe 결제 페이지로 이동합니다...");
+          window.open(result.checkoutUrl, "_blank");
+        }
+      } else {
+        const result = await cryptoPayment.mutateAsync({
+          type: "credit_package",
+          packageId,
+          cryptoCurrency: selectedCrypto,
+          network: selectedCrypto === "BTC" ? "bitcoin" : "ethereum",
+        });
+        navigate(`/crypto-payment/${result.paymentId}`);
+      }
+    } catch (e: any) {
+      toast.error(e.message || "결제 처리 중 오류가 발생했습니다.");
+    } finally {
+      setLoadingPackage(null);
     }
   };
 
@@ -131,7 +205,7 @@ export default function Pricing() {
           </p>
 
           {/* Billing Toggle */}
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-3 mb-6">
             <span className={`text-sm ${!isYearly ? "text-white font-medium" : "text-slate-400"}`}>월간</span>
             <Switch checked={isYearly} onCheckedChange={setIsYearly} />
             <span className={`text-sm ${isYearly ? "text-white font-medium" : "text-slate-400"}`}>
@@ -141,6 +215,44 @@ export default function Pricing() {
               </Badge>
             </span>
           </div>
+
+          {/* Payment Method Selector */}
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-xs text-slate-400 mr-2">결제 수단:</span>
+            <Button
+              size="sm"
+              variant={paymentMethod === "stripe" ? "default" : "outline"}
+              className={`text-xs h-8 ${paymentMethod === "stripe" ? "bg-blue-600 hover:bg-blue-700" : "border-slate-600 text-slate-300 hover:bg-slate-800"}`}
+              onClick={() => setPaymentMethod("stripe")}
+            >
+              <CreditCard className="w-3 h-3 mr-1" /> 카드 결제
+            </Button>
+            <Button
+              size="sm"
+              variant={paymentMethod === "crypto" ? "default" : "outline"}
+              className={`text-xs h-8 ${paymentMethod === "crypto" ? "bg-orange-600 hover:bg-orange-700" : "border-slate-600 text-slate-300 hover:bg-slate-800"}`}
+              onClick={() => setPaymentMethod("crypto")}
+            >
+              <Wallet className="w-3 h-3 mr-1" /> 암호화폐
+            </Button>
+          </div>
+
+          {/* Crypto currency selector */}
+          {paymentMethod === "crypto" && (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              {(["USDT", "USDC", "ETH", "BTC"] as CryptoCurrency[]).map((coin) => (
+                <Button
+                  key={coin}
+                  size="sm"
+                  variant={selectedCrypto === coin ? "default" : "outline"}
+                  className={`text-xs h-7 px-3 ${selectedCrypto === coin ? "bg-amber-600" : "border-slate-600 text-slate-400 hover:bg-slate-800"}`}
+                  onClick={() => setSelectedCrypto(coin)}
+                >
+                  {coin}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -173,6 +285,7 @@ export default function Pricing() {
                   ? plan.priceYearly ? Math.round(plan.priceYearly / 12) : 0
                   : plan.priceMonthly;
                 const features = Array.isArray(plan.features) ? plan.features : [];
+                const isLoadingThis = loadingPlan === plan.slug;
 
                 return (
                   <Card
@@ -270,9 +383,18 @@ export default function Pricing() {
                         variant={isProfessional ? "default" : "outline"}
                         size="sm"
                         onClick={() => handleSubscribe(plan.slug)}
-                        disabled={subscribeMutation.isPending}
+                        disabled={isLoadingThis}
                       >
-                        {getButtonLabel(plan.slug)}
+                        {isLoadingThis ? (
+                          <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> 처리 중...</>
+                        ) : (
+                          <>
+                            {paymentMethod === "crypto" && plan.slug !== "free" && plan.slug !== "enterprise" && (
+                              <Wallet className="w-3 h-3 mr-1" />
+                            )}
+                            {getButtonLabel(plan.slug)}
+                          </>
+                        )}
                       </Button>
                     </CardContent>
                   </Card>
@@ -337,29 +459,50 @@ export default function Pricing() {
         </div>
 
         <div className="grid md:grid-cols-4 gap-4">
-          {CREDIT_PACKAGES.map((pkg) => (
-            <Card key={pkg.name} className="border-border/50 hover:border-amber-500/30 transition-colors">
-              <CardContent className="p-6 text-center">
-                <h3 className="font-bold text-lg mb-1">{pkg.name}</h3>
-                <div className="text-3xl font-bold text-amber-500 mb-1">
-                  {pkg.credits.toLocaleString()}
-                </div>
-                <div className="text-xs text-muted-foreground mb-3">크레딧</div>
-                <div className="text-2xl font-bold mb-1">${pkg.price}</div>
-                <div className="text-xs text-muted-foreground mb-4">
-                  크레딧당 ${pkg.perCredit.toFixed(3)}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => toast.info("결제 시스템 준비 중입니다.")}
-                >
-                  구매하기
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+          {CREDIT_PACKAGE_MAP.map((pkg) => {
+            const isLoadingThis = loadingPackage === pkg.id;
+            return (
+              <Card key={pkg.id} className="border-border/50 hover:border-amber-500/30 transition-colors">
+                <CardContent className="p-6 text-center">
+                  <h3 className="font-bold text-lg mb-1">{pkg.name}</h3>
+                  <div className="text-3xl font-bold text-amber-500 mb-1">
+                    {pkg.credits.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-3">크레딧</div>
+                  <div className="text-2xl font-bold mb-1">${pkg.price}</div>
+                  <div className="text-xs text-muted-foreground mb-4">
+                    크레딧당 ${pkg.perCredit.toFixed(2)}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => handleBuyCredits(pkg.id)}
+                    disabled={isLoadingThis}
+                  >
+                    {isLoadingThis ? (
+                      <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> 처리 중...</>
+                    ) : (
+                      <>
+                        {paymentMethod === "crypto" ? (
+                          <><Wallet className="w-3 h-3 mr-1" /> {selectedCrypto}로 구매</>
+                        ) : (
+                          <><CreditCard className="w-3 h-3 mr-1" /> 카드로 구매</>
+                        )}
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Test card info */}
+        <div className="mt-6 text-center">
+          <p className="text-xs text-muted-foreground">
+            테스트 결제: 카드번호 <code className="bg-muted px-1.5 py-0.5 rounded text-foreground">4242 4242 4242 4242</code> / 만료일: 미래 날짜 / CVC: 아무 숫자 3자리
+          </p>
         </div>
       </div>
 
@@ -417,7 +560,7 @@ export default function Pricing() {
                   </div>
                   <div className="flex justify-between text-slate-300">
                     <span>추가 크레딧 (500)</span>
-                    <span className="font-medium">$39</span>
+                    <span className="font-medium">$100</span>
                   </div>
                   <div className="flex justify-between text-slate-300">
                     <span>스튜디오/인건비</span>
@@ -429,12 +572,12 @@ export default function Pricing() {
                   </div>
                   <div className="border-t border-green-500/20 pt-3 flex justify-between text-green-400 font-bold text-lg">
                     <span>월 총 비용</span>
-                    <span>$138</span>
+                    <span>$199</span>
                   </div>
                 </div>
                 <div className="mt-4 bg-green-500/10 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-400">97.7% 절약</div>
-                  <div className="text-xs text-green-400/70">월 $5,862 절감</div>
+                  <div className="text-2xl font-bold text-green-400">96.7% 절약</div>
+                  <div className="text-xs text-green-400/70">월 $5,801 절감</div>
                 </div>
               </CardContent>
             </Card>
@@ -457,24 +600,24 @@ export default function Pricing() {
               a: "각 AI 기능(스크립트 생성, TTS, 아바타 영상 등)은 사용 시 크레딧이 차감됩니다. 구독 플랜에 포함된 월 크레딧이 매월 자동 충전되며, 부족 시 추가 크레딧 패키지를 구매할 수 있습니다. 미사용 크레딧은 다음 달로 이월되지 않습니다.",
             },
             {
-              q: "무료 플랜의 제한은 무엇인가요?",
-              a: "Free 플랜은 월 10 크레딧, 1회 강의 생성, 기본 TTS 3종, 기본 얼굴 3종, 480p 영상 품질로 제한됩니다. 딥페이크, 음성 변조, 라이브 방송 등 고급 기능은 사용할 수 없습니다.",
+              q: "어떤 결제 수단을 지원하나요?",
+              a: "Stripe를 통한 신용카드/체크카드 결제와 암호화폐(USDT, USDC, ETH, BTC) 결제를 모두 지원합니다. 암호화폐 결제 시 Ethereum, BSC, Polygon, Tron, Bitcoin 네트워크를 사용할 수 있습니다.",
             },
             {
               q: "5분 강의 영상 1건에 크레딧이 얼마나 드나요?",
               a: "스크립트 생성(5) + TTS 음성(10) + 아바타 영상(100) + 썸네일(5) + 자막(3) = 약 123 크레딧입니다. Professional 플랜(500 크레딧)이면 월 4건, Business 플랜(2,000 크레딧)이면 월 16건 정도 제작 가능합니다.",
             },
             {
-              q: "Enterprise 플랜은 어떻게 문의하나요?",
-              a: "contact@virtualspeaker.ai로 이메일을 보내시거나, 사이트 내 문의 양식을 이용해주세요. 전담 매니저가 조직 규모와 요구사항에 맞는 맞춤 견적을 제공합니다.",
-            },
-            {
-              q: "플랜 변경은 어떻게 하나요?",
-              a: "언제든지 업그레이드 또는 다운그레이드할 수 있습니다. 업그레이드는 즉시 적용되며 차액이 청구됩니다. 다운그레이드는 현재 결제 기간 종료 후 적용됩니다.",
+              q: "크레딧이 부족하면 어떻게 되나요?",
+              a: "기능 사용 시 크레딧이 부족하면 자동으로 안내 모달이 표시됩니다. 모달에서 바로 크레딧 충전 페이지로 이동하거나, 플랜 업그레이드를 할 수 있습니다.",
             },
             {
               q: "API 비용은 누가 부담하나요?",
               a: "모든 AI API 비용(D-ID, OpenAI TTS, LLM 등)은 크레딧 가격에 이미 포함되어 있습니다. 별도의 외부 API 키를 준비하실 필요가 없습니다. 저희가 모든 인프라를 관리합니다.",
+            },
+            {
+              q: "플랜 변경은 어떻게 하나요?",
+              a: "언제든지 업그레이드 또는 다운그레이드할 수 있습니다. 업그레이드는 즉시 적용되며 차액이 청구됩니다. 다운그레이드는 현재 결제 기간 종료 후 적용됩니다.",
             },
           ].map((faq, i) => (
             <Card
@@ -508,10 +651,10 @@ export default function Pricing() {
             무료로 체험하고, 비즈니스에 맞는 플랜으로 업그레이드하세요.
           </p>
           <div className="flex gap-4 justify-center">
-            <Button size="lg" className="bg-purple-600 hover:bg-purple-700" onClick={() => handleSubscribe("free")}>
-              무료로 시작하기
+            <Button size="lg" className="bg-purple-600 hover:bg-purple-700" onClick={() => handleSubscribe("starter")}>
+              Starter 시작하기
             </Button>
-            <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+            <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10" onClick={() => handleSubscribe("enterprise")}>
               영업팀 문의
             </Button>
           </div>
