@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
@@ -222,18 +223,13 @@ export default function BroadcastManager() {
 
         {/* Broadcast List */}
         {filteredBroadcasts.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-16 text-center">
-              <Tv className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-              <p className="text-muted-foreground mb-4">
-                {filter === "all" ? "아직 방송이 없습니다." : `${filter === "live" ? "진행 중인" : filter === "scheduled" ? "예정된" : "종료된"} 방송이 없습니다.`}
-              </p>
-              <Button onClick={() => setShowCreate(true)} variant="outline" className="gap-2">
-                <Plus className="w-4 h-4" />
-                첫 방송 만들기
-              </Button>
-            </CardContent>
-          </Card>
+          <EmptyState
+            type="broadcast"
+            title={filter === "all" ? "아직 방송이 없습니다" : `${filter === "live" ? "진행 중인" : filter === "scheduled" ? "예정된" : "종료된"} 방송이 없습니다`}
+            description="스크립트를 선택하고 라이브 방송을 시작해보세요."
+            actionLabel="첫 방송 만들기"
+            onAction={() => setShowCreate(true)}
+          />
         ) : (
           <div className="grid gap-4">
             {filteredBroadcasts.map((item: any) => {

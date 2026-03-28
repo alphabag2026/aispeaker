@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import { trpc } from "@/lib/trpc";
+import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -167,17 +168,13 @@ export default function InstructorLectures() {
             })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">강의가 없습니다</h3>
-            <p className="text-muted-foreground mb-4">첫 번째 AI 강의를 만들어보세요!</p>
-            <Link href="/instructor/lectures/new">
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                새 강의 만들기
-              </Button>
-            </Link>
-          </div>
+          <EmptyState
+            type="lectures"
+            title="강의가 없습니다"
+            description="첫 번째 AI 강의를 만들어보세요!"
+            actionLabel="새 강의 만들기"
+            actionHref="/instructor/lectures/new"
+          />
         )}
       </div>
     </div>

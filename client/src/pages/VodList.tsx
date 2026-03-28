@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { trpc } from "@/lib/trpc";
+import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -137,16 +138,13 @@ export default function VodList() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <Video className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-semibold mb-2">아직 VOD가 없습니다</h3>
-            <p className="text-muted-foreground mb-6">
-              강의가 종료되면 자동으로 VOD가 생성됩니다.
-            </p>
-            <Link href="/lectures">
-              <Button>강의 둘러보기</Button>
-            </Link>
-          </div>
+          <EmptyState
+            type="general"
+            title="아직 VOD가 없습니다"
+            description="강의가 종료되면 자동으로 VOD가 생성됩니다."
+            actionLabel="강의 둘러보기"
+            actionHref="/lectures"
+          />
         )}
       </div>
     </div>

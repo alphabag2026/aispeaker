@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import EmptyState from "@/components/EmptyState";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import {
@@ -337,13 +338,13 @@ export default function PipelineDashboard() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Film className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>아직 제작 히스토리가 없습니다.</p>
-                <Button variant="outline" className="mt-4" onClick={() => navigate("/studio")}>
-                  첫 강의 영상 제작하기
-                </Button>
-              </div>
+              <EmptyState
+                type="pipeline"
+                title="아직 제작 히스토리가 없습니다"
+                description="스튜디오에서 첫 강의 영상을 제작해보세요."
+                actionLabel="첫 강의 영상 제작하기"
+                actionHref="/studio"
+              />
             )}
           </CardContent>
         </Card>

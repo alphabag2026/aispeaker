@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -381,13 +382,13 @@ export default function ProductionStudio() {
             <div className="space-y-4">
               {scriptsQuery.isLoading && <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-violet-400" /></div>}
               {scriptsQuery.data?.length === 0 && (
-                <Card className="border-dashed">
-                  <CardContent className="py-12 text-center">
-                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">아직 생성된 스크립트가 없습니다.</p>
-                    <Button variant="outline" className="mt-4" onClick={() => setActiveTab("create")}>스크립트 생성하기</Button>
-                  </CardContent>
-                </Card>
+                <EmptyState
+                  type="scripts"
+                  title="아직 생성된 스크립트가 없습니다"
+                  description="AI로 강의 스크립트를 자동 생성해보세요."
+                  actionLabel="스크립트 생성하기"
+                  onAction={() => setActiveTab("create")}
+                />
               )}
               {scriptsQuery.data?.map((script) => {
                 const sections = script.sections ? JSON.parse(script.sections) : [];
@@ -563,13 +564,13 @@ export default function ProductionStudio() {
             <div className="space-y-4">
               {pipelinesQuery.isLoading && <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-violet-400" /></div>}
               {pipelinesQuery.data?.length === 0 && (
-                <Card className="border-dashed">
-                  <CardContent className="py-12 text-center">
-                    <Layers className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">아직 제작 이력이 없습니다.</p>
-                    <Button variant="outline" className="mt-4" onClick={() => setActiveTab("produce")}>영상 제작하기</Button>
-                  </CardContent>
-                </Card>
+                <EmptyState
+                  type="pipeline"
+                  title="아직 제작 이력이 없습니다"
+                  description="스크립트를 선택하고 AI 영상을 제작해보세요."
+                  actionLabel="영상 제작하기"
+                  onAction={() => setActiveTab("produce")}
+                />
               )}
               {pipelinesQuery.data?.map((item) => {
                 const p = item.pipeline;

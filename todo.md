@@ -375,3 +375,11 @@
 - [x] 제작 스튜디오 (ProductionStudio) + 스크립트 에디터 + 스크립트 템플릿 + 파이프라인 대시보드 배너 추가
 - [x] 강의 목록 (LectureList) 배너 추가
 - [x] 방송 관리 (BroadcastManager) + VOD 아카이브 (VodList) 배너 추가
+
+## UI 개선 (v2.5.3)
+- [x] Navbar에서 내 수강/학습 현황/수료증 메뉴 제거
+- [x] AI 로고 생성 및 Navbar 적용
+- [x] 빈 상태(Empty State) AI 일러스트 추가
+- [x] 라이트 테마 전환 기능 추가
+- [x] 불필요한 라우트 제거 (내 수강, 학습 현황, 수료증)
+- [x] 전체 200개 테스트 통과 확인

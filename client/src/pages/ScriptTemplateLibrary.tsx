@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -333,21 +334,21 @@ export default function ScriptTemplateLibrary() {
         )}
 
         {filteredTemplates.length === 0 && !templatesQuery.isLoading && (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center">
-              <BookTemplate className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-2">아직 템플릿이 없습니다.</p>
-              <p className="text-sm text-muted-foreground mb-4">"기본 템플릿 추가" 버튼을 클릭하여 내장 템플릿을 불러오거나, 직접 새 템플릿을 만들어보세요.</p>
-              <div className="flex gap-2 justify-center">
-                <Button variant="outline" onClick={() => seedBuiltIn.mutate()}>
-                  <Sparkles className="w-4 h-4 mr-2" />기본 템플릿 추가
-                </Button>
-                <Button onClick={() => { resetForm(); setShowCreateDialog(true); }}>
-                  <Plus className="w-4 h-4 mr-2" />새 템플릿 만들기
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div>
+            <EmptyState
+              type="scripts"
+              title="아직 템플릿이 없습니다"
+              description="기본 템플릿을 불러오거나, 직접 새 템플릿을 만들어보세요."
+            />
+            <div className="flex gap-2 justify-center -mt-4">
+              <Button variant="outline" onClick={() => seedBuiltIn.mutate()}>
+                <Sparkles className="w-4 h-4 mr-2" />기본 템플릿 추가
+              </Button>
+              <Button onClick={() => { resetForm(); setShowCreateDialog(true); }}>
+                <Plus className="w-4 h-4 mr-2" />새 템플릿 만들기
+              </Button>
+            </div>
+          </div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

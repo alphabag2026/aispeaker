@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import { trpc } from "@/lib/trpc";
+import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -146,11 +147,11 @@ export default function LectureList() {
             })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">강의가 없습니다</h3>
-            <p className="text-muted-foreground">아직 등록된 강의가 없습니다.</p>
-          </div>
+          <EmptyState
+            type="lectures"
+            title="강의가 없습니다"
+            description="아직 등록된 강의가 없습니다. 강사가 새 강의를 만들면 여기에 표시됩니다."
+          />
         )}
       </div>
     </div>

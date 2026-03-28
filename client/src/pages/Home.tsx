@@ -90,12 +90,12 @@ const features = [
 ];
 
 const categories = [
-  { name: "Web3", color: "bg-blue-500/20 text-blue-400" },
-  { name: "AI", color: "bg-purple-500/20 text-purple-400" },
-  { name: "Blockchain", color: "bg-green-500/20 text-green-400" },
-  { name: "DeFi", color: "bg-yellow-500/20 text-yellow-400" },
-  { name: "NFT", color: "bg-pink-500/20 text-pink-400" },
-  { name: "Metaverse", color: "bg-cyan-500/20 text-cyan-400" },
+  { name: "Web3", color: "bg-blue-500/20 text-blue-600 dark:text-blue-400" },
+  { name: "AI", color: "bg-purple-500/20 text-purple-600 dark:text-purple-400" },
+  { name: "Blockchain", color: "bg-green-500/20 text-green-600 dark:text-green-400" },
+  { name: "DeFi", color: "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400" },
+  { name: "NFT", color: "bg-pink-500/20 text-pink-600 dark:text-pink-400" },
+  { name: "Metaverse", color: "bg-cyan-500/20 text-cyan-600 dark:text-cyan-400" },
 ];
 
 const platforms = [
@@ -123,8 +123,8 @@ export default function Home() {
             alt="Virtual AI Instructor"
             className="w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background/60" />
         </div>
 
         <div className="container relative py-24 md:py-32 lg:py-40">
@@ -134,18 +134,18 @@ export default function Home() {
               Virtual Speaker v2.5
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 drop-shadow-lg">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 drop-shadow-lg [text-shadow:0_2px_8px_var(--background)]">
               AI가 당신 대신
               <br />
               <span className="text-primary">온라인 강의</span>를 진행합니다
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground mb-4 max-w-xl">
+            <p className="text-lg md:text-xl text-foreground/80 mb-4 max-w-xl [text-shadow:0_1px_4px_var(--background)]">
               프롬프트만 입력하면 AI가 강의 콘텐츠를 생성하고, 딥페이크 얼굴 변환과 음성 변조로
               완전히 다른 강사로 변신하여 Zoom, Google Meet 등에서 실시간 강의를 진행합니다.
             </p>
 
-            <p className="text-sm text-muted-foreground mb-8 max-w-xl">
+            <p className="text-sm text-foreground/60 mb-8 max-w-xl [text-shadow:0_1px_4px_var(--background)]">
               강사의 얼굴, 목소리, 말투를 AI로 변환 · 외부 회의 플랫폼 직접 송출 · 20개 이상 다국어 지원
             </p>
 

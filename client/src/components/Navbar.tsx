@@ -3,6 +3,7 @@ import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { Link, useLocation } from "wouter";
+import { useTheme } from "@/contexts/ThemeContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,13 +12,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Award,
-  BarChart3,
   BookOpen,
-  GraduationCap,
   Home,
   LogOut,
-  Mic,
   Monitor,
   User,
   Menu,
@@ -27,6 +24,8 @@ import {
   HelpCircle,
   History,
   Tv,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -34,6 +33,7 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme, switchable } = useTheme();
 
   const isInstructor = user?.platformRole === "instructor" || user?.role === "admin";
 
@@ -41,11 +41,6 @@ export default function Navbar() {
     { href: "/", label: "홈", icon: Home },
     { href: "/lectures", label: "강의 목록", icon: BookOpen },
     { href: "/vod", label: "VOD", icon: Video },
-    ...(isAuthenticated ? [
-      { href: "/my-lectures", label: "내 수강", icon: GraduationCap },
-      { href: "/my-dashboard", label: "학습 현황", icon: BarChart3 },
-      { href: "/certificates", label: "수료증", icon: Award },
-    ] : []),
     ...(isInstructor ? [
       { href: "/studio", label: "스튜디오", icon: Play },
       { href: "/instructor", label: "강사 대시보드", icon: Monitor },
@@ -59,10 +54,12 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <Mic className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <span className="hidden sm:inline">Virtual Speaker</span>
+          <img
+            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/vs-logo-icon-QHaTxEF2mDDePGaUptJBPp.webp"
+            alt="Virtual Speaker"
+            className="h-8 w-8 rounded-lg object-contain"
+          />
+          <span className="hidden sm:inline bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Virtual Speaker</span>
         </Link>
 
         {/* Desktop nav */}
@@ -82,6 +79,23 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Theme toggle */}
+          {switchable && toggleTheme && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9"
+              title={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4 text-yellow-400" />
+              ) : (
+                <Moon className="h-4 w-4 text-blue-600" />
+              )}
+            </Button>
+          )}
+
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -15,9 +15,7 @@ import InstructorTemplates from "./pages/InstructorTemplates";
 import InstructorFaceSwap from "./pages/InstructorFaceSwap";
 import InstructorVoiceMod from "./pages/InstructorVoiceMod";
 import InstructorPlatforms from "./pages/InstructorPlatforms";
-import MyEnrollments from "./pages/MyEnrollments";
-import StudentDashboard from "./pages/StudentDashboard";
-import Certificates from "./pages/Certificates";
+// MyEnrollments, StudentDashboard, Certificates removed per user request
 import VodList from "./pages/VodList";
 import VodPlayer from "./pages/VodPlayer";
 import ProductionStudio from "./pages/ProductionStudio";
@@ -36,9 +34,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/lectures" component={LectureList} />
       <Route path="/lecture/:id" component={LectureRoom} />
-      <Route path="/my-lectures" component={MyEnrollments} />
-      <Route path="/my-dashboard" component={StudentDashboard} />
-      <Route path="/certificates" component={Certificates} />
+      {/* /my-lectures, /my-dashboard, /certificates routes removed per user request */}
       <Route path="/vod" component={VodList} />
       <Route path="/vod/:id" component={VodPlayer} />
       <Route path="/instructor" component={InstructorDashboard} />
@@ -68,7 +64,7 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
           <Toaster />
           <Router />
