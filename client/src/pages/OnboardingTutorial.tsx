@@ -500,7 +500,7 @@ export default function OnboardingTutorial() {
               모든 온보딩 단계를 완료했습니다
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              이제 Virtual Speaker의 모든 기능을 활용할 준비가 되었습니다.
+              이제 AI Speaker의 모든 기능을 활용할 준비가 되었습니다.
               첫 번째 AI 강의 영상을 제작해보세요!
             </p>
 

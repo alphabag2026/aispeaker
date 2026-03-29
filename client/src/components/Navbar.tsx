@@ -32,6 +32,7 @@ import {
   Shield,
 } from "lucide-react";
 import { useState } from "react";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -64,10 +65,10 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 font-bold text-lg">
           <img
             src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/vs-logo-icon-QHaTxEF2mDDePGaUptJBPp.webp"
-            alt="Virtual Speaker"
+            alt="AI Speaker"
             className="h-8 w-8 rounded-lg object-contain"
           />
-          <span className="hidden sm:inline bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">Virtual Speaker</span>
+          <span className="hidden sm:inline bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">AI Speaker</span>
         </Link>
 
         {/* Desktop nav */}
@@ -88,6 +89,8 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           {/* Theme toggle */}
+          <LanguageSwitcher />
+
           {switchable && toggleTheme && (
             <Button
               variant="ghost"

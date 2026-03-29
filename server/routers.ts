@@ -2557,7 +2557,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           line_items: [{
             price_data: {
               currency: "usd",
-              product_data: { name: `Virtual Speaker ${product.name} (${input.billingCycle === "yearly" ? "연간" : "월간"})` },
+              product_data: { name: `AI Speaker ${product.name} (${input.billingCycle === "yearly" ? "연간" : "월간"})` },
               unit_amount: priceCents,
             },
             quantity: 1,
@@ -2608,7 +2608,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           line_items: [{
             price_data: {
               currency: "usd",
-              product_data: { name: `Virtual Speaker ${pkg.name}` },
+              product_data: { name: `AI Speaker ${pkg.name}` },
               unit_amount: pkg.priceCents,
             },
             quantity: 1,

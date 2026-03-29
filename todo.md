@@ -566,3 +566,64 @@
 ### v3.4.1 테스트
 - [x] 13개 테스트 통과 (v3.4.1-improvements.test.ts)
 - [x] 전체 297개 테스트 통과 (16개 파일)
+
+## v3.5 결제 E2E 검증, 이메일 알림, 다국어 확장
+
+### Stripe 결제 플로우 E2E 검증
+- [ ] Stripe 샌드박스 claim 안내 메시지 추가
+- [ ] 테스트 카드(4242...)로 실제 결제 플로우 검증
+- [ ] 결제 → 구독 활성화 → 온보딩 연결 E2E 확인
+- [ ] PaymentSuccess 페이지에서 구독 상태 실시간 반영
+
+### 결제 이메일 알림 시스템
+- [ ] 알림 DB 테이블 추가 (paymentNotifications)
+- [ ] 결제 완료 시 알림 발송 (webhook: checkout.session.completed)
+- [ ] 구독 갱신 시 알림 발송 (webhook: invoice.paid)
+- [ ] 결제 실패 시 알림 발송 (webhook: invoice.payment_failed)
+- [ ] 알림 이력 조회 페이지
+
+### 다국어 지원 확장 (Pricing/Troubleshooting/Onboarding)
+- [ ] i18n 시스템 구축 (언어 컨텍스트 + 번역 파일)
+- [ ] 언어 선택 UI (국기 아이콘 기반)
+- [ ] Pricing 페이지 영어/중국어/일본어 번역
+- [ ] PaymentTroubleshooting 페이지 영어/중국어/일본어 번역
+- [ ] OnboardingTutorial 페이지 영어/중국어/일본어 번역
+
+### 테스트
+- [ ] 결제 E2E 플로우 테스트
+- [ ] 이메일 알림 시스템 테스트
+- [ ] 다국어 번역 파일 구조 테스트
+- [ ] 전체 테스트 통과 확인
+
+## v3.5 브랜드명 변경, 도메인, 이메일 알림, 다국어
+
+### 브랜드명 변경 (Virtual Speaker → AI Speaker)
+- [x] VITE_APP_TITLE 변경 (Settings → General에서 설정 안내)
+- [x] index.html title 변경
+- [x] Navbar 브랜드명 변경
+- [x] Home 페이지 브랜딩 반영
+- [x] Footer 브랜딩 반영
+- [x] 전체 파일에서 "Virtual Speaker" → "AI Speaker" 일괄 변경 (Navbar, Home, Pricing, AdminDashboard, OnboardingTutorial, routers.ts)
+
+### 도메인 설정
+- [x] aispeaker.cc 커스텀 도메인 바인딩 안내 (Settings → Domains에서 설정)
+
+### 결제 알림 시스템
+- [x] 웹훅에 결제 완료 알림 추가 (notifyOwner - 구독/크레딧)
+- [x] 웹훅에 구독 갱신 알림 추가 (invoice.payment_succeeded)
+- [x] 웹훅에 결제 실패 알림 추가 (payment_intent.payment_failed)
+- [x] 웹훅에 구독 해지 알림 추가 (customer.subscription.deleted)
+
+### 다국어 지원 확장 (Pricing/Troubleshooting/Onboarding)
+- [x] i18n 시스템 구축 (LanguageContext + LanguageProvider + registerTranslations)
+- [x] 언어 선택 UI (LanguageSwitcher - 국기 아이콘 드롭다운, Navbar 통합)
+- [x] Pricing 페이지 영어/중국어/일본어 번역 (40+ 키)
+- [x] PaymentTroubleshooting 페이지 영어/중국어/일본어 번역 (20+ 키)
+- [x] OnboardingTutorial 페이지 영어/중국어/일본어 번역 (30+ 키)
+
+### 테스트
+- [x] 브랜드명 변경 테스트 (5개)
+- [x] 결제 알림 시스템 테스트 (5개)
+- [x] i18n 시스템 테스트 (4개)
+- [x] 번역 파일 구조 테스트 (4개)
+- [x] 전체 315개 테스트 통과 (17개 파일)

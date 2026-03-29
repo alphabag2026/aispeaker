@@ -81,6 +81,14 @@ async function startServer() {
                   externalPaymentId: session.payment_intent,
                 });
                 console.log(`[Webhook] Subscription activated for user ${userId}: ${plan.name}`);
+              // Send notification to owner
+              try {
+                const { notifyOwner } = await import("./notification");
+                await notifyOwner({
+                  title: `💳 새 구독 결제 완료`,
+                  content: `사용자 ID: ${userId}\n플랜: ${plan.name} (${metadata.billing_cycle === "yearly" ? "연간" : "월간"})\n금액: $${(payment.amountCents / 100).toFixed(2)}\n크레딧: ${plan.monthlyCredits}개 지급\n시간: ${new Date().toISOString()}`,
+                });
+              } catch (e) { console.warn("[Webhook] Notification failed:", e); }
               }
             } else if (metadata.type === "credit_package" && metadata.credits) {
               const credits = parseInt(metadata.credits);
@@ -98,10 +106,60 @@ async function startServer() {
                 description: `크레딧 ${credits}개 구매 (Stripe)`,
               });
               console.log(`[Webhook] Credits added for user ${userId}: ${credits}`);
+              // Send notification to owner
+              try {
+                const { notifyOwner } = await import("./notification");
+                await notifyOwner({
+                  title: `🪙 크레딧 패키지 구매`,
+                  content: `사용자 ID: ${userId}\n크레딧: ${credits}개 충전\n금액: $${(payment.amountCents / 100).toFixed(2)}\n시간: ${new Date().toISOString()}`,
+                });
+              } catch (e) { console.warn("[Webhook] Notification failed:", e); }
             }
           }
         }
       }
+      // Handle payment_intent.payment_failed
+      if (event.type === "payment_intent.payment_failed") {
+        const paymentIntent = event.data.object as any;
+        const lastError = paymentIntent.last_payment_error;
+        console.log(`[Webhook] Payment failed: ${paymentIntent.id}`);
+        try {
+          const { notifyOwner } = await import("./notification");
+          await notifyOwner({
+            title: `\u274c \uacb0\uc81c \uc2e4\ud328 \uc54c\ub9bc`,
+            content: `Payment Intent: ${paymentIntent.id}\n\uc2e4\ud328 \uc0ac\uc720: ${lastError?.message || "\uc54c \uc218 \uc5c6\uc74c"}\n\uc5d0\ub7ec \ucf54\ub4dc: ${lastError?.code || "N/A"}\n\uae08\uc561: $${(paymentIntent.amount / 100).toFixed(2)}\n\uc2dc\uac04: ${new Date().toISOString()}`,
+          });
+        } catch (e) { console.warn("[Webhook] Notification failed:", e); }
+      }
+
+      // Handle invoice.payment_succeeded (subscription renewal)
+      if (event.type === "invoice.payment_succeeded") {
+        const invoice = event.data.object as any;
+        if (invoice.billing_reason === "subscription_cycle") {
+          console.log(`[Webhook] Subscription renewed: ${invoice.subscription}`);
+          try {
+            const { notifyOwner } = await import("./notification");
+            await notifyOwner({
+              title: `\ud83d\udd04 \uad6c\ub3c5 \uac31\uc2e0 \uc644\ub8cc`,
+              content: `\uad6c\ub3c5 ID: ${invoice.subscription}\n\uace0\uac1d: ${invoice.customer_email || "N/A"}\n\uae08\uc561: $${(invoice.amount_paid / 100).toFixed(2)}\n\uc2dc\uac04: ${new Date().toISOString()}`,
+            });
+          } catch (e) { console.warn("[Webhook] Notification failed:", e); }
+        }
+      }
+
+      // Handle customer.subscription.deleted
+      if (event.type === "customer.subscription.deleted") {
+        const subscription = event.data.object as any;
+        console.log(`[Webhook] Subscription cancelled: ${subscription.id}`);
+        try {
+          const { notifyOwner } = await import("./notification");
+          await notifyOwner({
+            title: `\u26a0\ufe0f \uad6c\ub3c5 \ud574\uc9c0`,
+            content: `\uad6c\ub3c5 ID: ${subscription.id}\n\uace0\uac1d ID: ${subscription.customer}\n\uc0c1\ud0dc: ${subscription.status}\n\uc2dc\uac04: ${new Date().toISOString()}`,
+          });
+        } catch (e) { console.warn("[Webhook] Notification failed:", e); }
+      }
+
       res.json({ received: true });
     } catch (err: any) {
       console.error("[Webhook] Error:", err);

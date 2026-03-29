@@ -54,7 +54,7 @@ export default function AdminDashboard() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">관리자 대시보드</h1>
-            <p className="text-sm text-muted-foreground mt-1">Virtual Speaker 플랫폼 관리</p>
+            <p className="text-sm text-muted-foreground mt-1">AI Speaker 플랫폼 관리</p>
           </div>
           <Badge className="bg-red-500/10 text-red-500 border-red-500/20">
             <Shield className="w-3 h-3 mr-1" /> Admin

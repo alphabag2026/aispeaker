@@ -514,7 +514,7 @@ export default function Pricing() {
               <Calculator className="w-3 h-3 mr-1" /> ROI 계산
             </Badge>
             <h2 className="text-3xl font-bold text-white mb-3">
-              Virtual Speaker로 얼마나 절약할 수 있을까요?
+              AI Speaker로 얼마나 절약할 수 있을까요?
             </h2>
             <p className="text-slate-400">
               전통적인 강의 영상 제작 대비 비용 절감 효과
@@ -552,7 +552,7 @@ export default function Pricing() {
 
             <Card className="bg-green-950/30 border-green-500/20">
               <CardContent className="p-6">
-                <h3 className="text-lg font-bold text-green-400 mb-4">Virtual Speaker (월 10건 강의)</h3>
+                <h3 className="text-lg font-bold text-green-400 mb-4">AI Speaker (월 10건 강의)</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between text-slate-300">
                     <span>Professional 구독</span>

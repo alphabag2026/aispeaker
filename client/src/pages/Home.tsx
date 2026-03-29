@@ -149,7 +149,7 @@ export default function Home() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 backdrop-blur-sm px-4 py-1.5 text-sm text-primary mb-6">
               <Sparkles className="h-3.5 w-3.5" />
-              Virtual Speaker v3.0 &mdash; 지금 {heroSlides[currentSlide].platform}에서 라이브
+              AI Speaker v3.0 &mdash; 지금 {heroSlides[currentSlide].platform}에서 라이브
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 drop-shadow-lg [text-shadow:0_2px_12px_var(--background)]">
@@ -525,7 +525,7 @@ export default function Home() {
       {/* ═══════════ Footer ═══════════ */}
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>Virtual Speaker v3.0 &mdash; AI-Powered Virtual Lecture Automation Platform</p>
+          <p>AI Speaker v3.0 &mdash; AI-Powered Virtual Lecture Automation Platform</p>
         </div>
       </footer>
     </div>
