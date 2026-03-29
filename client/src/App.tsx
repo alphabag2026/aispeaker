@@ -39,12 +39,14 @@ import CryptoPayment from "./pages/CryptoPayment";
 import PaymentTroubleshooting from "./pages/PaymentTroubleshooting";
 import OnboardingTutorial from "./pages/OnboardingTutorial";
 import Features from "./pages/Features";
+import FeatureDetail from "./pages/FeatureDetail";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/features" component={Features} />
+      <Route path="/features/:id" component={FeatureDetail} />
       <Route path="/lectures" component={LectureList} />
       <Route path="/lecture/:id" component={LectureRoom} />
       {/* /my-lectures, /my-dashboard, /certificates routes removed per user request */}

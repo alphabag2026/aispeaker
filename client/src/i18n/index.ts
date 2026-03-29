@@ -2,3 +2,4 @@
 import "./pricing";
 import "./troubleshooting";
 import "./onboarding";
+import "./features";

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   User2,
   Volume2,
@@ -28,23 +29,27 @@ import {
   Layers,
   Zap,
   Check,
+  ExternalLink,
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
 
 /* ── Feature category definitions ── */
 interface Feature {
+  id: string;
   icon: LucideIcon;
-  title: string;
-  desc: string;
-  details: string[];
+  titleKey: string;
+  descKey: string;
+  detailKeys: string[];
   badge?: string;
   color: string;
+  demoType?: "video" | "gif" | "animation";
+  demoLabel?: string;
 }
 
 interface FeatureCategory {
   id: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
   features: Feature[];
 }
@@ -52,291 +57,400 @@ interface FeatureCategory {
 const categories: FeatureCategory[] = [
   {
     id: "identity",
-    label: "AI 아이덴티티",
+    labelKey: "features.cat.identity",
     icon: User2,
     features: [
       {
+        id: "deepfake",
         icon: User2,
-        title: "딥페이크 얼굴 변환",
-        desc: "강사의 실제 얼굴 대신 AI가 생성한 전문 강사 얼굴로 강의하세요. 50개 이상의 프리셋에서 선택하거나 커스텀 얼굴을 생성할 수 있습니다.",
-        details: [
-          "50+ AI 얼굴 프리셋 제공",
-          "실시간 얼굴 변환 (30ms 이하 지연)",
-          "다양한 국적/성별/연령대 선택",
-          "커스텀 얼굴 업로드 지원",
-          "99.2% 자연스러움 평가",
+        titleKey: "features.identity.deepfake.title",
+        descKey: "features.identity.deepfake.desc",
+        detailKeys: [
+          "features.identity.deepfake.d1",
+          "features.identity.deepfake.d2",
+          "features.identity.deepfake.d3",
+          "features.identity.deepfake.d4",
+          "features.identity.deepfake.d5",
         ],
         badge: "CORE",
         color: "from-violet-500 to-purple-600",
+        demoType: "animation",
+        demoLabel: "Face Swap Demo",
       },
       {
+        id: "voice",
         icon: Volume2,
-        title: "음성 변조 & 말투 변환",
-        desc: "피치, 속도, 톤을 세밀하게 조절하고, 격식체/비격식체/학술체 등 다양한 말투 스타일로 변환합니다.",
-        details: [
-          "20+ 음성 스타일 프리셋",
-          "피치/속도/톤 실시간 조절",
-          "격식체, 비격식체, 학술체 말투",
-          "음성 클로닝 (강사 목소리 학습)",
-          "자연스러운 억양 및 감정 표현",
+        titleKey: "features.identity.voice.title",
+        descKey: "features.identity.voice.desc",
+        detailKeys: [
+          "features.identity.voice.d1",
+          "features.identity.voice.d2",
+          "features.identity.voice.d3",
+          "features.identity.voice.d4",
+          "features.identity.voice.d5",
         ],
         badge: "CORE",
         color: "from-cyan-500 to-blue-600",
+        demoType: "animation",
+        demoLabel: "Voice Modulation Demo",
       },
       {
+        id: "avatar",
         icon: Brain,
-        title: "D-ID AI 아바타",
-        desc: "D-ID API 연동으로 실제 AI 아바타가 화면에서 립싱크와 함께 강의를 진행합니다. 딥페이크와 결합하여 더욱 사실적인 강의를 제공합니다.",
-        details: [
-          "D-ID API 실시간 연동",
-          "립싱크 + 표정 애니메이션",
-          "딥페이크 + 아바타 결합 모드",
-          "API 키 미설정 시 내장 아바타 폴백",
-          "커스텀 아바타 이미지 지원",
+        titleKey: "features.identity.avatar.title",
+        descKey: "features.identity.avatar.desc",
+        detailKeys: [
+          "features.identity.avatar.d1",
+          "features.identity.avatar.d2",
+          "features.identity.avatar.d3",
+          "features.identity.avatar.d4",
+          "features.identity.avatar.d5",
         ],
         color: "from-emerald-500 to-teal-600",
+        demoType: "animation",
+        demoLabel: "AI Avatar Demo",
       },
     ],
   },
   {
     id: "content",
-    label: "콘텐츠 제작",
+    labelKey: "features.cat.content",
     icon: Wand2,
     features: [
       {
+        id: "pipeline",
         icon: Wand2,
-        title: "원클릭 강의 영상 제작",
-        desc: "프롬프트 하나로 AI가 스크립트, TTS 음성, 아바타 영상을 자동 생성합니다. 딥페이크와 음성 변조까지 한 번에 적용됩니다.",
-        details: [
-          "프롬프트 → 스크립트 자동 생성",
-          "스크립트 → TTS 음성 변환",
-          "음성 + 아바타 → 영상 합성",
-          "딥페이크 + 음성 변조 자동 적용",
-          "파이프라인 진행 상태 실시간 표시",
+        titleKey: "features.content.pipeline.title",
+        descKey: "features.content.pipeline.desc",
+        detailKeys: [
+          "features.content.pipeline.d1",
+          "features.content.pipeline.d2",
+          "features.content.pipeline.d3",
+          "features.content.pipeline.d4",
+          "features.content.pipeline.d5",
         ],
         badge: "POPULAR",
         color: "from-amber-500 to-orange-600",
+        demoType: "animation",
+        demoLabel: "Pipeline Demo",
       },
       {
+        id: "editor",
         icon: FileText,
-        title: "AI 스크립트 에디터",
-        desc: "AI가 생성한 스크립트를 섹션별로 편집하고, 드래그&드롭으로 재배치하며, 개별 섹션만 AI로 재생성할 수 있습니다.",
-        details: [
-          "섹션별 인라인 편집",
-          "드래그&드롭 재배치",
-          "개별 섹션 AI 재생성",
-          "버전 관리 (스냅샷/롤백/비교)",
-          "섹션별 예상 시간 자동 계산",
+        titleKey: "features.content.editor.title",
+        descKey: "features.content.editor.desc",
+        detailKeys: [
+          "features.content.editor.d1",
+          "features.content.editor.d2",
+          "features.content.editor.d3",
+          "features.content.editor.d4",
+          "features.content.editor.d5",
         ],
         color: "from-blue-500 to-indigo-600",
+        demoType: "animation",
+        demoLabel: "Editor Demo",
       },
       {
+        id: "template",
         icon: Layers,
-        title: "스크립트 템플릿 라이브러리",
-        desc: "도입-본론-결론, Q&A 포함형, 실습형 등 다양한 템플릿으로 빠르게 스크립트를 생성하세요.",
-        details: [
-          "기본 내장 템플릿 5종+",
-          "기존 스크립트에서 템플릿 저장",
-          "템플릿 기반 새 스크립트 생성",
-          "카테고리별 분류 (Web3, DeFi, AI 등)",
-          "커스텀 템플릿 생성/공유",
+        titleKey: "features.content.template.title",
+        descKey: "features.content.template.desc",
+        detailKeys: [
+          "features.content.template.d1",
+          "features.content.template.d2",
+          "features.content.template.d3",
+          "features.content.template.d4",
+          "features.content.template.d5",
         ],
         color: "from-pink-500 to-rose-600",
+        demoType: "animation",
+        demoLabel: "Template Demo",
       },
       {
+        id: "subtitle",
         icon: Subtitles,
-        title: "자동 자막 생성",
-        desc: "생성된 음성을 STT로 자동 변환하여 SRT 자막 파일을 생성합니다. 다국어 자막도 지원합니다.",
-        details: [
-          "음성 → SRT 자막 자동 변환",
-          "타임스탬프 정확도 95%+",
-          "자막 미리보기 및 편집",
-          "SRT 파일 다운로드",
-          "다국어 자막 생성 가능",
+        titleKey: "features.content.subtitle.title",
+        descKey: "features.content.subtitle.desc",
+        detailKeys: [
+          "features.content.subtitle.d1",
+          "features.content.subtitle.d2",
+          "features.content.subtitle.d3",
+          "features.content.subtitle.d4",
+          "features.content.subtitle.d5",
         ],
         color: "from-teal-500 to-cyan-600",
+        demoType: "animation",
+        demoLabel: "Subtitle Demo",
       },
       {
+        id: "thumbnail",
         icon: Image,
-        title: "썸네일 자동 생성",
-        desc: "강의 주제를 기반으로 AI가 자동으로 매력적인 썸네일 이미지를 생성합니다.",
-        details: [
-          "AI 이미지 생성 API 연동",
-          "강의 주제 기반 자동 프롬프트",
-          "썸네일 미리보기 및 재생성",
-          "고해상도 다운로드",
-          "파이프라인 완료 후 자동 생성 옵션",
+        titleKey: "features.content.thumbnail.title",
+        descKey: "features.content.thumbnail.desc",
+        detailKeys: [
+          "features.content.thumbnail.d1",
+          "features.content.thumbnail.d2",
+          "features.content.thumbnail.d3",
+          "features.content.thumbnail.d4",
+          "features.content.thumbnail.d5",
         ],
         color: "from-fuchsia-500 to-purple-600",
+        demoType: "animation",
+        demoLabel: "Thumbnail Demo",
       },
     ],
   },
   {
     id: "delivery",
-    label: "강의 송출",
+    labelKey: "features.cat.delivery",
     icon: Monitor,
     features: [
       {
+        id: "platform",
         icon: Monitor,
-        title: "외부 플랫폼 연동",
-        desc: "Zoom, Google Meet, Webex, Tencent Meeting에서 AI 강의를 바로 송출합니다. OBS 가상 카메라를 통해 어떤 플랫폼에서든 사용 가능합니다.",
-        details: [
-          "Zoom 미팅 링크 자동 생성",
-          "Google Meet 연동",
-          "Webex / Tencent Meeting 지원",
-          "OBS 가상 카메라 연동",
-          "단계별 설정 튜토리얼 제공",
+        titleKey: "features.delivery.platform.title",
+        descKey: "features.delivery.platform.desc",
+        detailKeys: [
+          "features.delivery.platform.d1",
+          "features.delivery.platform.d2",
+          "features.delivery.platform.d3",
+          "features.delivery.platform.d4",
+          "features.delivery.platform.d5",
         ],
         badge: "CORE",
         color: "from-green-500 to-emerald-600",
+        demoType: "animation",
+        demoLabel: "Platform Demo",
       },
       {
+        id: "broadcast",
         icon: Tv,
-        title: "라이브 방송 시스템",
-        desc: "수백 명의 시청자에게 실시간으로 AI 강의를 송출합니다. 슬라이드 동기화, 실시간 채팅, TTS 오디오 자동 재생을 지원합니다.",
-        details: [
-          "실시간 슬라이드 동기화",
-          "시청자 실시간 채팅",
-          "TTS 오디오 자동 재생",
-          "시청자 수 실시간 표시",
-          "방송 녹화 및 VOD 변환",
+        titleKey: "features.delivery.broadcast.title",
+        descKey: "features.delivery.broadcast.desc",
+        detailKeys: [
+          "features.delivery.broadcast.d1",
+          "features.delivery.broadcast.d2",
+          "features.delivery.broadcast.d3",
+          "features.delivery.broadcast.d4",
+          "features.delivery.broadcast.d5",
         ],
         color: "from-red-500 to-rose-600",
+        demoType: "animation",
+        demoLabel: "Broadcast Demo",
       },
       {
+        id: "vod",
         icon: Video,
-        title: "VOD 자동 녹화",
-        desc: "강의 내용을 자동 아카이브하여 VOD로 재활용할 수 있습니다. Q&A 타임라인과 화이트보드 스냅샷도 함께 저장됩니다.",
-        details: [
-          "강의 자동 아카이브",
-          "Q&A 타임라인 저장",
-          "화이트보드 스냅샷 보존",
-          "VOD 검색 및 필터",
-          "VOD 재생 페이지 제공",
+        titleKey: "features.delivery.vod.title",
+        descKey: "features.delivery.vod.desc",
+        detailKeys: [
+          "features.delivery.vod.d1",
+          "features.delivery.vod.d2",
+          "features.delivery.vod.d3",
+          "features.delivery.vod.d4",
+          "features.delivery.vod.d5",
         ],
         color: "from-orange-500 to-amber-600",
+        demoType: "animation",
+        demoLabel: "VOD Demo",
       },
     ],
   },
   {
     id: "interactive",
-    label: "인터랙티브",
+    labelKey: "features.cat.interactive",
     icon: MessageSquare,
     features: [
       {
+        id: "qa",
         icon: MessageSquare,
-        title: "실시간 AI Q&A",
-        desc: "텍스트 또는 음성으로 질문하면 AI가 강의 맥락에 맞게 즉시 답변합니다. 카테고리별 AI 컨텍스트 템플릿으로 정확도를 높입니다.",
-        details: [
-          "텍스트 + 음성 질문 지원",
-          "강의 맥락 기반 AI 답변",
-          "카테고리별 컨텍스트 템플릿",
-          "Q&A 북마크 저장",
-          "답변 다국어 번역",
+        titleKey: "features.interactive.qa.title",
+        descKey: "features.interactive.qa.desc",
+        detailKeys: [
+          "features.interactive.qa.d1",
+          "features.interactive.qa.d2",
+          "features.interactive.qa.d3",
+          "features.interactive.qa.d4",
+          "features.interactive.qa.d5",
         ],
         color: "from-sky-500 to-blue-600",
+        demoType: "animation",
+        demoLabel: "Q&A Demo",
       },
       {
+        id: "whiteboard",
         icon: Palette,
-        title: "PPT + 화이트보드",
-        desc: "슬라이드 프레젠테이션과 실시간 칠판으로 시각적 강의를 진행합니다. Canvas 기반 드로잉 도구를 제공합니다.",
-        details: [
-          "PPT/PDF 슬라이드 뷰어",
-          "실시간 페이지 전환",
-          "Canvas 기반 화이트보드",
-          "드로잉 도구 (펜, 형광펜, 지우개)",
-          "화이트보드 스냅샷 저장",
+        titleKey: "features.interactive.whiteboard.title",
+        descKey: "features.interactive.whiteboard.desc",
+        detailKeys: [
+          "features.interactive.whiteboard.d1",
+          "features.interactive.whiteboard.d2",
+          "features.interactive.whiteboard.d3",
+          "features.interactive.whiteboard.d4",
+          "features.interactive.whiteboard.d5",
         ],
         color: "from-yellow-500 to-amber-600",
+        demoType: "animation",
+        demoLabel: "Whiteboard Demo",
       },
       {
+        id: "translate",
         icon: Globe,
-        title: "다국어 자동 번역",
-        desc: "20개 이상의 언어로 AI 자동 번역하여 글로벌 강의를 제공합니다. Q&A 답변도 실시간 번역됩니다.",
-        details: [
-          "20+ 언어 지원",
-          "국기 아이콘 기반 언어 선택",
-          "Q&A 답변 실시간 번역",
-          "AI 캐싱으로 빠른 번역",
-          "사용자 선호 언어 자동 기억",
+        titleKey: "features.interactive.translate.title",
+        descKey: "features.interactive.translate.desc",
+        detailKeys: [
+          "features.interactive.translate.d1",
+          "features.interactive.translate.d2",
+          "features.interactive.translate.d3",
+          "features.interactive.translate.d4",
+          "features.interactive.translate.d5",
         ],
         color: "from-indigo-500 to-violet-600",
+        demoType: "animation",
+        demoLabel: "Translation Demo",
       },
     ],
   },
   {
     id: "analytics",
-    label: "분석 & 관리",
+    labelKey: "features.cat.analytics",
     icon: BarChart3,
     features: [
       {
+        id: "report",
         icon: BarChart3,
-        title: "AI 콘텐츠 분석 리포트",
-        desc: "가독성 점수, 난이도 적절성, 키워드 밀도, 구조 균형을 AI가 분석하고 개선 제안을 제공합니다.",
-        details: [
-          "가독성 점수 분석",
-          "난이도 적절성 평가",
-          "키워드 밀도 분석",
-          "구조 균형 분석 (섹션별 시간 배분)",
-          "AI 개선 제안 생성",
+        titleKey: "features.analytics.report.title",
+        descKey: "features.analytics.report.desc",
+        detailKeys: [
+          "features.analytics.report.d1",
+          "features.analytics.report.d2",
+          "features.analytics.report.d3",
+          "features.analytics.report.d4",
+          "features.analytics.report.d5",
         ],
         color: "from-slate-500 to-gray-600",
+        demoType: "animation",
+        demoLabel: "Report Demo",
       },
       {
+        id: "preview",
         icon: Play,
-        title: "통합 미리보기 플레이어",
-        desc: "슬라이드 + 오디오를 동기화하여 최종 강의를 미리 확인합니다. 섹션별 자동 전환과 타임라인 컨트롤을 제공합니다.",
-        details: [
-          "슬라이드 + 오디오 동기화",
-          "섹션별 자동 전환",
-          "재생/일시정지/이전/다음 컨트롤",
-          "프로그레스 바 및 시간 표시",
-          "전용 미리보기 페이지",
+        titleKey: "features.analytics.preview.title",
+        descKey: "features.analytics.preview.desc",
+        detailKeys: [
+          "features.analytics.preview.d1",
+          "features.analytics.preview.d2",
+          "features.analytics.preview.d3",
+          "features.analytics.preview.d4",
+          "features.analytics.preview.d5",
         ],
         color: "from-emerald-500 to-green-600",
+        demoType: "animation",
+        demoLabel: "Preview Demo",
       },
       {
+        id: "certificate",
         icon: Award,
-        title: "수료증 자동 발급",
-        desc: "수강 진도를 달성하면 AI가 자동으로 수료증을 생성합니다. 인증코드 검증 기능도 포함됩니다.",
-        details: [
-          "진도 달성 시 자동 발급",
-          "수료증 HTML 다운로드",
-          "디자인 템플릿 제공",
-          "인증코드 검증 기능",
-          "수료증 목록 관리",
+        titleKey: "features.analytics.certificate.title",
+        descKey: "features.analytics.certificate.desc",
+        detailKeys: [
+          "features.analytics.certificate.d1",
+          "features.analytics.certificate.d2",
+          "features.analytics.certificate.d3",
+          "features.analytics.certificate.d4",
+          "features.analytics.certificate.d5",
         ],
         color: "from-amber-500 to-yellow-600",
+        demoType: "animation",
+        demoLabel: "Certificate Demo",
       },
       {
+        id: "context",
         icon: BookOpen,
-        title: "AI 컨텍스트 템플릿",
-        desc: "Web3, DeFi, NFT, AI, Blockchain, Metaverse 등 카테고리별 AI 컨텍스트를 미리 설정하여 답변 정확도를 높입니다.",
-        details: [
-          "카테고리별 기본 템플릿",
-          "Web3, DeFi, NFT, AI 등 지원",
-          "커스텀 템플릿 생성",
-          "강의 생성 시 자동 로드",
-          "템플릿 관리 페이지",
+        titleKey: "features.analytics.context.title",
+        descKey: "features.analytics.context.desc",
+        detailKeys: [
+          "features.analytics.context.d1",
+          "features.analytics.context.d2",
+          "features.analytics.context.d3",
+          "features.analytics.context.d4",
+          "features.analytics.context.d5",
         ],
         color: "from-blue-500 to-cyan-600",
+        demoType: "animation",
+        demoLabel: "Context Demo",
       },
     ],
   },
 ];
 
-/* ── Stats data ── */
-const stats = [
-  { value: "50+", label: "AI 얼굴 프리셋" },
-  { value: "20+", label: "음성 스타일" },
-  { value: "20+", label: "지원 언어" },
-  { value: "6+", label: "연동 플랫폼" },
-  { value: "18+", label: "핵심 기능" },
-  { value: "99.2%", label: "자연스러움 평가" },
+/* ── Animated Demo Placeholder ── */
+function DemoPreview({ feature }: { feature: Feature }) {
+  const Icon = feature.icon;
+  const colorClass = feature.color;
+
+  return (
+    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-muted/80 to-muted/40 border border-border/50 group-hover:border-primary/30 transition-all">
+      {/* Animated background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className={`absolute inset-0 bg-gradient-to-br ${colorClass} animate-pulse`} style={{ animationDuration: "3s" }} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: "radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 1px, transparent 1px), radial-gradient(circle at 75% 75%, rgba(255,255,255,0.1) 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
+        }} />
+      </div>
+
+      {/* Center icon with animation */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+        <div className={`h-16 w-16 rounded-2xl bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}>
+          <Icon className="h-8 w-8 text-white" />
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Play className="h-3 w-3" />
+          <span>{feature.demoLabel}</span>
+        </div>
+      </div>
+
+      {/* Floating particles */}
+      <div className="absolute top-4 left-6 w-2 h-2 rounded-full bg-primary/20 animate-bounce" style={{ animationDelay: "0s", animationDuration: "2s" }} />
+      <div className="absolute top-8 right-10 w-1.5 h-1.5 rounded-full bg-cyan-400/20 animate-bounce" style={{ animationDelay: "0.5s", animationDuration: "2.5s" }} />
+      <div className="absolute bottom-6 left-12 w-1 h-1 rounded-full bg-violet-400/20 animate-bounce" style={{ animationDelay: "1s", animationDuration: "3s" }} />
+      <div className="absolute bottom-4 right-8 w-2.5 h-2.5 rounded-full bg-amber-400/15 animate-bounce" style={{ animationDelay: "1.5s", animationDuration: "2.2s" }} />
+    </div>
+  );
+}
+
+/* ── Stats data with i18n keys ── */
+const statsData = [
+  { value: "50+", labelKey: "features.stats.faces" },
+  { value: "20+", labelKey: "features.stats.voices" },
+  { value: "20+", labelKey: "features.stats.languages" },
+  { value: "6+", labelKey: "features.stats.platforms" },
+  { value: "18+", labelKey: "features.stats.features" },
+  { value: "99.2%", labelKey: "features.stats.naturalness" },
+];
+
+/* ── Comparison table data with i18n keys ── */
+const comparisonRows = [
+  { featureKey: "features.compare.script_gen", starter: true, pro: true, biz: true },
+  { featureKey: "features.compare.basic_tts", starter: "5", pro: "20", biz: "20" },
+  { featureKey: "features.compare.face_presets", starter: "10", pro: "50+", biz: "50+" },
+  { featureKey: "features.compare.resolution", starter: "720p", pro: "1080p", biz: "4K" },
+  { featureKey: "features.compare.deepfake", starter: false, pro: true, biz: true },
+  { featureKey: "features.compare.voice_mod", starter: false, pro: true, biz: true },
+  { featureKey: "features.compare.broadcast", starter: false, pro: true, biz: true },
+  { featureKey: "features.compare.subtitle", starter: true, pro: true, biz: true },
+  { featureKey: "features.compare.thumbnail", starter: true, pro: true, biz: true },
+  { featureKey: "features.compare.analysis", starter: false, pro: true, biz: true },
+  { featureKey: "features.compare.batch", starter: false, pro: false, biz: true },
+  { featureKey: "features.compare.api", starter: false, pro: false, biz: true },
+  { featureKey: "features.compare.team", starter: "1", pro: "1", biz: "5" },
+  { featureKey: "features.compare.credits", starter: "100", pro: "500", biz: "2,000" },
 ];
 
 export default function Features() {
   const { isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState("identity");
 
   const currentCategory = categories.find((c) => c.id === activeCategory) || categories[0];
@@ -355,20 +469,19 @@ export default function Features() {
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-6">
               <Sparkles className="h-3.5 w-3.5" />
-              AI Speaker 핵심 기능
+              {t("features.hero.badge")}
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-              AI 강의 자동화의
+              {t("features.hero.title1")}
               <br />
               <span className="bg-gradient-to-r from-primary via-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                모든 기능
+                {t("features.hero.title2")}
               </span>
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              얼굴 변환부터 음성 변조, 스크립트 자동 생성, 라이브 방송까지.
-              AI Speaker가 제공하는 18가지 이상의 핵심 기능을 살펴보세요.
+              {t("features.hero.desc")}
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center">
@@ -376,7 +489,7 @@ export default function Features() {
                 <Link href="/studio">
                   <Button size="lg" className="gap-2">
                     <Play className="h-5 w-5" />
-                    지금 시작하기
+                    {t("features.hero.explore")}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -384,14 +497,14 @@ export default function Features() {
                 <Button size="lg" className="gap-2" asChild>
                   <a href={getLoginUrl()}>
                     <Sparkles className="h-5 w-5" />
-                    무료로 시작하기
+                    {t("features.cta.start_free")}
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
               )}
               <Link href="/pricing">
                 <Button size="lg" variant="outline" className="gap-2">
-                  요금제 보기
+                  {t("features.hero.pricing")}
                 </Button>
               </Link>
             </div>
@@ -403,10 +516,10 @@ export default function Features() {
       <section className="border-y border-border bg-muted/30">
         <div className="container py-8">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
+            {statsData.map((stat) => (
+              <div key={stat.labelKey} className="text-center">
                 <div className="text-2xl md:text-3xl font-bold text-primary">{stat.value}</div>
-                <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                <div className="text-sm text-muted-foreground mt-1">{t(stat.labelKey)}</div>
               </div>
             ))}
           </div>
@@ -417,9 +530,9 @@ export default function Features() {
       <section className="py-16 md:py-24">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">카테고리별 기능 탐색</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("features.all.title")}</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              AI Speaker의 기능을 카테고리별로 살펴보세요. 각 기능의 상세 스펙과 활용 방법을 확인할 수 있습니다.
+              {t("features.all.desc")}
             </p>
           </div>
 
@@ -436,7 +549,7 @@ export default function Features() {
                 }`}
               >
                 <cat.icon className="h-4 w-4" />
-                {cat.label}
+                {t(cat.labelKey)}
               </button>
             ))}
           </div>
@@ -444,45 +557,55 @@ export default function Features() {
           {/* Feature cards for active category */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {currentCategory.features.map((feature) => (
-              <Card
-                key={feature.title}
-                className="group relative overflow-hidden border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5"
-              >
-                {/* Gradient top bar */}
-                <div className={`h-1.5 bg-gradient-to-r ${feature.color}`} />
+              <Link key={feature.id} href={`/features/${feature.id}`}>
+                <Card className="group relative overflow-hidden border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 cursor-pointer h-full">
+                  {/* Gradient top bar */}
+                  <div className={`h-1.5 bg-gradient-to-r ${feature.color}`} />
 
-                <CardContent className="p-6">
-                  {feature.badge && (
-                    <span className={`absolute top-4 right-4 text-[10px] px-2.5 py-1 rounded-full font-bold ${
-                      feature.badge === "CORE"
-                        ? "bg-primary/20 text-primary"
-                        : feature.badge === "POPULAR"
-                        ? "bg-amber-500/20 text-amber-400"
-                        : "bg-emerald-500/20 text-emerald-400"
-                    }`}>
-                      {feature.badge}
-                    </span>
-                  )}
+                  <CardContent className="p-6">
+                    {feature.badge && (
+                      <span className={`absolute top-4 right-4 text-[10px] px-2.5 py-1 rounded-full font-bold ${
+                        feature.badge === "CORE"
+                          ? "bg-primary/20 text-primary"
+                          : feature.badge === "POPULAR"
+                          ? "bg-amber-500/20 text-amber-400"
+                          : "bg-emerald-500/20 text-emerald-400"
+                      }`}>
+                        {feature.badge}
+                      </span>
+                    )}
 
-                  <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
-                    <feature.icon className="h-6 w-6 text-white" />
-                  </div>
+                    {/* Demo Preview */}
+                    <div className="mb-5">
+                      <DemoPreview feature={feature} />
+                    </div>
 
-                  <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-5">{feature.desc}</p>
+                    <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center mb-3 shadow-lg group-hover:scale-110 transition-transform`}>
+                      <feature.icon className="h-5 w-5 text-white" />
+                    </div>
 
-                  <div className="space-y-2.5">
-                    {feature.details.map((detail) => (
-                      <div key={detail} className="flex items-start gap-2.5">
-                        <div className="mt-0.5 h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <Check className="h-2.5 w-2.5 text-primary" />
+                    <h3 className="text-lg font-bold mb-2">{t(feature.titleKey)}</h3>
+                    <p className="text-muted-foreground text-sm leading-relaxed mb-4 line-clamp-3">{t(feature.descKey)}</p>
+
+                    <div className="space-y-2">
+                      {feature.detailKeys.slice(0, 3).map((key) => (
+                        <div key={key} className="flex items-start gap-2">
+                          <div className="mt-0.5 h-4 w-4 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Check className="h-2.5 w-2.5 text-primary" />
+                          </div>
+                          <span className="text-xs text-foreground/80">{t(key)}</span>
                         </div>
-                        <span className="text-sm text-foreground/80">{detail}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      ))}
+                      {feature.detailKeys.length > 3 && (
+                        <div className="flex items-center gap-1.5 text-xs text-primary font-medium pt-1">
+                          <ExternalLink className="h-3 w-3" />
+                          {t("features.cta.detail")} (+{feature.detailKeys.length - 3})
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
@@ -492,27 +615,26 @@ export default function Features() {
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">전체 기능 한눈에 보기</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("features.all.title")}</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              AI Speaker가 제공하는 모든 기능을 한 곳에서 확인하세요
+              {t("features.all.desc")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
             {categories.map((cat) =>
               cat.features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors"
-                >
-                  <div className={`h-9 w-9 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center shrink-0`}>
-                    <feature.icon className="h-4 w-4 text-white" />
+                <Link key={feature.id} href={`/features/${feature.id}`}>
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/30 transition-colors cursor-pointer group">
+                    <div className={`h-9 w-9 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform`}>
+                      <feature.icon className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">{t(feature.titleKey)}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{t(feature.descKey)}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-semibold text-sm">{feature.title}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{feature.desc}</div>
-                  </div>
-                </div>
+                </Link>
               ))
             )}
           </div>
@@ -523,9 +645,9 @@ export default function Features() {
       <section className="py-16 md:py-24">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">플랜별 기능 비교</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("features.compare.title")}</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              각 요금제에서 사용할 수 있는 기능을 비교해보세요
+              {t("features.compare.desc")}
             </p>
           </div>
 
@@ -533,42 +655,27 @@ export default function Features() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-4 px-4 font-semibold">기능</th>
+                  <th className="text-left py-4 px-4 font-semibold">{t("features.compare.feature")}</th>
                   <th className="text-center py-4 px-4 font-semibold">Starter</th>
                   <th className="text-center py-4 px-4 font-semibold">
                     <span className="inline-flex items-center gap-1">
                       Professional
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground">추천</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary text-primary-foreground">{t("features.compare.recommended")}</span>
                     </span>
                   </th>
                   <th className="text-center py-4 px-4 font-semibold">Business</th>
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { feature: "AI 스크립트 생성", starter: true, pro: true, biz: true },
-                  { feature: "기본 TTS 음성", starter: "5종", pro: "20종", biz: "20종" },
-                  { feature: "AI 얼굴 프리셋", starter: "10종", pro: "50+", biz: "50+" },
-                  { feature: "영상 해상도", starter: "720p", pro: "1080p", biz: "4K" },
-                  { feature: "딥페이크 얼굴 변환", starter: false, pro: true, biz: true },
-                  { feature: "음성 변조 & 말투 변환", starter: false, pro: true, biz: true },
-                  { feature: "라이브 방송", starter: false, pro: true, biz: true },
-                  { feature: "자동 자막 생성", starter: true, pro: true, biz: true },
-                  { feature: "썸네일 자동 생성", starter: true, pro: true, biz: true },
-                  { feature: "AI 콘텐츠 분석", starter: false, pro: true, biz: true },
-                  { feature: "배치 처리", starter: false, pro: false, biz: true },
-                  { feature: "API 접근 권한", starter: false, pro: false, biz: true },
-                  { feature: "팀 멤버", starter: "1명", pro: "1명", biz: "5명" },
-                  { feature: "월 크레딧", starter: "100", pro: "500", biz: "2,000" },
-                ].map((row) => (
-                  <tr key={row.feature} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                    <td className="py-3 px-4 text-sm">{row.feature}</td>
+                {comparisonRows.map((row) => (
+                  <tr key={row.featureKey} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <td className="py-3 px-4 text-sm">{t(row.featureKey)}</td>
                     {[row.starter, row.pro, row.biz].map((val, i) => (
                       <td key={i} className="text-center py-3 px-4">
                         {val === true ? (
                           <Check className="h-4 w-4 text-primary mx-auto" />
                         ) : val === false ? (
-                          <span className="text-muted-foreground/40">—</span>
+                          <span className="text-muted-foreground/40">&mdash;</span>
                         ) : (
                           <span className="text-sm font-medium">{val}</span>
                         )}
@@ -583,7 +690,7 @@ export default function Features() {
           <div className="text-center mt-8">
             <Link href="/pricing">
               <Button size="lg" className="gap-2">
-                요금제 상세 보기
+                {t("features.compare.view_pricing")}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -596,17 +703,17 @@ export default function Features() {
         <div className="container">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              지금 바로 AI 강사로 변신하세요
+              {t("features.cta.title")}
             </h2>
             <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
-              모든 기능을 무료로 체험해보세요. 얼굴과 목소리를 선택하고, Zoom에서 바로 강의를 시작할 수 있습니다.
+              {t("features.cta.desc")}
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               {isAuthenticated ? (
                 <Link href="/studio">
                   <Button size="lg" className="gap-2">
                     <Play className="h-5 w-5" />
-                    제작 스튜디오로 이동
+                    {t("features.cta.studio")}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
@@ -614,14 +721,14 @@ export default function Features() {
                 <Button size="lg" className="gap-2" asChild>
                   <a href={getLoginUrl()}>
                     <Sparkles className="h-5 w-5" />
-                    무료로 시작하기
+                    {t("features.cta.start_free")}
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
               )}
               <Link href="/pricing">
                 <Button size="lg" variant="outline" className="gap-2">
-                  요금제 비교
+                  {t("features.cta.compare")}
                 </Button>
               </Link>
             </div>
@@ -632,9 +739,13 @@ export default function Features() {
       {/* ═══════════ Footer ═══════════ */}
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>AI Speaker v3.0 &mdash; AI-Powered Virtual Lecture Automation Platform</p>
+          <p>{t("features.footer")}</p>
         </div>
       </footer>
     </div>
   );
 }
+
+/* Export categories for use in FeatureDetail page */
+export { categories };
+export type { Feature, FeatureCategory };
