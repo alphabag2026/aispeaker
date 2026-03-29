@@ -30,6 +30,7 @@ import {
   Volume2,
   CreditCard,
   Shield,
+  Layers,
 } from "lucide-react";
 import { useState } from "react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -46,6 +47,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "/", label: "홈", icon: Home },
+    { href: "/features", label: "기능", icon: Layers },
     { href: "/faces", label: "AI 얼굴", icon: Users },
     { href: "/voices", label: "AI 목소리", icon: Volume2 },
     { href: "/pricing", label: "요금제", icon: CreditCard },

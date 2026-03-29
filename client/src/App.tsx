@@ -38,11 +38,13 @@ import AdminRevenue from "./pages/AdminRevenue";
 import CryptoPayment from "./pages/CryptoPayment";
 import PaymentTroubleshooting from "./pages/PaymentTroubleshooting";
 import OnboardingTutorial from "./pages/OnboardingTutorial";
+import Features from "./pages/Features";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/features" component={Features} />
       <Route path="/lectures" component={LectureList} />
       <Route path="/lecture/:id" component={LectureRoom} />
       {/* /my-lectures, /my-dashboard, /certificates routes removed per user request */}

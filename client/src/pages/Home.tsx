@@ -400,6 +400,12 @@ export default function Home() {
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             AI 기술을 활용한 강의 자동화의 모든 것
           </p>
+          <Link href="/features">
+            <Button variant="link" className="gap-1 mt-2 text-primary">
+              전체 기능 상세 보기
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature) => (
