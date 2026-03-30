@@ -418,7 +418,7 @@ registerTranslations("zh", {
   "features.hero.explore": "探索功能",
   "features.hero.pricing": "查看价格",
 
-  "features.stats.faces": "AI面部预设",
+  "features.stats.faces": "AI形象预设",
   "features.stats.voices": "语音风格",
   "features.stats.languages": "支持语言",
   "features.stats.platforms": "集成平台",
@@ -431,9 +431,9 @@ registerTranslations("zh", {
   "features.cat.interactive": "互动功能",
   "features.cat.analytics": "分析与管理",
 
-  "features.identity.deepfake.title": "深度伪造面部变换",
-  "features.identity.deepfake.desc": "用AI生成的专业讲师面孔代替真实面孔进行授课。从50多个预设中选择或创建自定义面孔。",
-  "features.identity.deepfake.d1": "50+AI面部预设",
+  "features.identity.deepfake.title": "AI智能换脸",
+  "features.identity.deepfake.desc": "用AI生成的专业讲师形象代替真实面容进行授课。从50多个预设中选择或创建自定义形象。",
+  "features.identity.deepfake.d1": "50+ AI形象预设",
   "features.identity.deepfake.d2": "实时面部变换（<30ms延迟）",
   "features.identity.deepfake.d3": "多国籍/性别/年龄选择",
   "features.identity.deepfake.d4": "支持自定义面部上传",
@@ -443,24 +443,24 @@ registerTranslations("zh", {
   "features.identity.voice.desc": "精细调节音高、速度和音调，转换为正式、非正式、学术等多种说话风格。",
   "features.identity.voice.d1": "20+语音风格预设",
   "features.identity.voice.d2": "实时音高/速度/音调控制",
-  "features.identity.voice.d3": "正式、非正式、学术风格",
+  "features.identity.voice.d3": "正式、日常、学术等多种语气风格",
   "features.identity.voice.d4": "语音克隆（学习讲师声音）",
   "features.identity.voice.d5": "自然语调与情感表达",
 
   "features.identity.avatar.title": "D-ID AI虚拟形象",
-  "features.identity.avatar.desc": "通过D-ID API集成，AI虚拟形象可以配合口型同步进行授课。结合深度伪造提供更逼真的演示。",
+  "features.identity.avatar.desc": "通过D-ID API集成，AI虚拟形象可以配合口型同步进行授课。结合AI换脸提供更逼真的演示。",
   "features.identity.avatar.d1": "D-ID API实时集成",
   "features.identity.avatar.d2": "口型同步+面部动画",
-  "features.identity.avatar.d3": "深度伪造+虚拟形象组合模式",
+  "features.identity.avatar.d3": "AI换脸+虚拟形象组合模式",
   "features.identity.avatar.d4": "无API密钥时内置虚拟形象备用",
   "features.identity.avatar.d5": "支持自定义虚拟形象图片",
 
   "features.content.pipeline.title": "一键视频制作",
-  "features.content.pipeline.desc": "只需一个提示，AI自动生成脚本、TTS音频和虚拟形象视频。深度伪造和语音调制一步到位。",
+  "features.content.pipeline.desc": "只需一个提示，AI自动生成脚本、TTS音频和虚拟形象视频。AI换脸和语音变调一步到位。",
   "features.content.pipeline.d1": "提示→自动生成脚本",
   "features.content.pipeline.d2": "脚本→TTS音频转换",
   "features.content.pipeline.d3": "音频+虚拟形象→视频合成",
-  "features.content.pipeline.d4": "自动应用深度伪造+语音调制",
+  "features.content.pipeline.d4": "自动应用AI换脸+语音变调",
   "features.content.pipeline.d5": "实时流水线进度跟踪",
 
   "features.content.editor.title": "AI脚本编辑器",
@@ -520,10 +520,10 @@ registerTranslations("zh", {
   "features.delivery.vod.d5": "VOD播放页面",
 
   "features.interactive.qa.title": "实时AI问答",
-  "features.interactive.qa.desc": "通过文字或语音提问，AI根据讲座上下文即时回答。类别AI上下文模板提高准确度。",
+  "features.interactive.qa.desc": "通过文字或语音提问，AI根据课程内容即时回答。分类AI知识库模板可显著提高回答准确度。",
   "features.interactive.qa.d1": "文字+语音提问支持",
-  "features.interactive.qa.d2": "基于讲座上下文的AI回答",
-  "features.interactive.qa.d3": "类别上下文模板",
+  "features.interactive.qa.d2": "基于课程内容的AI回答",
+  "features.interactive.qa.d3": "分类知识库模板",
   "features.interactive.qa.d4": "问答书签保存",
   "features.interactive.qa.d5": "多语言答案翻译",
 
@@ -567,8 +567,8 @@ registerTranslations("zh", {
   "features.analytics.certificate.d4": "验证码验证功能",
   "features.analytics.certificate.d5": "证书列表管理",
 
-  "features.analytics.context.title": "AI上下文模板",
-  "features.analytics.context.desc": "按类别（Web3、DeFi、NFT、AI等）预配置AI上下文以提高回答准确度。",
+  "features.analytics.context.title": "AI知识库模板",
+  "features.analytics.context.desc": "按类别（Web3、DeFi、NFT、AI等）预设AI知识库以提高回答准确度。",
   "features.analytics.context.d1": "类别默认模板",
   "features.analytics.context.d2": "支持Web3、DeFi、NFT、AI",
   "features.analytics.context.d3": "自定义模板创建",
@@ -585,9 +585,9 @@ registerTranslations("zh", {
   "features.compare.view_pricing": "查看价格详情",
   "features.compare.script_gen": "AI脚本生成",
   "features.compare.basic_tts": "基本TTS语音",
-  "features.compare.face_presets": "AI面部预设",
+  "features.compare.face_presets": "AI形象预设",
   "features.compare.resolution": "视频分辨率",
-  "features.compare.deepfake": "深度伪造面部变换",
+  "features.compare.deepfake": "AI智能换脸",
   "features.compare.voice_mod": "语音调制与风格变换",
   "features.compare.broadcast": "直播",
   "features.compare.subtitle": "自动字幕生成",
@@ -599,7 +599,7 @@ registerTranslations("zh", {
   "features.compare.credits": "月度积分",
 
   "features.cta.title": "立即成为AI讲师",
-  "features.cta.desc": "免费体验所有功能。选择面孔和声音，立即在Zoom上开始授课。",
+  "features.cta.desc": "免费体验所有功能。选择形象和声音，立即在Zoom上开始授课。",
   "features.cta.studio": "前往制作工作室",
   "features.cta.start_free": "免费开始",
   "features.cta.compare": "比较套餐",
@@ -1248,7 +1248,7 @@ registerTranslations("zh", {
 
   "features.detail.qa.step1": "在授课期间激活问答面板。",
   "features.detail.qa.step2": "学生通过文字或语音提交问题。",
-  "features.detail.qa.step3": "AI分析课程上下文并即时生成答案。",
+  "features.detail.qa.step3": "AI分析课程内容并即时生成答案。",
   "features.detail.qa.step4": "收藏有用的问答以供将来参考。",
 
   "features.detail.whiteboard.step1": "在授课期间激活白板模式。",
@@ -1276,14 +1276,14 @@ registerTranslations("zh", {
   "features.detail.certificate.step3": "选择或自定义证书设计模板。",
   "features.detail.certificate.step4": "使用验证码验证证书真伪。",
 
-  "features.detail.context.step1": "从AI上下文管理页面选择类别。",
+  "features.detail.context.step1": "从AI知识库管理页面选择类别。",
   "features.detail.context.step2": "查看默认模板或创建自定义模板。",
-  "features.detail.context.step3": "创建该类别课程时上下文自动加载。",
+  "features.detail.context.step3": "创建该类别课程时知识库自动加载。",
   "features.detail.context.step4": "问答回答准确度显著提升。",
 
   "features.usecase.deepfake.1": "希望在保护隐私的同时进行专业在线授课的讲师",
   "features.usecase.deepfake.2": "使用多国籍讲师角色制作全球教育内容的教育企业",
-  "features.usecase.deepfake.3": "不露脸运营YouTube教育频道的创作者",
+  "features.usecase.deepfake.3": "运营YouTube教育频道但不想露脸的创作者",
 
   "features.usecase.voice.1": "希望用专业配音级音质授课的讲师",
   "features.usecase.voice.2": "学术演讲和普通课程需要不同说话风格的教授",
@@ -1350,8 +1350,8 @@ registerTranslations("zh", {
   "features.usecase.certificate.3": "需要验证码验证证书真伪的正式教育课程",
 
   "features.usecase.context.1": "Web3、DeFi等专业领域课程需要准确AI回答的情况",
-  "features.usecase.context.2": "运营多主题课程需要不同AI上下文的平台",
-  "features.usecase.context.3": "使用自定义上下文提供公司/产品专属培训的情况",
+  "features.usecase.context.2": "运营多主题课程需要不同AI知识库的平台",
+  "features.usecase.context.3": "使用自定义知识库提供公司/产品专属培训的情况",
 });
 
 // Japanese - Detail page

@@ -56,7 +56,7 @@ registerTranslations("zh", {
   "trouble.copy": "复制",
   "trouble.copied": "已复制！",
   "trouble.common_issues": "常见支付问题",
-  "trouble.failure_scenarios": "Stripe测试卡失败场景",
+  "trouble.failure_scenarios": "Stripe测试卡模拟失败场景",
   "trouble.failure_scenarios_desc": "用于测试各种支付失败情况的卡号",
   "trouble.card_number": "卡号",
   "trouble.error_message": "错误消息",
@@ -66,7 +66,7 @@ registerTranslations("zh", {
   "trouble.cause": "原因",
   "trouble.back_to_pricing": "返回价格页面",
   "trouble.need_help": "需要更多帮助？",
-  "trouble.contact_support": "联系客户支持",
+  "trouble.contact_support": "联系客服",
 });
 
 // Japanese

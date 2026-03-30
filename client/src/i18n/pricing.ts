@@ -97,7 +97,7 @@ registerTranslations("en", {
 // Chinese
 registerTranslations("zh", {
   "pricing.title": "价格方案",
-  "pricing.subtitle": "以合理的价格享受所有AI讲座自动化功能",
+  "pricing.subtitle": "以合理的价格使用全部AI授课自动化功能",
   "pricing.monthly": "月付",
   "pricing.yearly": "年付",
   "pricing.yearly_discount": "8折优惠",
@@ -112,7 +112,7 @@ registerTranslations("zh", {
   "pricing.video_quality": "视频质量",
   "pricing.face_presets": "面部预设",
   "pricing.voice_presets": "语音预设",
-  "pricing.deepfake": "深度伪造转换",
+  "pricing.deepfake": "AI换脸",
   "pricing.priority_support": "优先支持",
   "pricing.custom_branding": "自定义品牌",
   "pricing.api_access": "API访问",

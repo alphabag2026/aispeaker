@@ -240,7 +240,7 @@ registerTranslations("en", {
 
 // Chinese
 registerTranslations("zh", {
-  "pp.hero.badge": "高收益定价模型",
+  "pp.hero.badge": "高性价比定价方案",
   "pp.hero.title": "选择适合您业务的方案",
   "pp.hero.desc1": "基于积分的按量计费，只为使用的部分付费。",
   "pp.hero.desc2": "所有付费方案均包含",
@@ -254,9 +254,9 @@ registerTranslations("zh", {
   "pp.hero.crypto": "加密货币",
 
   "pp.plan.free": "免费开始",
-  "pp.plan.starter": "开始使用Starter",
-  "pp.plan.professional": "开始使用Professional",
-  "pp.plan.business": "开始使用Business",
+  "pp.plan.starter": "开始使用入门版",
+  "pp.plan.professional": "开始使用专业版",
+  "pp.plan.business": "开始使用商业版",
   "pp.plan.enterprise": "联系销售团队",
   "pp.plan.start": "立即开始",
   "pp.plan.inquiry": "咨询",
@@ -267,7 +267,7 @@ registerTranslations("zh", {
   "pp.plan.processing": "处理中...",
 
   "pp.spec.video_quality": "视频质量",
-  "pp.spec.deepfake": "深度伪造",
+  "pp.spec.deepfake": "AI换脸",
   "pp.spec.live_broadcast": "直播",
   "pp.spec.white_label": "白标",
 
@@ -285,8 +285,8 @@ registerTranslations("zh", {
   "pp.ci.tts_desc": "5分钟高品质语音生成",
   "pp.ci.avatar": "AI虚拟形象视频（5分钟）",
   "pp.ci.avatar_desc": "基于D-ID的虚拟形象视频制作",
-  "pp.ci.deepfake": "深度伪造面部变换",
-  "pp.ci.deepfake_desc": "面部变换 + 视频合成",
+  "pp.ci.deepfake": "AI面部变换",
+  "pp.ci.deepfake_desc": "AI换脸 + 视频合成",
   "pp.ci.thumbnail": "自动生成缩略图",
   "pp.ci.thumbnail_desc": "基于AI图像的缩略图",
   "pp.ci.subtitle": "自动生成字幕",
@@ -312,13 +312,13 @@ registerTranslations("zh", {
   "pp.roi.traditional": "传统方式（月10场课程）",
   "pp.roi.ai_speaker": "AI Speaker（月10场课程）",
   "pp.roi.studio": "视频拍摄工作室租赁",
-  "pp.roi.crew": "摄影师 + 剪辑师人工费",
+  "pp.roi.crew": "摄影师 + 剪辑师人力成本",
   "pp.roi.instructor": "讲师出场费（10场）",
   "pp.roi.subtitle_cost": "字幕 + 翻译费用",
   "pp.roi.total": "月总费用",
   "pp.roi.pro_sub": "Professional订阅",
   "pp.roi.extra_credits": "额外积分（500）",
-  "pp.roi.studio_cost": "工作室/人工费",
+  "pp.roi.studio_cost": "工作室/人力成本",
   "pp.roi.auto_subtitle": "自动生成字幕",
   "pp.roi.included": "已包含",
   "pp.roi.savings": "节省",
@@ -338,11 +338,11 @@ registerTranslations("zh", {
   "pp.faq.a5": "所有AI API费用（D-ID、OpenAI TTS、LLM等）已包含在积分价格中。您无需准备任何外部API密钥。我们负责管理所有基础设施。",
   "pp.faq.q6": "如何变更方案？",
   "pp.faq.a6": "您可以随时升级或降级。升级立即生效并按比例收费。降级在当前计费周期结束后生效。",
-  "pp.faq.troubleshoot": "支付遇到问题？查看故障排除指南",
+  "pp.faq.troubleshoot": "支付遇到问题？查看解决方案",
 
   "pp.cta.title": "立即开始",
   "pp.cta.desc": "免费试用，然后升级到适合您业务的方案。",
-  "pp.cta.starter": "开始使用Starter",
+  "pp.cta.starter": "开始使用入门版",
   "pp.cta.enterprise": "联系销售团队",
 
   "pp.toast.login_required": "需要登录。",

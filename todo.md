@@ -677,3 +677,9 @@
 - [x] Pricing.tsx 하드코딩 한국어를 i18n 시스템으로 전환 (ko/en/zh/ja)
 - [x] i18n 번역 파일 생성: home.ts, navbar.ts, pricingPage.ts
 - [x] Vultr 서버(aispeaker.cc)에 번역 업데이트 재배포
+
+## 중국어 번역 원어민 수준 검수 (v3.5.2)
+- [x] 모든 i18n 번역 파일 중국어 검수 (home.ts, navbar.ts, pricingPage.ts, features.ts, pricing.ts, onboarding.ts, troubleshooting.ts)
+- [x] 어색한 표현/직역체/문법 오류 수정
+- [x] 중국 현지 표현/관용어로 자연스럽게 개선
+- [x] Vultr 서버 재배포
