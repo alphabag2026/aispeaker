@@ -670,3 +670,10 @@
 - [x] 상세 페이지 구조 테스트 (7개)
 - [x] Features 페이지 업데이트 테스트 (3개)
 - [x] 전체 352개 테스트 통과 (19개 파일)
+
+## 중국어 번역 완벽 수정 (v3.5.1)
+- [x] Home.tsx 하드코딩 한국어를 i18n 시스템으로 전환 (ko/en/zh/ja)
+- [x] Navbar.tsx 하드코딩 한국어를 i18n 시스템으로 전환 (ko/en/zh/ja)
+- [x] Pricing.tsx 하드코딩 한국어를 i18n 시스템으로 전환 (ko/en/zh/ja)
+- [x] i18n 번역 파일 생성: home.ts, navbar.ts, pricingPage.ts
+- [x] Vultr 서버(aispeaker.cc)에 번역 업데이트 재배포

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { Link, useLocation } from "wouter";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,24 +41,25 @@ export default function Navbar() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme, switchable } = useTheme();
+  const { t } = useLanguage();
 
   const isInstructor = user?.platformRole === "instructor" || user?.role === "admin";
 
   const isAdmin = user?.role === "admin";
 
   const navLinks = [
-    { href: "/", label: "홈", icon: Home },
-    { href: "/features", label: "기능", icon: Layers },
-    { href: "/faces", label: "AI 얼굴", icon: Users },
-    { href: "/voices", label: "AI 목소리", icon: Volume2 },
-    { href: "/pricing", label: "요금제", icon: CreditCard },
+    { href: "/", label: t("nav.home"), icon: Home },
+    { href: "/features", label: t("nav.features"), icon: Layers },
+    { href: "/faces", label: t("nav.ai_faces"), icon: Users },
+    { href: "/voices", label: t("nav.ai_voices"), icon: Volume2 },
+    { href: "/pricing", label: t("nav.pricing"), icon: CreditCard },
     ...(isInstructor ? [
-      { href: "/studio", label: "스튜디오", icon: Play },
-      { href: "/instructor", label: "대시보드", icon: Monitor },
-      { href: "/broadcasts", label: "라이브", icon: Tv },
+      { href: "/studio", label: t("nav.studio"), icon: Play },
+      { href: "/instructor", label: t("nav.dashboard"), icon: Monitor },
+      { href: "/broadcasts", label: t("nav.live"), icon: Tv },
     ] : []),
     ...(isAdmin ? [
-      { href: "/admin", label: "관리자", icon: Shield },
+      { href: "/admin", label: t("nav.admin"), icon: Shield },
     ] : []),
   ];
 
@@ -99,7 +101,7 @@ export default function Navbar() {
               size="icon"
               onClick={toggleTheme}
               className="h-9 w-9"
-              title={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
+              title={t("nav.theme_toggle")}
             >
               {theme === "dark" ? (
                 <Sun className="h-4 w-4 text-yellow-400" />
@@ -114,19 +116,19 @@ export default function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="gap-2">
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">{user?.name || "사용자"}</span>
+                  <span className="hidden sm:inline">{user?.name || t("nav.user")}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem className="text-muted-foreground text-xs">
-                  {isInstructor ? "강사" : "수강생"}
+                  {isInstructor ? t("nav.role_instructor") : t("nav.role_student")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {!isInstructor && (
                   <DropdownMenuItem asChild>
                     <Link href="/instructor" className="cursor-pointer">
                       <Monitor className="h-4 w-4 mr-2" />
-                      강사로 전환
+                      {t("nav.switch_instructor")}
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -135,13 +137,13 @@ export default function Navbar() {
                   className="text-destructive cursor-pointer"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
-                  로그아웃
+                  {t("nav.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button size="sm" asChild>
-              <a href={getLoginUrl()}>로그인</a>
+              <a href={getLoginUrl()}>{t("nav.login")}</a>
             </Button>
           )}
 
