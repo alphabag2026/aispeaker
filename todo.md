@@ -732,3 +732,9 @@
 - [x] Google 미설정 시 fallback 버튼 표시
 - [x] v4.2 테스트 14개 통과
 - [x] AWS Lightsail 서버 재배포
+
+## Google OAuth Client ID 적용 (v4.3)
+- [x] Manus 개발 서버에 VITE_GOOGLE_CLIENT_ID 환경변수 설정
+- [x] AWS Lightsail 서버 prod.env에 VITE_GOOGLE_CLIENT_ID 추가
+- [x] 서비스 재시작 및 Google Client ID API 응답 확인
+- [x] v4.3 테스트 3개 통과
