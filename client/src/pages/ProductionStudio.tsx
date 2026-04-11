@@ -38,14 +38,7 @@ const DIFFICULTIES = [
   { value: "advanced", label: "고급", color: "bg-red-500/20 text-red-400" },
 ];
 
-const VOICES = [
-  { value: "alloy", label: "Alloy (중성)" },
-  { value: "echo", label: "Echo (남성)" },
-  { value: "fable", label: "Fable (남성)" },
-  { value: "onyx", label: "Onyx (남성 저음)" },
-  { value: "nova", label: "Nova (여성)" },
-  { value: "shimmer", label: "Shimmer (여성)" },
-];
+// Voices loaded from server API (Gemini TTS voices)
 
 export default function ProductionStudio() {
   const { user } = useAuth();
@@ -62,13 +55,26 @@ export default function ProductionStudio() {
   // Pipeline form
   const [selectedScriptId, setSelectedScriptId] = useState<number | null>(null);
   const [pipelineTitle, setPipelineTitle] = useState("");
-  const [ttsVoiceId, setTtsVoiceId] = useState("alloy");
+  const [ttsVoiceId, setTtsVoiceId] = useState("");
   const [selectedVoiceModId, setSelectedVoiceModId] = useState<string>("none");
   const [selectedFaceSwapId, setSelectedFaceSwapId] = useState<string>("none");
 
   // Batch processing state
   const [batchSelectedIds, setBatchSelectedIds] = useState<Set<number>>(new Set());
-  const [batchTtsVoiceId, setBatchTtsVoiceId] = useState("alloy");
+  const [batchTtsVoiceId, setBatchTtsVoiceId] = useState("");
+
+  // Load voices from server
+  const { data: voicesData } = trpc.tts.voices.useQuery();
+  const VOICES = useMemo(() => 
+    (voicesData || []).map(v => ({ value: v.id, label: `${v.name} (${v.desc})` })),
+    [voicesData]
+  );
+
+  // Set default voice when loaded
+  useEffect(() => {
+    if (VOICES.length > 0 && !ttsVoiceId) setTtsVoiceId(VOICES[0].value);
+    if (VOICES.length > 0 && !batchTtsVoiceId) setBatchTtsVoiceId(VOICES[0].value);
+  }, [VOICES]);
   const [batchVoiceModId, setBatchVoiceModId] = useState<string>("none");
   const [batchFaceSwapId, setBatchFaceSwapId] = useState<string>("none");
   const [batchResults, setBatchResults] = useState<any>(null);

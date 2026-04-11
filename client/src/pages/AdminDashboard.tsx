@@ -244,6 +244,61 @@ function ApiMonitoringPanel() {
           </CardContent>
         </Card>
       )}
+      {/* Gemini API Quota Alert Guide */}
+      <Card className="border-border/50 border-amber-500/20 bg-amber-500/5">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-500" />
+            Gemini API 쿼터 알림 설정 가이드
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          <p className="text-muted-foreground">
+            Gemini API 무료 티어는 <strong>분당 15건, 일 1,500건</strong>의 요청 제한이 있습니다.
+            쿼터 초과 시 서비스가 중단되므로 알림을 설정하세요.
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <Badge className="bg-violet-500/10 text-violet-500 border-0 shrink-0 mt-0.5">1</Badge>
+              <div>
+                <p className="font-medium">Google Cloud Console 접속</p>
+                <a href="https://console.cloud.google.com/apis/api/generativelanguage.googleapis.com/quotas" 
+                   target="_blank" rel="noopener noreferrer"
+                   className="text-xs text-blue-400 hover:underline">
+                  console.cloud.google.com → APIs → Generative Language API → Quotas
+                </a>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Badge className="bg-violet-500/10 text-violet-500 border-0 shrink-0 mt-0.5">2</Badge>
+              <div>
+                <p className="font-medium">알림 정책 생성</p>
+                <p className="text-xs text-muted-foreground">
+                  Cloud Monitoring → Alerting → Create Policy → Metric: "API Request Count" → 
+                  Threshold: 일 1,200건 (80%) 도달 시 이메일 알림
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Badge className="bg-violet-500/10 text-violet-500 border-0 shrink-0 mt-0.5">3</Badge>
+              <div>
+                <p className="font-medium">유료 전환 (선택)</p>
+                <p className="text-xs text-muted-foreground">
+                  Billing 활성화 후 "Pay as you go" 전환 시 분당 2,000건까지 확장 가능.
+                  Gemini 2.5 Flash: 입력 $0.15/1M tokens, 출력 $0.60/1M tokens
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 p-3 bg-muted/30 rounded-lg">
+            <p className="text-xs text-muted-foreground">
+              <strong>현재 사용량:</strong> 최근 {stats?.dailyBreakdown?.[0] ? 
+                `오늘 ${(stats.dailyBreakdown[0].llm || 0) + (stats.dailyBreakdown[0].tts || 0)}건 / 일 1,500건 한도` : 
+                '데이터 수집 중...'}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

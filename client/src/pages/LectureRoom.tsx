@@ -270,7 +270,7 @@ export default function LectureRoom() {
     try {
       const result = await ttsMutation.mutateAsync({
         text,
-        voiceId: "alloy",
+        voiceId: "Kore",
       });
       if (result.audioUrl) {
         const audio = new Audio(result.audioUrl);

@@ -134,7 +134,15 @@ async function wavToMp3(wavBuffer: Buffer): Promise<Buffer> {
 
   try {
     await writeFile(tmpWav, wavBuffer);
-    await execAsync(`ffmpeg -i "${tmpWav}" -codec:a libmp3lame -qscale:a 2 -y "${tmpMp3}" 2>/dev/null`);
+    // High-quality MP3 conversion with:
+    // -b:a 192k: 192kbps constant bitrate for clear speech
+    // -af loudnorm: EBU R128 loudness normalization for consistent volume
+    // -ar 44100: Standard sample rate for broad compatibility
+    // -ac 1: Mono channel (speech doesn't need stereo)
+    await execAsync(
+      `ffmpeg -i "${tmpWav}" -codec:a libmp3lame -b:a 192k -ar 44100 -ac 1 ` +
+      `-af "loudnorm=I=-16:TP=-1.5:LRA=11" -y "${tmpMp3}" 2>/dev/null`
+    );
     const mp3Buffer = await readFile(tmpMp3);
     return mp3Buffer;
   } finally {

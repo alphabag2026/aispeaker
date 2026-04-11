@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -17,14 +17,7 @@ import {
   ArrowLeft, Tv, MessageSquare, Eye
 } from "lucide-react";
 
-const TTS_VOICES = [
-  { id: "alloy", name: "Alloy", desc: "중성적, 균형잡힌 톤" },
-  { id: "echo", name: "Echo", desc: "남성적, 깊은 톤" },
-  { id: "fable", name: "Fable", desc: "영국식, 따뜻한 톤" },
-  { id: "onyx", name: "Onyx", desc: "남성적, 권위있는 톤" },
-  { id: "nova", name: "Nova", desc: "여성적, 밝은 톤" },
-  { id: "shimmer", name: "Shimmer", desc: "여성적, 부드러운 톤" },
-];
+// Voices loaded from server API
 
 export default function BroadcastManager() {
   const { user } = useAuth();
@@ -33,7 +26,16 @@ export default function BroadcastManager() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedScript, setSelectedScript] = useState("");
-  const [ttsVoice, setTtsVoice] = useState("alloy");
+  const [ttsVoice, setTtsVoice] = useState("");
+
+  // Load voices from server
+  const { data: voicesData } = trpc.tts.voices.useQuery();
+  const TTS_VOICES = useMemo(() => voicesData || [], [voicesData]);
+
+  // Set default voice when loaded
+  useEffect(() => {
+    if (TTS_VOICES.length > 0 && !ttsVoice) setTtsVoice(TTS_VOICES[0].id);
+  }, [TTS_VOICES]);
   const [filter, setFilter] = useState<"all" | "scheduled" | "live" | "ended">("all");
 
   const scripts = trpc.script.list.useQuery(undefined, { enabled: !!user });

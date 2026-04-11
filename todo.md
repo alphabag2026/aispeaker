@@ -758,3 +758,10 @@
 - [x] Gemini API 에러 핸들링 강화 — API 키 만료/쿼터 초과 시 사용자에게 명확한 에러 메시지 표시 (401/403/429/500 분류)
 - [x] Gemini API 사용량 모니터링 — 대시보드에 API 사용량/에러율 표시 기능 추가 (apiUsageLogs 테이블, 관리자 대시보드 탭)
 - [x] 프로덕션 서버 배포 및 검증 (새 서버 IP 54.151.247.194)
+
+## v4.6 음성 목록 교체, 쿼터 알림, 오디오 품질 개선
+
+- [x] 프론트엔드 음성 목록을 Gemini 음성으로 교체 (Alloy/Echo → Kore/Puck/Zephyr 등) - 30개 Gemini 음성 한국어 설명 포함
+- [x] Google Cloud Console Gemini API 쿼터 알림 설정 가이드 페이지 추가 - 관리자 대시보드 API 모니터링 탭에 추가
+- [x] TTS 오디오 품질 개선 (비트레이트 최적화, 오디오 정규화) - 192kbps MP3, loudnorm 필터 적용
+- [x] 프로덕션 서버 배포 및 검증 - WorkingDirectory 수정 (/opt/aispeaker/app), Nginx 캐시 방지 헤더 추가

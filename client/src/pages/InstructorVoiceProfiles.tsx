@@ -20,7 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Link } from "wouter";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -35,14 +35,7 @@ import {
   StopCircle,
 } from "lucide-react";
 
-const ttsVoices = [
-  { id: "alloy", name: "Alloy", desc: "중성적, 균형잡힌 목소리" },
-  { id: "echo", name: "Echo", desc: "남성적, 깊은 목소리" },
-  { id: "fable", name: "Fable", desc: "영국식, 서술적 목소리" },
-  { id: "onyx", name: "Onyx", desc: "남성적, 권위있는 목소리" },
-  { id: "nova", name: "Nova", desc: "여성적, 따뜻한 목소리" },
-  { id: "shimmer", name: "Shimmer", desc: "여성적, 밝은 목소리" },
-];
+// Voices loaded from server API
 
 export default function InstructorVoiceProfiles() {
   const { data: profiles, refetch } = trpc.voiceProfile.list.useQuery();
@@ -53,7 +46,16 @@ export default function InstructorVoiceProfiles() {
   const [name, setName] = useState("");
   const [voiceDescription, setVoiceDescription] = useState("");
   const [teachingStyle, setTeachingStyle] = useState("");
-  const [ttsVoiceId, setTtsVoiceId] = useState("alloy");
+  const [ttsVoiceId, setTtsVoiceId] = useState("");
+
+  // Load voices from server
+  const { data: voicesData } = trpc.tts.voices.useQuery();
+  const ttsVoices = useMemo(() => voicesData || [], [voicesData]);
+
+  // Set default voice when loaded
+  useEffect(() => {
+    if (ttsVoices.length > 0 && !ttsVoiceId) setTtsVoiceId(ttsVoices[0].id);
+  }, [ttsVoices]);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -102,7 +104,7 @@ export default function InstructorVoiceProfiles() {
     setName("");
     setVoiceDescription("");
     setTeachingStyle("");
-    setTtsVoiceId("alloy");
+    setTtsVoiceId(ttsVoices[0]?.id || "");
   };
 
   const handleSubmit = () => {
@@ -133,7 +135,7 @@ export default function InstructorVoiceProfiles() {
     setName(profile.name);
     setVoiceDescription(profile.voiceDescription || "");
     setTeachingStyle(profile.teachingStyle || "");
-    setTtsVoiceId(profile.ttsVoiceId || "alloy");
+    setTtsVoiceId(profile.ttsVoiceId || ttsVoices[0]?.id || "");
     setDialogOpen(true);
   };
 
@@ -343,7 +345,7 @@ export default function InstructorVoiceProfiles() {
                         variant="outline"
                         size="sm"
                         className="gap-1"
-                        onClick={() => handlePreviewVoice(profile.ttsVoiceId || "alloy")}
+                        onClick={() => handlePreviewVoice(profile.ttsVoiceId || ttsVoices[0]?.id || "Kore")}
                         disabled={ttsMutation.isPending}
                       >
                         {ttsMutation.isPending ? (
