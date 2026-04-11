@@ -695,3 +695,30 @@
 - [x] Manus OAuth 관련 코드 완전 제거
 - [x] 테스트 및 빌드 확인
 - [x] AWS Lightsail 서버 재배포
+
+## 관리자 계정 초기 설정 (v4.1)
+- [x] 첫 번째 가입 사용자 자동 관리자 승격 로직
+- [x] 관리자 존재 여부 체크 API (getAdminCount)
+
+## 비밀번호 찾기/재설정 (v4.1)
+- [x] 비밀번호 재설정 토큰 DB 테이블 (passwordResetTokens)
+- [x] 비밀번호 재설정 요청 API (forgotPassword - 토큰 생성)
+- [x] 비밀번호 재설정 실행 API (resetPassword - 토큰 검증 + 비밀번호 변경)
+- [x] 로그인 사용자 비밀번호 변경 API (changePassword)
+- [x] 비밀번호 재설정 요청 UI (/forgot-password 페이지)
+- [x] 비밀번호 재설정 실행 UI (/reset-password 페이지)
+- [x] 로그인 페이지에 '비밀번호를 잊으셨나요?' 링크 추가
+- [x] 4개 언어 번역 (한/영/중/일)
+
+## Google OAuth Client ID 설정 (v4.1)
+- [ ] Google Cloud Console에서 OAuth 2.0 클라이언트 생성 (사용자 직접 설정 필요)
+- [ ] Google Client ID 서버 환경변수 설정
+- [ ] Google OAuth 프론트엔드 연동 확인
+- [x] AWS Lightsail 서버 재배포 (v4.1)
+
+## v4.1 테스트
+- [x] 비밀번호 재설정 프로시저 테스트 (forgotPassword, resetPassword, changePassword)
+- [x] 관리자 자동 승격 DB 함수 테스트 (getAdminCount)
+- [x] 라우터 구조 검증 테스트
+- [x] 스키마 검증 테스트
+- [x] 전체 25개 신규 테스트 통과

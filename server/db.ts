@@ -36,6 +36,7 @@ import {
   payments, InsertPayment,
   cryptoPayments, InsertCryptoPayment,
   creditUsageLogs, InsertCreditUsageLog,
+  passwordResetTokens,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -101,13 +102,24 @@ export async function getUserById(userId: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getAdminCount() {
+  const db = await getDb(); if (!db) return 1; // assume admin exists if db unavailable
+  const result = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, 'admin'));
+  return result[0]?.count ?? 0;
+}
+
 export async function createUserWithEmail(data: { email: string; passwordHash: string; name: string }) {
   const db = await getDb(); if (!db) throw new Error("Database not available");
+  // First user becomes admin automatically
+  const adminCount = await getAdminCount();
+  const isFirstUser = adminCount === 0;
   const result = await db.insert(users).values({
     email: data.email,
     passwordHash: data.passwordHash,
     name: data.name,
     loginMethod: "email",
+    role: isFirstUser ? "admin" : "user",
+    platformRole: isFirstUser ? "instructor" : "student",
     openId: `email_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
     lastSignedIn: new Date(),
   });
@@ -116,16 +128,45 @@ export async function createUserWithEmail(data: { email: string; passwordHash: s
 
 export async function createUserWithGoogle(data: { googleId: string; email: string; name: string; avatarUrl?: string }) {
   const db = await getDb(); if (!db) throw new Error("Database not available");
+  // First user becomes admin automatically
+  const adminCount = await getAdminCount();
+  const isFirstUser = adminCount === 0;
   const result = await db.insert(users).values({
     googleId: data.googleId,
     email: data.email,
     name: data.name,
     avatarUrl: data.avatarUrl || null,
     loginMethod: "google",
+    role: isFirstUser ? "admin" : "user",
+    platformRole: isFirstUser ? "instructor" : "student",
     openId: `google_${data.googleId}`,
     lastSignedIn: new Date(),
   });
   return result[0].insertId;
+}
+
+// ============ Password Reset ============
+export async function savePasswordResetToken(userId: number, token: string, expiresAt: Date) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  // Delete any existing tokens for this user
+  await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+  await db.insert(passwordResetTokens).values({ userId, token, expiresAt });
+}
+
+export async function getPasswordResetToken(token: string) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, token));
+  return result[0];
+}
+
+export async function deletePasswordResetToken(token: string) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token));
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string) {
+  const db = await getDb(); if (!db) return;
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 }
 
 export async function linkGoogleToUser(userId: number, googleId: string) {

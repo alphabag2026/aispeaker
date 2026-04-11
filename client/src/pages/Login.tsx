@@ -28,6 +28,7 @@ const translations = {
     passwordPlaceholder: "비밀번호를 입력하세요",
     loginSuccess: "로그인 성공!",
     loginError: "이메일 또는 비밀번호가 올바르지 않습니다.",
+    forgotPassword: "비밀번호를 잊으셨나요?",
   },
   en: {
     title: "Sign In",
@@ -43,6 +44,7 @@ const translations = {
     passwordPlaceholder: "Enter your password",
     loginSuccess: "Login successful!",
     loginError: "Invalid email or password.",
+    forgotPassword: "Forgot your password?",
   },
   zh: {
     title: "登录",
@@ -58,6 +60,7 @@ const translations = {
     passwordPlaceholder: "请输入密码",
     loginSuccess: "登录成功！",
     loginError: "邮箱或密码不正确。",
+    forgotPassword: "忘记密码？",
   },
   ja: {
     title: "ログイン",
@@ -73,6 +76,7 @@ const translations = {
     passwordPlaceholder: "パスワードを入力",
     loginSuccess: "ログイン成功！",
     loginError: "メールアドレスまたはパスワードが正しくありません。",
+    forgotPassword: "パスワードをお忘れですか？",
   },
 };
 
@@ -195,6 +199,15 @@ export default function Login() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
+              </div>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
+                  className="text-xs text-primary hover:underline"
+                >
+                  {t.forgotPassword}
+                </button>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}

@@ -984,3 +984,17 @@ export const creditUsageLogs = mysqlTable("creditUsageLogs", {
 
 export type CreditUsageLog = typeof creditUsageLogs.$inferSelect;
 export type InsertCreditUsageLog = typeof creditUsageLogs.$inferInsert;
+
+/**
+ * Password reset tokens for email-based password recovery
+ */
+export const passwordResetTokens = mysqlTable("passwordResetTokens", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
