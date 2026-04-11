@@ -16,6 +16,7 @@ import {
   Radio, Plus, Play, Pause, Square, Users, Clock, Copy, ExternalLink,
   ArrowLeft, Tv, MessageSquare, Eye
 } from "lucide-react";
+import VoicePreviewButton from "@/components/VoicePreviewButton";
 
 // Voices loaded from server API
 
@@ -180,18 +181,21 @@ export default function BroadcastManager() {
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-2 block">TTS 음성</label>
-                  <Select value={ttsVoice} onValueChange={setTtsVoice}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {TTS_VOICES.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.name} - {v.desc}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select value={ttsVoice} onValueChange={setTtsVoice}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TTS_VOICES.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.name} - {v.desc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <VoicePreviewButton voiceId={ttsVoice} />
+                  </div>
                 </div>
               </div>
               <DialogFooter>

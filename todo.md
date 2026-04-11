@@ -765,3 +765,10 @@
 - [x] Google Cloud Console Gemini API 쿼터 알림 설정 가이드 페이지 추가 - 관리자 대시보드 API 모니터링 탭에 추가
 - [x] TTS 오디오 품질 개선 (비트레이트 최적화, 오디오 정규화) - 192kbps MP3, loudnorm 필터 적용
 - [x] 프로덕션 서버 배포 및 검증 - WorkingDirectory 수정 (/opt/aispeaker/app), Nginx 캐시 방지 헤더 추가
+
+## v4.7 음성 미리듣기, Cloudflare 캐시 최적화, TTS 병렬 생성
+
+- [x] 음성 미리듣기 기능 - tts.preview 프로시저 + VoicePreviewButton 컴포넌트 (ProductionStudio, InstructorVoiceProfiles, BroadcastManager)
+- [x] Cloudflare Cache Rules 최적화 - 가이드 문서 작성 (HTML 우회, /assets/* 장기 캐시, /api/ 우회, /storage/ 캐시)
+- [x] TTS 병렬 생성 - pipeline.start + batchStart를 Promise.allSettled + CONCURRENCY=4로 병렬화
+- [x] 프로덕션 서버 배포 및 검증 - aispeaker.cc 배포 완료, tts.preview API 정상 동작 확인

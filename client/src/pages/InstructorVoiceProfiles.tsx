@@ -34,6 +34,7 @@ import {
   Brain,
   StopCircle,
 } from "lucide-react";
+import VoicePreviewButton from "@/components/VoicePreviewButton";
 
 // Voices loaded from server API
 
@@ -266,18 +267,21 @@ export default function InstructorVoiceProfiles() {
                 </div>
                 <div>
                   <Label>TTS 음성</Label>
-                  <Select value={ttsVoiceId} onValueChange={setTtsVoiceId}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ttsVoices.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.name} - {v.desc}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select value={ttsVoiceId} onValueChange={setTtsVoiceId}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ttsVoices.map((v) => (
+                          <SelectItem key={v.id} value={v.id}>
+                            {v.name} - {v.desc}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <VoicePreviewButton voiceId={ttsVoiceId} />
+                  </div>
                 </div>
                 <div>
                   <Label>음성 특성 설명</Label>

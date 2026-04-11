@@ -21,6 +21,7 @@ import {
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
+import VoicePreviewButton from "@/components/VoicePreviewButton";
 
 const CATEGORIES = [
   { value: "web3", label: "Web3" },
@@ -494,12 +495,15 @@ export default function ProductionStudio() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label className="text-sm text-muted-foreground">TTS 음성</Label>
-                          <Select value={ttsVoiceId} onValueChange={setTtsVoiceId}>
-                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Select value={ttsVoiceId} onValueChange={setTtsVoiceId}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <VoicePreviewButton voiceId={ttsVoiceId} />
+                          </div>
                         </div>
                         <div>
                           <Label className="text-sm text-muted-foreground">음성 변조 프로필</Label>
@@ -729,12 +733,15 @@ export default function ProductionStudio() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label className="text-sm text-muted-foreground">TTS 음성</Label>
-                          <Select value={batchTtsVoiceId} onValueChange={setBatchTtsVoiceId}>
-                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Select value={batchTtsVoiceId} onValueChange={setBatchTtsVoiceId}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <VoicePreviewButton voiceId={batchTtsVoiceId} />
+                          </div>
                         </div>
                         <div>
                           <Label className="text-sm text-muted-foreground">음성 변조</Label>

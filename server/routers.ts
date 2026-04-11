@@ -403,6 +403,20 @@ export const appRouter = router({
   // ============ TTS ============
   tts: router({
     voices: publicProcedure.query(() => TTS_VOICES),
+    /** Preview a voice with a short sample text */
+    preview: publicProcedure
+      .input(z.object({ voiceId: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        const voice = TTS_VOICES.find(v => v.id.toLowerCase() === input.voiceId.toLowerCase());
+        const voiceName = voice?.name || input.voiceId;
+        const voiceDesc = voice?.desc || '';
+        const sampleText = `안녕하세요, 저는 ${voiceName}입니다. ${voiceDesc} 스타일로 AI 강의를 진행해 드리겠습니다.`;
+        const ttsResult = await generateGeminiTts({ text: sampleText, voiceId: input.voiceId });
+        if ('error' in ttsResult) throw new TRPCError({ code: ttsResult.code === 'QUOTA_EXCEEDED' ? 'TOO_MANY_REQUESTS' : 'INTERNAL_SERVER_ERROR', message: ttsResult.error });
+        const fileKey = `tts-preview/${input.voiceId.toLowerCase()}-${Date.now()}.mp3`;
+        const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
+        return { audioUrl: url, voiceId: input.voiceId, voiceName };
+      }),
     generate: protectedProcedure
       .input(z.object({ text: z.string().min(1), voiceId: z.string().optional(), voiceProfileId: z.number().optional(), voiceModProfileId: z.number().optional() }))
       .mutation(async ({ input }) => {
@@ -1779,43 +1793,72 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
 
         let totalDuration = 0;
         try {
-          for (let i = 0; i < sections.length; i++) {
-            const section = sections[i];
-            let textToSpeak = section.content;
+          // Pre-fetch voice modulation data once (avoid repeated DB queries)
+          let voiceModData: any = null;
+          let speed = 1;
+          if (input.voiceModProfileId) {
+            voiceModData = await db.getVoiceModProfileById(input.voiceModProfileId);
+            speed = voiceModData ? (voiceModData.speedPercent || 100) / 100 : 1;
+          }
 
-            // Apply voice modulation style if configured
-            if (input.voiceModProfileId) {
-              const voiceMod = await db.getVoiceModProfileById(input.voiceModProfileId);
-              if (voiceMod?.stylePrompt) {
-                const styleResponse = await invokeLLM({
-                  messages: [
-                    { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${voiceMod.stylePrompt}\n스타일: ${voiceMod.speakingStyle}` },
-                    { role: "user", content: textToSpeak },
-                  ],
-                });
-                const rawStyled = styleResponse.choices?.[0]?.message?.content;
-                if (typeof rawStyled === "string") textToSpeak = rawStyled;
+          // Prepare text for each section (apply style if needed) - sequential for LLM calls
+          const preparedTexts: string[] = [];
+          for (let i = 0; i < sections.length; i++) {
+            let textToSpeak = sections[i].content;
+            if (voiceModData?.stylePrompt) {
+              const styleResponse = await invokeLLM({
+                messages: [
+                  { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${voiceModData.stylePrompt}\n스타일: ${voiceModData.speakingStyle}` },
+                  { role: "user", content: textToSpeak },
+                ],
+              });
+              const rawStyled = styleResponse.choices?.[0]?.message?.content;
+              if (typeof rawStyled === "string") textToSpeak = rawStyled;
+            }
+            preparedTexts.push(textToSpeak);
+          }
+
+          await db.updateProductionPipeline(pipelineId, {
+            progressPercent: 30,
+            currentStep: `TTS 병렬 생성 중... (${sections.length}개 섹션)`,
+          });
+
+          // Generate TTS for all sections in parallel (max 4 concurrent)
+          const CONCURRENCY = 4;
+          const sectionResults: { index: number; url: string; duration: number }[] = [];
+          for (let batch = 0; batch < sections.length; batch += CONCURRENCY) {
+            const batchSections = sections.slice(batch, batch + CONCURRENCY);
+            const batchPromises = batchSections.map(async (section: any, batchIdx: number) => {
+              const i = batch + batchIdx;
+              const ttsResult = await generateGeminiTts({ text: preparedTexts[i], voiceId, speed });
+              if ('error' in ttsResult) throw new Error(`TTS failed for section ${i}: ${ttsResult.error}`);
+              const fileKey = `pipeline/${pipelineId}/section-${i}-${nanoid(6)}.mp3`;
+              const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
+              return { index: i, url, duration: section.durationSec || 0 };
+            });
+
+            const batchResults = await Promise.allSettled(batchPromises);
+            for (const result of batchResults) {
+              if (result.status === 'fulfilled') {
+                sectionResults.push(result.value);
+              } else {
+                throw new Error(result.reason?.message || 'TTS generation failed');
               }
             }
 
-            // Generate TTS audio
-            const speed = input.voiceModProfileId
-              ? ((await db.getVoiceModProfileById(input.voiceModProfileId))?.speedPercent || 100) / 100
-              : 1;
-
-            const ttsResult = await generateGeminiTts({ text: textToSpeak, voiceId, speed });
-            if ('error' in ttsResult) throw new Error(`TTS failed for section ${i}: ${ttsResult.error}`);
-            const fileKey = `pipeline/${pipelineId}/section-${i}-${nanoid(6)}.mp3`;
-            const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
-            audioUrls.push(url);
-            totalDuration += section.durationSec || 0;
-
-            // Update progress
-            const progress = Math.round(10 + (70 * (i + 1) / sections.length));
+            // Update progress after each batch
+            const progress = Math.round(30 + (60 * Math.min(batch + CONCURRENCY, sections.length) / sections.length));
             await db.updateProductionPipeline(pipelineId, {
               progressPercent: progress,
-              currentStep: `TTS 생성 중... (${i + 1}/${sections.length})`,
+              currentStep: `TTS 생성 중... (${Math.min(batch + CONCURRENCY, sections.length)}/${sections.length})`,
             });
+          }
+
+          // Sort by section index and collect URLs in order
+          sectionResults.sort((a, b) => a.index - b.index);
+          for (const r of sectionResults) {
+            audioUrls.push(r.url);
+            totalDuration += r.duration;
           }
 
           // Mark as completed
@@ -1909,41 +1952,61 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               }
             }
 
-            let totalDuration = 0;
+            // Pre-fetch voice modulation data once
+            let voiceModData: any = null;
+            let speed = 1;
+            if (item.voiceModProfileId) {
+              voiceModData = await db.getVoiceModProfileById(item.voiceModProfileId);
+              speed = voiceModData ? (voiceModData.speedPercent || 100) / 100 : 1;
+            }
+
+            // Prepare texts (apply style if needed)
+            const preparedTexts: string[] = [];
             for (let i = 0; i < sections.length; i++) {
-              const section = sections[i];
-              let textToSpeak = section.content;
-
-              if (item.voiceModProfileId) {
-                const voiceMod = await db.getVoiceModProfileById(item.voiceModProfileId);
-                if (voiceMod?.stylePrompt) {
-                  const styleResponse = await invokeLLM({
-                    messages: [
-                      { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${voiceMod.stylePrompt}\n스타일: ${voiceMod.speakingStyle}` },
-                      { role: "user", content: textToSpeak },
-                    ],
-                  });
-                  const rawStyled = styleResponse.choices?.[0]?.message?.content;
-                  if (typeof rawStyled === "string") textToSpeak = rawStyled;
-                }
+              let textToSpeak = sections[i].content;
+              if (voiceModData?.stylePrompt) {
+                const styleResponse = await invokeLLM({
+                  messages: [
+                    { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${voiceModData.stylePrompt}\n스타일: ${voiceModData.speakingStyle}` },
+                    { role: "user", content: textToSpeak },
+                  ],
+                });
+                const rawStyled = styleResponse.choices?.[0]?.message?.content;
+                if (typeof rawStyled === "string") textToSpeak = rawStyled;
               }
+              preparedTexts.push(textToSpeak);
+            }
 
-              const speed = item.voiceModProfileId
-                ? ((await db.getVoiceModProfileById(item.voiceModProfileId))?.speedPercent || 100) / 100
-                : 1;
-
-              const ttsResult = await generateGeminiTts({ text: textToSpeak, voiceId, speed });
-              if ('error' in ttsResult) throw new Error(`TTS failed for section ${i}: ${ttsResult.error}`);
-              const fileKey = `pipeline/${pipelineId}/section-${i}-${nanoid(6)}.mp3`;
-              const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
-              audioUrls.push(url);
-              totalDuration += section.durationSec || 0;
-
-              const progress = Math.round(10 + (70 * (i + 1) / sections.length));
+            // Parallel TTS generation (max 4 concurrent)
+            let totalDuration = 0;
+            const BATCH_CONCURRENCY = 4;
+            const sectionResults: { index: number; url: string; duration: number }[] = [];
+            for (let batch = 0; batch < sections.length; batch += BATCH_CONCURRENCY) {
+              const batchSections = sections.slice(batch, batch + BATCH_CONCURRENCY);
+              const batchPromises = batchSections.map(async (section: any, batchIdx: number) => {
+                const i = batch + batchIdx;
+                const ttsResult = await generateGeminiTts({ text: preparedTexts[i], voiceId, speed });
+                if ('error' in ttsResult) throw new Error(`TTS failed for section ${i}: ${ttsResult.error}`);
+                const fileKey = `pipeline/${pipelineId}/section-${i}-${nanoid(6)}.mp3`;
+                const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
+                return { index: i, url, duration: section.durationSec || 0 };
+              });
+              const batchResults = await Promise.allSettled(batchPromises);
+              for (const result of batchResults) {
+                if (result.status === 'fulfilled') sectionResults.push(result.value);
+                else throw new Error(result.reason?.message || 'TTS generation failed');
+              }
+              const progress = Math.round(10 + (70 * Math.min(batch + BATCH_CONCURRENCY, sections.length) / sections.length));
               await db.updateProductionPipeline(pipelineId, {
                 progressPercent: progress,
-                currentStep: `TTS 생성 중... (${i + 1}/${sections.length})`,
+                currentStep: `TTS 생성 중... (${Math.min(batch + BATCH_CONCURRENCY, sections.length)}/${sections.length})`,
               });
+            }
+
+            sectionResults.sort((a, b) => a.index - b.index);
+            for (const r of sectionResults) {
+              audioUrls.push(r.url);
+              totalDuration += r.duration;
             }
 
             await db.updateProductionPipeline(pipelineId, {
