@@ -10,6 +10,9 @@ import { storagePut } from "./storage";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { generateImage } from "./_core/imageGeneration";
 import { nanoid } from "nanoid";
+import bcrypt from "bcryptjs";
+import { sdk } from "./_core/sdk";
+import axios from "axios";
 
 // Instructor-only procedure
 const instructorProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -63,6 +66,102 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+
+    // Email/Password Registration
+    register: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string().min(6),
+        name: z.string().min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const existing = await db.getUserByEmail(input.email);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "이미 등록된 이메일입니다." });
+        }
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        const userId = await db.createUserWithEmail({
+          email: input.email,
+          passwordHash,
+          name: input.name,
+        });
+        const user = await db.getUserById(userId);
+        if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "회원가입 실패" });
+        const token = await sdk.createSessionToken(user.id, { email: user.email || "", name: user.name || "" });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 365 * 24 * 60 * 60 * 1000 });
+        return { success: true, user };
+      }),
+
+    // Email/Password Login
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserByEmail(input.email);
+        if (!user || !user.passwordHash) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "이메일 또는 비밀번호가 올바르지 않습니다." });
+        }
+        const valid = await bcrypt.compare(input.password, user.passwordHash);
+        if (!valid) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "이메일 또는 비밀번호가 올바르지 않습니다." });
+        }
+        const token = await sdk.createSessionToken(user.id, { email: user.email || "", name: user.name || "" });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 365 * 24 * 60 * 60 * 1000 });
+        return { success: true, user };
+      }),
+
+    // Google OAuth Login
+    googleLogin: publicProcedure
+      .input(z.object({
+        credential: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify Google ID token
+        let googlePayload: { sub: string; email: string; name: string; picture?: string };
+        try {
+          const response = await axios.get(
+            `https://oauth2.googleapis.com/tokeninfo?id_token=${input.credential}`
+          );
+          googlePayload = {
+            sub: response.data.sub,
+            email: response.data.email,
+            name: response.data.name || response.data.email.split("@")[0],
+            picture: response.data.picture,
+          };
+        } catch (err) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Google 인증에 실패했습니다." });
+        }
+
+        // Check if user exists by Google ID
+        let user = await db.getUserByGoogleId(googlePayload.sub);
+        if (!user) {
+          // Check if email already exists
+          user = await db.getUserByEmail(googlePayload.email);
+          if (user) {
+            // Link Google to existing account
+            await db.linkGoogleToUser(user.id, googlePayload.sub);
+          } else {
+            // Create new user
+            const userId = await db.createUserWithGoogle({
+              googleId: googlePayload.sub,
+              email: googlePayload.email,
+              name: googlePayload.name,
+              avatarUrl: googlePayload.picture,
+            });
+            user = await db.getUserById(userId);
+          }
+        }
+        if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "로그인 실패" });
+
+        const token = await sdk.createSessionToken(user.id, { email: user.email || "", name: user.name || "" });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 365 * 24 * 60 * 60 * 1000 });
+        return { success: true, user };
+      }),
   }),
 
   // ============ User & Role ============

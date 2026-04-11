@@ -1,5 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+// getLoginUrl removed - using direct /login route
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { Link, useLocation } from "wouter";
@@ -143,7 +143,7 @@ export default function Navbar() {
             </DropdownMenu>
           ) : (
             <Button size="sm" asChild>
-              <a href={getLoginUrl()}>{t("nav.login")}</a>
+              <Link href="/login">{t("nav.login")}</Link>
             </Button>
           )}
 

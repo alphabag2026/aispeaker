@@ -683,3 +683,15 @@
 - [x] 어색한 표현/직역체/문법 오류 수정
 - [x] 중국 현지 표현/관용어로 자연스럽게 개선
 - [x] Vultr 서버 재배포
+
+## 인증 시스템 변경 - Manus OAuth 제거 + 이메일/Google 로그인 (v4.0)
+- [x] 현재 Manus OAuth 인증 코드 분석
+- [x] DB 스키마 수정 (email, password_hash, google_id 필드 추가)
+- [x] 서버 이메일/비밀번호 회원가입 API 구현
+- [x] 서버 이메일/비밀번호 로그인 API 구현
+- [x] 서버 Google OAuth 로그인 API 구현
+- [x] 프론트엔드 로그인 페이지 UI 구현
+- [x] 프론트엔드 회원가입 페이지 UI 구현
+- [x] Manus OAuth 관련 코드 완전 제거
+- [x] 테스트 및 빌드 확인
+- [x] AWS Lightsail 서버 재배포

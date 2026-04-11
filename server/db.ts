@@ -82,6 +82,57 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+// ============ Email/Google Auth helpers ============
+export async function getUserByEmail(email: string) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserByGoogleId(googleId: string) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.googleId, googleId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserById(userId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createUserWithEmail(data: { email: string; passwordHash: string; name: string }) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const result = await db.insert(users).values({
+    email: data.email,
+    passwordHash: data.passwordHash,
+    name: data.name,
+    loginMethod: "email",
+    openId: `email_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+    lastSignedIn: new Date(),
+  });
+  return result[0].insertId;
+}
+
+export async function createUserWithGoogle(data: { googleId: string; email: string; name: string; avatarUrl?: string }) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const result = await db.insert(users).values({
+    googleId: data.googleId,
+    email: data.email,
+    name: data.name,
+    avatarUrl: data.avatarUrl || null,
+    loginMethod: "google",
+    openId: `google_${data.googleId}`,
+    lastSignedIn: new Date(),
+  });
+  return result[0].insertId;
+}
+
+export async function linkGoogleToUser(userId: number, googleId: string) {
+  const db = await getDb(); if (!db) return;
+  await db.update(users).set({ googleId }).where(eq(users.id, userId));
+}
+
 // ============ User helpers ============
 export async function updateUserPlatformRole(userId: number, platformRole: "instructor" | "student") {
   const db = await getDb(); if (!db) return;

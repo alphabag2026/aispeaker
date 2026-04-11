@@ -40,11 +40,15 @@ import PaymentTroubleshooting from "./pages/PaymentTroubleshooting";
 import OnboardingTutorial from "./pages/OnboardingTutorial";
 import Features from "./pages/Features";
 import FeatureDetail from "./pages/FeatureDetail";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/features" component={Features} />
       <Route path="/features/:id" component={FeatureDetail} />
       <Route path="/lectures" component={LectureList} />
