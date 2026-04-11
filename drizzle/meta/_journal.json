@@ -92,6 +92,13 @@
       "when": 1775890727695,
       "tag": "0012_clammy_kulan_gath",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1775916632653,
+      "tag": "0013_wide_rockslide",
+      "breakpoints": true
     }
   ]
 }

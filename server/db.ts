@@ -1,4 +1,4 @@
-import { eq, desc, and, like, sql } from "drizzle-orm";
+import { eq, desc, and, like, sql, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -37,6 +37,7 @@ import {
   cryptoPayments, InsertCryptoPayment,
   creditUsageLogs, InsertCreditUsageLog,
   passwordResetTokens,
+  apiUsageLogs, InsertApiUsageLog,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1474,4 +1475,68 @@ export async function getCreditConsumptionTrend() {
     entry.byFeature[log.feature] = (entry.byFeature[log.feature] || 0) + log.creditsUsed;
   }
   return Array.from(dailyMap.entries()).map(([date, data]) => ({ date, ...data })).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+
+// ============ API Usage Logging (v4.5) ============
+export async function logApiUsage(data: {
+  userId?: number;
+  apiType: "llm" | "tts";
+  model?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  durationMs?: number;
+  status: "success" | "error";
+  errorCode?: string;
+  errorMessage?: string;
+  metadata?: string;
+}) {
+  try {
+    const db = await getDb(); if (!db) return;
+    await db.insert(apiUsageLogs).values(data);
+  } catch (e) {
+    // Silently fail - logging should never break main flow
+    console.error("[API Usage Log] Failed to log:", e);
+  }
+}
+
+export async function getApiUsageStats(days = 30) {
+  const db = await getDb(); if (!db) return null;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const logs = await db.select().from(apiUsageLogs).where(
+    gte(apiUsageLogs.createdAt, since)
+  ).orderBy(desc(apiUsageLogs.createdAt));
+
+  const totalCalls = logs.length;
+  const llmCalls = logs.filter(l => l.apiType === "llm").length;
+  const ttsCalls = logs.filter(l => l.apiType === "tts").length;
+  const errorCalls = logs.filter(l => l.status === "error").length;
+  const totalInputTokens = logs.reduce((sum, l) => sum + (l.inputTokens || 0), 0);
+  const totalOutputTokens = logs.reduce((sum, l) => sum + (l.outputTokens || 0), 0);
+  const avgDurationMs = totalCalls > 0 ? Math.round(logs.reduce((sum, l) => sum + (l.durationMs || 0), 0) / totalCalls) : 0;
+
+  // Daily breakdown
+  const dailyMap = new Map<string, { llm: number; tts: number; errors: number }>();
+  for (const log of logs) {
+    const day = log.createdAt.toISOString().split("T")[0];
+    if (!dailyMap.has(day)) dailyMap.set(day, { llm: 0, tts: 0, errors: 0 });
+    const entry = dailyMap.get(day)!;
+    if (log.apiType === "llm") entry.llm++;
+    else entry.tts++;
+    if (log.status === "error") entry.errors++;
+  }
+  const dailyBreakdown = Array.from(dailyMap.entries()).map(([date, counts]) => ({ date, ...counts }));
+
+  return {
+    totalCalls,
+    llmCalls,
+    ttsCalls,
+    errorCalls,
+    errorRate: totalCalls > 0 ? ((errorCalls / totalCalls) * 100).toFixed(1) : "0",
+    totalInputTokens,
+    totalOutputTokens,
+    avgDurationMs,
+    dailyBreakdown,
+    recentLogs: logs.slice(0, 50),
+  };
 }

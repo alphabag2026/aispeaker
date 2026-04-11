@@ -1,4 +1,5 @@
 import { ENV } from "./env";
+import { logApiUsage } from "../db";
 
 export type Role = "system" | "user" | "assistant" | "tool" | "function";
 
@@ -209,26 +210,38 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
+/**
+ * Resolve LLM API URL:
+ * - If GEMINI_API_KEY is set, use Gemini OpenAI-compatible endpoint directly
+ * - Otherwise fall back to BUILT_IN_FORGE_API_URL (Manus Forge)
+ */
 const resolveApiUrl = () => {
+  // If Gemini API key is available, use Gemini directly
+  if (ENV.geminiApiKey) {
+    return "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+  }
+  // Fallback to Forge API
   if (!ENV.forgeApiUrl || ENV.forgeApiUrl.trim().length === 0) {
     return "https://forge.manus.im/v1/chat/completions";
   }
   const base = ENV.forgeApiUrl.replace(/\/$/, "");
-  // If URL already contains /chat/completions, use as-is
-  if (base.includes("/chat/completions")) {
-    return base;
-  }
-  // If URL ends with /openai (Gemini-style), append /chat/completions
-  if (base.endsWith("/openai")) {
-    return `${base}/chat/completions`;
-  }
-  // Default: append /v1/chat/completions
+  if (base.includes("/chat/completions")) return base;
+  if (base.endsWith("/openai")) return `${base}/chat/completions`;
   return `${base}/v1/chat/completions`;
 };
 
+/**
+ * Resolve the API key for LLM calls:
+ * - If GEMINI_API_KEY is set, use it
+ * - Otherwise use BUILT_IN_FORGE_API_KEY
+ */
+const resolveApiKey = () => {
+  return ENV.geminiApiKey || ENV.forgeApiKey;
+};
+
 const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+  if (!ENV.geminiApiKey && !ENV.forgeApiKey) {
+    throw new Error("API key is not configured (set GEMINI_API_KEY or BUILT_IN_FORGE_API_KEY)");
   }
 };
 
@@ -277,8 +290,9 @@ const normalizeResponseFormat = ({
   };
 };
 
-export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
+export async function invokeLLM(params: InvokeParams & { _userId?: number }): Promise<InvokeResult> {
   assertApiKey();
+  const startTime = Date.now();
 
   const {
     messages,
@@ -289,10 +303,12 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     output_schema,
     responseFormat,
     response_format,
+    _userId,
   } = params;
 
+  const model = "gemini-2.5-flash";
   const payload: Record<string, unknown> = {
-    model: "gemini-2.5-flash",
+    model,
     messages: messages.map(normalizeMessage),
   };
 
@@ -321,21 +337,81 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.response_format = normalizedResponseFormat;
   }
 
-  const response = await fetch(resolveApiUrl(), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch(resolveApiUrl(), {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${resolveApiKey()}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(
-      `LLM invoke failed: ${response.status} ${response.statusText} – ${errorText}`
-    );
+    if (!response.ok) {
+      const errorText = await response.text();
+      const status = response.status;
+      const durationMs = Date.now() - startTime;
+
+      // Log error
+      logApiUsage({
+        userId: _userId,
+        apiType: "llm",
+        model,
+        durationMs,
+        status: "error",
+        errorCode: `HTTP_${status}`,
+        errorMessage: errorText.slice(0, 500),
+      });
+
+      // Classify errors with user-friendly messages
+      if (status === 401 || status === 403) {
+        throw new Error(
+          `AI 서비스 인증 오류: API 키가 유효하지 않거나 만료되었습니다. 관리자에게 문의하세요. (HTTP ${status})`
+        );
+      }
+      if (status === 429) {
+        throw new Error(
+          `AI 서비스 사용량 한도 초과: 일일 API 쿼터를 초과했습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`
+        );
+      }
+      if (status === 500 || status === 502 || status === 503) {
+        throw new Error(
+          `AI 서비스 일시적 오류: 서버가 응답하지 않습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`
+        );
+      }
+      throw new Error(
+        `AI 서비스 오류: ${response.statusText} (HTTP ${status}) – ${errorText.slice(0, 200)}`
+      );
+    }
+
+    const result = (await response.json()) as InvokeResult;
+    const durationMs = Date.now() - startTime;
+
+    // Log success
+    logApiUsage({
+      userId: _userId,
+      apiType: "llm",
+      model,
+      inputTokens: result.usage?.prompt_tokens,
+      outputTokens: result.usage?.completion_tokens,
+      durationMs,
+      status: "success",
+    });
+
+    return result;
+  } catch (err: any) {
+    // If not already logged (non-HTTP errors like network failures)
+    if (!err.message?.includes("HTTP")) {
+      logApiUsage({
+        userId: _userId,
+        apiType: "llm",
+        model,
+        durationMs: Date.now() - startTime,
+        status: "error",
+        errorCode: "NETWORK_ERROR",
+        errorMessage: err.message?.slice(0, 500),
+      });
+    }
+    throw err;
   }
-
-  return (await response.json()) as InvokeResult;
 }

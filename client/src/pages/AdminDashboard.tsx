@@ -8,11 +8,245 @@ import { Input } from "@/components/ui/input";
 import {
   Users, CreditCard, BarChart3, Settings, Search,
   Crown, Zap, Building2, TrendingUp, Activity,
-  User, Image, Volume2, Shield, AlertCircle
+  User, Image, Volume2, Shield, AlertCircle, Cpu, Clock, AlertTriangle, CheckCircle2
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+
+function ApiMonitoringPanel() {
+  const [days, setDays] = useState(30);
+  const { data: stats, isLoading } = trpc.revenue.apiUsage.useQuery({ days }, {
+    refetchInterval: 60000, // Auto-refresh every minute
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500" />
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <Card className="border-border/50">
+        <CardContent className="p-8 text-center text-muted-foreground">
+          <Cpu className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>API 사용량 데이터가 없습니다.</p>
+          <p className="text-xs mt-1">AI 스크립트 생성이나 TTS 음성 생성을 실행하면 데이터가 기록됩니다.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Period Selector */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">기간:</span>
+        {[7, 14, 30, 90].map(d => (
+          <Button key={d} size="sm" variant={days === d ? "default" : "outline"} onClick={() => setDays(d)}>
+            {d}일
+          </Button>
+        ))}
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Cpu className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.totalCalls}</p>
+                <p className="text-xs text-muted-foreground">전체 API 호출</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-violet-500/10 rounded-lg">
+                <Zap className="w-5 h-5 text-violet-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.llmCalls}</p>
+                <p className="text-xs text-muted-foreground">LLM 호출</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <Volume2 className="w-5 h-5 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.ttsCalls}</p>
+                <p className="text-xs text-muted-foreground">TTS 호출</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${Number(stats.errorRate) > 5 ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
+                {Number(stats.errorRate) > 5 ? (
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                ) : (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                )}
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{stats.errorRate}%</p>
+                <p className="text-xs text-muted-foreground">에러율 ({stats.errorCalls}건)</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Token Usage & Performance */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">토큰 사용량</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">입력 토큰</span>
+              <span className="font-mono font-medium">{stats.totalInputTokens.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">출력 토큰</span>
+              <span className="font-mono font-medium">{stats.totalOutputTokens.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center border-t border-border/50 pt-3">
+              <span className="text-sm font-medium">총 토큰</span>
+              <span className="font-mono font-bold">{(stats.totalInputTokens + stats.totalOutputTokens).toLocaleString()}</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">성능 지표</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">평균 응답 시간</span>
+              <span className="font-mono font-medium">
+                <Clock className="w-3 h-3 inline mr-1" />
+                {stats.avgDurationMs > 1000 ? `${(stats.avgDurationMs / 1000).toFixed(1)}초` : `${stats.avgDurationMs}ms`}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">일평균 호출</span>
+              <span className="font-mono font-medium">
+                {stats.dailyBreakdown.length > 0 ? Math.round(stats.totalCalls / stats.dailyBreakdown.length) : 0}회
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Daily Breakdown */}
+      {stats.dailyBreakdown.length > 0 && (
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">일별 API 호출 추이</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {stats.dailyBreakdown.slice(0, 14).map((day: any) => {
+                const total = day.llm + day.tts;
+                const maxCalls = Math.max(...stats.dailyBreakdown.map((d: any) => d.llm + d.tts));
+                const pct = maxCalls > 0 ? (total / maxCalls) * 100 : 0;
+                return (
+                  <div key={day.date} className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-20 shrink-0">{day.date.slice(5)}</span>
+                    <div className="flex-1 h-6 bg-muted/30 rounded overflow-hidden flex">
+                      <div className="h-full bg-violet-500/60 transition-all" style={{ width: `${maxCalls > 0 ? (day.llm / maxCalls) * 100 : 0}%` }} />
+                      <div className="h-full bg-emerald-500/60 transition-all" style={{ width: `${maxCalls > 0 ? (day.tts / maxCalls) * 100 : 0}%` }} />
+                    </div>
+                    <span className="text-xs font-mono w-12 text-right">{total}회</span>
+                    {day.errors > 0 && (
+                      <Badge variant="destructive" className="text-[10px] px-1.5">{day.errors} err</Badge>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-violet-500/60 rounded" /> LLM</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-emerald-500/60 rounded" /> TTS</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recent Logs */}
+      {stats.recentLogs && stats.recentLogs.length > 0 && (
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">최근 API 호출 로그</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/50">
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">시간</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">타입</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">모델</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">상태</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">소요시간</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">토큰</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.recentLogs.slice(0, 20).map((log: any) => (
+                    <tr key={log.id} className="border-b border-border/30 hover:bg-muted/30">
+                      <td className="py-2 px-3 text-xs text-muted-foreground">
+                        {new Date(log.createdAt).toLocaleString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                      </td>
+                      <td className="py-2 px-3">
+                        <Badge variant="outline" className={`text-xs ${log.apiType === 'llm' ? 'border-violet-500/30 text-violet-500' : 'border-emerald-500/30 text-emerald-500'}`}>
+                          {log.apiType.toUpperCase()}
+                        </Badge>
+                      </td>
+                      <td className="py-2 px-3 text-xs font-mono">{log.model || '-'}</td>
+                      <td className="py-2 px-3">
+                        {log.status === 'success' ? (
+                          <Badge className="bg-green-500/10 text-green-500 border-0 text-[10px]">성공</Badge>
+                        ) : (
+                          <Badge className="bg-red-500/10 text-red-500 border-0 text-[10px]" title={log.errorMessage || ''}>
+                            실패 {log.errorCode && `(${log.errorCode})`}
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-xs font-mono">
+                        {log.durationMs ? (log.durationMs > 1000 ? `${(log.durationMs / 1000).toFixed(1)}s` : `${log.durationMs}ms`) : '-'}
+                      </td>
+                      <td className="py-2 px-3 text-xs font-mono">
+                        {log.inputTokens || log.outputTokens ? `${(log.inputTokens || 0).toLocaleString()} / ${(log.outputTokens || 0).toLocaleString()}` : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -67,6 +301,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="users" className="gap-1.5"><Users className="w-4 h-4" /> 유저</TabsTrigger>
             <TabsTrigger value="revenue" className="gap-1.5"><CreditCard className="w-4 h-4" /> 매출</TabsTrigger>
             <TabsTrigger value="samples" className="gap-1.5"><Image className="w-4 h-4" /> 샘플</TabsTrigger>
+            <TabsTrigger value="api" className="gap-1.5"><Cpu className="w-4 h-4" /> API 모니터링</TabsTrigger>
             <TabsTrigger value="settings" className="gap-1.5"><Settings className="w-4 h-4" /> 설정</TabsTrigger>
           </TabsList>
 
@@ -301,6 +536,11 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* API Monitoring Tab */}
+          <TabsContent value="api">
+            <ApiMonitoringPanel />
           </TabsContent>
 
           {/* Settings Tab */}

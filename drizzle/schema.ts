@@ -998,3 +998,25 @@ export const passwordResetTokens = mysqlTable("passwordResetTokens", {
 
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
 export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+
+
+/**
+ * API usage logs for monitoring Gemini API calls (LLM + TTS)
+ */
+export const apiUsageLogs = mysqlTable("apiUsageLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  apiType: mysqlEnum("apiType", ["llm", "tts"]).notNull(),
+  model: varchar("model", { length: 128 }),
+  inputTokens: int("inputTokens").default(0),
+  outputTokens: int("outputTokens").default(0),
+  durationMs: int("durationMs").default(0),
+  status: mysqlEnum("status", ["success", "error"]).default("success").notNull(),
+  errorCode: varchar("errorCode", { length: 64 }),
+  errorMessage: text("errorMessage"),
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
+export type InsertApiUsageLog = typeof apiUsageLogs.$inferInsert;

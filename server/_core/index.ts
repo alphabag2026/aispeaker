@@ -180,6 +180,13 @@ async function startServer() {
       createContext,
     })
   );
+  // Serve local storage files (for self-hosted production)
+  const localStorageDir = process.env.LOCAL_STORAGE_DIR || '/opt/aispeaker/storage';
+  app.use('/storage', express.static(localStorageDir, {
+    maxAge: '7d',
+    immutable: true,
+  }));
+
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

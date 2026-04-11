@@ -9,6 +9,7 @@ import { invokeLLM } from "./_core/llm";
 import { storagePut } from "./storage";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { generateImage } from "./_core/imageGeneration";
+import { generateGeminiTts, GEMINI_VOICES } from "./_core/geminiTts";
 import { nanoid } from "nanoid";
 import bcrypt from "bcryptjs";
 import { sdk } from "./_core/sdk";
@@ -47,15 +48,8 @@ const SUPPORTED_LANGUAGES = [
   { code: "sv", name: "Svenska", flag: "🇸🇪" },
 ];
 
-// TTS voice options
-const TTS_VOICES = [
-  { id: "alloy", name: "Alloy", desc: "중성적, 균형잡힌 톤" },
-  { id: "echo", name: "Echo", desc: "남성적, 깊은 톤" },
-  { id: "fable", name: "Fable", desc: "영국식, 따뜻한 톤" },
-  { id: "onyx", name: "Onyx", desc: "남성적, 권위있는 톤" },
-  { id: "nova", name: "Nova", desc: "여성적, 밝은 톤" },
-  { id: "shimmer", name: "Shimmer", desc: "여성적, 부드러운 톤" },
-];
+// TTS voice options - Gemini 2.5 Flash TTS voices
+const TTS_VOICES = GEMINI_VOICES;
 
 export const appRouter = router({
   system: systemRouter,
@@ -445,15 +439,10 @@ export const appRouter = router({
           if (profile?.ttsVoiceId && !input.voiceModProfileId) effectiveVoiceId = profile.ttsVoiceId;
         }
 
-        const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "tts-1", voice: effectiveVoiceId, input: textToSpeak }),
-        });
-        if (!ttsResponse.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "TTS 생성 실패" });
-        const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+        const ttsResult = await generateGeminiTts({ text: textToSpeak, voiceId: effectiveVoiceId });
+        if ('error' in ttsResult) throw new TRPCError({ code: ttsResult.code === 'QUOTA_EXCEEDED' ? 'TOO_MANY_REQUESTS' : 'INTERNAL_SERVER_ERROR', message: ttsResult.error });
         const fileKey = `tts/${Date.now()}-${nanoid(6)}.mp3`;
-        const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+        const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
         return { audioUrl: url, voiceId: effectiveVoiceId, transformedText: textToSpeak !== input.text ? textToSpeak : undefined };
       }),
   }),
@@ -506,16 +495,11 @@ export const appRouter = router({
           if (faceSwap?.targetFaceUrl) avatarImageUrl = faceSwap.targetFaceUrl;
         }
 
-        // Generate TTS audio
-        const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "tts-1", voice: voiceId, input: input.text }),
-        });
-        if (!ttsResponse.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "TTS 생성 실패" });
-        const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+        // Generate TTS audio via Gemini
+        const ttsResult = await generateGeminiTts({ text: input.text, voiceId });
+        if ('error' in ttsResult) throw new TRPCError({ code: ttsResult.code === 'QUOTA_EXCEEDED' ? 'TOO_MANY_REQUESTS' : 'INTERNAL_SERVER_ERROR', message: ttsResult.error });
         const audioKey = `avatar-audio/${Date.now()}-${nanoid(6)}.mp3`;
-        const { url: audioUrl } = await storagePut(audioKey, audioBuffer, "audio/mpeg");
+        const { url: audioUrl } = await storagePut(audioKey, ttsResult.audioBuffer, ttsResult.mimeType);
 
         // Generate D-ID video if enabled
         let videoUrl: string | null = null;
@@ -822,15 +806,10 @@ export const appRouter = router({
         }
         const charVoiceMap: Record<string, string> = { male_deep: "onyx", male_bright: "echo", female_warm: "nova", female_clear: "shimmer", neutral: "alloy" };
         const voiceId = profile.customTtsVoiceId || charVoiceMap[profile.voiceCharacter] || "alloy";
-        const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ model: "tts-1", voice: voiceId, input: textToSpeak, speed: (profile.speedPercent || 100) / 100 }),
-        });
-        if (!ttsResponse.ok) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "TTS 미리듣기 실패" });
-        const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+        const ttsResult = await generateGeminiTts({ text: textToSpeak, voiceId, speed: (profile.speedPercent || 100) / 100 });
+        if ('error' in ttsResult) throw new TRPCError({ code: ttsResult.code === 'QUOTA_EXCEEDED' ? 'TOO_MANY_REQUESTS' : 'INTERNAL_SERVER_ERROR', message: ttsResult.error });
         const fileKey = `voice-mod-preview/${Date.now()}-${nanoid(6)}.mp3`;
-        const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+        const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
         await db.updateVoiceModProfile(input.profileId, 0, { previewAudioUrl: url });
         return { audioUrl: url, transformedText: textToSpeak, voiceId };
       }),
@@ -1824,16 +1803,10 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               ? ((await db.getVoiceModProfileById(input.voiceModProfileId))?.speedPercent || 100) / 100
               : 1;
 
-            const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
-              method: "POST",
-              headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
-              body: JSON.stringify({ model: "tts-1", voice: voiceId, input: textToSpeak, speed }),
-            });
-
-            if (!ttsResponse.ok) throw new Error(`TTS failed for section ${i}`);
-            const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+            const ttsResult = await generateGeminiTts({ text: textToSpeak, voiceId, speed });
+            if ('error' in ttsResult) throw new Error(`TTS failed for section ${i}: ${ttsResult.error}`);
             const fileKey = `pipeline/${pipelineId}/section-${i}-${nanoid(6)}.mp3`;
-            const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+            const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
             audioUrls.push(url);
             totalDuration += section.durationSec || 0;
 
@@ -1959,16 +1932,10 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
                 ? ((await db.getVoiceModProfileById(item.voiceModProfileId))?.speedPercent || 100) / 100
                 : 1;
 
-              const ttsResponse = await fetch(`${process.env.BUILT_IN_FORGE_API_URL}/v1/audio/speech`, {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${process.env.BUILT_IN_FORGE_API_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ model: "tts-1", voice: voiceId, input: textToSpeak, speed }),
-              });
-
-              if (!ttsResponse.ok) throw new Error(`TTS failed for section ${i}`);
-              const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+              const ttsResult = await generateGeminiTts({ text: textToSpeak, voiceId, speed });
+              if ('error' in ttsResult) throw new Error(`TTS failed for section ${i}: ${ttsResult.error}`);
               const fileKey = `pipeline/${pipelineId}/section-${i}-${nanoid(6)}.mp3`;
-              const { url } = await storagePut(fileKey, audioBuffer, "audio/mpeg");
+              const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
               audioUrls.push(url);
               totalDuration += section.durationSec || 0;
 
@@ -2987,6 +2954,13 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .query(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         return db.getAllPayments(input?.limit ?? 100);
+      }),
+    /** API usage stats for monitoring */
+    apiUsage: protectedProcedure
+      .input(z.object({ days: z.number().min(1).max(365).optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getApiUsageStats(input?.days ?? 30);
       }),
   }),
 });
