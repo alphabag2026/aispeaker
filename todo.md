@@ -722,3 +722,13 @@
 - [x] 라우터 구조 검증 테스트
 - [x] 스키마 검증 테스트
 - [x] 전체 25개 신규 테스트 통과
+
+## Google OAuth 로그인/회원가입 버그 수정 (v4.2)
+- [x] 회원가입 페이지에 Google 로그인 버튼 추가
+- [x] 로그인 페이지 Google OAuth 버튼 개선 (getGoogleClientId API 연동)
+- [x] Google GSI 스크립트 index.html에 추가
+- [x] 서버 getGoogleClientId tRPC 프로시저 추가
+- [x] env.ts에 VITE_GOOGLE_CLIENT_ID 환경변수 추가
+- [x] Google 미설정 시 fallback 버튼 표시
+- [x] v4.2 테스트 14개 통과
+- [x] AWS Lightsail 서버 재배포

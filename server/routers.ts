@@ -68,6 +68,11 @@ export const appRouter = router({
       return { success: true } as const;
     }),
 
+    // Get Google Client ID for frontend
+    getGoogleClientId: publicProcedure.query(() => {
+      return { clientId: process.env.VITE_GOOGLE_CLIENT_ID || "" };
+    }),
+
     // Email/Password Registration
     register: publicProcedure
       .input(z.object({

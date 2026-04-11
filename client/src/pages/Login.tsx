@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -10,8 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Navbar from "@/components/Navbar";
-
-// Google Sign-In types handled via any casting
 
 const translations = {
   ko: {
@@ -29,6 +27,7 @@ const translations = {
     loginSuccess: "로그인 성공!",
     loginError: "이메일 또는 비밀번호가 올바르지 않습니다.",
     forgotPassword: "비밀번호를 잊으셨나요?",
+    googleNotConfigured: "Google 로그인이 아직 설정되지 않았습니다.",
   },
   en: {
     title: "Sign In",
@@ -45,6 +44,7 @@ const translations = {
     loginSuccess: "Login successful!",
     loginError: "Invalid email or password.",
     forgotPassword: "Forgot your password?",
+    googleNotConfigured: "Google Sign-In is not configured yet.",
   },
   zh: {
     title: "登录",
@@ -61,6 +61,7 @@ const translations = {
     loginSuccess: "登录成功！",
     loginError: "邮箱或密码不正确。",
     forgotPassword: "忘记密码？",
+    googleNotConfigured: "Google登录尚未配置。",
   },
   ja: {
     title: "ログイン",
@@ -77,6 +78,7 @@ const translations = {
     loginSuccess: "ログイン成功！",
     loginError: "メールアドレスまたはパスワードが正しくありません。",
     forgotPassword: "パスワードをお忘れですか？",
+    googleNotConfigured: "Googleログインはまだ設定されていません。",
   },
 };
 
@@ -89,6 +91,11 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  // Fetch Google Client ID from server
+  const { data: googleConfig } = trpc.auth.getGoogleClientId.useQuery();
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: () => {
@@ -110,6 +117,58 @@ export default function Login() {
     },
   });
 
+  const handleGoogleCallback = useCallback((response: any) => {
+    if (response.credential) {
+      googleLoginMutation.mutate({ credential: response.credential });
+    }
+  }, [googleLoginMutation]);
+
+  // Initialize Google Sign-In when client ID is available
+  useEffect(() => {
+    if (!googleConfig?.clientId || !googleBtnRef.current) return;
+
+    const initGoogle = () => {
+      const goog = (window as any).google;
+      if (!goog?.accounts?.id) return;
+      
+      try {
+        goog.accounts.id.initialize({
+          client_id: googleConfig.clientId,
+          callback: handleGoogleCallback,
+        });
+        goog.accounts.id.renderButton(googleBtnRef.current!, {
+          theme: "outline",
+          size: "large",
+          width: googleBtnRef.current!.offsetWidth || 350,
+          text: "signin_with",
+          shape: "rectangular",
+        });
+        setGoogleReady(true);
+      } catch (err) {
+        console.warn("Google Sign-In initialization failed:", err);
+      }
+    };
+
+    // Google GSI might not be loaded yet
+    if ((window as any).google?.accounts?.id) {
+      initGoogle();
+    } else {
+      // Wait for script to load
+      const interval = setInterval(() => {
+        if ((window as any).google?.accounts?.id) {
+          clearInterval(interval);
+          initGoogle();
+        }
+      }, 200);
+      // Cleanup after 10 seconds
+      const timeout = setTimeout(() => clearInterval(interval), 10000);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [googleConfig?.clientId, handleGoogleCallback]);
+
   // Redirect if already logged in
   if (!authLoading && isAuthenticated) {
     navigate("/");
@@ -119,33 +178,6 @@ export default function Login() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     loginMutation.mutate({ email, password });
-  };
-
-  const handleGoogleCallback = (response: any) => {
-    if (response.credential) {
-      googleLoginMutation.mutate({ credential: response.credential });
-    }
-  };
-
-  // Initialize Google Sign-In
-  const initGoogleSignIn = (element: HTMLDivElement | null) => {
-    const goog = (window as any).google;
-    if (!element || !goog) return;
-    try {
-      goog.accounts.id.initialize({
-        client_id: (window as any).__GOOGLE_CLIENT_ID__,
-        callback: handleGoogleCallback,
-      });
-      goog.accounts.id.renderButton(element, {
-        theme: "outline",
-        size: "large",
-        width: "100%",
-        text: "signin_with",
-        shape: "rectangular",
-      });
-    } catch (err) {
-      console.warn("Google Sign-In not available");
-    }
   };
 
   const isLoading = loginMutation.isPending || googleLoginMutation.isPending;
@@ -225,14 +257,13 @@ export default function Login() {
             </div>
 
             {/* Google Sign-In Button */}
-            <div ref={initGoogleSignIn} className="flex justify-center" />
-            
-            {/* Fallback Google button if GSI not loaded */}
-            {!(window as any).google && (
+            {googleConfig?.clientId ? (
+              <div ref={googleBtnRef} className="flex justify-center" />
+            ) : (
               <Button
                 variant="outline"
                 className="w-full"
-                disabled
+                onClick={() => toast.info(t.googleNotConfigured)}
               >
                 <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -242,6 +273,14 @@ export default function Login() {
                 </svg>
                 {t.googleLogin}
               </Button>
+            )}
+
+            {/* Show Google loading state */}
+            {googleConfig?.clientId && !googleReady && (
+              <div className="flex items-center justify-center text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                Google Sign-In loading...
+              </div>
             )}
 
             <p className="text-center text-sm text-muted-foreground">
