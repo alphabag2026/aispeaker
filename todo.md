@@ -738,3 +738,16 @@
 - [x] AWS Lightsail 서버 prod.env에 VITE_GOOGLE_CLIENT_ID 추가
 - [x] 서비스 재시작 및 Google Client ID API 응답 확인
 - [x] v4.3 테스트 3개 통과
+
+## Google 로그인 세션 유지 버그 수정 (v4.4)
+- [x] Google 로그인 후 세션이 유지되지 않는 문제 분석 (Cloudflare Flexible SSL + sameSite:none + secure:false 쿠키 거부)
+- [x] Nginx X-Forwarded-Proto https 강제 설정으로 수정
+- [x] Nginx 설정 리로드 완료
+
+## v4.4 Gemini API 연동 및 프로덕션 DB 동기화
+
+- [x] Gemini API 연동 - LLM 호출 코드를 Gemini OpenAI 호환 엔드포인트로 수정 (thinking 파라미터 제거, resolveApiUrl 수정)
+- [x] 프로덕션 DB 누락 테이블 일괄 생성 (lectureScripts, productionPipelines, voiceModProfiles, faceSwapProfiles 등) - 확인 결과 모든 테이블 이미 존재
+- [x] 프로덕션 서버에 Gemini API Key 환경변수 설정
+- [x] 프로덕션 서버에 수정된 코드 배포
+- [x] E2E 테스트 - AI 스크립트 생성 및 전체 플로우 검증 - 성공
