@@ -206,10 +206,14 @@ function TechComparisonTable() {
 /* ─── PPT + PIP Lecture Mode Preview ─── */
 function PipLectureModeSection() {
   const { user } = useAuth();
-  const [pipPosition, setPipPosition] = useState<"bottom-right" | "bottom-left" | "top-right" | "top-left">("bottom-right");
+  const [pipPosition, setPipPosition] = useState<"bottom-right" | "bottom-left" | "top-right" | "top-left" | "custom">("bottom-right");
   const [pipSize, setPipSize] = useState<"small" | "medium" | "large">("medium");
   const [pipShape, setPipShape] = useState<"circle" | "rounded" | "rectangle">("rounded");
   const [pipOpacity, setPipOpacity] = useState(100);
+  const [customX, setCustomX] = useState(75); // percentage 0-100
+  const [customY, setCustomY] = useState(75);
+  const [isDragging, setIsDragging] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const pipSettings = trpc.pip.get.useQuery(undefined, { enabled: !!user });
   const updatePip = trpc.pip.update.useMutation({
@@ -223,11 +227,13 @@ function PipLectureModeSection() {
       setPipSize(pipSettings.data.size as any);
       setPipShape(pipSettings.data.shape as any);
       setPipOpacity(pipSettings.data.opacity);
+      if (pipSettings.data.customX != null) setCustomX(pipSettings.data.customX);
+      if (pipSettings.data.customY != null) setCustomY(pipSettings.data.customY);
     }
   }, [pipSettings.data]);
 
   const sizeMap = { small: "w-20 h-20 md:w-24 md:h-24", medium: "w-28 h-28 md:w-36 md:h-36", large: "w-36 h-36 md:w-48 md:h-48" };
-  const posMap = {
+  const posMap: Record<string, string> = {
     "bottom-right": "bottom-3 right-3",
     "bottom-left": "bottom-3 left-3",
     "top-right": "top-3 right-3",
@@ -235,8 +241,44 @@ function PipLectureModeSection() {
   };
   const shapeMap = { circle: "rounded-full", rounded: "rounded-2xl", rectangle: "rounded-md" };
 
+  // Drag handler for custom position
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (pipPosition !== "custom") return;
+    e.preventDefault();
+    setIsDragging(true);
+  }, [pipPosition]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging || !previewRef.current) return;
+    const rect = previewRef.current.getBoundingClientRect();
+    const x = Math.max(5, Math.min(95, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(5, Math.min(95, ((e.clientY - rect.top) / rect.height) * 100));
+    setCustomX(Math.round(x));
+    setCustomY(Math.round(y));
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Touch handlers for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (pipPosition !== "custom") return;
+    setIsDragging(true);
+  }, [pipPosition]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging || !previewRef.current) return;
+    const touch = e.touches[0];
+    const rect = previewRef.current.getBoundingClientRect();
+    const x = Math.max(5, Math.min(95, ((touch.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(5, Math.min(95, ((touch.clientY - rect.top) / rect.height) * 100));
+    setCustomX(Math.round(x));
+    setCustomY(Math.round(y));
+  }, [isDragging]);
+
   const handleSave = () => {
-    updatePip.mutate({ position: pipPosition, size: pipSize, shape: pipShape, opacity: pipOpacity });
+    updatePip.mutate({ position: pipPosition, size: pipSize, shape: pipShape, opacity: pipOpacity, customX, customY });
   };
 
   return (
@@ -254,7 +296,15 @@ function PipLectureModeSection() {
         {/* Preview */}
         <Card className="overflow-hidden border-primary/10">
           <CardContent className="p-0">
-            <div className="relative aspect-video bg-gradient-to-br from-slate-800 to-slate-900 overflow-hidden">
+            <div
+              ref={previewRef}
+              className={`relative aspect-video bg-gradient-to-br from-slate-800 to-slate-900 overflow-hidden ${pipPosition === "custom" ? "select-none" : ""}`}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleMouseUp}
+            >
               {/* Simulated PPT slide */}
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-white">
                 <div className="w-full max-w-md">
@@ -286,8 +336,17 @@ function PipLectureModeSection() {
 
               {/* PIP face overlay */}
               <div
-                className={`absolute ${posMap[pipPosition]} ${sizeMap[pipSize]} ${shapeMap[pipShape]} overflow-hidden border-2 border-white/30 shadow-2xl transition-all duration-300`}
-                style={{ opacity: pipOpacity / 100 }}
+                className={`absolute ${pipPosition !== "custom" ? posMap[pipPosition] : ""} ${sizeMap[pipSize]} ${shapeMap[pipShape]} overflow-hidden border-2 ${isDragging ? "border-primary ring-2 ring-primary/50" : "border-white/30"} shadow-2xl transition-all ${isDragging ? "duration-0" : "duration-300"} ${pipPosition === "custom" ? "cursor-grab active:cursor-grabbing" : ""}`}
+                style={{
+                  opacity: pipOpacity / 100,
+                  ...(pipPosition === "custom" ? {
+                    left: `${customX}%`,
+                    top: `${customY}%`,
+                    transform: "translate(-50%, -50%)",
+                  } : {}),
+                }}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
               >
                 <img
                   src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/avatar-sujin-5gLEWECpKGLiVXyqTcBK7u.webp"
@@ -331,8 +390,12 @@ function PipLectureModeSection() {
                   <SelectItem value="bottom-left">좌측 하단</SelectItem>
                   <SelectItem value="top-right">우측 상단</SelectItem>
                   <SelectItem value="top-left">좌측 상단</SelectItem>
+                  <SelectItem value="custom">자유 배치 (드래그)</SelectItem>
                 </SelectContent>
               </Select>
+              {pipPosition === "custom" && (
+                <p className="text-xs text-primary mt-1">미리보기 화면에서 PIP 창을 드래그하여 위치를 조정하세요 (X: {customX}%, Y: {customY}%)</p>
+              )}
             </div>
             <div>
               <Label className="text-sm">크기</Label>
@@ -371,11 +434,170 @@ function PipLectureModeSection() {
               {updatePip.isPending ? "저장 중..." : "설정 저장"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              이 설정은 영상 제작 시 PPT 강의 모드에 적용됩니다. 실시간 강의(Zoom/Meet)에서는 OBS Studio 등의 도구와 함께 사용하세요.
+              이 설정은 영상 제작 시 PPT 강의 모드에 적용됩니다. 브라우저 스튜디오에서도 동일한 설정이 적용됩니다.
             </p>
           </CardContent>
         </Card>
       </div>
+    </div>
+  );
+}
+
+/* ─── PPT Slide Editor Section ─── */
+function PptSlideEditorSection() {
+  const { user } = useAuth();
+  const pptList = trpc.ppt.list.useQuery(undefined, { enabled: !!user });
+  const [selectedPptId, setSelectedPptId] = useState<string>("");
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const reorderSlides = trpc.ppt.reorderSlides.useMutation({
+    onSuccess: () => { toast.success("슬라이드 순서가 변경되었습니다."); pptList.refetch(); },
+    onError: (err) => toast.error(err.message),
+  });
+  const deleteSlide = trpc.ppt.deleteSlide.useMutation({
+    onSuccess: () => { toast.success("슬라이드가 삭제되었습니다."); pptList.refetch(); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const selectedPpt = pptList.data?.find((p: any) => p.id.toString() === selectedPptId);
+  const slideImages: string[] = selectedPpt?.slideImages
+    ? (typeof selectedPpt.slideImages === 'string' ? JSON.parse(selectedPpt.slideImages) : selectedPpt.slideImages as unknown as string[])
+    : [];
+
+  const handleDragStart = (idx: number) => setDragIdx(idx);
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    setDragOverIdx(idx);
+  };
+  const handleDrop = (targetIdx: number) => {
+    if (dragIdx === null || dragIdx === targetIdx || !selectedPpt) return;
+    const order = slideImages.map((_, i) => i);
+    const [removed] = order.splice(dragIdx, 1);
+    order.splice(targetIdx, 0, removed);
+    reorderSlides.mutate({ id: selectedPpt.id, slideOrder: order });
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
+  const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null); };
+
+  const handleDeleteSlide = (idx: number) => {
+    if (!selectedPpt) return;
+    if (slideImages.length <= 1) {
+      toast.error("최소 1장의 슬라이드가 필요합니다.");
+      return;
+    }
+    if (!confirm(`슬라이드 ${idx + 1}을 삭제하시겠습니까?`)) return;
+    deleteSlide.mutate({ id: selectedPpt.id, slideIndex: idx });
+  };
+
+  const moveSlide = (fromIdx: number, toIdx: number) => {
+    if (!selectedPpt || toIdx < 0 || toIdx >= slideImages.length) return;
+    const order = slideImages.map((_, i) => i);
+    const [removed] = order.splice(fromIdx, 1);
+    order.splice(toIdx, 0, removed);
+    reorderSlides.mutate({ id: selectedPpt.id, slideOrder: order });
+  };
+
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <Settings2 className="h-5 w-5 text-primary" />
+        PPT 슬라이드 편집
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        업로드된 PPT의 슬라이드 순서를 드래그하여 변경하거나, 불필요한 슬라이드를 삭제할 수 있습니다.
+      </p>
+
+      <Select value={selectedPptId} onValueChange={setSelectedPptId}>
+        <SelectTrigger className="w-full max-w-md mb-4">
+          <SelectValue placeholder="편집할 PPT 파일을 선택하세요..." />
+        </SelectTrigger>
+        <SelectContent>
+          {pptList.data?.map((ppt: any) => (
+            <SelectItem key={ppt.id} value={ppt.id.toString()}>
+              {ppt.title} ({ppt.totalSlides}장)
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {selectedPpt && slideImages.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">{selectedPpt.title}</CardTitle>
+              <span className="text-sm text-muted-foreground">{slideImages.length}장</span>
+            </div>
+            <CardDescription>드래그하여 순서를 변경하거나, X 버튼으로 슬라이드를 삭제하세요</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {slideImages.map((url, idx) => (
+                <div
+                  key={`${url}-${idx}`}
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={() => handleDrop(idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`group relative aspect-video rounded-lg overflow-hidden border-2 transition-all cursor-grab active:cursor-grabbing ${
+                    dragIdx === idx ? "opacity-50 scale-95" : ""
+                  } ${
+                    dragOverIdx === idx && dragIdx !== idx ? "border-primary ring-2 ring-primary/30 scale-105" : "border-border hover:border-primary/50"
+                  }`}
+                >
+                  <img src={url} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                  {/* Slide number */}
+                  <div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
+                    {idx + 1}
+                  </div>
+                  {/* Drag handle */}
+                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <GripVertical className="w-4 h-4 text-white drop-shadow" />
+                  </div>
+                  {/* Action buttons */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between">
+                    <div className="flex gap-0.5">
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-6 w-6 text-white hover:bg-white/20"
+                        onClick={(e) => { e.stopPropagation(); moveSlide(idx, idx - 1); }}
+                        disabled={idx === 0 || reorderSlides.isPending}
+                      >
+                        <ChevronUp className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-6 w-6 text-white hover:bg-white/20"
+                        onClick={(e) => { e.stopPropagation(); moveSlide(idx, idx + 1); }}
+                        disabled={idx === slideImages.length - 1 || reorderSlides.isPending}
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="ghost" size="icon"
+                      className="h-6 w-6 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteSlide(idx); }}
+                      disabled={deleteSlide.isPending}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {(reorderSlides.isPending || deleteSlide.isPending) && (
+              <p className="text-xs text-muted-foreground mt-3 animate-pulse">처리 중...</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedPpt && slideImages.length === 0 && (
+        <p className="text-sm text-muted-foreground">이 PPT에는 슬라이드가 없습니다.</p>
+      )}
     </div>
   );
 }
@@ -998,6 +1220,9 @@ export default function InstructorFaceSwap() {
 
         {/* PPT + PIP Lecture Mode */}
         <PipLectureModeSection />
+
+        {/* PPT Slide Editor */}
+        <PptSlideEditorSection />
 
         {/* Create New */}
         {!showForm ? (

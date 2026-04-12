@@ -3206,10 +3206,12 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
     }),
     update: protectedProcedure
       .input(z.object({
-        position: z.enum(["bottom-right", "bottom-left", "top-right", "top-left"]).optional(),
+        position: z.enum(["bottom-right", "bottom-left", "top-right", "top-left", "custom"]).optional(),
         size: z.enum(["small", "medium", "large"]).optional(),
         opacity: z.number().min(0).max(100).optional(),
         shape: z.enum(["circle", "rounded", "rectangle"]).optional(),
+        customX: z.number().min(0).max(100).optional(),
+        customY: z.number().min(0).max(100).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         await db.upsertPipSettings(ctx.user.id, input);
@@ -3344,6 +3346,47 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         }
         await db.deletePptUpload(input.id);
         return { success: true };
+      }),
+
+    reorderSlides: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        slideOrder: z.array(z.number()), // array of original indices in new order
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const ppt = await db.getPptUploadById(input.id);
+        if (!ppt || ppt.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        const currentSlides: string[] = typeof ppt.slideImages === 'string' ? JSON.parse(ppt.slideImages) : (ppt.slideImages as unknown as string[]) || [];
+        const reordered = input.slideOrder.map(idx => currentSlides[idx]).filter(Boolean);
+        await db.updatePptUpload(input.id, {
+          slideImages: JSON.stringify(reordered) as any,
+          totalSlides: reordered.length,
+        });
+        return { success: true, totalSlides: reordered.length };
+      }),
+
+    deleteSlide: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        slideIndex: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const ppt = await db.getPptUploadById(input.id);
+        if (!ppt || ppt.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        const currentSlides: string[] = typeof ppt.slideImages === 'string' ? JSON.parse(ppt.slideImages) : (ppt.slideImages as unknown as string[]) || [];
+        if (input.slideIndex < 0 || input.slideIndex >= currentSlides.length) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid slide index" });
+        }
+        currentSlides.splice(input.slideIndex, 1);
+        await db.updatePptUpload(input.id, {
+          slideImages: JSON.stringify(currentSlides) as any,
+          totalSlides: currentSlides.length,
+        });
+        return { success: true, totalSlides: currentSlides.length };
       }),
   }),
 });

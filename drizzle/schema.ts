@@ -1070,10 +1070,12 @@ export type GalleryComment = typeof galleryComments.$inferSelect;
 export const pipSettings = mysqlTable("pipSettings", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
-  position: mysqlEnum("position", ["bottom-right", "bottom-left", "top-right", "top-left"]).default("bottom-right").notNull(),
+  position: mysqlEnum("position", ["bottom-right", "bottom-left", "top-right", "top-left", "custom"]).default("bottom-right").notNull(),
   size: mysqlEnum("size", ["small", "medium", "large"]).default("medium").notNull(),
   opacity: int("opacity").default(100).notNull(),
   shape: mysqlEnum("shape", ["circle", "rounded", "rectangle"]).default("rounded").notNull(),
+  customX: int("customX").default(75),
+  customY: int("customY").default(75),
   isDefault: boolean("isDefault").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

@@ -857,3 +857,16 @@
 - [x] PPTX/PDF 업로드 시 서버에서 자동 슬라이드 이미지 변환 (LibreOffice + pdf-to-png-converter)
 - [x] pdf-to-png-converter 라이브러리를 이용한 PDF 페이지 이미지화 (viewportScale 2.0)
 - [x] 변환된 슬라이드 이미지 S3 업로드 및 DB 저장 (slideImages 배열)
+
+## v5.4 Browser Virtual Camera, PPT Slide Editor, PIP Drag Position
+- [x] 브라우저 기반 라이브 스트리밍 페이지 (BrowserStudio.tsx - OBS 없이 플랫폼 내에서 직접 방송)
+- [x] WebRTC 기반 카메라/마이크 캡처 + Canvas 합성 (PPT + 카메라 PIP 오버레이)
+- [x] 가상 카메라 출력 (Canvas captureStream → Zoom/Meet 브라우저 탭 공유용)
+- [x] 레이아웃 모드 (PIP 우하/좌상, 좌우 분할, 카메라만, 슬라이드만)
+- [x] BroadcastManager에서 브라우저 스튜디오 진입 버튼 추가
+- [x] PPT 슬라이드 순서 변경 (드래그 앤 드롭 UI - PptSlideEditorSection)
+- [x] PPT 슬라이드 삭제 기능 (개별 삭제 + 확인 다이얼로그)
+- [x] PPT 슬라이드 편집 서버 API (ppt.reorderSlides, ppt.deleteSlide)
+- [x] PIP 드래그 위치 조정 (마우스/터치 드래그로 자유 위치 설정 - 'custom' position)
+- [x] PIP 드래그 좌표를 DB에 저장 (customX/customY 퍼센트, pipSettings 스키마 확장)
+- [x] BrowserStudio에서 pipSettings 로드 및 드래그 위치 자동 저장

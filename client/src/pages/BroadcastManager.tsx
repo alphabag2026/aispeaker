@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Radio, Plus, Play, Pause, Square, Users, Clock, Copy, ExternalLink,
-  ArrowLeft, Tv, MessageSquare, Eye
+  ArrowLeft, Tv, MessageSquare, Eye, Monitor
 } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 
@@ -129,7 +129,11 @@ export default function BroadcastManager() {
 
       <div className="container py-8 max-w-6xl mx-auto px-4">
         {/* Header Actions */}
-        <div className="flex items-center justify-end mb-8">
+        <div className="flex items-center justify-end gap-3 mb-8">
+          <Button variant="outline" className="gap-2 border-violet-500/50 text-violet-400 hover:bg-violet-500/10" onClick={() => navigate("/browser-studio")}>
+            <Monitor className="w-4 h-4" />
+            브라우저 스튜디오
+          </Button>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
               <Button className="gap-2">
