@@ -18,7 +18,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Link, useSearch } from "wouter";
 import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
-  Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, Settings2, Edit3, History,
+  Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, User2, Settings2, Edit3, History,
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera,
   Presentation
 } from "lucide-react";
@@ -794,32 +794,87 @@ export default function ProductionStudio() {
                                     </div>
                                   ))}
                                 </div>
-                                {/* Enlarged preview modal */}
-                                {previewSlideIdx !== null && slides[previewSlideIdx] && (
-                                  <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewSlideIdx(null)}>
-                                    <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-                                      <img src={slides[previewSlideIdx]} alt={`슬라이드 ${previewSlideIdx + 1}`} className="w-full rounded-lg shadow-2xl" />
-                                      <div className="absolute top-4 right-4 flex items-center gap-2">
-                                        <Badge className="bg-black/60 text-white">{previewSlideIdx + 1} / {slides.length}</Badge>
-                                        <button onClick={() => setPreviewSlideIdx(null)} className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">×</button>
-                                      </div>
-                                      <div className="absolute top-1/2 -translate-y-1/2 left-2">
-                                        <button
-                                          onClick={() => setPreviewSlideIdx(Math.max(0, previewSlideIdx - 1))}
-                                          disabled={previewSlideIdx === 0}
-                                          className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
-                                        >←</button>
-                                      </div>
-                                      <div className="absolute top-1/2 -translate-y-1/2 right-2">
-                                        <button
-                                          onClick={() => setPreviewSlideIdx(Math.min(slides.length - 1, previewSlideIdx + 1))}
-                                          disabled={previewSlideIdx === slides.length - 1}
-                                          className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
-                                        >→</button>
+                                {/* Enlarged preview modal with PIP overlay */}
+                                {previewSlideIdx !== null && slides[previewSlideIdx] && (() => {
+                                  const ps = pipSettingsQuery.data;
+                                  const pipPos = ps?.position || "bottom-right";
+                                  const pipSz = ps?.size || "medium";
+                                  const pipSh = ps?.shape || "rounded";
+                                  const pipOp = ps?.opacity ?? 100;
+                                  const pipSizeClass: Record<string, string> = { small: "w-[60px] h-[60px] md:w-[80px] md:h-[80px]", medium: "w-[80px] h-[80px] md:w-[120px] md:h-[120px]", large: "w-[100px] h-[100px] md:w-[160px] md:h-[160px]" };
+                                  const pipPosClass: Record<string, string> = { "bottom-right": "bottom-3 right-3", "bottom-left": "bottom-3 left-3", "top-right": "top-3 right-3", "top-left": "top-3 left-3" };
+                                  const pipShapeClass: Record<string, string> = { circle: "rounded-full", rounded: "rounded-2xl", rectangle: "rounded-md" };
+                                  // Get selected face image
+                                  let faceImgUrl = "";
+                                  if (selectedFaceSwapId.startsWith("user-")) {
+                                    const fid = parseInt(selectedFaceSwapId.replace("user-", ""));
+                                    const fp = faceSwapsQuery.data?.find((f: any) => f.id === fid);
+                                    faceImgUrl = fp?.sourceFaceUrl || "";
+                                  } else if (selectedFaceSwapId.startsWith("sample-")) {
+                                    const sid = parseInt(selectedFaceSwapId.replace("sample-", ""));
+                                    const sf = sampleFacesQuery.data?.find((f: any) => f.id === sid);
+                                    faceImgUrl = sf?.imageUrl || "";
+                                  }
+                                  return (
+                                    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewSlideIdx(null)}>
+                                      <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+                                        <div className="relative">
+                                          <img src={slides[previewSlideIdx]} alt={`슬라이드 ${previewSlideIdx + 1}`} className="w-full rounded-lg shadow-2xl" />
+                                          {/* PIP Face Overlay */}
+                                          {faceImgUrl && (
+                                            <div
+                                              className={`absolute ${pipPosClass[pipPos]} ${pipSizeClass[pipSz]} ${pipShapeClass[pipSh]} overflow-hidden border-2 border-white/40 shadow-2xl transition-all duration-300`}
+                                              style={{ opacity: pipOp / 100 }}
+                                            >
+                                              <img src={faceImgUrl} alt="PIP 얼굴" className="w-full h-full object-cover" />
+                                              <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-red-500/80 text-white text-[8px]">
+                                                <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
+                                                PIP
+                                              </div>
+                                            </div>
+                                          )}
+                                          {!faceImgUrl && (
+                                            <div className={`absolute ${pipPosClass[pipPos]} ${pipSizeClass[pipSz]} ${pipShapeClass[pipSh]} overflow-hidden border-2 border-dashed border-white/30 bg-white/10 backdrop-blur-sm flex items-center justify-center transition-all duration-300`} style={{ opacity: pipOp / 100 }}>
+                                              <div className="text-center">
+                                                <User2 className="w-6 h-6 text-white/50 mx-auto" />
+                                                <span className="text-[9px] text-white/50">얼굴 선택</span>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="absolute top-4 right-4 flex items-center gap-2">
+                                          <Badge className="bg-black/60 text-white">{previewSlideIdx + 1} / {slides.length}</Badge>
+                                          {faceImgUrl && <Badge className="bg-violet-600/80 text-white">PIP 미리보기</Badge>}
+                                          <button onClick={() => setPreviewSlideIdx(null)} className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">×</button>
+                                        </div>
+                                        <div className="absolute top-1/2 -translate-y-1/2 left-2">
+                                          <button
+                                            onClick={() => setPreviewSlideIdx(Math.max(0, previewSlideIdx - 1))}
+                                            disabled={previewSlideIdx === 0}
+                                            className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
+                                          >←</button>
+                                        </div>
+                                        <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                                          <button
+                                            onClick={() => setPreviewSlideIdx(Math.min(slides.length - 1, previewSlideIdx + 1))}
+                                            disabled={previewSlideIdx === slides.length - 1}
+                                            className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
+                                          >→</button>
+                                        </div>
+                                        {/* PIP settings info bar */}
+                                        <div className="mt-2 flex items-center justify-center gap-3 text-xs text-white/60">
+                                          <span>위치: {pipPos === "bottom-right" ? "우측 하단" : pipPos === "bottom-left" ? "좌측 하단" : pipPos === "top-right" ? "우측 상단" : "좌측 상단"}</span>
+                                          <span>·</span>
+                                          <span>크기: {pipSz === "small" ? "작게" : pipSz === "large" ? "크게" : "보통"}</span>
+                                          <span>·</span>
+                                          <span>모양: {pipSh === "circle" ? "원형" : pipSh === "rounded" ? "둥근 사각형" : "사각형"}</span>
+                                          <span>·</span>
+                                          <span>투명도: {pipOp}%</span>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
-                                )}
+                                  );
+                                })()}
                               </div>
                             );
                           })()}

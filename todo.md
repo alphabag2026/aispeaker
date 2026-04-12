@@ -848,3 +848,12 @@
 - [x] 갤러리 기술별 필터링 (전체/내장 AI/D-ID/HeyGen 버튼)
 - [x] 갤러리 정렬 기능 (최신순/좋아요순 버튼)
 - [x] 갤러리 필터/정렬 UI 컴포넌트 (Filter + ArrowUpDown 아이콘)
+
+## v5.3 PIP Live Preview, Infinite Scroll Gallery, Auto Slide Split
+- [x] PIP 실시간 미리보기 (PPT 슬라이드 위에 얼굴 오버레이 프리뷰 + PIP 배지 + 설정 정보 바)
+- [x] PIP 위치/크기/모양/투명도 변경 시 실시간 반영 (pipSettingsQuery 연동)
+- [x] 갤러리 무한 스크롤 (12개씩 페이지 로딩, 스크롤 시 자동 추가)
+- [x] 갤러리 IntersectionObserver 기반 로딩 트리거 + 로딩/완료 상태 UI
+- [x] PPTX/PDF 업로드 시 서버에서 자동 슬라이드 이미지 변환 (LibreOffice + pdf-to-png-converter)
+- [x] pdf-to-png-converter 라이브러리를 이용한 PDF 페이지 이미지화 (viewportScale 2.0)
+- [x] 변환된 슬라이드 이미지 S3 업로드 및 DB 저장 (slideImages 배열)

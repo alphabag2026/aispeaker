@@ -488,7 +488,13 @@ function GallerySection() {
   const { user } = useAuth();
   const [galleryMethod, setGalleryMethod] = useState<"all" | "builtin" | "did" | "heygen">("all");
   const [gallerySort, setGallerySort] = useState<"latest" | "likes">("latest");
-  const galleryQuery = trpc.gallery.list.useQuery({ limit: 20, method: galleryMethod, sort: gallerySort });
+  const PAGE_SIZE = 12;
+  const [allItems, setAllItems] = useState<any[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const galleryQuery = trpc.gallery.list.useQuery({ limit: PAGE_SIZE, offset, method: galleryMethod, sort: gallerySort });
   const myLikesQuery = trpc.gallery.myLikes.useQuery(undefined, { enabled: !!user });
   const likeMutation = trpc.gallery.like.useMutation({
     onSuccess: () => {
@@ -518,6 +524,48 @@ function GallerySection() {
 
   const myLikes = useMemo(() => new Set(myLikesQuery.data ?? []), [myLikesQuery.data]);
 
+  // Reset when filter/sort changes
+  useEffect(() => {
+    setAllItems([]);
+    setOffset(0);
+    setHasMore(true);
+  }, [galleryMethod, gallerySort]);
+
+  // Accumulate items as pages load
+  useEffect(() => {
+    if (galleryQuery.data) {
+      if (offset === 0) {
+        setAllItems(galleryQuery.data);
+      } else {
+        setAllItems(prev => {
+          const existingIds = new Set(prev.map((i: any) => i.id));
+          const newItems = galleryQuery.data.filter((i: any) => !existingIds.has(i.id));
+          return [...prev, ...newItems];
+        });
+      }
+      if (galleryQuery.data.length < PAGE_SIZE) {
+        setHasMore(false);
+      }
+      setLoadingMore(false);
+    }
+  }, [galleryQuery.data, offset]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (!loadMoreRef.current || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !galleryQuery.isFetching) {
+          setLoadingMore(true);
+          setOffset(prev => prev + PAGE_SIZE);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, galleryQuery.isFetching]);
+
   // Fallback sample data when DB is empty
   const SAMPLE_GALLERY = [
     {
@@ -534,7 +582,7 @@ function GallerySection() {
     },
   ];
 
-  const items = (galleryQuery.data && galleryQuery.data.length > 0) ? galleryQuery.data : SAMPLE_GALLERY;
+  const items = (allItems.length > 0) ? allItems : SAMPLE_GALLERY;
 
   const handleImageUpload = useCallback(async (file: File, type: "before" | "after") => {
     if (file.size > 10 * 1024 * 1024) {
@@ -754,6 +802,25 @@ function GallerySection() {
           </Card>
         ))}
       </div>
+
+      {/* Infinite scroll trigger */}
+      {hasMore && allItems.length > 0 && (
+        <div ref={loadMoreRef} className="flex items-center justify-center py-6">
+          {loadingMore || galleryQuery.isFetching ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              더 불러오는 중...
+            </div>
+          ) : (
+            <div className="h-4" />
+          )}
+        </div>
+      )}
+      {!hasMore && allItems.length > 0 && (
+        <div className="text-center py-4 text-sm text-muted-foreground">
+          모든 갤러리 항목을 불러왔습니다.
+        </div>
+      )}
     </div>
   );
 }

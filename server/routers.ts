@@ -3240,16 +3240,85 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           status: "processing",
         });
         
-        // For PDF files, we can convert pages to images using the built-in image generation
-        // For now, store the file and mark as ready
-        // In production, a worker would convert PPT→images
-        await db.updatePptUpload(id, {
-          status: "ready",
-          totalSlides: 1,
-          slideImages: [fileUrl],
-        });
-        
-        return { id, fileUrl };
+        // Auto-convert to slide images
+        try {
+          const { pdfToPng } = await import("pdf-to-png-converter");
+          const { execSync } = await import("child_process");
+          const fs = await import("fs");
+          const path = await import("path");
+          const os = await import("os");
+          
+          const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ppt-"));
+          let pdfBuffer: Buffer = fileBuffer;
+          
+          // If PPTX/PPT, convert to PDF first using LibreOffice
+          const ext = input.fileName.toLowerCase().split(".").pop();
+          if (ext === "pptx" || ext === "ppt") {
+            const inputPath = path.join(tmpDir, input.fileName);
+            fs.writeFileSync(inputPath, fileBuffer);
+            try {
+              execSync(`libreoffice --headless --convert-to pdf --outdir "${tmpDir}" "${inputPath}"`, {
+                timeout: 120000,
+                env: { ...process.env, HOME: tmpDir },
+              });
+              const pdfName = input.fileName.replace(/\.(pptx?|PPT[X]?)$/, ".pdf");
+              const pdfPath = path.join(tmpDir, pdfName);
+              if (fs.existsSync(pdfPath)) {
+                pdfBuffer = fs.readFileSync(pdfPath);
+              } else {
+                // Try finding any PDF in tmpDir
+                const files = fs.readdirSync(tmpDir).filter((f: string) => f.endsWith(".pdf"));
+                if (files.length > 0) {
+                  pdfBuffer = fs.readFileSync(path.join(tmpDir, files[0]));
+                } else {
+                  throw new Error("LibreOffice PDF conversion failed");
+                }
+              }
+            } catch (e: any) {
+              console.error("LibreOffice conversion error:", e.message);
+              // Fallback: store as single slide
+              await db.updatePptUpload(id, { status: "ready", totalSlides: 1, slideImages: [fileUrl] });
+              return { id, fileUrl, slideCount: 1 };
+            }
+          } else if (ext !== "pdf") {
+            // Unsupported format, store as-is
+            await db.updatePptUpload(id, { status: "ready", totalSlides: 1, slideImages: [fileUrl] });
+            return { id, fileUrl, slideCount: 1 };
+          }
+          
+          // Convert PDF pages to PNG images
+          const pngPages = await pdfToPng(pdfBuffer, {
+            disableFontFace: false,
+            useSystemFonts: true,
+            viewportScale: 2.0,
+          });
+          
+          // Upload each slide image to S3
+          const slideUrls: string[] = [];
+          for (let i = 0; i < pngPages.length; i++) {
+            const pageContent = pngPages[i].content;
+            if (!pageContent) continue;
+            const slideKey = `ppt/${ctx.user.id}/slides/${nanoid()}-slide-${i + 1}.png`;
+            const { url: slideUrl } = await storagePut(slideKey, pageContent, "image/png");
+            slideUrls.push(slideUrl);
+          }
+          
+          // Clean up temp files
+          try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+          
+          await db.updatePptUpload(id, {
+            status: "ready",
+            totalSlides: slideUrls.length,
+            slideImages: slideUrls,
+          });
+          
+          return { id, fileUrl, slideCount: slideUrls.length };
+        } catch (conversionError: any) {
+          console.error("Slide conversion error:", conversionError.message);
+          // Fallback: mark as ready with original file as single slide
+          await db.updatePptUpload(id, { status: "ready", totalSlides: 1, slideImages: [fileUrl] });
+          return { id, fileUrl, slideCount: 1 };
+        }
       }),
 
     list: protectedProcedure.query(async ({ ctx }) => {
