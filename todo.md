@@ -812,3 +812,8 @@
 ## v4.8 Face Swap Example Images
 - [x] Generate AI face swap example images (before/after) - 3 images created
 - [x] Add example images section to InstructorFaceSwap page
+
+## v4.9 Face Swap Page Enhancements
+- [x] Regenerate example images with Korean text labels ('원본' / 'AI 변환') - 3 new Korean images
+- [x] Add interactive before/after drag slider comparison component (BeforeAfterSlider)
+- [x] Add user-generated results gallery section at page bottom with like/comment/share
