@@ -18,7 +18,8 @@ import { Link, useSearch } from "wouter";
 import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, Settings2, Edit3, History,
-  BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera
+  BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera,
+  Presentation
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -59,6 +60,12 @@ export default function ProductionStudio() {
   const [ttsVoiceId, setTtsVoiceId] = useState("");
   const [selectedVoiceModId, setSelectedVoiceModId] = useState<string>("none");
   const [selectedFaceSwapId, setSelectedFaceSwapId] = useState<string>("none");
+
+  // PIP mode + PPT upload
+  const [pipEnabled, setPipEnabled] = useState(false);
+  const [selectedPptId, setSelectedPptId] = useState<string>("none");
+  const [pptUploadTitle, setPptUploadTitle] = useState("");
+  const [pptUploading, setPptUploading] = useState(false);
 
   // Batch processing state
   const [batchSelectedIds, setBatchSelectedIds] = useState<Set<number>>(new Set());
@@ -129,6 +136,17 @@ export default function ProductionStudio() {
   const voiceModsQuery = trpc.voiceMod.list.useQuery(undefined, { enabled: !!user });
   const faceSwapsQuery = trpc.faceSwap.list.useQuery(undefined, { enabled: !!user });
   const sampleFacesQuery = trpc.sampleFace.list.useQuery(undefined, { enabled: true });
+  const pptListQuery = trpc.ppt.list.useQuery(undefined, { enabled: !!user });
+  const pptUploadMutation = trpc.ppt.upload.useMutation({
+    onSuccess: (data) => {
+      toast.success("PPT 업로드 완료!");
+      pptListQuery.refetch();
+      setSelectedPptId(data.id.toString());
+      setPptUploadTitle("");
+    },
+    onError: (err) => toast.error("PPT 업로드 실패: " + err.message),
+  });
+  const pipSettingsQuery = trpc.pip.get.useQuery(undefined, { enabled: !!user });
 
   // Mutations
   const generateScript = trpc.script.generate.useMutation({
@@ -273,7 +291,43 @@ export default function ProductionStudio() {
       ttsVoiceId,
       voiceModProfileId: selectedVoiceModId !== "none" ? parseInt(selectedVoiceModId) : undefined,
       faceSwapProfileId: parseFaceSwapId(selectedFaceSwapId),
+      pipEnabled,
+      pipPosition: pipSettingsQuery.data?.position as any || "bottom-right",
+      pipSize: pipSettingsQuery.data?.size as any || "medium",
+      pipShape: pipSettingsQuery.data?.shape as any || "rounded",
+      pipOpacity: pipSettingsQuery.data?.opacity ?? 100,
+      pptUploadId: selectedPptId !== "none" ? parseInt(selectedPptId) : undefined,
     });
+  };
+
+  const handlePptUpload = async (file: File) => {
+    if (!pptUploadTitle.trim()) {
+      toast.error("PPT 제목을 입력하세요.");
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      toast.error("파일 크기는 50MB 이하여야 합니다.");
+      return;
+    }
+    setPptUploading(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      pptUploadMutation.mutate({
+        title: pptUploadTitle,
+        fileName: file.name,
+        fileData: base64,
+        mimeType: file.type,
+      });
+    } catch (err) {
+      toast.error("파일 읽기에 실패했습니다.");
+    } finally {
+      setPptUploading(false);
+    }
   };
 
   return (
@@ -656,6 +710,95 @@ export default function ProductionStudio() {
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">정면 얼굴 사진을 업로드하면 내 아바타로 등록됩니다 (5MB 이하)</p>
                       </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* PPT + PIP Lecture Mode */}
+                    <div>
+                      <Label className="flex items-center gap-2 mb-3"><Presentation className="w-4 h-4 text-violet-400" />PPT + PIP 강의 모드 (선택)</Label>
+                      <div className="flex items-center gap-3 mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setPipEnabled(!pipEnabled)}
+                          className={`relative w-11 h-6 rounded-full transition-colors ${
+                            pipEnabled ? "bg-violet-600" : "bg-muted"
+                          }`}
+                        >
+                          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                            pipEnabled ? "translate-x-5" : ""
+                          }`} />
+                        </button>
+                        <span className="text-sm text-muted-foreground">
+                          {pipEnabled ? "PIP 모드 활성화" : "PIP 모드 비활성화"}
+                        </span>
+                      </div>
+
+                      {pipEnabled && (
+                        <div className="space-y-3 p-3 rounded-lg border border-violet-500/20 bg-violet-500/5">
+                          {/* PPT file selection or upload */}
+                          <div>
+                            <Label className="text-sm text-muted-foreground">PPT 파일 선택</Label>
+                            <Select value={selectedPptId} onValueChange={setSelectedPptId}>
+                              <SelectTrigger className="mt-1"><SelectValue placeholder="PPT를 선택하세요" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">PPT 없음 (PIP만 사용)</SelectItem>
+                                {pptListQuery.data?.map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id.toString()}>
+                                    {p.title} ({p.originalFileName})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Upload new PPT */}
+                          <div className="p-3 rounded-lg border border-dashed border-violet-500/30 bg-violet-500/5">
+                            <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                              <Upload className="w-3.5 h-3.5 text-violet-400" />
+                              새 PPT 업로드
+                            </p>
+                            <div className="space-y-2">
+                              <Input
+                                value={pptUploadTitle}
+                                onChange={(e) => setPptUploadTitle(e.target.value)}
+                                placeholder="PPT 제목 (예: 블록체인 기초)"
+                                className="text-sm"
+                              />
+                              <label className="cursor-pointer block">
+                                <input
+                                  type="file"
+                                  accept=".pptx,.pdf,.ppt"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handlePptUpload(file);
+                                    e.target.value = "";
+                                  }}
+                                />
+                                <div className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed transition-colors ${
+                                  pptUploading ? "border-violet-500/50 bg-violet-500/10" : "border-border hover:border-violet-500/50 hover:bg-violet-500/5"
+                                }`}>
+                                  {pptUploading || pptUploadMutation.isPending ? (
+                                    <><Loader2 className="w-4 h-4 animate-spin text-violet-400" /><span className="text-sm">업로드 중...</span></>
+                                  ) : (
+                                    <><Upload className="w-4 h-4 text-muted-foreground" /><span className="text-sm text-muted-foreground">PPT/PDF 파일을 클릭하여 선택 (최대 50MB)</span></>
+                                  )}
+                                </div>
+                              </label>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-muted-foreground">
+                            PIP 위치/크기/모양은 딥페이크 페이지의 PIP 설정에서 변경할 수 있습니다.
+                            {pipSettingsQuery.data && (
+                              <span className="ml-1 text-violet-400">
+                                (현재: {pipSettingsQuery.data.position === "bottom-right" ? "우측 하단" : pipSettingsQuery.data.position === "bottom-left" ? "좌측 하단" : pipSettingsQuery.data.position === "top-right" ? "우측 상단" : "좌측 상단"}, {pipSettingsQuery.data.size === "small" ? "작게" : pipSettingsQuery.data.size === "large" ? "크게" : "보통"})
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {startPipeline.isPending ? (

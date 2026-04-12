@@ -1080,3 +1080,23 @@ export const pipSettings = mysqlTable("pipSettings", {
 });
 export type PipSetting = typeof pipSettings.$inferSelect;
 export type InsertPipSetting = typeof pipSettings.$inferInsert;
+
+
+/**
+ * PPT uploads for PIP lecture mode
+ */
+export const pptUploads = mysqlTable("pptUploads", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  originalFileUrl: text("originalFileUrl").notNull(),
+  originalFileName: varchar("originalFileName", { length: 255 }).notNull(),
+  totalSlides: int("totalSlides").default(0).notNull(),
+  /** JSON array of slide image URLs: ["url1","url2",...] */
+  slideImages: json("slideImages").$type<string[]>().default([]),
+  status: mysqlEnum("status", ["uploading", "processing", "ready", "error"]).default("uploading").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PptUpload = typeof pptUploads.$inferSelect;
+export type InsertPptUpload = typeof pptUploads.$inferInsert;

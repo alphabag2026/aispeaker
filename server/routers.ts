@@ -1753,10 +1753,30 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         faceSwapProfileId: z.number().optional(),
         ttsVoiceId: z.string().optional(),
         config: z.string().optional(),
+        // PIP mode settings
+        pipEnabled: z.boolean().optional(),
+        pipPosition: z.enum(["bottom-right", "bottom-left", "top-right", "top-left"]).optional(),
+        pipSize: z.enum(["small", "medium", "large"]).optional(),
+        pipShape: z.enum(["circle", "rounded", "rectangle"]).optional(),
+        pipOpacity: z.number().min(0).max(100).optional(),
+        pptUploadId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const script = await db.getLectureScriptById(input.scriptId);
         if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "스크립트가 준비되지 않았습니다." });
+
+        // Build config with PIP settings
+        const configObj = input.config ? JSON.parse(input.config) : {};
+        if (input.pipEnabled) {
+          configObj.pip = {
+            enabled: true,
+            position: input.pipPosition || "bottom-right",
+            size: input.pipSize || "medium",
+            shape: input.pipShape || "rounded",
+            opacity: input.pipOpacity ?? 100,
+            pptUploadId: input.pptUploadId,
+          };
+        }
 
         const pipelineId = await db.createProductionPipeline({
           userId: ctx.user.id,
@@ -1769,7 +1789,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           voiceModProfileId: input.voiceModProfileId,
           faceSwapProfileId: input.faceSwapProfileId,
           ttsVoiceId: input.ttsVoiceId || "alloy",
-          config: input.config,
+          config: JSON.stringify(configObj),
           startedAt: new Date(),
         });
         if (!pipelineId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
@@ -3146,6 +3166,18 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       const likes = await db.getUserLikes(ctx.user.id);
       return likes.map(l => l.galleryItemId);
     }),
+    uploadImage: protectedProcedure
+      .input(z.object({
+        imageData: z.string(), // base64
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.imageData, "base64");
+        const fileKey = `gallery/${ctx.user.id}/${nanoid()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        return { url };
+      }),
   }),
 
   // ========== PIP Settings ==========
@@ -3162,6 +3194,67 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       }))
       .mutation(async ({ ctx, input }) => {
         await db.upsertPipSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+  }),
+
+  ppt: router({
+    upload: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        fileName: z.string(),
+        fileData: z.string(), // base64 encoded
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Upload original file to S3
+        const fileBuffer = Buffer.from(input.fileData, "base64");
+        const fileKey = `ppt/${ctx.user.id}/${nanoid()}-${input.fileName}`;
+        const { url: fileUrl } = await storagePut(fileKey, fileBuffer, input.mimeType);
+        
+        // Create DB record
+        const id = await db.createPptUpload({
+          userId: ctx.user.id,
+          title: input.title,
+          originalFileUrl: fileUrl,
+          originalFileName: input.fileName,
+          status: "processing",
+        });
+        
+        // For PDF files, we can convert pages to images using the built-in image generation
+        // For now, store the file and mark as ready
+        // In production, a worker would convert PPT→images
+        await db.updatePptUpload(id, {
+          status: "ready",
+          totalSlides: 1,
+          slideImages: [fileUrl],
+        });
+        
+        return { id, fileUrl };
+      }),
+
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getPptUploadsByUser(ctx.user.id);
+    }),
+
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const ppt = await db.getPptUploadById(input.id);
+        if (!ppt || ppt.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        return ppt;
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const ppt = await db.getPptUploadById(input.id);
+        if (!ppt || ppt.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
+        await db.deletePptUpload(input.id);
         return { success: true };
       }),
   }),

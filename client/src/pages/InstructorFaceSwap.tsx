@@ -379,6 +379,109 @@ function PipLectureModeSection() {
   );
 }
 
+/* ─── Drag & Drop Image Upload Zone ─── */
+function ImageDropZone({
+  label,
+  imageUrl,
+  onImageSelected,
+  uploading,
+}: {
+  label: string;
+  imageUrl: string;
+  onImageSelected: (file: File) => void;
+  uploading: boolean;
+}) {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) {
+      onImageSelected(file);
+    } else {
+      toast.error("이미지 파일만 업로드할 수 있습니다.");
+    }
+  }, [onImageSelected]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragOver(false);
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) onImageSelected(file);
+    if (inputRef.current) inputRef.current.value = "";
+  }, [onImageSelected]);
+
+  return (
+    <div>
+      <Label className="text-sm mb-1.5 block">{label}</Label>
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={() => inputRef.current?.click()}
+        className={`relative border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 overflow-hidden ${
+          isDragOver
+            ? "border-primary bg-primary/10 scale-[1.02]"
+            : imageUrl
+            ? "border-primary/30 bg-primary/5"
+            : "border-border hover:border-primary/50 hover:bg-muted/30"
+        }`}
+      >
+        {imageUrl ? (
+          <div className="relative aspect-video">
+            <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="text-white text-sm font-medium flex items-center gap-1.5">
+                <Upload className="h-4 w-4" />
+                이미지 변경
+              </div>
+            </div>
+            {uploading && (
+              <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                <div className="flex items-center gap-2 text-white text-sm">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  업로드 중...
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="aspect-video flex flex-col items-center justify-center gap-2 text-muted-foreground">
+            {uploading ? (
+              <>
+                <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                <span className="text-sm">업로드 중...</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-8 w-8 text-primary/50" />
+                <span className="text-sm font-medium">이미지를 드래그하거나 클릭하여 선택</span>
+                <span className="text-xs">JPG, PNG, WebP (최대 10MB)</span>
+              </>
+            )}
+          </div>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelect}
+        />
+      </div>
+    </div>
+  );
+}
+
 /* ─── DB-Connected Gallery Section ─── */
 function GallerySection() {
   const { user } = useAuth();
@@ -393,16 +496,20 @@ function GallerySection() {
   const addCommentMutation = trpc.gallery.addComment.useMutation({
     onSuccess: () => toast.success("댓글이 등록되었습니다."),
   });
+  const uploadImageMutation = trpc.gallery.uploadImage.useMutation();
   const createMutation = trpc.gallery.create.useMutation({
     onSuccess: () => {
       galleryQuery.refetch();
       toast.success("갤러리에 등록되었습니다!");
       setShowUpload(false);
+      setUploadForm({ title: "", description: "", beforeImageUrl: "", afterImageUrl: "", method: "builtin" });
     },
   });
 
   const [showUpload, setShowUpload] = useState(false);
   const [uploadForm, setUploadForm] = useState({ title: "", description: "", beforeImageUrl: "", afterImageUrl: "", method: "builtin" as "builtin" | "did" | "heygen" });
+  const [uploadingBefore, setUploadingBefore] = useState(false);
+  const [uploadingAfter, setUploadingAfter] = useState(false);
   const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
   const [commentText, setCommentText] = useState<Record<number, string>>({});
 
@@ -426,6 +533,38 @@ function GallerySection() {
 
   const items = (galleryQuery.data && galleryQuery.data.length > 0) ? galleryQuery.data : SAMPLE_GALLERY;
 
+  const handleImageUpload = useCallback(async (file: File, type: "before" | "after") => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("파일 크기는 10MB 이하여야 합니다.");
+      return;
+    }
+    const setUploading = type === "before" ? setUploadingBefore : setUploadingAfter;
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const result = await uploadImageMutation.mutateAsync({
+        imageData: base64,
+        fileName: file.name,
+        mimeType: file.type,
+      });
+      if (type === "before") {
+        setUploadForm(prev => ({ ...prev, beforeImageUrl: result.url }));
+      } else {
+        setUploadForm(prev => ({ ...prev, afterImageUrl: result.url }));
+      }
+      toast.success(`${type === "before" ? "원본" : "변환"} 이미지가 업로드되었습니다.`);
+    } catch (err) {
+      toast.error("이미지 업로드에 실패했습니다.");
+    } finally {
+      setUploading(false);
+    }
+  }, [uploadImageMutation]);
+
   const handleLike = (id: number) => {
     if (!user) { toast.error("로그인이 필요합니다."); return; }
     if (id < 0) { toast.info("샘플 데이터에는 좋아요를 누를 수 없습니다."); return; }
@@ -441,6 +580,8 @@ function GallerySection() {
     setCommentText(prev => ({ ...prev, [id]: "" }));
   };
 
+  const canSubmit = uploadForm.title && uploadForm.beforeImageUrl && uploadForm.afterImageUrl && !createMutation.isPending && !uploadingBefore && !uploadingAfter;
+
   return (
     <div className="mt-12 pt-8 border-t border-border">
       <div className="flex items-center justify-between mb-6">
@@ -455,14 +596,14 @@ function GallerySection() {
         )}
       </div>
 
-      {/* Upload form */}
+      {/* Upload form with drag & drop */}
       {showUpload && (
         <Card className="mb-6 border-primary/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">결과물 공유하기</CardTitle>
-            <CardDescription>AI 얼굴 변환 전/후 이미지를 공유해주세요</CardDescription>
+            <CardDescription>AI 얼굴 변환 전/후 이미지를 드래그하거나 클릭하여 업로드하세요</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <div>
               <Label>제목</Label>
               <Input value={uploadForm.title} onChange={e => setUploadForm({ ...uploadForm, title: e.target.value })} placeholder="예: 블록체인 강의 AI 변환" />
@@ -471,15 +612,19 @@ function GallerySection() {
               <Label>설명</Label>
               <Textarea value={uploadForm.description} onChange={e => setUploadForm({ ...uploadForm, description: e.target.value })} placeholder="변환 결과에 대한 설명을 작성해주세요" rows={2} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>원본 이미지 URL</Label>
-                <Input value={uploadForm.beforeImageUrl} onChange={e => setUploadForm({ ...uploadForm, beforeImageUrl: e.target.value })} placeholder="https://..." />
-              </div>
-              <div>
-                <Label>변환 이미지 URL</Label>
-                <Input value={uploadForm.afterImageUrl} onChange={e => setUploadForm({ ...uploadForm, afterImageUrl: e.target.value })} placeholder="https://..." />
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <ImageDropZone
+                label="원본 이미지 (Before)"
+                imageUrl={uploadForm.beforeImageUrl}
+                onImageSelected={(file) => handleImageUpload(file, "before")}
+                uploading={uploadingBefore}
+              />
+              <ImageDropZone
+                label="변환 이미지 (After)"
+                imageUrl={uploadForm.afterImageUrl}
+                onImageSelected={(file) => handleImageUpload(file, "after")}
+                uploading={uploadingAfter}
+              />
             </div>
             <div>
               <Label>사용 기술</Label>
@@ -493,10 +638,10 @@ function GallerySection() {
               </Select>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => createMutation.mutate(uploadForm)} disabled={!uploadForm.title || !uploadForm.beforeImageUrl || !uploadForm.afterImageUrl || createMutation.isPending}>
-                {createMutation.isPending ? "업로드 중..." : "공유하기"}
+              <Button onClick={() => createMutation.mutate(uploadForm)} disabled={!canSubmit}>
+                {createMutation.isPending ? "등록 중..." : "공유하기"}
               </Button>
-              <Button variant="outline" onClick={() => setShowUpload(false)}>취소</Button>
+              <Button variant="outline" onClick={() => { setShowUpload(false); setUploadForm({ title: "", description: "", beforeImageUrl: "", afterImageUrl: "", method: "builtin" }); }}>취소</Button>
             </div>
           </CardContent>
         </Card>

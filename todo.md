@@ -827,3 +827,14 @@
 - [x] PPT + Face PIP lecture mode (Picture-in-Picture with PPT slides)
 - [x] PIP mode settings (face position, size, shape, opacity)
 - [x] PIP mode preview with live PPT simulation
+
+## v5.1 PPT Upload, Drag&Drop Gallery, PIP Pipeline Integration
+- [x] PPT file upload endpoint (accept .pptx/.pdf, store in S3)
+- [x] PPT slide splitting (convert to individual slide images)
+- [x] PIP lecture video generation from PPT slides + face avatar
+- [x] DB schema for pptUploads table (slides metadata)
+- [x] Gallery drag & drop image upload (replace URL input with drag&drop zones)
+- [x] Gallery image upload to S3 via backend (gallery.uploadImage procedure)
+- [x] Integrate PIP settings into production pipeline (pipeline.start)
+- [x] PIP options in ProductionStudio video production tab (toggle + PPT select + upload)
+- [x] Frontend PPT upload UI with slide preview

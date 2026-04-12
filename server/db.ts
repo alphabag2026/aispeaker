@@ -41,6 +41,7 @@ import {
   faceSwapGallery, InsertFaceSwapGalleryItem,
   galleryLikes, galleryComments,
   pipSettings, InsertPipSetting,
+  pptUploads, InsertPptUpload,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1641,4 +1642,38 @@ export async function upsertPipSettings(userId: number, data: Partial<InsertPipS
   } else {
     await db.insert(pipSettings).values({ userId, ...data } as InsertPipSetting);
   }
+}
+
+
+// ── PPT Uploads ──
+export async function createPptUpload(data: InsertPptUpload) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(pptUploads).values(data);
+  return result[0].insertId;
+}
+
+export async function getPptUploadsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(pptUploads).where(eq(pptUploads.userId, userId)).orderBy(desc(pptUploads.createdAt));
+}
+
+export async function getPptUploadById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(pptUploads).where(eq(pptUploads.id, id));
+  return rows[0] || null;
+}
+
+export async function updatePptUpload(id: number, data: Partial<InsertPptUpload>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(pptUploads).set(data).where(eq(pptUploads.id, id));
+}
+
+export async function deletePptUpload(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(pptUploads).where(eq(pptUploads.id, id));
 }
