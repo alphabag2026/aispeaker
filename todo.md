@@ -808,3 +808,7 @@
 - [x] Insert 10 new avatars into sampleFaces DB (total: 15 avatars)
 - [x] Improve cancel confirmation message with detailed toast notification
 - [x] Tests pass (390/394, 4 pre-existing failures)
+
+## v4.8 Face Swap Example Images
+- [x] Generate AI face swap example images (before/after) - 3 images created
+- [x] Add example images section to InstructorFaceSwap page

@@ -80,6 +80,54 @@ export default function InstructorFaceSwap() {
           </CardContent>
         </Card>
 
+        {/* Example Gallery */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <Eye className="h-5 w-5 text-primary" />
+            AI 얼굴 변환 예시
+          </h2>
+          <div className="grid gap-4">
+            {/* Example 1: Before/After comparison */}
+            <Card className="overflow-hidden border-primary/10">
+              <CardContent className="p-0">
+                <img
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-example-1-jjnP6v2EBEhMZkuXD8HH4v.webp"
+                  alt="AI 얼굴 변환 예시 - 원본에서 AI 변환"
+                  className="w-full h-auto"
+                />
+              </CardContent>
+            </Card>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Example 2: Live lecture face swap */}
+              <Card className="overflow-hidden border-primary/10">
+                <CardContent className="p-0">
+                  <img
+                    src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-example-2-GjtrEJAJs7XQFeUtviEMDJ.webp"
+                    alt="AI 얼굴 변환 예시 - 라이브 강의"
+                    className="w-full h-auto"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Example 3: 3-step process infographic */}
+              <Card className="overflow-hidden border-primary/10">
+                <CardContent className="p-0">
+                  <img
+                    src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-example-3-7eJ6xeQNy6HNWaVMZpuDCg.webp"
+                    alt="AI 얼굴 변환 3단계 프로세스"
+                    className="w-full h-auto"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            <p className="text-sm text-muted-foreground text-center">
+              위 이미지는 AI 얼굴 변환 기능의 예시입니다. 원본 강사의 얼굴을 AI가 자연스럽게 다른 얼굴로 변환합니다.
+            </p>
+          </div>
+        </div>
+
         {/* Create New */}
         {!showForm ? (
           <Button onClick={() => setShowForm(true)} className="mb-6"><Plus className="h-4 w-4 mr-2" /> 새 프로필 생성</Button>
