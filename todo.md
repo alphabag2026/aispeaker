@@ -870,3 +870,6 @@
 - [x] PIP 드래그 위치 조정 (마우스/터치 드래그로 자유 위치 설정 - 'custom' position)
 - [x] PIP 드래그 좌표를 DB에 저장 (customX/customY 퍼센트, pipSettings 스키마 확장)
 - [x] BrowserStudio에서 pipSettings 로드 및 드래그 위치 자동 저장
+
+## v5.4.1 Bugfix
+- [x] faceSwapProfileId NaN 버그 수정 (pipeline.start/batchStart 서버 mutation에서 NaN 방어 처리)

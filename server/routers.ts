@@ -1762,6 +1762,12 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         pptUploadId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Sanitize NaN values from optional number fields
+        const safeNum = (v: number | undefined) => (v != null && !isNaN(v) ? v : undefined);
+        input.faceSwapProfileId = safeNum(input.faceSwapProfileId);
+        input.voiceModProfileId = safeNum(input.voiceModProfileId);
+        input.voiceProfileId = safeNum(input.voiceProfileId);
+
         const script = await db.getLectureScriptById(input.scriptId);
         if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "스크립트가 준비되지 않았습니다." });
 
@@ -1961,6 +1967,13 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         pipOpacity: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Sanitize NaN values from optional number fields
+        const safeNum = (v: number | undefined) => (v != null && !isNaN(v) ? v : undefined);
+        for (const item of input.items) {
+          item.faceSwapProfileId = safeNum(item.faceSwapProfileId);
+          item.voiceModProfileId = safeNum(item.voiceModProfileId);
+        }
+
         const results: { scriptId: number; pipelineId: number | null; status: string; error?: string }[] = [];
 
         for (const item of input.items) {
