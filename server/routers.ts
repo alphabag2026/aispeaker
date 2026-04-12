@@ -3087,6 +3087,84 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return db.getApiUsageStats(input?.days ?? 30);
       }),
   }),
+
+  // ========== Face Swap Gallery ==========
+  gallery: router({
+    list: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(50).optional(), offset: z.number().min(0).optional() }).optional())
+      .query(async ({ input }) => {
+        return db.getGalleryItems(input?.limit ?? 20, input?.offset ?? 0);
+      }),
+    myItems: protectedProcedure.query(async ({ ctx }) => {
+      return db.getGalleryItemsByUser(ctx.user.id);
+    }),
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1).max(255),
+        description: z.string().optional(),
+        beforeImageUrl: z.string().url(),
+        afterImageUrl: z.string().url(),
+        method: z.enum(["builtin", "did", "heygen"]).optional(),
+        isPublic: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createGalleryItem({
+          userId: ctx.user.id,
+          title: input.title,
+          description: input.description,
+          beforeImageUrl: input.beforeImageUrl,
+          afterImageUrl: input.afterImageUrl,
+          method: input.method ?? "builtin",
+          isPublic: input.isPublic ?? true,
+        });
+        return { id };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteGalleryItem(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    like: protectedProcedure
+      .input(z.object({ galleryItemId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const liked = await db.toggleGalleryLike(input.galleryItemId, ctx.user.id);
+        return { liked };
+      }),
+    comments: publicProcedure
+      .input(z.object({ galleryItemId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getGalleryComments(input.galleryItemId);
+      }),
+    addComment: protectedProcedure
+      .input(z.object({ galleryItemId: z.number(), content: z.string().min(1).max(500) }))
+      .mutation(async ({ ctx, input }) => {
+        await db.addGalleryComment(input.galleryItemId, ctx.user.id, input.content);
+        return { success: true };
+      }),
+    myLikes: protectedProcedure.query(async ({ ctx }) => {
+      const likes = await db.getUserLikes(ctx.user.id);
+      return likes.map(l => l.galleryItemId);
+    }),
+  }),
+
+  // ========== PIP Settings ==========
+  pip: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return db.getPipSettings(ctx.user.id);
+    }),
+    update: protectedProcedure
+      .input(z.object({
+        position: z.enum(["bottom-right", "bottom-left", "top-right", "top-left"]).optional(),
+        size: z.enum(["small", "medium", "large"]).optional(),
+        opacity: z.number().min(0).max(100).optional(),
+        shape: z.enum(["circle", "rounded", "rectangle"]).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.upsertPipSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+  }),
 });
 
 // SRT time formatter

@@ -38,6 +38,9 @@ import {
   creditUsageLogs, InsertCreditUsageLog,
   passwordResetTokens,
   apiUsageLogs, InsertApiUsageLog,
+  faceSwapGallery, InsertFaceSwapGalleryItem,
+  galleryLikes, galleryComments,
+  pipSettings, InsertPipSetting,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1539,4 +1542,103 @@ export async function getApiUsageStats(days = 30) {
     dailyBreakdown,
     recentLogs: logs.slice(0, 50),
   };
+}
+
+
+// ── Gallery helpers ──────────────────────────────────────
+export async function getGalleryItems(limit = 20, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(faceSwapGallery)
+    .where(eq(faceSwapGallery.isPublic, true))
+    .orderBy(desc(faceSwapGallery.createdAt))
+    .limit(limit).offset(offset);
+}
+
+export async function getGalleryItemsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(faceSwapGallery)
+    .where(eq(faceSwapGallery.userId, userId))
+    .orderBy(desc(faceSwapGallery.createdAt));
+}
+
+export async function createGalleryItem(data: InsertFaceSwapGalleryItem) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(faceSwapGallery).values(data);
+  return result.insertId;
+}
+
+export async function deleteGalleryItem(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(galleryComments).where(eq(galleryComments.galleryItemId, id));
+  await db.delete(galleryLikes).where(eq(galleryLikes.galleryItemId, id));
+  await db.delete(faceSwapGallery).where(and(eq(faceSwapGallery.id, id), eq(faceSwapGallery.userId, userId)));
+}
+
+export async function toggleGalleryLike(galleryItemId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(galleryLikes)
+    .where(and(eq(galleryLikes.galleryItemId, galleryItemId), eq(galleryLikes.userId, userId)));
+  if (existing.length > 0) {
+    await db.delete(galleryLikes).where(and(eq(galleryLikes.galleryItemId, galleryItemId), eq(galleryLikes.userId, userId)));
+    await db.update(faceSwapGallery).set({ likesCount: sql`likesCount - 1` }).where(eq(faceSwapGallery.id, galleryItemId));
+    return false;
+  } else {
+    await db.insert(galleryLikes).values({ galleryItemId, userId });
+    await db.update(faceSwapGallery).set({ likesCount: sql`likesCount + 1` }).where(eq(faceSwapGallery.id, galleryItemId));
+    return true;
+  }
+}
+
+export async function getGalleryComments(galleryItemId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const comments = await db.select({
+    id: galleryComments.id,
+    content: galleryComments.content,
+    userId: galleryComments.userId,
+    createdAt: galleryComments.createdAt,
+    userName: users.name,
+    userAvatar: users.avatarUrl,
+  }).from(galleryComments)
+    .leftJoin(users, eq(galleryComments.userId, users.id))
+    .where(eq(galleryComments.galleryItemId, galleryItemId))
+    .orderBy(desc(galleryComments.createdAt));
+  return comments;
+}
+
+export async function addGalleryComment(galleryItemId: number, userId: number, content: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(galleryComments).values({ galleryItemId, userId, content });
+  await db.update(faceSwapGallery).set({ commentsCount: sql`commentsCount + 1` }).where(eq(faceSwapGallery.id, galleryItemId));
+}
+
+export async function getUserLikes(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ galleryItemId: galleryLikes.galleryItemId }).from(galleryLikes).where(eq(galleryLikes.userId, userId));
+}
+
+// ── PIP Settings helpers ──────────────────────────────────
+export async function getPipSettings(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(pipSettings).where(eq(pipSettings.userId, userId));
+  return rows[0] || null;
+}
+
+export async function upsertPipSettings(userId: number, data: Partial<InsertPipSetting>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(pipSettings).where(eq(pipSettings.userId, userId));
+  if (existing.length > 0) {
+    await db.update(pipSettings).set(data).where(eq(pipSettings.userId, userId));
+  } else {
+    await db.insert(pipSettings).values({ userId, ...data } as InsertPipSetting);
+  }
 }

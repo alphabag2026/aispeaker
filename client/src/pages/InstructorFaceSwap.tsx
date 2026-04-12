@@ -8,25 +8,70 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Link } from "wouter";
-import { ArrowLeft, Plus, Trash2, Upload, Wand2, Eye, User2, Sparkles, GripVertical, Heart, MessageCircle, Share2, Image as ImageIcon } from "lucide-react";
+import {
+  ArrowLeft, Plus, Trash2, Upload, Wand2, Eye, User2, Sparkles,
+  GripVertical, Heart, MessageCircle, Share2, Image as ImageIcon,
+  Monitor, Layout, Settings2, Check, X, Send, ChevronDown, ChevronUp,
+  Presentation, Video
+} from "lucide-react";
 
-/* ─── Interactive Before/After Slider ─── */
+/* ─── Interactive Before/After Slider with Auto Animation ─── */
 function BeforeAfterSlider({
   beforeSrc,
   afterSrc,
   beforeLabel = "원본",
   afterLabel = "AI 변환",
+  autoAnimate = false,
 }: {
   beforeSrc: string;
   afterSrc: string;
   beforeLabel?: string;
   afterLabel?: string;
+  autoAnimate?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [sliderPos, setSliderPos] = useState(50);
   const isDragging = useRef(false);
+  const hasInteracted = useRef(false);
+  const animationRef = useRef<number | null>(null);
+
+  // Auto animation on mount
+  useEffect(() => {
+    if (!autoAnimate) return;
+    let startTime: number | null = null;
+    let cancelled = false;
+
+    const animate = (timestamp: number) => {
+      if (cancelled || hasInteracted.current) return;
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      
+      // Smooth sine wave: 3 full cycles over 4 seconds, then stop
+      const duration = 4000;
+      if (elapsed > duration) {
+        setSliderPos(50);
+        return;
+      }
+      const progress = elapsed / duration;
+      const cycles = 2.5;
+      const pos = 50 + 35 * Math.sin(progress * cycles * 2 * Math.PI);
+      setSliderPos(pos);
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    // Start animation after a short delay
+    const timeout = setTimeout(() => {
+      animationRef.current = requestAnimationFrame(animate);
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [autoAnimate]);
 
   const handleMove = useCallback((clientX: number) => {
     if (!containerRef.current) return;
@@ -38,6 +83,8 @@ function BeforeAfterSlider({
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     isDragging.current = true;
+    hasInteracted.current = true;
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     handleMove(e.clientX);
   }, [handleMove]);
@@ -59,14 +106,8 @@ function BeforeAfterSlider({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      {/* After image (full background) */}
       <img src={afterSrc} alt={afterLabel} className="absolute inset-0 w-full h-full object-cover" />
-
-      {/* Before image (clipped) */}
-      <div
-        className="absolute inset-0 overflow-hidden"
-        style={{ width: `${sliderPos}%` }}
-      >
+      <div className="absolute inset-0 overflow-hidden" style={{ width: `${sliderPos}%` }}>
         <img
           src={beforeSrc}
           alt={beforeLabel}
@@ -74,27 +115,20 @@ function BeforeAfterSlider({
           style={{ width: containerRef.current ? `${containerRef.current.offsetWidth}px` : '100vw', maxWidth: 'none' }}
         />
       </div>
-
-      {/* Slider line */}
       <div
         className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg z-10"
         style={{ left: `${sliderPos}%`, transform: 'translateX(-50%)' }}
       >
-        {/* Handle */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-xl flex items-center justify-center border-2 border-primary/30 group-hover:scale-110 transition-transform">
           <GripVertical className="h-5 w-5 text-primary/70" />
         </div>
       </div>
-
-      {/* Labels */}
       <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-sm font-medium z-20">
         {beforeLabel}
       </div>
       <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-primary/80 backdrop-blur-sm text-white text-sm font-medium z-20">
         {afterLabel}
       </div>
-
-      {/* Instruction overlay (fades on interaction) */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white/80 text-xs z-20 pointer-events-none group-hover:opacity-0 transition-opacity">
         ← 드래그하여 비교 →
       </div>
@@ -102,46 +136,490 @@ function BeforeAfterSlider({
   );
 }
 
-/* ─── Sample Gallery Data ─── */
-const SAMPLE_GALLERY = [
-  {
-    id: 1,
-    userName: "김강사",
-    avatar: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/avatar-sujin-5gLEWECpKGLiVXyqTcBK7u.webp",
-    beforeUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-1-UR5sNLMMjUAr4sCpMbZ5Vs.webp",
-    afterUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-2-HLyczqY27Tjs5fixoQ799n.webp",
-    description: "블록체인 강의에 AI 얼굴 변환을 적용했습니다. 학생들이 더 집중하는 효과가 있었어요!",
-    likes: 24,
-    comments: 5,
-    method: "내장 AI",
-    createdAt: "2025-12-15",
-  },
-  {
-    id: 2,
-    userName: "이교수",
-    avatar: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/avatar-minjun-7Zzw3Cqf2eFHYKFGLWFxVv.webp",
-    beforeUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-2-HLyczqY27Tjs5fixoQ799n.webp",
-    afterUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-1-UR5sNLMMjUAr4sCpMbZ5Vs.webp",
-    description: "D-ID API를 사용하여 영어 강의에 외국인 강사 얼굴을 적용했습니다. 자연스러운 결과에 만족합니다.",
-    likes: 18,
-    comments: 3,
-    method: "D-ID",
-    createdAt: "2026-01-08",
-  },
-  {
-    id: 3,
-    userName: "박튜터",
-    avatar: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/avatar-sarah-9ioKDLqFuZNzDJqRLLYHsP.webp",
-    beforeUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-1-UR5sNLMMjUAr4sCpMbZ5Vs.webp",
-    afterUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-2-HLyczqY27Tjs5fixoQ799n.webp",
-    description: "프라이버시 보호를 위해 AI 얼굴 변환을 사용하고 있습니다. HeyGen의 품질이 정말 좋아요!",
-    likes: 31,
-    comments: 8,
-    method: "HeyGen",
-    createdAt: "2026-02-20",
-  },
-];
+/* ─── Technology Comparison Table ─── */
+function TechComparisonTable() {
+  return (
+    <Card className="mb-8 border-primary/10">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Settings2 className="h-5 w-5 text-primary" />
+          변환 기술 비교
+        </CardTitle>
+        <CardDescription>각 기술의 예상 품질, 속도, 비용을 비교하여 최적의 방식을 선택하세요</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-2 font-medium text-muted-foreground">항목</th>
+                <th className="text-center py-3 px-2 font-medium">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">내장 AI</span>
+                    <span className="text-xs text-muted-foreground">Built-in</span>
+                  </div>
+                </th>
+                <th className="text-center py-3 px-2 font-medium">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-xs">D-ID</span>
+                    <span className="text-xs text-muted-foreground">API 연동</span>
+                  </div>
+                </th>
+                <th className="text-center py-3 px-2 font-medium">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-500 text-xs">HeyGen</span>
+                    <span className="text-xs text-muted-foreground">API 연동</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: "품질", builtin: "⭐⭐⭐", did: "⭐⭐⭐⭐", heygen: "⭐⭐⭐⭐⭐", desc: "변환 자연스러움" },
+                { label: "속도", builtin: "⚡⚡⚡⚡⚡", did: "⚡⚡⚡", heygen: "⚡⚡", desc: "처리 시간" },
+                { label: "비용", builtin: "무료 (크레딧)", did: "월 $5.9~", heygen: "월 $24~", desc: "예상 비용" },
+                { label: "실시간 지원", builtin: "✅", did: "✅", heygen: "❌", desc: "라이브 강의" },
+                { label: "립싱크", builtin: "기본", did: "고급", heygen: "최고급", desc: "입 움직임 동기화" },
+                { label: "감정 표현", builtin: "제한적", did: "보통", heygen: "우수", desc: "표정 다양성" },
+                { label: "API 키 필요", builtin: "❌", did: "✅", heygen: "✅", desc: "별도 가입 필요" },
+                { label: "추천 용도", builtin: "빠른 테스트\n간단한 강의", did: "일반 강의\n프라이버시", heygen: "고품질 콘텐츠\n마케팅 영상", desc: "" },
+              ].map((row, i) => (
+                <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                  <td className="py-3 px-2">
+                    <div className="font-medium">{row.label}</div>
+                    {row.desc && <div className="text-xs text-muted-foreground">{row.desc}</div>}
+                  </td>
+                  <td className="text-center py-3 px-2 whitespace-pre-line">{row.builtin}</td>
+                  <td className="text-center py-3 px-2 whitespace-pre-line">{row.did}</td>
+                  <td className="text-center py-3 px-2 whitespace-pre-line">{row.heygen}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
+/* ─── PPT + PIP Lecture Mode Preview ─── */
+function PipLectureModeSection() {
+  const { user } = useAuth();
+  const [pipPosition, setPipPosition] = useState<"bottom-right" | "bottom-left" | "top-right" | "top-left">("bottom-right");
+  const [pipSize, setPipSize] = useState<"small" | "medium" | "large">("medium");
+  const [pipShape, setPipShape] = useState<"circle" | "rounded" | "rectangle">("rounded");
+  const [pipOpacity, setPipOpacity] = useState(100);
+
+  const pipSettings = trpc.pip.get.useQuery(undefined, { enabled: !!user });
+  const updatePip = trpc.pip.update.useMutation({
+    onSuccess: () => toast.success("PIP 설정이 저장되었습니다."),
+  });
+
+  // Load saved settings
+  useEffect(() => {
+    if (pipSettings.data) {
+      setPipPosition(pipSettings.data.position as any);
+      setPipSize(pipSettings.data.size as any);
+      setPipShape(pipSettings.data.shape as any);
+      setPipOpacity(pipSettings.data.opacity);
+    }
+  }, [pipSettings.data]);
+
+  const sizeMap = { small: "w-20 h-20 md:w-24 md:h-24", medium: "w-28 h-28 md:w-36 md:h-36", large: "w-36 h-36 md:w-48 md:h-48" };
+  const posMap = {
+    "bottom-right": "bottom-3 right-3",
+    "bottom-left": "bottom-3 left-3",
+    "top-right": "top-3 right-3",
+    "top-left": "top-3 left-3",
+  };
+  const shapeMap = { circle: "rounded-full", rounded: "rounded-2xl", rectangle: "rounded-md" };
+
+  const handleSave = () => {
+    updatePip.mutate({ position: pipPosition, size: pipSize, shape: pipShape, opacity: pipOpacity });
+  };
+
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <Presentation className="h-5 w-5 text-primary" />
+        PPT + 얼굴 노출 강의 모드 (PIP)
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        PPT 슬라이드를 메인 화면에 표시하면서 강사 얼굴을 작은 창으로 함께 보여주는 PIP(Picture-in-Picture) 모드입니다.
+        Zoom, Google Meet 등에서 화면 공유 시 활용할 수 있습니다.
+      </p>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Preview */}
+        <Card className="overflow-hidden border-primary/10">
+          <CardContent className="p-0">
+            <div className="relative aspect-video bg-gradient-to-br from-slate-800 to-slate-900 overflow-hidden">
+              {/* Simulated PPT slide */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-white">
+                <div className="w-full max-w-md">
+                  <div className="text-xs text-primary/80 mb-2 font-medium">SLIDE 3 / 12</div>
+                  <h3 className="text-lg md:text-xl font-bold mb-3">블록체인 기술의 핵심 원리</h3>
+                  <div className="space-y-2 text-sm text-white/70">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      <span>분산 원장 기술 (DLT)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      <span>합의 알고리즘 (PoW, PoS)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      <span>스마트 컨트랙트</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary" />
+                      <span>암호화 해시 함수</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 h-1 bg-white/10 rounded-full">
+                    <div className="h-full w-1/4 bg-primary rounded-full" />
+                  </div>
+                </div>
+              </div>
+
+              {/* PIP face overlay */}
+              <div
+                className={`absolute ${posMap[pipPosition]} ${sizeMap[pipSize]} ${shapeMap[pipShape]} overflow-hidden border-2 border-white/30 shadow-2xl transition-all duration-300`}
+                style={{ opacity: pipOpacity / 100 }}
+              >
+                <img
+                  src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/avatar-sujin-5gLEWECpKGLiVXyqTcBK7u.webp"
+                  alt="강사"
+                  className="w-full h-full object-cover"
+                />
+                {/* Live indicator */}
+                <div className="absolute top-1 left-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/80 text-white text-[10px]">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  LIVE
+                </div>
+              </div>
+
+              {/* Zoom-like controls bar */}
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-black/40 backdrop-blur-sm flex items-center justify-center gap-4 text-white/60 text-xs">
+                <span>🎤 음소거 해제</span>
+                <span>📹 비디오 켜짐</span>
+                <span>🖥 화면 공유 중</span>
+              </div>
+            </div>
+            <div className="p-3 text-center">
+              <p className="text-sm font-medium">PPT + 강사 얼굴 PIP 미리보기</p>
+              <p className="text-xs text-muted-foreground">설정을 변경하면 실시간으로 미리보기가 업데이트됩니다</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Settings */}
+        <Card className="border-primary/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">PIP 설정</CardTitle>
+            <CardDescription>강사 얼굴 창의 위치, 크기, 모양을 설정하세요</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label className="text-sm">위치</Label>
+              <Select value={pipPosition} onValueChange={(v: any) => setPipPosition(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bottom-right">우측 하단</SelectItem>
+                  <SelectItem value="bottom-left">좌측 하단</SelectItem>
+                  <SelectItem value="top-right">우측 상단</SelectItem>
+                  <SelectItem value="top-left">좌측 상단</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm">크기</Label>
+              <Select value={pipSize} onValueChange={(v: any) => setPipSize(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="small">작게</SelectItem>
+                  <SelectItem value="medium">보통</SelectItem>
+                  <SelectItem value="large">크게</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm">모양</Label>
+              <Select value={pipShape} onValueChange={(v: any) => setPipShape(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="circle">원형</SelectItem>
+                  <SelectItem value="rounded">둥근 사각형</SelectItem>
+                  <SelectItem value="rectangle">사각형</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm">투명도: {pipOpacity}%</Label>
+              <input
+                type="range"
+                min={30}
+                max={100}
+                value={pipOpacity}
+                onChange={e => setPipOpacity(Number(e.target.value))}
+                className="w-full mt-1 accent-primary"
+              />
+            </div>
+            <Button onClick={handleSave} disabled={updatePip.isPending} className="w-full">
+              {updatePip.isPending ? "저장 중..." : "설정 저장"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              이 설정은 영상 제작 시 PPT 강의 모드에 적용됩니다. 실시간 강의(Zoom/Meet)에서는 OBS Studio 등의 도구와 함께 사용하세요.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+/* ─── DB-Connected Gallery Section ─── */
+function GallerySection() {
+  const { user } = useAuth();
+  const galleryQuery = trpc.gallery.list.useQuery({ limit: 20 });
+  const myLikesQuery = trpc.gallery.myLikes.useQuery(undefined, { enabled: !!user });
+  const likeMutation = trpc.gallery.like.useMutation({
+    onSuccess: () => {
+      galleryQuery.refetch();
+      myLikesQuery.refetch();
+    },
+  });
+  const addCommentMutation = trpc.gallery.addComment.useMutation({
+    onSuccess: () => toast.success("댓글이 등록되었습니다."),
+  });
+  const createMutation = trpc.gallery.create.useMutation({
+    onSuccess: () => {
+      galleryQuery.refetch();
+      toast.success("갤러리에 등록되었습니다!");
+      setShowUpload(false);
+    },
+  });
+
+  const [showUpload, setShowUpload] = useState(false);
+  const [uploadForm, setUploadForm] = useState({ title: "", description: "", beforeImageUrl: "", afterImageUrl: "", method: "builtin" as "builtin" | "did" | "heygen" });
+  const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
+  const [commentText, setCommentText] = useState<Record<number, string>>({});
+
+  const myLikes = useMemo(() => new Set(myLikesQuery.data ?? []), [myLikesQuery.data]);
+
+  // Fallback sample data when DB is empty
+  const SAMPLE_GALLERY = [
+    {
+      id: -1, userId: 0, title: "블록체인 강의 AI 변환", description: "블록체인 강의에 AI 얼굴 변환을 적용했습니다. 학생들이 더 집중하는 효과가 있었어요!",
+      beforeImageUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-1-UR5sNLMMjUAr4sCpMbZ5Vs.webp",
+      afterImageUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-2-HLyczqY27Tjs5fixoQ799n.webp",
+      method: "builtin", likesCount: 24, commentsCount: 5, isPublic: true, createdAt: new Date("2025-12-15"),
+    },
+    {
+      id: -2, userId: 0, title: "영어 강의 외국인 강사", description: "D-ID API를 사용하여 영어 강의에 외국인 강사 얼굴을 적용했습니다.",
+      beforeImageUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-2-HLyczqY27Tjs5fixoQ799n.webp",
+      afterImageUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-1-UR5sNLMMjUAr4sCpMbZ5Vs.webp",
+      method: "did", likesCount: 18, commentsCount: 3, isPublic: true, createdAt: new Date("2026-01-08"),
+    },
+  ];
+
+  const items = (galleryQuery.data && galleryQuery.data.length > 0) ? galleryQuery.data : SAMPLE_GALLERY;
+
+  const handleLike = (id: number) => {
+    if (!user) { toast.error("로그인이 필요합니다."); return; }
+    if (id < 0) { toast.info("샘플 데이터에는 좋아요를 누를 수 없습니다."); return; }
+    likeMutation.mutate({ galleryItemId: id });
+  };
+
+  const handleComment = (id: number) => {
+    if (!user) { toast.error("로그인이 필요합니다."); return; }
+    if (id < 0) { toast.info("샘플 데이터에는 댓글을 달 수 없습니다."); return; }
+    const text = commentText[id]?.trim();
+    if (!text) return;
+    addCommentMutation.mutate({ galleryItemId: id, content: text });
+    setCommentText(prev => ({ ...prev, [id]: "" }));
+  };
+
+  return (
+    <div className="mt-12 pt-8 border-t border-border">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <ImageIcon className="h-5 w-5 text-primary" />
+          사용자 변환 갤러리
+        </h2>
+        {user && (
+          <Button variant="outline" size="sm" onClick={() => setShowUpload(!showUpload)}>
+            <Plus className="h-4 w-4 mr-1" /> 내 결과물 공유
+          </Button>
+        )}
+      </div>
+
+      {/* Upload form */}
+      {showUpload && (
+        <Card className="mb-6 border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">결과물 공유하기</CardTitle>
+            <CardDescription>AI 얼굴 변환 전/후 이미지를 공유해주세요</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <Label>제목</Label>
+              <Input value={uploadForm.title} onChange={e => setUploadForm({ ...uploadForm, title: e.target.value })} placeholder="예: 블록체인 강의 AI 변환" />
+            </div>
+            <div>
+              <Label>설명</Label>
+              <Textarea value={uploadForm.description} onChange={e => setUploadForm({ ...uploadForm, description: e.target.value })} placeholder="변환 결과에 대한 설명을 작성해주세요" rows={2} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>원본 이미지 URL</Label>
+                <Input value={uploadForm.beforeImageUrl} onChange={e => setUploadForm({ ...uploadForm, beforeImageUrl: e.target.value })} placeholder="https://..." />
+              </div>
+              <div>
+                <Label>변환 이미지 URL</Label>
+                <Input value={uploadForm.afterImageUrl} onChange={e => setUploadForm({ ...uploadForm, afterImageUrl: e.target.value })} placeholder="https://..." />
+              </div>
+            </div>
+            <div>
+              <Label>사용 기술</Label>
+              <Select value={uploadForm.method} onValueChange={(v: any) => setUploadForm({ ...uploadForm, method: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="builtin">내장 AI</SelectItem>
+                  <SelectItem value="did">D-ID</SelectItem>
+                  <SelectItem value="heygen">HeyGen</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => createMutation.mutate(uploadForm)} disabled={!uploadForm.title || !uploadForm.beforeImageUrl || !uploadForm.afterImageUrl || createMutation.isPending}>
+                {createMutation.isPending ? "업로드 중..." : "공유하기"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowUpload(false)}>취소</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Gallery items */}
+      <div className="grid gap-6">
+        {items.map((item: any) => (
+          <Card key={item.id} className="overflow-hidden border-border/50 hover:border-primary/20 transition-colors">
+            <CardContent className="p-0">
+              <div className="flex items-center gap-3 p-4 pb-2">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User2 className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(item.createdAt).toLocaleDateString("ko-KR")} · {item.method === "did" ? "D-ID" : item.method === "heygen" ? "HeyGen" : "내장 AI"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="px-4 pb-2">
+                <BeforeAfterSlider beforeSrc={item.beforeImageUrl} afterSrc={item.afterImageUrl} />
+              </div>
+
+              <div className="p-4 pt-2">
+                {item.description && <p className="text-sm mb-3">{item.description}</p>}
+                <div className="flex items-center gap-4">
+                  <button onClick={() => handleLike(item.id)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
+                    <Heart className={`h-4 w-4 ${myLikes.has(item.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                    <span>{item.likesCount}</span>
+                  </button>
+                  <button
+                    onClick={() => setExpandedComments(prev => {
+                      const next = new Set(prev);
+                      if (next.has(item.id)) next.delete(item.id);
+                      else next.add(item.id);
+                      return next;
+                    })}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>{item.commentsCount}</span>
+                    {expandedComments.has(item.id) ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </button>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("링크가 복사되었습니다."); }}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    <span>공유</span>
+                  </button>
+                </div>
+
+                {/* Comments section */}
+                {expandedComments.has(item.id) && item.id > 0 && (
+                  <CommentsSection galleryItemId={item.id} />
+                )}
+                {expandedComments.has(item.id) && item.id < 0 && (
+                  <div className="mt-3 p-3 bg-muted/30 rounded-lg text-sm text-muted-foreground text-center">
+                    샘플 데이터입니다. 실제 결과물을 공유하면 댓글을 달 수 있습니다.
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Comments Sub-component ─── */
+function CommentsSection({ galleryItemId }: { galleryItemId: number }) {
+  const { user } = useAuth();
+  const commentsQuery = trpc.gallery.comments.useQuery({ galleryItemId });
+  const addComment = trpc.gallery.addComment.useMutation({
+    onSuccess: () => {
+      commentsQuery.refetch();
+      setNewComment("");
+      toast.success("댓글이 등록되었습니다.");
+    },
+  });
+  const [newComment, setNewComment] = useState("");
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/50">
+      {commentsQuery.data?.map((c: any) => (
+        <div key={c.id} className="flex gap-2 mb-2">
+          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+            <User2 className="h-3 w-3 text-muted-foreground" />
+          </div>
+          <div>
+            <span className="text-xs font-medium">{c.userName || "사용자"}</span>
+            <p className="text-sm text-muted-foreground">{c.content}</p>
+          </div>
+        </div>
+      ))}
+      {user && (
+        <div className="flex gap-2 mt-2">
+          <Input
+            value={newComment}
+            onChange={e => setNewComment(e.target.value)}
+            placeholder="댓글을 입력하세요..."
+            className="text-sm"
+            onKeyDown={e => { if (e.key === "Enter" && newComment.trim()) addComment.mutate({ galleryItemId, content: newComment.trim() }); }}
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => { if (newComment.trim()) addComment.mutate({ galleryItemId, content: newComment.trim() }); }}
+            disabled={!newComment.trim() || addComment.isPending}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main Page ─── */
 export default function InstructorFaceSwap() {
   const { user } = useAuth();
   const profiles = trpc.faceSwap.list.useQuery(undefined, { enabled: !!user });
@@ -153,7 +631,6 @@ export default function InstructorFaceSwap() {
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", method: "builtin" as string, settings: JSON.stringify({ gender: "male", age: "30s", ethnicity: "asian" }, null, 2) });
-  const [likedItems, setLikedItems] = useState<Set<number>>(new Set());
 
   const handleCreate = () => {
     createProfile.mutate({ name: form.name, method: form.method as any, settings: form.settings });
@@ -170,15 +647,6 @@ export default function InstructorFaceSwap() {
       await updateProfile.mutateAsync({ id: profileId, ...updateData });
     };
     reader.readAsDataURL(file);
-  };
-
-  const toggleLike = (id: number) => {
-    setLikedItems(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
   };
 
   return (
@@ -220,28 +688,27 @@ export default function InstructorFaceSwap() {
           </CardContent>
         </Card>
 
-        {/* Example Gallery with Korean images */}
+        {/* Example Gallery with Auto-Animated Slider */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Eye className="h-5 w-5 text-primary" />
             AI 얼굴 변환 예시
           </h2>
           <div className="grid gap-4">
-            {/* Interactive Before/After Slider */}
             <BeforeAfterSlider
               beforeSrc="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-1-UR5sNLMMjUAr4sCpMbZ5Vs.webp"
               afterSrc="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-2-HLyczqY27Tjs5fixoQ799n.webp"
               beforeLabel="원본"
               afterLabel="AI 변환"
+              autoAnimate={true}
             />
 
             <div className="grid md:grid-cols-2 gap-4">
-              {/* Example 2: Before/After lecture */}
               <Card className="overflow-hidden border-primary/10">
                 <CardContent className="p-0">
                   <img
                     src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/faceswap-kr-2-HLyczqY27Tjs5fixoQ799n.webp"
-                    alt="AI 얼굴 변환 예시 - 라이브 강의"
+                    alt="라이브 강의 얼굴 변환"
                     className="w-full h-auto"
                   />
                   <div className="p-3">
@@ -250,8 +717,6 @@ export default function InstructorFaceSwap() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Example 3: 3-step process infographic */}
               <Card className="overflow-hidden border-primary/10">
                 <CardContent className="p-0">
                   <img
@@ -272,6 +737,12 @@ export default function InstructorFaceSwap() {
             </p>
           </div>
         </div>
+
+        {/* Technology Comparison Table */}
+        <TechComparisonTable />
+
+        {/* PPT + PIP Lecture Mode */}
+        <PipLectureModeSection />
 
         {/* Create New */}
         {!showForm ? (
@@ -316,7 +787,6 @@ export default function InstructorFaceSwap() {
             <Card key={profile.id} className="overflow-hidden">
               <CardContent className="py-4">
                 <div className="flex items-start gap-4">
-                  {/* Preview */}
                   <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
                     {profile.previewUrl ? (
                       <img src={profile.previewUrl} alt="Preview" className="w-full h-full object-cover" />
@@ -326,8 +796,6 @@ export default function InstructorFaceSwap() {
                       <User2 className="h-10 w-10 text-muted-foreground" />
                     )}
                   </div>
-
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold">{profile.name}</h3>
@@ -340,8 +808,6 @@ export default function InstructorFaceSwap() {
                       <span>원본: {profile.sourceFaceUrl ? "업로드됨" : "미설정"}</span>
                       <span>대상: {profile.targetFaceUrl ? "업로드됨" : "미설정"}</span>
                     </div>
-
-                    {/* Actions */}
                     <div className="flex flex-wrap gap-2">
                       <label className="cursor-pointer">
                         <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUploadFace(profile.id, "source", e.target.files[0])} />
@@ -374,72 +840,8 @@ export default function InstructorFaceSwap() {
           )}
         </div>
 
-        {/* ─── User Results Gallery ─── */}
-        <div className="mt-12 pt-8 border-t border-border">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <ImageIcon className="h-5 w-5 text-primary" />
-              사용자 변환 갤러리
-            </h2>
-            <p className="text-sm text-muted-foreground">다른 사용자들의 AI 변환 결과물</p>
-          </div>
-
-          <div className="grid gap-6">
-            {SAMPLE_GALLERY.map((item) => (
-              <Card key={item.id} className="overflow-hidden border-border/50 hover:border-primary/20 transition-colors">
-                <CardContent className="p-0">
-                  {/* User info header */}
-                  <div className="flex items-center gap-3 p-4 pb-2">
-                    <img src={item.avatar} alt={item.userName} className="w-10 h-10 rounded-full object-cover" />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{item.userName}</p>
-                      <p className="text-xs text-muted-foreground">{item.createdAt} · {item.method}</p>
-                    </div>
-                  </div>
-
-                  {/* Before/After comparison */}
-                  <div className="px-4 pb-2">
-                    <BeforeAfterSlider
-                      beforeSrc={item.beforeUrl}
-                      afterSrc={item.afterUrl}
-                    />
-                  </div>
-
-                  {/* Description & actions */}
-                  <div className="p-4 pt-2">
-                    <p className="text-sm mb-3">{item.description}</p>
-                    <div className="flex items-center gap-4">
-                      <button
-                        onClick={() => toggleLike(item.id)}
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <Heart className={`h-4 w-4 ${likedItems.has(item.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                        <span>{item.likes + (likedItems.has(item.id) ? 1 : 0)}</span>
-                      </button>
-                      <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors">
-                        <MessageCircle className="h-4 w-4" />
-                        <span>{item.comments}</span>
-                      </button>
-                      <button
-                        onClick={() => { navigator.clipboard.writeText(window.location.href); toast.success("링크가 복사되었습니다."); }}
-                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <Share2 className="h-4 w-4" />
-                        <span>공유</span>
-                      </button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="mt-6 text-center">
-            <Button variant="outline" onClick={() => toast.info("더 많은 결과물이 곧 추가됩니다!")}>
-              더 보기
-            </Button>
-          </div>
-        </div>
+        {/* DB-Connected Gallery */}
+        <GallerySection />
       </div>
     </div>
   );

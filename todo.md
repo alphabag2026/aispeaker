@@ -817,3 +817,13 @@
 - [x] Regenerate example images with Korean text labels ('원본' / 'AI 변환') - 3 new Korean images
 - [x] Add interactive before/after drag slider comparison component (BeforeAfterSlider)
 - [x] Add user-generated results gallery section at page bottom with like/comment/share
+
+## v5.0 Gallery DB, Auto Slider, Comparison Table, PIP Lecture Mode
+- [x] Create faceSwapGallery DB table (user uploads, likes, comments)
+- [x] Gallery backend API (CRUD, like, comment, upload before/after images)
+- [x] Connect InstructorFaceSwap gallery to real DB (with sample fallback)
+- [x] Before/After slider auto-animation on page load (2.5 cycles, 4s)
+- [x] Face swap technology comparison table (Built-in AI / D-ID / HeyGen)
+- [x] PPT + Face PIP lecture mode (Picture-in-Picture with PPT slides)
+- [x] PIP mode settings (face position, size, shape, opacity)
+- [x] PIP mode preview with live PPT simulation

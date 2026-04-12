@@ -1020,3 +1020,63 @@ export const apiUsageLogs = mysqlTable("apiUsageLogs", {
 
 export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
 export type InsertApiUsageLog = typeof apiUsageLogs.$inferInsert;
+
+
+/**
+ * Face swap gallery - user-generated results shared publicly
+ */
+export const faceSwapGallery = mysqlTable("faceSwapGallery", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  beforeImageUrl: text("beforeImageUrl").notNull(),
+  afterImageUrl: text("afterImageUrl").notNull(),
+  method: mysqlEnum("method", ["builtin", "did", "heygen"]).default("builtin").notNull(),
+  likesCount: int("likesCount").default(0).notNull(),
+  commentsCount: int("commentsCount").default(0).notNull(),
+  isPublic: boolean("isPublic").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type FaceSwapGalleryItem = typeof faceSwapGallery.$inferSelect;
+export type InsertFaceSwapGalleryItem = typeof faceSwapGallery.$inferInsert;
+
+/**
+ * Gallery likes
+ */
+export const galleryLikes = mysqlTable("galleryLikes", {
+  id: int("id").autoincrement().primaryKey(),
+  galleryItemId: int("galleryItemId").notNull(),
+  userId: int("userId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type GalleryLike = typeof galleryLikes.$inferSelect;
+
+/**
+ * Gallery comments
+ */
+export const galleryComments = mysqlTable("galleryComments", {
+  id: int("id").autoincrement().primaryKey(),
+  galleryItemId: int("galleryItemId").notNull(),
+  userId: int("userId").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type GalleryComment = typeof galleryComments.$inferSelect;
+
+/**
+ * PIP (Picture-in-Picture) lecture mode settings
+ */
+export const pipSettings = mysqlTable("pipSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  position: mysqlEnum("position", ["bottom-right", "bottom-left", "top-right", "top-left"]).default("bottom-right").notNull(),
+  size: mysqlEnum("size", ["small", "medium", "large"]).default("medium").notNull(),
+  opacity: int("opacity").default(100).notNull(),
+  shape: mysqlEnum("shape", ["circle", "rounded", "rectangle"]).default("rounded").notNull(),
+  isDefault: boolean("isDefault").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PipSetting = typeof pipSettings.$inferSelect;
+export type InsertPipSetting = typeof pipSettings.$inferInsert;
