@@ -1364,9 +1364,10 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           });
 
           return { id: scriptId, status: "ready", sectionCount: sections.length, estimatedDurationSec: totalDuration };
-        } catch (error) {
+        } catch (error: any) {
+          console.error('[Script Generate] Error:', error?.message || error, error?.stack);
           await db.updateLectureScript(scriptId, { status: "error" });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "스크립트 생성에 실패했습니다." });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `스크립트 생성에 실패했습니다: ${error?.message || 'Unknown error'}` });
         }
       }),
 
@@ -2556,6 +2557,43 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         await db.deleteSampleVoice(input.id);
         return { success: true };
+      }),
+    preview: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const voice = await db.getSampleVoice(input.id);
+        if (!voice) throw new TRPCError({ code: "NOT_FOUND", message: "음성을 찾을 수 없습니다." });
+        // If already has a sample audio URL, return it
+        if (voice.sampleAudioUrl) {
+          return { audioUrl: voice.sampleAudioUrl };
+        }
+        // Generate a short demo TTS using Gemini
+        const demoTexts: Record<string, string> = {
+          ko: "안녕하세요, 저는 AI 강의 음성입니다. 이 목소리로 여러분의 강의를 더욱 생동감 있게 만들어 드리겠습니다.",
+          en: "Hello, I am an AI lecture voice. I will make your lectures more engaging and dynamic with this voice.",
+          ja: "こんにちは、私はAI講義の音声です。この声であなたの講義をより生き生きとしたものにします。",
+          zh: "你好，我是AI讲座语音。我会用这个声音让你的讲座更加生动有趣。",
+        };
+        const demoText = demoTexts[voice.language] || demoTexts.ko;
+        try {
+          const result = await generateGeminiTts({
+            text: demoText,
+            voiceId: voice.ttsVoiceId,
+          });
+          if ('error' in result) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error || "TTS 생성 실패" });
+          }
+          // Upload to S3
+          const fileKey = `voice-demos/${voice.ttsVoiceId}-${nanoid(6)}.mp3`;
+          const { url } = await storagePut(fileKey, result.audioBuffer, "audio/mpeg");
+          // Update the sample voice with the audio URL
+          await db.updateSampleVoice(voice.id, { sampleAudioUrl: url } as any);
+          return { audioUrl: url };
+        } catch (err: any) {
+          if (err instanceof TRPCError) throw err;
+          console.error("[Voice Preview] TTS generation failed:", err.message);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "음성 미리듣기 생성에 실패했습니다." });
+        }
       }),
   }),
 

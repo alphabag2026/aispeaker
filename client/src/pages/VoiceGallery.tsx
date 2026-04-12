@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Crown, Mic, Play, Pause, Volume2, Globe, Sparkles, ChevronRight } from "lucide-react";
+import { Search, Crown, Mic, Play, Pause, Volume2, Globe, Sparkles, ChevronRight, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -52,6 +52,7 @@ export default function VoiceGallery() {
   const [selectedGender, setSelectedGender] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [playingId, setPlayingId] = useState<number | null>(null);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const { data: voices = [], isLoading } = trpc.sampleVoice.list.useQuery({
@@ -59,6 +60,8 @@ export default function VoiceGallery() {
     gender: selectedGender === "all" ? undefined : selectedGender,
     tone: selectedTone === "all" ? undefined : selectedTone,
   });
+
+  const previewMutation = trpc.sampleVoice.preview.useMutation();
 
   const filteredVoices = voices.filter((voice: any) => {
     if (!searchQuery) return true;
@@ -69,27 +72,57 @@ export default function VoiceGallery() {
     );
   });
 
-  const handlePlay = (voice: any) => {
+  const handlePlay = async (voice: any) => {
+    // If currently playing this voice, pause it
     if (playingId === voice.id) {
       audioRef.current?.pause();
       setPlayingId(null);
       return;
     }
-    // Since we don't have actual audio files, show a demo toast
-    if (!voice.sampleAudioUrl) {
-      toast.info(`${voice.name} 음성 미리듣기 (데모: ${voice.ttsVoiceId} 엔진)`);
-      setPlayingId(voice.id);
-      setTimeout(() => setPlayingId(null), 2000);
-      return;
-    }
+
+    // Stop any currently playing audio
     if (audioRef.current) {
       audioRef.current.pause();
+      audioRef.current = null;
+      setPlayingId(null);
     }
-    const audio = new Audio(voice.sampleAudioUrl);
+
+    // If voice already has a sample audio URL, play it directly
+    if (voice.sampleAudioUrl) {
+      playAudio(voice.sampleAudioUrl, voice.id);
+      return;
+    }
+
+    // Generate TTS demo on-the-fly
+    setLoadingId(voice.id);
+    try {
+      const result = await previewMutation.mutateAsync({ id: voice.id });
+      if (result.audioUrl) {
+        playAudio(result.audioUrl, voice.id);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "음성 미리듣기 생성에 실패했습니다.");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const playAudio = (url: string, voiceId: number) => {
+    const audio = new Audio(url);
     audioRef.current = audio;
-    audio.play();
-    setPlayingId(voice.id);
-    audio.onended = () => setPlayingId(null);
+    audio.play().catch(() => {
+      toast.error("오디오 재생에 실패했습니다.");
+      setPlayingId(null);
+    });
+    setPlayingId(voiceId);
+    audio.onended = () => {
+      setPlayingId(null);
+      audioRef.current = null;
+    };
+    audio.onerror = () => {
+      setPlayingId(null);
+      audioRef.current = null;
+    };
   };
 
   return (
@@ -117,7 +150,7 @@ export default function VoiceGallery() {
               <Globe className="w-3 h-3 mr-1" /> 다국어 지원
             </Badge>
             <Badge variant="secondary" className="bg-white/20 text-white border-0 px-3 py-1">
-              <Mic className="w-3 h-3 mr-1" /> OpenAI TTS
+              <Mic className="w-3 h-3 mr-1" /> Gemini TTS
             </Badge>
           </div>
         </div>
@@ -240,8 +273,11 @@ export default function VoiceGallery() {
                       size="sm"
                       className="gap-2"
                       onClick={() => handlePlay(voice)}
+                      disabled={loadingId === voice.id}
                     >
-                      {playingId === voice.id ? (
+                      {loadingId === voice.id ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> 생성 중...</>
+                      ) : playingId === voice.id ? (
                         <><Pause className="w-4 h-4" /> 정지</>
                       ) : (
                         <><Play className="w-4 h-4" /> 미리듣기</>

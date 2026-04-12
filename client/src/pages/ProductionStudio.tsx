@@ -13,12 +13,12 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Link, useSearch } from "wouter";
 import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, Settings2, Edit3, History,
-  BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare
+  BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -91,6 +91,33 @@ export default function ProductionStudio() {
     { enabled: !!templateId }
   );
 
+  // Inline audio player for pipeline sections
+  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+  const sectionAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const stopSectionAudio = useCallback(() => {
+    if (sectionAudioRef.current) {
+      sectionAudioRef.current.pause();
+      sectionAudioRef.current.currentTime = 0;
+      sectionAudioRef.current = null;
+    }
+    setPlayingUrl(null);
+  }, []);
+
+  const playSectionAudio = useCallback((url: string) => {
+    if (playingUrl === url) {
+      stopSectionAudio();
+      return;
+    }
+    stopSectionAudio();
+    const audio = new Audio(url);
+    sectionAudioRef.current = audio;
+    setPlayingUrl(url);
+    audio.onended = () => { setPlayingUrl(null); sectionAudioRef.current = null; };
+    audio.onerror = () => { setPlayingUrl(null); sectionAudioRef.current = null; toast.error("오디오 재생에 실패했습니다."); };
+    audio.play().catch(() => { setPlayingUrl(null); toast.error("오디오 재생에 실패했습니다."); });
+  }, [playingUrl, stopSectionAudio]);
+
   // Credit guard
   const { modalState, checkCredits, closeModal } = useCreditGuard();
   const subscriptionQuery = trpc.subscription.my.useQuery(undefined, { enabled: !!user });
@@ -101,6 +128,7 @@ export default function ProductionStudio() {
   const pipelinesQuery = trpc.pipeline.list.useQuery(undefined, { enabled: !!user });
   const voiceModsQuery = trpc.voiceMod.list.useQuery(undefined, { enabled: !!user });
   const faceSwapsQuery = trpc.faceSwap.list.useQuery(undefined, { enabled: !!user });
+  const sampleFacesQuery = trpc.sampleFace.list.useQuery(undefined, { enabled: true });
 
   // Mutations
   const generateScript = trpc.script.generate.useMutation({
@@ -160,6 +188,13 @@ export default function ProductionStudio() {
     onError: (err) => toast.error(err.message),
   });
 
+  // Face upload & profile creation for quick avatar
+  const uploadFaceMutation = trpc.faceSwap.uploadFace.useMutation();
+  const createFaceProfile = trpc.faceSwap.create.useMutation({
+    onSuccess: () => faceSwapsQuery.refetch(),
+    onError: (err) => toast.error(err.message),
+  });
+
   // Apply template if coming from template library
   useEffect(() => {
     if (templateId && selectedTemplateQuery.data) {
@@ -178,6 +213,13 @@ export default function ProductionStudio() {
     }
   };
 
+  // Helper to parse avatar ID: "sample-5" → undefined (sample faces are cosmetic only), "user-3" → 3, "none" → undefined
+  const parseFaceSwapId = (val: string): number | undefined => {
+    if (val === "none" || val.startsWith("sample-")) return undefined;
+    const num = parseInt(val.replace("user-", ""));
+    return isNaN(num) ? undefined : num;
+  };
+
   const handleBatchStart = () => {
     if (batchSelectedIds.size === 0) { toast.error("스크립트를 선택하세요."); return; }
     const readyScripts = scriptsQuery.data?.filter(s => s.status === "ready" && batchSelectedIds.has(s.id)) || [];
@@ -188,7 +230,7 @@ export default function ProductionStudio() {
         title: s.title,
         ttsVoiceId: batchTtsVoiceId,
         voiceModProfileId: batchVoiceModId !== "none" ? parseInt(batchVoiceModId) : undefined,
-        faceSwapProfileId: batchFaceSwapId !== "none" ? parseInt(batchFaceSwapId) : undefined,
+        faceSwapProfileId: parseFaceSwapId(batchFaceSwapId),
       })),
     });
   };
@@ -219,7 +261,7 @@ export default function ProductionStudio() {
       title: pipelineTitle,
       ttsVoiceId,
       voiceModProfileId: selectedVoiceModId !== "none" ? parseInt(selectedVoiceModId) : undefined,
-      faceSwapProfileId: selectedFaceSwapId !== "none" ? parseInt(selectedFaceSwapId) : undefined,
+      faceSwapProfileId: parseFaceSwapId(selectedFaceSwapId),
     });
   };
 
@@ -519,23 +561,115 @@ export default function ProductionStudio() {
                     </div>
 
                     <div>
-                      <Label className="flex items-center gap-2 mb-3"><UserCircle2 className="w-4 h-4 text-violet-400" />딥페이크 아바타 (선택)</Label>
+                      <Label className="flex items-center gap-2 mb-3"><UserCircle2 className="w-4 h-4 text-violet-400" />AI 아바타 (선택)</Label>
                       <Select value={selectedFaceSwapId} onValueChange={setSelectedFaceSwapId}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">아바타 없음 (음성만)</SelectItem>
-                          {faceSwapsQuery.data?.map((f) => <SelectItem key={f.id} value={f.id.toString()}>{f.name} ({f.method})</SelectItem>)}
+                          {sampleFacesQuery.data && sampleFacesQuery.data.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">기본 제공 아바타</div>
+                              {sampleFacesQuery.data.map((f) => (
+                                <SelectItem key={`sample-${f.id}`} value={`sample-${f.id}`}>
+                                  <div className="flex items-center gap-2">
+                                    <img src={f.thumbnailUrl || f.imageUrl} alt={f.name} className="w-6 h-6 rounded-full object-cover" />
+                                    <span>{f.name}</span>
+                                    {f.isPremium && <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-500/50 text-amber-400">PRO</Badge>}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
+                          {faceSwapsQuery.data && faceSwapsQuery.data.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-1">내 아바타</div>
+                              {faceSwapsQuery.data.map((f) => (
+                                <SelectItem key={`user-${f.id}`} value={`user-${f.id}`}>{f.name} ({f.method})</SelectItem>
+                              ))}
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
+                      {selectedFaceSwapId !== "none" && selectedFaceSwapId.startsWith("sample-") && sampleFacesQuery.data && (() => {
+                        const face = sampleFacesQuery.data.find(f => `sample-${f.id}` === selectedFaceSwapId);
+                        if (!face) return null;
+                        return (
+                          <div className="mt-2 flex items-center gap-3 p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                            <img src={face.thumbnailUrl || face.imageUrl} alt={face.name} className="w-12 h-12 rounded-full object-cover border-2 border-violet-500/30" />
+                            <div>
+                              <p className="text-sm font-medium">{face.name}</p>
+                              <p className="text-xs text-muted-foreground">{face.description}</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Quick Upload Avatar */}
+                      <div className="mt-3 p-3 rounded-lg border border-dashed border-violet-500/30 bg-violet-500/5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Camera className="w-4 h-4 text-violet-400" />
+                            <span className="text-sm text-muted-foreground">내 사진으로 아바타 만들기</span>
+                          </div>
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (file.size > 5 * 1024 * 1024) { toast.error("파일 크기는 5MB 이하로 제한됩니다."); return; }
+                                const name = file.name.replace(/\.[^.]+$/, "").slice(0, 20) || "내 아바타";
+                                try {
+                                  toast.info("아바타 업로드 중...");
+                                  const reader = new FileReader();
+                                  reader.onload = async (ev) => {
+                                    const base64 = (ev.target?.result as string).split(",")[1];
+                                    const uploadResult = await uploadFaceMutation.mutateAsync({ imageData: base64, fileName: file.name, type: "source" });
+                                    await createFaceProfile.mutateAsync({ name, method: "builtin", settings: JSON.stringify({ uploadedImage: true }), sourceFaceUrl: uploadResult.url });
+                                    toast.success(`"${name}" 아바타가 생성되었습니다!`);
+                                    faceSwapsQuery.refetch();
+                                  };
+                                  reader.readAsDataURL(file);
+                                } catch (err: any) {
+                                  toast.error(err.message || "아바타 업로드에 실패했습니다.");
+                                }
+                                e.target.value = "";
+                              }}
+                            />
+                            <Button variant="outline" size="sm" asChild>
+                              <span><Upload className="w-3 h-3 mr-1" />사진 업로드</span>
+                            </Button>
+                          </label>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">정면 얼굴 사진을 업로드하면 내 아바타로 등록됩니다 (5MB 이하)</p>
+                      </div>
                     </div>
 
-                    <Button onClick={handleStartPipeline} disabled={startPipeline.isPending || !selectedScriptId} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
-                      {startPipeline.isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />강의 영상을 제작하고 있습니다... (TTS 생성 중)</>
-                      ) : (
-                        <><Sparkles className="w-4 h-4 mr-2" />원클릭 강의 영상 제작 시작</>
-                      )}
-                    </Button>
+                    {startPipeline.isPending ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                          <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                          <span className="text-sm">강의 영상을 제작하고 있습니다... (TTS 생성 중)</span>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => {
+                            toast.info("제작을 중단합니다. 서버에서 처리 중인 작업은 완료될 수 있습니다.");
+                            // Reset the mutation state so the UI goes back to idle
+                            startPipeline.reset();
+                          }}
+                        >
+                          <Square className="w-4 h-4 mr-2" />제작 중단
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button onClick={handleStartPipeline} disabled={!selectedScriptId} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+                        <Sparkles className="w-4 h-4 mr-2" />원클릭 강의 영상 제작 시작
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -634,11 +768,23 @@ export default function ProductionStudio() {
                               <p className="text-sm font-medium">생성된 음성 파일:</p>
                               <div className="flex flex-wrap gap-2">
                                 {audioUrls.map((url: string, i: number) => (
-                                  <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-                                    <Badge variant="outline" className="cursor-pointer hover:bg-violet-500/20">
-                                      <Volume2 className="w-3 h-3 mr-1" />섹션 {i + 1}
-                                    </Badge>
-                                  </a>
+                                  <Badge
+                                    key={i}
+                                    variant="outline"
+                                    className={`cursor-pointer transition-colors ${
+                                      playingUrl === url
+                                        ? "bg-violet-500/30 text-violet-300 border-violet-500 animate-pulse"
+                                        : "hover:bg-violet-500/20"
+                                    }`}
+                                    onClick={() => playSectionAudio(url)}
+                                  >
+                                    {playingUrl === url ? (
+                                      <Square className="w-3 h-3 mr-1" />
+                                    ) : (
+                                      <Volume2 className="w-3 h-3 mr-1" />
+                                    )}
+                                    섹션 {i + 1}
+                                  </Badge>
                                 ))}
                               </div>
                             </div>
@@ -756,13 +902,73 @@ export default function ProductionStudio() {
                       </div>
                     </div>
 
-                    <Button onClick={handleBatchStart} disabled={batchStart.isPending || batchSelectedIds.size === 0} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
-                      {batchStart.isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />배치 처리 중... ({batchSelectedIds.size}건)</>  
-                      ) : (
-                        <><ListChecks className="w-4 h-4 mr-2" />{batchSelectedIds.size}건 일괄 영상 제작 시작</>
-                      )}
-                    </Button>
+                    <div>
+                      <Label className="flex items-center gap-2 mb-3"><UserCircle2 className="w-4 h-4 text-violet-400" />공통 AI 아바타 (선택)</Label>
+                      <Select value={batchFaceSwapId} onValueChange={setBatchFaceSwapId}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">아바타 없음 (음성만)</SelectItem>
+                          {sampleFacesQuery.data && sampleFacesQuery.data.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">기본 제공 아바타</div>
+                              {sampleFacesQuery.data.map((f) => (
+                                <SelectItem key={`sample-${f.id}`} value={`sample-${f.id}`}>
+                                  <div className="flex items-center gap-2">
+                                    <img src={f.thumbnailUrl || f.imageUrl} alt={f.name} className="w-6 h-6 rounded-full object-cover" />
+                                    <span>{f.name}</span>
+                                    {f.isPremium && <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-500/50 text-amber-400">PRO</Badge>}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </>
+                          )}
+                          {faceSwapsQuery.data && faceSwapsQuery.data.length > 0 && (
+                            <>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-1">내 아바타</div>
+                              {faceSwapsQuery.data.map((f) => (
+                                <SelectItem key={`user-${f.id}`} value={`user-${f.id}`}>{f.name} ({f.method})</SelectItem>
+                              ))}
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {batchFaceSwapId !== "none" && batchFaceSwapId.startsWith("sample-") && sampleFacesQuery.data && (() => {
+                        const face = sampleFacesQuery.data.find(f => `sample-${f.id}` === batchFaceSwapId);
+                        if (!face) return null;
+                        return (
+                          <div className="mt-2 flex items-center gap-3 p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                            <img src={face.thumbnailUrl || face.imageUrl} alt={face.name} className="w-10 h-10 rounded-full object-cover border-2 border-violet-500/30" />
+                            <div>
+                              <p className="text-sm font-medium">{face.name}</p>
+                              <p className="text-xs text-muted-foreground">{face.description}</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {batchStart.isPending ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                          <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                          <span className="text-sm">배치 처리 중... ({batchSelectedIds.size}건)</span>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          className="w-full"
+                          onClick={() => {
+                            toast.info("배치 처리를 중단합니다. 서버에서 처리 중인 작업은 완료될 수 있습니다.");
+                            batchStart.reset();
+                          }}
+                        >
+                          <Square className="w-4 h-4 mr-2" />배치 중단
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button onClick={handleBatchStart} disabled={batchSelectedIds.size === 0} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+                        <ListChecks className="w-4 h-4 mr-2" />{batchSelectedIds.size}건 일괄 영상 제작 시작
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>

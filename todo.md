@@ -772,3 +772,22 @@
 - [x] Cloudflare Cache Rules 최적화 - 가이드 문서 작성 (HTML 우회, /assets/* 장기 캐시, /api/ 우회, /storage/ 캐시)
 - [x] TTS 병렬 생성 - pipeline.start + batchStart를 Promise.allSettled + CONCURRENCY=4로 병렬화
 - [x] 프로덕션 서버 배포 및 검증 - aispeaker.cc 배포 완료, tts.preview API 정상 동작 확인
+
+## 음성 미리듣기 버그 수정
+- [ ] AI Voices 갤러리 음성 미리듣기(데모) 소리가 나오지 않는 버그 수정 - sampleAudioUrl이 null이라 toast만 표시됨, 실제 TTS 데모 음성 생성 필요
+- [ ] 스크립트 생성 실패 버그 수정 - 다른 계정에서 스크립트 생성 시 "스크립트 생성에 실패했습니다" 에러 발생
+
+## 제작 이력 음성 인라인 재생 + 에러 수정
+- [ ] 제작 이력 섹션 음성 클릭 시 페이지 이동 없이 인라인 재생
+- [ ] 썸네일 생성 에러 수정 - BUILT_IN_FORGE_API_URL 미설정 시 Gemini 이미지 생성 폴백
+- [ ] LLM 호출 시 재시도(retry) 로직 추가 (503 에러 대응)
+
+## 아바타 시스템 구현
+- [ ] AI 얼굴 갤러리 기본 아바타 선택 기능
+- [ ] 사용자 사진 업로드 아바타 기능
+- [ ] 기본 제공 아바타 세트 (시스템 프리셋)
+
+## v4.5 Bug Fixes & UX Improvements
+- [x] Fix faceSwapProfileId NaN error when selecting sample avatar in pipeline start
+- [x] Add stop/cancel button during TTS generation (pipeline in progress)
+- [ ] Deploy fixes to production (aispeaker.cc)

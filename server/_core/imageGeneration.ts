@@ -1,19 +1,9 @@
 /**
- * Image generation helper using internal ImageService
+ * Image generation helper with Gemini Imagen fallback
  *
- * Example usage:
- *   const { url: imageUrl } = await generateImage({
- *     prompt: "A serene landscape with mountains"
- *   });
- *
- * For editing:
- *   const { url: imageUrl } = await generateImage({
- *     prompt: "Add a rainbow to this landscape",
- *     originalImages: [{
- *       url: "https://example.com/original.jpg",
- *       mimeType: "image/jpeg"
- *     }]
- *   });
+ * - If BUILT_IN_FORGE_API_URL is set, use Forge ImageService
+ * - Otherwise, if GEMINI_API_KEY is set, use Gemini Imagen API
+ * - If neither is available, throw a descriptive error
  */
 import { storagePut } from "server/storage";
 import { ENV } from "./env";
@@ -31,20 +21,60 @@ export type GenerateImageResponse = {
   url?: string;
 };
 
-export async function generateImage(
-  options: GenerateImageOptions
-): Promise<GenerateImageResponse> {
-  if (!ENV.forgeApiUrl) {
-    throw new Error("BUILT_IN_FORGE_API_URL is not configured");
-  }
-  if (!ENV.forgeApiKey) {
-    throw new Error("BUILT_IN_FORGE_API_KEY is not configured");
+/**
+ * Generate image using Gemini Imagen API (fallback when Forge is unavailable)
+ */
+async function generateWithGemini(prompt: string): Promise<Buffer> {
+  const apiKey = ENV.geminiApiKey;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not configured for image generation");
   }
 
-  // Build the full URL by appending the service path to the base URL
-  const baseUrl = ENV.forgeApiUrl.endsWith("/")
-    ? ENV.forgeApiUrl
-    : `${ENV.forgeApiUrl}/`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: `Generate an image: ${prompt}. Create a visually appealing, professional thumbnail image.`
+        }]
+      }],
+      generationConfig: {
+        responseModalities: ["TEXT", "IMAGE"]
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    throw new Error(`Gemini image generation failed (${response.status}): ${errorText.slice(0, 200)}`);
+  }
+
+  const result = await response.json();
+  
+  // Extract image from Gemini response
+  const candidates = result.candidates || [];
+  for (const candidate of candidates) {
+    const parts = candidate.content?.parts || [];
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        return Buffer.from(part.inlineData.data, "base64");
+      }
+    }
+  }
+
+  throw new Error("Gemini did not return an image in the response");
+}
+
+/**
+ * Generate image using Forge ImageService
+ */
+async function generateWithForge(options: GenerateImageOptions): Promise<{ buffer: Buffer; mimeType: string }> {
+  const baseUrl = ENV.forgeApiUrl!.endsWith("/")
+    ? ENV.forgeApiUrl!
+    : `${ENV.forgeApiUrl!}/`;
   const fullUrl = new URL(
     "images.v1.ImageService/GenerateImage",
     baseUrl
@@ -72,21 +102,39 @@ export async function generateImage(
   }
 
   const result = (await response.json()) as {
-    image: {
-      b64Json: string;
-      mimeType: string;
-    };
+    image: { b64Json: string; mimeType: string };
   };
-  const base64Data = result.image.b64Json;
-  const buffer = Buffer.from(base64Data, "base64");
+  return {
+    buffer: Buffer.from(result.image.b64Json, "base64"),
+    mimeType: result.image.mimeType,
+  };
+}
 
-  // Save to S3
+export async function generateImage(
+  options: GenerateImageOptions
+): Promise<GenerateImageResponse> {
+  let buffer: Buffer;
+  let mimeType = "image/png";
+
+  // Try Forge first, then Gemini fallback
+  if (ENV.forgeApiUrl && ENV.forgeApiKey) {
+    const result = await generateWithForge(options);
+    buffer = result.buffer;
+    mimeType = result.mimeType;
+  } else if (ENV.geminiApiKey) {
+    console.log("[ImageGen] Forge not available, using Gemini Imagen fallback");
+    buffer = await generateWithGemini(options.prompt);
+  } else {
+    throw new Error(
+      "이미지 생성 서비스를 사용할 수 없습니다. BUILT_IN_FORGE_API_URL 또는 GEMINI_API_KEY를 설정해주세요."
+    );
+  }
+
+  // Save to storage
   const { url } = await storagePut(
     `generated/${Date.now()}.png`,
     buffer,
-    result.image.mimeType
+    mimeType
   );
-  return {
-    url,
-  };
+  return { url };
 }

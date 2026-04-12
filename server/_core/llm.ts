@@ -290,6 +290,15 @@ const normalizeResponseFormat = ({
   };
 };
 
+/** Retry configuration for transient errors */
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [2000, 4000, 8000]; // exponential backoff in ms
+const RETRYABLE_STATUS_CODES = new Set([500, 502, 503, 429]);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export async function invokeLLM(params: InvokeParams & { _userId?: number }): Promise<InvokeResult> {
   assertApiKey();
   const startTime = Date.now();
@@ -337,81 +346,112 @@ export async function invokeLLM(params: InvokeParams & { _userId?: number }): Pr
     payload.response_format = normalizedResponseFormat;
   }
 
-  try {
-    const response = await fetch(resolveApiUrl(), {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${resolveApiKey()}`,
-      },
-      body: JSON.stringify(payload),
-    });
+  let lastError: Error | null = null;
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      const status = response.status;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      if (attempt > 0) {
+        const delay = RETRY_DELAYS[attempt - 1] || 8000;
+        console.log(`[LLM] Retry attempt ${attempt}/${MAX_RETRIES} after ${delay}ms delay...`);
+        await sleep(delay);
+      }
+
+      const response = await fetch(resolveApiUrl(), {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${resolveApiKey()}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        const status = response.status;
+        const durationMs = Date.now() - startTime;
+
+        // Check if retryable
+        if (RETRYABLE_STATUS_CODES.has(status) && attempt < MAX_RETRIES) {
+          console.log(`[LLM] Transient error (HTTP ${status}), will retry. Error: ${errorText.slice(0, 200)}`);
+          lastError = new Error(`HTTP ${status}: ${errorText.slice(0, 200)}`);
+          continue; // retry
+        }
+
+        // Log error (final attempt)
+        logApiUsage({
+          userId: _userId,
+          apiType: "llm",
+          model,
+          durationMs,
+          status: "error",
+          errorCode: `HTTP_${status}`,
+          errorMessage: errorText.slice(0, 500),
+        });
+
+        // Classify errors with user-friendly messages
+        if (status === 401 || status === 403) {
+          throw new Error(
+            `AI 서비스 인증 오류: API 키가 유효하지 않거나 만료되었습니다. 관리자에게 문의하세요. (HTTP ${status})`
+          );
+        }
+        if (status === 429) {
+          throw new Error(
+            `AI 서비스 사용량 한도 초과: 일일 API 쿼터를 초과했습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`
+          );
+        }
+        if (status === 500 || status === 502 || status === 503) {
+          throw new Error(
+            `AI 서비스 일시적 오류: 서버가 응답하지 않습니다. ${MAX_RETRIES}회 재시도 후에도 실패했습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`
+          );
+        }
+        throw new Error(
+          `AI 서비스 오류: ${response.statusText} (HTTP ${status}) – ${errorText.slice(0, 200)}`
+        );
+      }
+
+      const result = (await response.json()) as InvokeResult;
       const durationMs = Date.now() - startTime;
 
-      // Log error
+      if (attempt > 0) {
+        console.log(`[LLM] Succeeded on retry attempt ${attempt}`);
+      }
+
+      // Log success
       logApiUsage({
         userId: _userId,
         apiType: "llm",
         model,
+        inputTokens: result.usage?.prompt_tokens,
+        outputTokens: result.usage?.completion_tokens,
         durationMs,
-        status: "error",
-        errorCode: `HTTP_${status}`,
-        errorMessage: errorText.slice(0, 500),
+        status: "success",
       });
 
-      // Classify errors with user-friendly messages
-      if (status === 401 || status === 403) {
-        throw new Error(
-          `AI 서비스 인증 오류: API 키가 유효하지 않거나 만료되었습니다. 관리자에게 문의하세요. (HTTP ${status})`
-        );
+      return result;
+    } catch (err: any) {
+      // If this is a retryable network error and we have retries left
+      if (attempt < MAX_RETRIES && !err.message?.includes("HTTP")) {
+        console.log(`[LLM] Network error on attempt ${attempt + 1}, will retry: ${err.message}`);
+        lastError = err;
+        continue;
       }
-      if (status === 429) {
-        throw new Error(
-          `AI 서비스 사용량 한도 초과: 일일 API 쿼터를 초과했습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`
-        );
+
+      // If not already logged (non-HTTP errors like network failures)
+      if (!err.message?.includes("HTTP")) {
+        logApiUsage({
+          userId: _userId,
+          apiType: "llm",
+          model,
+          durationMs: Date.now() - startTime,
+          status: "error",
+          errorCode: "NETWORK_ERROR",
+          errorMessage: err.message?.slice(0, 500),
+        });
       }
-      if (status === 500 || status === 502 || status === 503) {
-        throw new Error(
-          `AI 서비스 일시적 오류: 서버가 응답하지 않습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`
-        );
-      }
-      throw new Error(
-        `AI 서비스 오류: ${response.statusText} (HTTP ${status}) – ${errorText.slice(0, 200)}`
-      );
+      throw err;
     }
-
-    const result = (await response.json()) as InvokeResult;
-    const durationMs = Date.now() - startTime;
-
-    // Log success
-    logApiUsage({
-      userId: _userId,
-      apiType: "llm",
-      model,
-      inputTokens: result.usage?.prompt_tokens,
-      outputTokens: result.usage?.completion_tokens,
-      durationMs,
-      status: "success",
-    });
-
-    return result;
-  } catch (err: any) {
-    // If not already logged (non-HTTP errors like network failures)
-    if (!err.message?.includes("HTTP")) {
-      logApiUsage({
-        userId: _userId,
-        apiType: "llm",
-        model,
-        durationMs: Date.now() - startTime,
-        status: "error",
-        errorCode: "NETWORK_ERROR",
-        errorMessage: err.message?.slice(0, 500),
-      });
-    }
-    throw err;
   }
+
+  // Should not reach here, but just in case
+  throw lastError || new Error("LLM invocation failed after all retries");
 }
