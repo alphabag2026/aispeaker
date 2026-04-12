@@ -161,10 +161,13 @@ export default function ProductionStudio() {
 
   const cancelPipeline = trpc.pipeline.cancel.useMutation({
     onSuccess: () => {
-      toast.success("파이프라인이 취소되었습니다.");
+      toast.success("작업이 취소되었습니다", {
+        description: "진행 중이던 제작이 중단되었습니다. 제작 이력에서 확인할 수 있습니다.",
+        duration: 5000,
+      });
       pipelinesQuery.refetch();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => toast.error("취소 실패: " + err.message),
   });
 
   // Template-based script generation
@@ -671,7 +674,7 @@ export default function ProductionStudio() {
                             if (pipelineId) {
                               cancelPipeline.mutate({ id: pipelineId });
                             }
-                            toast.info("제작을 중단합니다.");
+                            toast.info("제작 중단 요청 중...");
                             startPipeline.reset();
                           }}
                         >
@@ -996,7 +999,7 @@ export default function ProductionStudio() {
                                  }
                                }
                              }
-                             toast.info("배치 처리를 중단합니다.");
+                             toast.info("배치 처리 중단 요청 중...");
                              batchStart.reset();
                            }}
                          >

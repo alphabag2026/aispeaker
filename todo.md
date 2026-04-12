@@ -801,3 +801,10 @@
 - [x] Added cancelled status to productionPipelines schema
 - [x] Created apiUsageLogs table (was missing)
 - [x] Cancel button in production history tab for running pipelines
+
+## v4.7 Real-time Polling, More Avatars & Cancel Confirmation
+- [x] Add real-time polling for pipeline progress (2s interval when pipelines are running)
+- [x] Generate 10 new diverse AI avatar images (various ethnicities/ages)
+- [x] Insert 10 new avatars into sampleFaces DB (total: 15 avatars)
+- [x] Improve cancel confirmation message with detailed toast notification
+- [x] Tests pass (390/394, 4 pre-existing failures)
