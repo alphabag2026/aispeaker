@@ -159,6 +159,14 @@ export default function ProductionStudio() {
     onSuccess: () => { toast.success("파이프라인 삭제됨"); pipelinesQuery.refetch(); },
   });
 
+  const cancelPipeline = trpc.pipeline.cancel.useMutation({
+    onSuccess: () => {
+      toast.success("파이프라인이 취소되었습니다.");
+      pipelinesQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   // Template-based script generation
   const generateFromTemplate = trpc.scriptTemplate.generateFromTemplate.useMutation({
     onSuccess: (data) => {
@@ -656,13 +664,23 @@ export default function ProductionStudio() {
                         <Button
                           variant="destructive"
                           className="w-full"
+                          disabled={cancelPipeline.isPending}
                           onClick={() => {
-                            toast.info("제작을 중단합니다. 서버에서 처리 중인 작업은 완료될 수 있습니다.");
-                            // Reset the mutation state so the UI goes back to idle
+                            // If we have a pipeline ID from the response, cancel it server-side
+                            const pipelineId = (startPipeline.data as any)?.id;
+                            if (pipelineId) {
+                              cancelPipeline.mutate({ id: pipelineId });
+                            }
+                            toast.info("제작을 중단합니다.");
                             startPipeline.reset();
                           }}
                         >
-                          <Square className="w-4 h-4 mr-2" />제작 중단
+                          {cancelPipeline.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Square className="w-4 h-4 mr-2" />
+                          )}
+                          제작 중단
                         </Button>
                       </div>
                     ) : (
@@ -740,6 +758,7 @@ export default function ProductionStudio() {
                   compositing: { label: "합성 중", color: "bg-orange-500/20 text-orange-400" },
                   completed: { label: "완료", color: "bg-green-500/20 text-green-400" },
                   failed: { label: "실패", color: "bg-red-500/20 text-red-400" },
+                  cancelled: { label: "취소됨", color: "bg-gray-500/20 text-gray-400" },
                 };
                 const status = statusMap[p.status] || statusMap.queued;
 
@@ -752,10 +771,21 @@ export default function ProductionStudio() {
                             <h3 className="font-semibold">{p.title}</h3>
                             <Badge variant="outline" className={status.color}>{status.label}</Badge>
                           </div>
-                          {p.status !== "completed" && p.status !== "failed" && (
+                          {p.status !== "completed" && p.status !== "failed" && p.status !== "cancelled" && (
                             <div className="mb-3">
                               <Progress value={p.progressPercent || 0} className="h-2" />
-                              <p className="text-xs text-muted-foreground mt-1">{p.currentStep} ({p.progressPercent}%)</p>
+                              <div className="flex items-center justify-between mt-1">
+                                <p className="text-xs text-muted-foreground">{p.currentStep} ({p.progressPercent}%)</p>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-red-400 hover:text-red-300 h-6 px-2 text-xs"
+                                  disabled={cancelPipeline.isPending}
+                                  onClick={() => cancelPipeline.mutate({ id: p.id })}
+                                >
+                                  <Square className="w-3 h-3 mr-1" />중단
+                                </Button>
+                              </div>
                             </div>
                           )}
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -954,15 +984,24 @@ export default function ProductionStudio() {
                           <span className="text-sm">배치 처리 중... ({batchSelectedIds.size}건)</span>
                         </div>
                         <Button
-                          variant="destructive"
-                          className="w-full"
-                          onClick={() => {
-                            toast.info("배치 처리를 중단합니다. 서버에서 처리 중인 작업은 완료될 수 있습니다.");
-                            batchStart.reset();
-                          }}
-                        >
-                          <Square className="w-4 h-4 mr-2" />배치 중단
-                        </Button>
+                           variant="destructive"
+                           className="w-full"
+                           onClick={() => {
+                             // Cancel all running pipelines from batch results
+                             const batchData = batchStart.data as any;
+                             if (batchData?.results) {
+                               for (const r of batchData.results) {
+                                 if (r.pipelineId && r.status !== 'completed' && r.status !== 'failed') {
+                                   cancelPipeline.mutate({ id: r.pipelineId });
+                                 }
+                               }
+                             }
+                             toast.info("배치 처리를 중단합니다.");
+                             batchStart.reset();
+                           }}
+                         >
+                           <Square className="w-4 h-4 mr-2" />배치 중단
+                         </Button>
                       </div>
                     ) : (
                       <Button onClick={handleBatchStart} disabled={batchSelectedIds.size === 0} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">

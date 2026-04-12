@@ -1,0 +1,1 @@
+ALTER TABLE `productionPipelines` MODIFY COLUMN `status` enum('queued','script_gen','tts_gen','avatar_gen','compositing','completed','failed','cancelled') NOT NULL DEFAULT 'queued';

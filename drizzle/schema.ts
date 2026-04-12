@@ -477,7 +477,7 @@ export const productionPipelines = mysqlTable("productionPipelines", {
   /** Pipeline title */
   title: varchar("title", { length: 500 }).notNull(),
   /** Current pipeline status */
-  status: mysqlEnum("status", ["queued", "script_gen", "tts_gen", "avatar_gen", "compositing", "completed", "failed"]).default("queued").notNull(),
+  status: mysqlEnum("status", ["queued", "script_gen", "tts_gen", "avatar_gen", "compositing", "completed", "failed", "cancelled"]).default("queued").notNull(),
   /** Overall progress percentage (0-100) */
   progressPercent: int("progressPercent").default(0),
   /** Current step description */

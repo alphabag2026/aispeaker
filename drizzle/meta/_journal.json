@@ -99,6 +99,13 @@
       "when": 1775916632653,
       "tag": "0013_wide_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1775991125097,
+      "tag": "0014_puzzling_stingray",
+      "breakpoints": true
     }
   ]
 }

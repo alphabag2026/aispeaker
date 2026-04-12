@@ -791,3 +791,13 @@
 - [x] Fix faceSwapProfileId NaN error when selecting sample avatar in pipeline start
 - [x] Add stop/cancel button during TTS generation (pipeline in progress)
 - [ ] Deploy fixes to production (aispeaker.cc)
+
+## v4.6 Avatar Images, Voice Demos & Cancel API
+- [x] Generate AI face images for 5 sample avatars and register in DB (DB had 5, not 10)
+- [ ] Generate TTS demo audio for AI Voices gallery (blocked: GEMINI_API_KEY not configured for direct TTS)
+- [x] Implement server-side pipeline cancel API (pipeline.cancel procedure)
+- [x] Update client stop button to call server cancel API
+- [x] Tests pass (390/394, 4 pre-existing failures)
+- [x] Added cancelled status to productionPipelines schema
+- [x] Created apiUsageLogs table (was missing)
+- [x] Cancel button in production history tab for running pipelines

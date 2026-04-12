@@ -1895,6 +1895,29 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return pipeline;
       }),
 
+    /** Cancel a running pipeline */
+    cancel: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const pipeline = await db.getProductionPipelineById(input.id);
+        if (!pipeline) throw new TRPCError({ code: "NOT_FOUND", message: "파이프라인을 찾을 수 없습니다." });
+        if (pipeline.pipeline.userId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const activeStatuses = ["queued", "script_gen", "tts_gen", "avatar_gen", "compositing"];
+        if (!activeStatuses.includes(pipeline.pipeline.status)) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "이미 완료되었거나 취소된 파이프라인입니다." });
+        }
+        // Mark as cancelled in DB - running async operations will check this flag
+        await db.updateProductionPipeline(input.id, {
+          status: "cancelled",
+          currentStep: "사용자에 의해 취소됨",
+          errorMessage: "사용자가 제작을 취소했습니다.",
+          completedAt: new Date(),
+        });
+        return { success: true, message: "파이프라인이 취소되었습니다." };
+      }),
+
     /** Delete a pipeline */
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
