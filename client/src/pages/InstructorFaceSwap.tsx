@@ -14,8 +14,9 @@ import {
   ArrowLeft, Plus, Trash2, Upload, Wand2, Eye, User2, Sparkles,
   GripVertical, Heart, MessageCircle, Share2, Image as ImageIcon,
   Monitor, Layout, Settings2, Check, X, Send, ChevronDown, ChevronUp,
-  Presentation, Video
+  Presentation, Video, Filter, ArrowUpDown
 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 /* ─── Interactive Before/After Slider with Auto Animation ─── */
 function BeforeAfterSlider({
@@ -485,7 +486,9 @@ function ImageDropZone({
 /* ─── DB-Connected Gallery Section ─── */
 function GallerySection() {
   const { user } = useAuth();
-  const galleryQuery = trpc.gallery.list.useQuery({ limit: 20 });
+  const [galleryMethod, setGalleryMethod] = useState<"all" | "builtin" | "did" | "heygen">("all");
+  const [gallerySort, setGallerySort] = useState<"latest" | "likes">("latest");
+  const galleryQuery = trpc.gallery.list.useQuery({ limit: 20, method: galleryMethod, sort: gallerySort });
   const myLikesQuery = trpc.gallery.myLikes.useQuery(undefined, { enabled: !!user });
   const likeMutation = trpc.gallery.like.useMutation({
     onSuccess: () => {
@@ -646,6 +649,46 @@ function GallerySection() {
           </CardContent>
         </Card>
       )}
+
+      {/* Filter & Sort Controls */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">기술:</span>
+          {(["all", "builtin", "did", "heygen"] as const).map((m) => (
+            <Button
+              key={m}
+              size="sm"
+              variant={galleryMethod === m ? "default" : "outline"}
+              className={`h-7 text-xs ${galleryMethod === m ? "" : "bg-transparent"}`}
+              onClick={() => setGalleryMethod(m)}
+            >
+              {m === "all" ? "전체" : m === "builtin" ? "내장 AI" : m === "did" ? "D-ID" : "HeyGen"}
+            </Button>
+          ))}
+        </div>
+        <Separator orientation="vertical" className="h-5" />
+        <div className="flex items-center gap-2">
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">정렬:</span>
+          <Button
+            size="sm"
+            variant={gallerySort === "latest" ? "default" : "outline"}
+            className={`h-7 text-xs ${gallerySort === "latest" ? "" : "bg-transparent"}`}
+            onClick={() => setGallerySort("latest")}
+          >
+            최신순
+          </Button>
+          <Button
+            size="sm"
+            variant={gallerySort === "likes" ? "default" : "outline"}
+            className={`h-7 text-xs ${gallerySort === "likes" ? "" : "bg-transparent"}`}
+            onClick={() => setGallerySort("likes")}
+          >
+            <Heart className="h-3 w-3 mr-1" />좋아요순
+          </Button>
+        </div>
+      </div>
 
       {/* Gallery items */}
       <div className="grid gap-6">

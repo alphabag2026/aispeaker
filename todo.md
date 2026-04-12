@@ -838,3 +838,13 @@
 - [x] Integrate PIP settings into production pipeline (pipeline.start)
 - [x] PIP options in ProductionStudio video production tab (toggle + PPT select + upload)
 - [x] Frontend PPT upload UI with slide preview
+
+## v5.2 PPT Slide Preview, Batch PIP/PPT, Gallery Filter/Sort
+- [x] PPT 슬라이드 썸네일 미리보기 (업로드된 PPT의 각 슬라이드를 이미지로 표시)
+- [x] PPT 미리보기 UI (슬라이드 그리드 + 선택된 슬라이드 확대 모달 + 좌우 네비게이션)
+- [x] 배치 제작 탭에 PIP 모드 토글 추가 (Switch 컴포넌트)
+- [x] 배치 제작 탭에 PPT 파일 선택/업로드 추가 (슬라이드 미리보기 포함)
+- [x] 배치 제작 batchStart에 PIP/PPT 옵션 전달 (서버 input 스키마 확장)
+- [x] 갤러리 기술별 필터링 (전체/내장 AI/D-ID/HeyGen 버튼)
+- [x] 갤러리 정렬 기능 (최신순/좋아요순 버튼)
+- [x] 갤러리 필터/정렬 UI 컴포넌트 (Filter + ArrowUpDown 아이콘)

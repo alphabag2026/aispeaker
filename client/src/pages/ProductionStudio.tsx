@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Link, useSearch } from "wouter";
@@ -66,6 +67,10 @@ export default function ProductionStudio() {
   const [selectedPptId, setSelectedPptId] = useState<string>("none");
   const [pptUploadTitle, setPptUploadTitle] = useState("");
   const [pptUploading, setPptUploading] = useState(false);
+  const [previewSlideIdx, setPreviewSlideIdx] = useState<number | null>(null);
+  // Batch PIP state
+  const [batchPipEnabled, setBatchPipEnabled] = useState(false);
+  const [batchSelectedPptId, setBatchSelectedPptId] = useState<string>("none");
 
   // Batch processing state
   const [batchSelectedIds, setBatchSelectedIds] = useState<Set<number>>(new Set());
@@ -253,6 +258,7 @@ export default function ProductionStudio() {
     if (batchSelectedIds.size === 0) { toast.error("스크립트를 선택하세요."); return; }
     const readyScripts = scriptsQuery.data?.filter(s => s.status === "ready" && batchSelectedIds.has(s.id)) || [];
     if (readyScripts.length === 0) { toast.error("준비된 스크립트가 없습니다."); return; }
+    const pipSettings = pipSettingsQuery.data;
     batchStart.mutate({
       items: readyScripts.map(s => ({
         scriptId: s.id,
@@ -261,6 +267,14 @@ export default function ProductionStudio() {
         voiceModProfileId: batchVoiceModId !== "none" ? parseInt(batchVoiceModId) : undefined,
         faceSwapProfileId: parseFaceSwapId(batchFaceSwapId),
       })),
+      ...(batchPipEnabled ? {
+        pipEnabled: true,
+        pptUploadId: batchSelectedPptId !== "none" ? parseInt(batchSelectedPptId) : undefined,
+        pipPosition: pipSettings?.position || "bottom-right",
+        pipSize: pipSettings?.size || "medium",
+        pipShape: pipSettings?.shape || "circle",
+        pipOpacity: pipSettings?.opacity ?? 100,
+      } : {}),
     });
   };
 
@@ -752,6 +766,64 @@ export default function ProductionStudio() {
                             </Select>
                           </div>
 
+                          {/* PPT Slide Thumbnails Preview */}
+                          {selectedPptId !== "none" && (() => {
+                            const ppt = pptListQuery.data?.find((p: any) => p.id.toString() === selectedPptId);
+                            if (!ppt) return null;
+                            const slides: string[] = ppt.slideImages ? (typeof ppt.slideImages === "string" ? JSON.parse(ppt.slideImages) : ppt.slideImages) : [];
+                            if (slides.length === 0) return (
+                              <div className="p-3 rounded-lg bg-muted/30 text-center">
+                                <p className="text-sm text-muted-foreground">슬라이드 이미지가 아직 생성되지 않았습니다.</p>
+                              </div>
+                            );
+                            return (
+                              <div>
+                                <Label className="text-sm text-muted-foreground mb-2 block">슬라이드 미리보기 ({slides.length}장)</Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {slides.map((url: string, i: number) => (
+                                    <div
+                                      key={i}
+                                      className="relative aspect-[16/9] rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-violet-500/50 transition-colors group"
+                                      onClick={() => setPreviewSlideIdx(i)}
+                                    >
+                                      <img src={url} alt={`슬라이드 ${i + 1}`} className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                                        <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">#{i + 1}</span>
+                                      </div>
+                                      <span className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">{i + 1}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                                {/* Enlarged preview modal */}
+                                {previewSlideIdx !== null && slides[previewSlideIdx] && (
+                                  <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewSlideIdx(null)}>
+                                    <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
+                                      <img src={slides[previewSlideIdx]} alt={`슬라이드 ${previewSlideIdx + 1}`} className="w-full rounded-lg shadow-2xl" />
+                                      <div className="absolute top-4 right-4 flex items-center gap-2">
+                                        <Badge className="bg-black/60 text-white">{previewSlideIdx + 1} / {slides.length}</Badge>
+                                        <button onClick={() => setPreviewSlideIdx(null)} className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">×</button>
+                                      </div>
+                                      <div className="absolute top-1/2 -translate-y-1/2 left-2">
+                                        <button
+                                          onClick={() => setPreviewSlideIdx(Math.max(0, previewSlideIdx - 1))}
+                                          disabled={previewSlideIdx === 0}
+                                          className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
+                                        >←</button>
+                                      </div>
+                                      <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                                        <button
+                                          onClick={() => setPreviewSlideIdx(Math.min(slides.length - 1, previewSlideIdx + 1))}
+                                          disabled={previewSlideIdx === slides.length - 1}
+                                          className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
+                                        >→</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+
                           {/* Upload new PPT */}
                           <div className="p-3 rounded-lg border border-dashed border-violet-500/30 bg-violet-500/5">
                             <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
@@ -1121,6 +1193,62 @@ export default function ProductionStudio() {
                           </div>
                         );
                       })()}
+                    </div>
+
+                    {/* Batch PIP Mode + PPT Selection */}
+                    <div>
+                      <Label className="flex items-center gap-2 mb-3"><Presentation className="w-4 h-4 text-violet-400" />공통 PIP 모드 (PPT + 얼굴)</Label>
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/50">
+                        <div>
+                          <p className="text-sm font-medium">PIP 모드 활성화</p>
+                          <p className="text-xs text-muted-foreground">PPT 슬라이드 + AI 얼굴 합성</p>
+                        </div>
+                        <Switch checked={batchPipEnabled} onCheckedChange={setBatchPipEnabled} />
+                      </div>
+                      {batchPipEnabled && (
+                        <div className="mt-3 space-y-3 p-3 rounded-lg border border-violet-500/20 bg-violet-500/5">
+                          <div>
+                            <Label className="text-sm text-muted-foreground">PPT 파일 선택</Label>
+                            <Select value={batchSelectedPptId} onValueChange={setBatchSelectedPptId}>
+                              <SelectTrigger className="mt-1"><SelectValue placeholder="PPT를 선택하세요" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">PPT 없음 (PIP만 사용)</SelectItem>
+                                {pptListQuery.data?.map((p: any) => (
+                                  <SelectItem key={p.id} value={p.id.toString()}>
+                                    {p.title} ({p.originalFileName})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {/* Batch PPT Slide Thumbnails */}
+                          {batchSelectedPptId !== "none" && (() => {
+                            const ppt = pptListQuery.data?.find((p: any) => p.id.toString() === batchSelectedPptId);
+                            if (!ppt) return null;
+                            const slides: string[] = ppt.slideImages ? (typeof ppt.slideImages === "string" ? JSON.parse(ppt.slideImages) : ppt.slideImages) : [];
+                            if (slides.length === 0) return null;
+                            return (
+                              <div>
+                                <Label className="text-sm text-muted-foreground mb-1 block">슬라이드 ({slides.length}장)</Label>
+                                <div className="grid grid-cols-4 gap-1.5">
+                                  {slides.slice(0, 8).map((url: string, i: number) => (
+                                    <div key={i} className="relative aspect-[16/9] rounded overflow-hidden border border-border/30">
+                                      <img src={url} alt={`슬라이드 ${i + 1}`} className="w-full h-full object-cover" />
+                                      <span className="absolute bottom-0.5 right-0.5 text-[9px] bg-black/60 text-white px-1 rounded">{i + 1}</span>
+                                    </div>
+                                  ))}
+                                  {slides.length > 8 && (
+                                    <div className="aspect-[16/9] rounded bg-muted/30 flex items-center justify-center text-xs text-muted-foreground">+{slides.length - 8}장</div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
+                          <p className="text-xs text-muted-foreground">
+                            PIP 위치/크기/모양은 딥페이크 페이지의 PIP 설정에서 변경할 수 있습니다.
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {batchStart.isPending ? (

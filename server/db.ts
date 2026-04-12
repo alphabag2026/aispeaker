@@ -1547,12 +1547,17 @@ export async function getApiUsageStats(days = 30) {
 
 
 // ── Gallery helpers ──────────────────────────────────────
-export async function getGalleryItems(limit = 20, offset = 0) {
+export async function getGalleryItems(limit = 20, offset = 0, method: "all" | "builtin" | "did" | "heygen" = "all", sort: "latest" | "likes" = "latest") {
   const db = await getDb();
   if (!db) return [];
+  const conditions = [eq(faceSwapGallery.isPublic, true)];
+  if (method !== "all") {
+    conditions.push(eq(faceSwapGallery.method, method as "builtin" | "did" | "heygen"));
+  }
+  const orderByClause = sort === "likes" ? desc(faceSwapGallery.likesCount) : desc(faceSwapGallery.createdAt);
   return db.select().from(faceSwapGallery)
-    .where(eq(faceSwapGallery.isPublic, true))
-    .orderBy(desc(faceSwapGallery.createdAt))
+    .where(and(...conditions))
+    .orderBy(orderByClause)
     .limit(limit).offset(offset);
 }
 

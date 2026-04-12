@@ -1953,6 +1953,12 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           voiceModProfileId: z.number().optional(),
           faceSwapProfileId: z.number().optional(),
         })).min(1).max(10),
+        pipEnabled: z.boolean().optional(),
+        pptUploadId: z.number().optional(),
+        pipPosition: z.string().optional(),
+        pipSize: z.string().optional(),
+        pipShape: z.string().optional(),
+        pipOpacity: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const results: { scriptId: number; pipelineId: number | null; status: string; error?: string }[] = [];
@@ -1976,6 +1982,14 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               faceSwapProfileId: item.faceSwapProfileId,
               ttsVoiceId: item.ttsVoiceId || "alloy",
               startedAt: new Date(),
+              ...(input.pipEnabled ? {
+                pipEnabled: true,
+                pptUploadId: input.pptUploadId,
+                pipPosition: input.pipPosition,
+                pipSize: input.pipSize,
+                pipShape: input.pipShape,
+                pipOpacity: input.pipOpacity,
+              } : {}),
             });
             if (!pipelineId) {
               results.push({ scriptId: item.scriptId, pipelineId: null, status: "failed", error: "파이프라인 생성 실패" });
@@ -3111,9 +3125,14 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
   // ========== Face Swap Gallery ==========
   gallery: router({
     list: publicProcedure
-      .input(z.object({ limit: z.number().min(1).max(50).optional(), offset: z.number().min(0).optional() }).optional())
+      .input(z.object({
+        limit: z.number().min(1).max(50).optional(),
+        offset: z.number().min(0).optional(),
+        method: z.enum(["all", "builtin", "did", "heygen"]).optional(),
+        sort: z.enum(["latest", "likes"]).optional(),
+      }).optional())
       .query(async ({ input }) => {
-        return db.getGalleryItems(input?.limit ?? 20, input?.offset ?? 0);
+        return db.getGalleryItems(input?.limit ?? 20, input?.offset ?? 0, input?.method ?? "all", input?.sort ?? "latest");
       }),
     myItems: protectedProcedure.query(async ({ ctx }) => {
       return db.getGalleryItemsByUser(ctx.user.id);
