@@ -883,4 +883,10 @@
 - [ ] 배포 검증 (HTTPS 접속 확인)
 ## v5.4.2 Bugfix - faceSwapProfileId NaN (프로덕션 서버)
 - [x] zod 스키마에서 NaN을 undefined로 변환하는 safeOptionalNumber 적용 (pipeline.start, batchStart, avatar.generate, session.start, lecture.create, lecture.update)
-- [ ] 프로덕션 서버 재배포
+- [x] 프로덕션 서버 재배포 (dist/index.js 교체 + docker restart)
+## v5.4.3 Bugfix - safeOptionalNumber에서 null도 처리
+- [ ] safeOptionalNumber에서 null도 undefined로 변환하도록 수정 (voiceModProfileId null 에러)
+- [ ] 프로덕션 서버 재배포 (v5.4.3)
+## v5.4.4 파이프라인 실패 에러 수정 + 진행률 표시 UI
+- [x] 파이프라인 실행 실패 에러 수정 (원인: TTS API 한도 초과, 에러 메시지 구체적으로 표시하도록 개선)
+- [x] 제작 진행률(%) 실시간 표시 UI 추가 (프로그레스 바 + 퍼센트 표시 + 자동 폴링)

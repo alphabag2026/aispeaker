@@ -16,13 +16,12 @@ import { sdk } from "./_core/sdk";
 import axios from "axios";
 import crypto from "crypto";
 
-// Helper: coerce NaN to undefined for optional number fields
-// Uses z.any() input + transform to avoid TypeScript requiring the field in client calls
-const safeOptionalNumber = z.any().optional().transform((val): number | undefined => {
+// Helper: coerce NaN/null/string to undefined for optional number fields
+// Uses z.union to accept number | null | undefined, then transforms to number | undefined
+const safeOptionalNumber = z.union([z.number(), z.null(), z.undefined()]).optional().transform((val): number | undefined => {
   if (val === undefined || val === null) return undefined;
-  const n = typeof val === 'string' ? Number(val) : val;
-  if (typeof n !== 'number' || isNaN(n)) return undefined;
-  return n;
+  if (typeof val !== 'number' || isNaN(val)) return undefined;
+  return val;
 });
 
 // Instructor-only procedure
@@ -427,7 +426,7 @@ export const appRouter = router({
         return { audioUrl: url, voiceId: input.voiceId, voiceName };
       }),
     generate: protectedProcedure
-      .input(z.object({ text: z.string().min(1), voiceId: z.string().optional(), voiceProfileId: z.number().optional(), voiceModProfileId: z.number().optional() }))
+      .input(z.object({ text: z.string().min(1), voiceId: z.string().optional(), voiceProfileId: safeOptionalNumber, voiceModProfileId: safeOptionalNumber }))
       .mutation(async ({ input }) => {
         let effectiveVoiceId = input.voiceId || "alloy";
         let textToSpeak = input.text;
@@ -1760,6 +1759,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         voiceProfileId: safeOptionalNumber,
         voiceModProfileId: safeOptionalNumber,
         faceSwapProfileId: safeOptionalNumber,
+        sampleFaceId: safeOptionalNumber,
         ttsVoiceId: z.string().optional(),
         config: z.string().optional(),
         // PIP mode settings
@@ -1776,6 +1776,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         input.faceSwapProfileId = safeNum(input.faceSwapProfileId);
         input.voiceModProfileId = safeNum(input.voiceModProfileId);
         input.voiceProfileId = safeNum(input.voiceProfileId);
+        input.sampleFaceId = safeNum(input.sampleFaceId);
 
         const script = await db.getLectureScriptById(input.scriptId);
         if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "스크립트가 준비되지 않았습니다." });
@@ -1803,6 +1804,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           voiceProfileId: input.voiceProfileId,
           voiceModProfileId: input.voiceModProfileId,
           faceSwapProfileId: input.faceSwapProfileId,
+          sampleFaceId: input.sampleFaceId,
           ttsVoiceId: input.ttsVoiceId || "alloy",
           config: JSON.stringify(configObj),
           startedAt: new Date(),
@@ -1914,7 +1916,8 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             currentStep: "오류 발생",
             errorMessage: error instanceof Error ? error.message : "Unknown error",
           });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "파이프라인 실행에 실패했습니다." });
+          const errMsg = error instanceof Error ? error.message : "Unknown error";
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: errMsg.includes("한도") ? "API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요." : `파이프라인 실행에 실패했습니다: ${errMsg}` });
         }
       }),
 
@@ -1967,6 +1970,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           ttsVoiceId: z.string().optional(),
           voiceModProfileId: safeOptionalNumber,
           faceSwapProfileId: safeOptionalNumber,
+          sampleFaceId: safeOptionalNumber,
         })).min(1).max(10),
         pipEnabled: z.boolean().optional(),
         pptUploadId: z.number().optional(),
@@ -1981,6 +1985,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         for (const item of input.items) {
           item.faceSwapProfileId = safeNum(item.faceSwapProfileId);
           item.voiceModProfileId = safeNum(item.voiceModProfileId);
+          item.sampleFaceId = safeNum(item.sampleFaceId);
         }
 
         const results: { scriptId: number; pipelineId: number | null; status: string; error?: string }[] = [];
@@ -2002,6 +2007,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               currentStep: "TTS 음성 생성 중...",
               voiceModProfileId: item.voiceModProfileId,
               faceSwapProfileId: item.faceSwapProfileId,
+              sampleFaceId: item.sampleFaceId,
               ttsVoiceId: item.ttsVoiceId || "alloy",
               startedAt: new Date(),
               ...(input.pipEnabled ? {
@@ -2302,7 +2308,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         title: z.string().min(1),
         description: z.string().optional(),
         ttsVoiceId: z.string().optional(),
-        voiceProfileId: z.number().optional(),
+        voiceProfileId: safeOptionalNumber,
         scheduledAt: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
