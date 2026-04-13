@@ -1,0 +1,1 @@
+ALTER TABLE `productionPipelines` ADD `sampleFaceId` int;

@@ -137,7 +137,19 @@ export default function ProductionStudio() {
 
   // Data queries
   const scriptsQuery = trpc.script.list.useQuery(undefined, { enabled: !!user });
+  const [activePipelineId, setActivePipelineId] = useState<number | null>(null);
   const pipelinesQuery = trpc.pipeline.list.useQuery(undefined, { enabled: !!user });
+  const hasRunningPipeline = pipelinesQuery.data?.some((item: any) => {
+    const s = item.pipeline.status;
+    return s !== "completed" && s !== "failed" && s !== "cancelled";
+  }) ?? false;
+
+  // Auto-refetch when pipeline is running
+  useEffect(() => {
+    if (!hasRunningPipeline && !activePipelineId) return;
+    const interval = setInterval(() => { pipelinesQuery.refetch(); }, 2000);
+    return () => clearInterval(interval);
+  }, [hasRunningPipeline, activePipelineId]);
   const voiceModsQuery = trpc.voiceMod.list.useQuery(undefined, { enabled: !!user });
   const faceSwapsQuery = trpc.faceSwap.list.useQuery(undefined, { enabled: !!user });
   const sampleFacesQuery = trpc.sampleFace.list.useQuery(undefined, { enabled: true });
@@ -167,11 +179,15 @@ export default function ProductionStudio() {
   const startPipeline = trpc.pipeline.start.useMutation({
     onSuccess: (data) => {
       toast.success("파이프라인 완료! 음성이 생성되었습니다.");
+      setActivePipelineId(null);
       pipelinesQuery.refetch();
       subscriptionQuery.refetch();
       setActiveTab("pipelines");
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      setActivePipelineId(null);
+      toast.error(err.message);
+    },
   });
 
   const deleteScript = trpc.script.delete.useMutation({
@@ -247,11 +263,19 @@ export default function ProductionStudio() {
     }
   };
 
-  // Helper to parse avatar ID: "sample-5" → undefined (sample faces are cosmetic only), "user-3" → 3, "none" → undefined
-  const parseFaceSwapId = (val: string): number | undefined => {
-    if (val === "none" || val.startsWith("sample-")) return undefined;
+  // Helper to parse avatar ID: returns { faceSwapProfileId, sampleFaceId }
+  const parseAvatarSelection = (val: string): { faceSwapProfileId?: number; sampleFaceId?: number } => {
+    if (val === "none") return {};
+    if (val.startsWith("sample-")) {
+      const num = parseInt(val.replace("sample-", ""));
+      return isNaN(num) ? {} : { sampleFaceId: num };
+    }
     const num = parseInt(val.replace("user-", ""));
-    return isNaN(num) ? undefined : num;
+    return isNaN(num) ? {} : { faceSwapProfileId: num };
+  };
+  // Legacy helper for backward compat
+  const parseFaceSwapId = (val: string): number | undefined => {
+    return parseAvatarSelection(val).faceSwapProfileId;
   };
 
   const handleBatchStart = () => {
@@ -259,23 +283,27 @@ export default function ProductionStudio() {
     const readyScripts = scriptsQuery.data?.filter(s => s.status === "ready" && batchSelectedIds.has(s.id)) || [];
     if (readyScripts.length === 0) { toast.error("준비된 스크립트가 없습니다."); return; }
     const pipSettings = pipSettingsQuery.data;
-    batchStart.mutate({
-      items: readyScripts.map(s => ({
-        scriptId: s.id,
-        title: s.title,
-        ttsVoiceId: batchTtsVoiceId,
-        voiceModProfileId: batchVoiceModId !== "none" ? parseInt(batchVoiceModId) : undefined,
-        faceSwapProfileId: parseFaceSwapId(batchFaceSwapId),
-      })),
-      ...(batchPipEnabled ? {
-        pipEnabled: true,
-        pptUploadId: batchSelectedPptId !== "none" ? parseInt(batchSelectedPptId) : undefined,
-        pipPosition: pipSettings?.position || "bottom-right",
-        pipSize: pipSettings?.size || "medium",
-        pipShape: pipSettings?.shape || "circle",
-        pipOpacity: pipSettings?.opacity ?? 100,
-      } : {}),
+    // Build batch items, omitting undefined fields to prevent superjson null serialization issues
+    const batchVoiceMod = batchVoiceModId !== "none" ? parseInt(batchVoiceModId) : undefined;
+    const batchAvatarSel = parseAvatarSelection(batchFaceSwapId);
+    const batchItems = readyScripts.map(s => {
+      const item: Record<string, any> = { scriptId: s.id, title: s.title, ttsVoiceId: batchTtsVoiceId };
+      if (batchVoiceMod !== undefined && !isNaN(batchVoiceMod)) item.voiceModProfileId = batchVoiceMod;
+      if (batchAvatarSel.faceSwapProfileId !== undefined) item.faceSwapProfileId = batchAvatarSel.faceSwapProfileId;
+      if (batchAvatarSel.sampleFaceId !== undefined) item.sampleFaceId = batchAvatarSel.sampleFaceId;
+      return item;
     });
+    const batchParams: Record<string, any> = { items: batchItems };
+    if (batchPipEnabled) {
+      batchParams.pipEnabled = true;
+      batchParams.pipPosition = pipSettings?.position || "bottom-right";
+      batchParams.pipSize = pipSettings?.size || "medium";
+      batchParams.pipShape = pipSettings?.shape || "circle";
+      batchParams.pipOpacity = pipSettings?.opacity ?? 100;
+      const batchPptId = batchSelectedPptId !== "none" ? parseInt(batchSelectedPptId) : undefined;
+      if (batchPptId !== undefined && !isNaN(batchPptId)) batchParams.pptUploadId = batchPptId;
+    }
+    batchStart.mutate(batchParams as any);
   };
 
   const toggleBatchSelect = (id: number) => {
@@ -299,19 +327,25 @@ export default function ProductionStudio() {
     if (!selectedScriptId || !pipelineTitle.trim()) { toast.error("스크립트를 선택하고 제목을 입력하세요."); return; }
     // Credit guard: TTS generation costs 10 credits
     if (!checkCredits("tts_generation", currentCredits)) return;
-    startPipeline.mutate({
+    // Build params, omitting undefined fields to prevent superjson null serialization issues
+    const params: Record<string, any> = {
       scriptId: selectedScriptId,
       title: pipelineTitle,
       ttsVoiceId,
-      voiceModProfileId: selectedVoiceModId !== "none" ? parseInt(selectedVoiceModId) : undefined,
-      faceSwapProfileId: parseFaceSwapId(selectedFaceSwapId),
       pipEnabled,
       pipPosition: pipSettingsQuery.data?.position as any || "bottom-right",
       pipSize: pipSettingsQuery.data?.size as any || "medium",
       pipShape: pipSettingsQuery.data?.shape as any || "rounded",
       pipOpacity: pipSettingsQuery.data?.opacity ?? 100,
-      pptUploadId: selectedPptId !== "none" ? parseInt(selectedPptId) : undefined,
-    });
+    };
+    const voiceModId = selectedVoiceModId !== "none" ? parseInt(selectedVoiceModId) : undefined;
+    if (voiceModId !== undefined && !isNaN(voiceModId)) params.voiceModProfileId = voiceModId;
+    const avatarSel = parseAvatarSelection(selectedFaceSwapId);
+    if (avatarSel.faceSwapProfileId !== undefined) params.faceSwapProfileId = avatarSel.faceSwapProfileId;
+    if (avatarSel.sampleFaceId !== undefined) params.sampleFaceId = avatarSel.sampleFaceId;
+    const pptId = selectedPptId !== "none" ? parseInt(selectedPptId) : undefined;
+    if (pptId !== undefined && !isNaN(pptId)) params.pptUploadId = pptId;
+    startPipeline.mutate(params as any);
   };
 
   const handlePptUpload = async (file: File) => {
@@ -928,11 +962,25 @@ export default function ProductionStudio() {
                       )}
                     </div>
 
-                    {startPipeline.isPending ? (
+                    {startPipeline.isPending ? (() => {
+                      // Find the active pipeline for real-time progress
+                      const activePipeline = activePipelineId
+                        ? pipelinesQuery.data?.find((item: any) => item.pipeline.id === activePipelineId)?.pipeline
+                        : pipelinesQuery.data?.[0]?.pipeline;
+                      const progress = activePipeline?.progressPercent || 0;
+                      const step = activePipeline?.currentStep || "TTS 생성 준비 중...";
+                      return (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                          <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
-                          <span className="text-sm">강의 영상을 제작하고 있습니다... (TTS 생성 중)</span>
+                        <div className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/20 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                            <span className="text-sm font-medium">강의 영상을 제작하고 있습니다...</span>
+                          </div>
+                          <Progress value={progress} className="h-2.5" />
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">{step}</p>
+                            <p className="text-xs font-semibold text-violet-400">{progress}%</p>
+                          </div>
                         </div>
                         <Button
                           variant="destructive"
@@ -956,7 +1004,8 @@ export default function ProductionStudio() {
                           제작 중단
                         </Button>
                       </div>
-                    ) : (
+                      );
+                    })() : (
                       <Button onClick={handleStartPipeline} disabled={!selectedScriptId} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
                         <Sparkles className="w-4 h-4 mr-2" />원클릭 강의 영상 제작 시작
                       </Button>

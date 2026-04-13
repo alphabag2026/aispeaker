@@ -488,6 +488,8 @@ export const productionPipelines = mysqlTable("productionPipelines", {
   voiceModProfileId: int("voiceModProfileId"),
   /** Face swap profile for avatar */
   faceSwapProfileId: int("faceSwapProfileId"),
+  /** Sample face ID (from sampleFaces gallery) */
+  sampleFaceId: int("sampleFaceId"),
   /** TTS voice ID override */
   ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).default("alloy"),
   /** Generated audio URLs as JSON array */
