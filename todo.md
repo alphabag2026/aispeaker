@@ -873,3 +873,14 @@
 
 ## v5.4.1 Bugfix
 - [x] faceSwapProfileId NaN 버그 수정 (pipeline.start/batchStart 서버 mutation에서 NaN 방어 처리)
+
+## v5.5 AWS Lightsail 배포 (aispeaker.cc)
+- [ ] 프로젝트 빌드 (pnpm build)
+- [ ] .env.production 생성 (Manus API 환경변수 포함)
+- [ ] AWS Lightsail 서버에 Docker 배포
+- [ ] DB 스키마 마이그레이션
+- [ ] aispeaker.cc 도메인 연결 및 SSL 설정
+- [ ] 배포 검증 (HTTPS 접속 확인)
+## v5.4.2 Bugfix - faceSwapProfileId NaN (프로덕션 서버)
+- [x] zod 스키마에서 NaN을 undefined로 변환하는 safeOptionalNumber 적용 (pipeline.start, batchStart, avatar.generate, session.start, lecture.create, lecture.update)
+- [ ] 프로덕션 서버 재배포

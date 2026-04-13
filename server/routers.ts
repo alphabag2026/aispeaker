@@ -16,6 +16,15 @@ import { sdk } from "./_core/sdk";
 import axios from "axios";
 import crypto from "crypto";
 
+// Helper: coerce NaN to undefined for optional number fields
+// Uses z.any() input + transform to avoid TypeScript requiring the field in client calls
+const safeOptionalNumber = z.any().optional().transform((val): number | undefined => {
+  if (val === undefined || val === null) return undefined;
+  const n = typeof val === 'string' ? Number(val) : val;
+  if (typeof n !== 'number' || isNaN(n)) return undefined;
+  return n;
+});
+
 // Instructor-only procedure
 const instructorProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.platformRole !== "instructor" && ctx.user.role !== "admin") {
@@ -257,9 +266,9 @@ export const appRouter = router({
         title: z.string().min(1), description: z.string().optional(),
         category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).optional(),
         aiMode: z.enum(["voice", "text", "avatar"]).optional(),
-        voiceProfileId: z.number().optional(), maxParticipants: z.number().optional(),
+        voiceProfileId: safeOptionalNumber, maxParticipants: z.number().optional(),
         aiContext: z.string().optional(), scheduledAt: z.string().optional(),
-        faceSwapProfileId: z.number().optional(), voiceModProfileId: z.number().optional(),
+        faceSwapProfileId: safeOptionalNumber, voiceModProfileId: safeOptionalNumber,
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await db.createLecture({
@@ -273,9 +282,9 @@ export const appRouter = router({
         id: z.number(), title: z.string().optional(), description: z.string().optional(),
         category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).optional(),
         aiMode: z.enum(["voice", "text", "avatar"]).optional(),
-        voiceProfileId: z.number().optional(), maxParticipants: z.number().optional(),
+        voiceProfileId: safeOptionalNumber, maxParticipants: z.number().optional(),
         aiContext: z.string().optional(), status: z.enum(["draft", "scheduled", "live", "completed", "archived"]).optional(),
-        faceSwapProfileId: z.number().optional(), voiceModProfileId: z.number().optional(),
+        faceSwapProfileId: safeOptionalNumber, voiceModProfileId: safeOptionalNumber,
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
@@ -477,7 +486,7 @@ export const appRouter = router({
   // ============ Avatar (D-ID) ============
   avatar: router({
     generate: instructorProcedure
-      .input(z.object({ text: z.string().min(1), voiceProfileId: z.number().optional(), useDid: z.boolean().optional(), faceSwapProfileId: z.number().optional(), voiceModProfileId: z.number().optional() }))
+      .input(z.object({ text: z.string().min(1), voiceProfileId: safeOptionalNumber, useDid: z.boolean().optional(), faceSwapProfileId: safeOptionalNumber, voiceModProfileId: safeOptionalNumber }))
       .mutation(async ({ input }) => {
         let voiceId = "alloy";
         let avatarImageUrl: string | null = null;
@@ -917,8 +926,8 @@ export const appRouter = router({
     start: instructorProcedure
       .input(z.object({
         lectureId: z.number(),
-        faceSwapProfileId: z.number().optional(),
-        voiceModProfileId: z.number().optional(),
+        faceSwapProfileId: safeOptionalNumber,
+        voiceModProfileId: safeOptionalNumber,
         platformIntegrationId: z.number().optional(),
         externalMeetingUrl: z.string().optional(),
       }))
@@ -1748,9 +1757,9 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .input(z.object({
         scriptId: z.number(),
         title: z.string().min(1),
-        voiceProfileId: z.number().optional(),
-        voiceModProfileId: z.number().optional(),
-        faceSwapProfileId: z.number().optional(),
+        voiceProfileId: safeOptionalNumber,
+        voiceModProfileId: safeOptionalNumber,
+        faceSwapProfileId: safeOptionalNumber,
         ttsVoiceId: z.string().optional(),
         config: z.string().optional(),
         // PIP mode settings
@@ -1956,8 +1965,8 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           scriptId: z.number(),
           title: z.string().min(1),
           ttsVoiceId: z.string().optional(),
-          voiceModProfileId: z.number().optional(),
-          faceSwapProfileId: z.number().optional(),
+          voiceModProfileId: safeOptionalNumber,
+          faceSwapProfileId: safeOptionalNumber,
         })).min(1).max(10),
         pipEnabled: z.boolean().optional(),
         pptUploadId: z.number().optional(),
