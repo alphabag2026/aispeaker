@@ -90,7 +90,11 @@ export function LanguageProvider({
   const t = useCallback(
     (key: string, params?: Record<string, string | number>): string => {
       // Try current language first, fallback to English, then Korean, then key itself
-      let text = translations[lang]?.[key] || translations["en"]?.[key] || translations["ko"]?.[key] || key;
+      // Use !== undefined instead of || to preserve empty strings as valid translations
+      const langVal = translations[lang]?.[key];
+      const enVal = translations["en"]?.[key];
+      const koVal = translations["ko"]?.[key];
+      let text = langVal !== undefined ? langVal : (enVal !== undefined ? enVal : (koVal !== undefined ? koVal : key));
       if (params) {
         Object.entries(params).forEach(([k, v]) => {
           text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
