@@ -1769,6 +1769,13 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         pipShape: z.enum(["circle", "rounded", "rectangle"]).optional(),
         pipOpacity: z.number().min(0).max(100).optional(),
         pptUploadId: z.number().optional(),
+        // Avatar engine selection
+        avatarEngine: z.enum(["d-id", "heygen"]).optional(),
+        // Seedance 2.0 intro/outro options
+        seedanceIntro: z.boolean().optional(),
+        seedanceOutro: z.boolean().optional(),
+        seedanceIntroPrompt: z.string().optional(),
+        seedanceOutroPrompt: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         // Sanitize NaN values from optional number fields
@@ -1899,17 +1906,304 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             totalDuration += r.duration;
           }
 
+          // Save audio URLs first
+          await db.updateProductionPipeline(pipelineId, {
+            audioUrls: JSON.stringify(audioUrls),
+            totalDurationSec: totalDuration,
+          });
+
+          // ===== Avatar Video Generation (D-ID or HeyGen) =====
+          const avatarVideoUrls: string[] = [];
+          let avatarImageUrl: string | null = null;
+          const avatarEngine = input.avatarEngine || "d-id";
+
+          // Get avatar image from sample face or face swap profile
+          if (input.sampleFaceId) {
+            const sampleFace = await db.getSampleFace(input.sampleFaceId);
+            if (sampleFace?.imageUrl) avatarImageUrl = sampleFace.imageUrl;
+          }
+          if (!avatarImageUrl && input.faceSwapProfileId) {
+            const faceSwap = await db.getFaceSwapProfileById(input.faceSwapProfileId);
+            if (faceSwap?.targetFaceUrl) avatarImageUrl = faceSwap.targetFaceUrl;
+          }
+
+          const didApiKey = process.env.DID_API_KEY;
+          const heygenApiKey = process.env.HEYGEN_API_KEY;
+          const siteBaseUrl = process.env.SITE_BASE_URL || "https://aispeaker.cc";
+
+          // Helper: ensure absolute URL
+          const toAbsoluteUrl = (url: string) => url.startsWith("/") ? `${siteBaseUrl}${url}` : url;
+
+          if (avatarImageUrl && audioUrls.length > 0) {
+            const engineLabel = avatarEngine === "heygen" ? "HeyGen" : "D-ID";
+            const hasApiKey = avatarEngine === "heygen" ? !!heygenApiKey : !!didApiKey;
+
+            if (!hasApiKey) {
+              console.warn(`[${engineLabel}] API key not configured, skipping avatar video generation`);
+            } else {
+              await db.updateProductionPipeline(pipelineId, {
+                status: "avatar_gen",
+                progressPercent: 70,
+                currentStep: `${engineLabel} 아바타 영상 생성 중... (0/${audioUrls.length})`,
+              });
+
+              for (let i = 0; i < audioUrls.length; i++) {
+                try {
+                  const absoluteAudioUrl = toAbsoluteUrl(audioUrls[i]);
+                  const absoluteAvatarUrl = toAbsoluteUrl(avatarImageUrl);
+
+                  let videoUrl: string | null = null;
+
+                  if (avatarEngine === "heygen") {
+                    // ===== HeyGen API =====
+                    console.log(`[HeyGen] Section ${i}: audio=${absoluteAudioUrl}, avatar=${absoluteAvatarUrl}`);
+
+                    const heygenResponse = await fetch("https://api.heygen.com/v2/videos", {
+                      method: "POST",
+                      headers: {
+                        "x-api-key": heygenApiKey!,
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                      },
+                      body: JSON.stringify({
+                        image_url: absoluteAvatarUrl,
+                        audio_url: absoluteAudioUrl,
+                        resolution: "1080p",
+                        aspect_ratio: "16:9",
+                        expressiveness: "high",
+                        title: `Section ${i} - ${input.title}`,
+                      }),
+                    });
+
+                    if (heygenResponse.ok) {
+                      const heygenData = await heygenResponse.json() as any;
+                      const heygenVideoId = heygenData.data?.video_id;
+                      if (!heygenVideoId) {
+                        console.error(`[HeyGen] No video_id in response for section ${i}:`, heygenData);
+                      } else {
+                        let attempts = 0;
+                        // Poll for completion (max 90 attempts = 3 min)
+                        while (attempts < 90) {
+                          await new Promise(resolve => setTimeout(resolve, 2000));
+                          const statusResponse = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${heygenVideoId}`, {
+                            headers: { "x-api-key": heygenApiKey!, "Accept": "application/json" },
+                          });
+                          if (statusResponse.ok) {
+                            const statusData = await statusResponse.json() as any;
+                            const status = statusData.data?.status;
+                            if (status === "completed" && statusData.data?.video_url) {
+                              videoUrl = statusData.data.video_url;
+                              console.log(`[HeyGen] Section ${i} completed: ${videoUrl}`);
+                              break;
+                            } else if (status === "failed") {
+                              console.error(`[HeyGen] Video ${heygenVideoId} failed:`, statusData.data?.error);
+                              break;
+                            }
+                          }
+                          attempts++;
+                        }
+                      }
+                    } else {
+                      const errText = await heygenResponse.text();
+                      console.error(`[HeyGen] Create video failed for section ${i}:`, errText);
+                    }
+                  } else {
+                    // ===== D-ID API =====
+                    console.log(`[D-ID] Section ${i}: audio=${absoluteAudioUrl}, avatar=${absoluteAvatarUrl}`);
+
+                    const didResponse = await fetch("https://api.d-id.com/talks", {
+                      method: "POST",
+                      headers: {
+                        "Authorization": `Basic ${didApiKey}`,
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({
+                        source_url: absoluteAvatarUrl,
+                        script: { type: "audio", audio_url: absoluteAudioUrl },
+                        config: { stitch: true, result_format: "mp4" },
+                      }),
+                    });
+
+                    if (didResponse.ok) {
+                      const didData = await didResponse.json() as any;
+                      const talkId = didData.id;
+                      let attempts = 0;
+
+                      while (attempts < 60) {
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        const statusResponse = await fetch(`https://api.d-id.com/talks/${talkId}`, {
+                          headers: { "Authorization": `Basic ${didApiKey}` },
+                        });
+                        if (statusResponse.ok) {
+                          const statusData = await statusResponse.json() as any;
+                          if (statusData.status === "done" && statusData.result_url) {
+                            videoUrl = statusData.result_url;
+                            break;
+                          } else if (statusData.status === "error") {
+                            console.error(`[D-ID] Talk ${talkId} failed:`, statusData.error);
+                            break;
+                          }
+                        }
+                        attempts++;
+                      }
+                    } else {
+                      const errText = await didResponse.text();
+                      console.error(`[D-ID] Create talk failed for section ${i}:`, errText);
+                    }
+                  }
+
+                  // Download video and save locally (both D-ID and HeyGen URLs expire)
+                  if (videoUrl) {
+                    try {
+                      const videoResponse = await fetch(videoUrl);
+                      if (videoResponse.ok) {
+                        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+                        const localVideoKey = `pipeline/${pipelineId}/avatar-section-${i}-${nanoid(6)}.mp4`;
+                        const { url: localVideoUrl } = await storagePut(localVideoKey, videoBuffer, "video/mp4");
+                        avatarVideoUrls.push(localVideoUrl);
+                        console.log(`[${engineLabel}] Section ${i} video saved locally: ${localVideoUrl}`);
+                      } else {
+                        console.error(`[${engineLabel}] Failed to download video for section ${i}: ${videoResponse.status}`);
+                        avatarVideoUrls.push("");
+                      }
+                    } catch (dlError) {
+                      console.error(`[${engineLabel}] Error downloading video for section ${i}:`, dlError);
+                      avatarVideoUrls.push("");
+                    }
+                  } else {
+                    avatarVideoUrls.push("");
+                  }
+
+                  // Update progress
+                  const avatarProgress = Math.round(70 + (25 * (i + 1)) / audioUrls.length);
+                  await db.updateProductionPipeline(pipelineId, {
+                    progressPercent: avatarProgress,
+                    currentStep: `${engineLabel} 아바타 영상 생성 중... (${i + 1}/${audioUrls.length})`,
+                  });
+                } catch (error) {
+                  console.error(`[${engineLabel}] Error generating avatar for section ${i}:`, error);
+                  avatarVideoUrls.push("");
+                }
+              }
+            }
+          }
+
+          // ===== Seedance 2.0 Intro/Outro Generation (via fal.ai) =====
+          let introVideoUrl: string | null = null;
+          let outroVideoUrl: string | null = null;
+          const falApiKey = process.env.FAL_API_KEY;
+
+          if (falApiKey && (input.seedanceIntro || input.seedanceOutro)) {
+            const generateSeedanceVideo = async (prompt: string, label: string): Promise<string | null> => {
+              try {
+                console.log(`[Seedance] Generating ${label}: ${prompt}`);
+                await db.updateProductionPipeline(pipelineId, {
+                  currentStep: `Seedance 2.0 ${label} 영상 생성 중...`,
+                });
+
+                // Submit to fal.ai queue
+                const submitResponse = await fetch("https://queue.fal.run/fal-ai/seedance-2.0/text-to-video", {
+                  method: "POST",
+                  headers: {
+                    "Authorization": `Key ${falApiKey}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    prompt,
+                    duration: "5",
+                    aspect_ratio: "16:9",
+                  }),
+                });
+
+                if (!submitResponse.ok) {
+                  const errText = await submitResponse.text();
+                  console.error(`[Seedance] Submit failed for ${label}:`, errText);
+                  return null;
+                }
+
+                const submitData = await submitResponse.json() as any;
+                const requestId = submitData.request_id;
+                if (!requestId) {
+                  console.error(`[Seedance] No request_id for ${label}:`, submitData);
+                  return null;
+                }
+
+                // Poll for completion (max 120 attempts = 4 min)
+                let attempts = 0;
+                while (attempts < 120) {
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  const statusResponse = await fetch(
+                    `https://queue.fal.run/fal-ai/seedance-2.0/text-to-video/requests/${requestId}/status`,
+                    { headers: { "Authorization": `Key ${falApiKey}` } }
+                  );
+                  if (statusResponse.ok) {
+                    const statusData = await statusResponse.json() as any;
+                    if (statusData.status === "COMPLETED") {
+                      // Get result
+                      const resultResponse = await fetch(
+                        `https://queue.fal.run/fal-ai/seedance-2.0/text-to-video/requests/${requestId}`,
+                        { headers: { "Authorization": `Key ${falApiKey}` } }
+                      );
+                      if (resultResponse.ok) {
+                        const resultData = await resultResponse.json() as any;
+                        const seedVideoUrl = resultData.video?.url;
+                        if (seedVideoUrl) {
+                          // Download and save locally
+                          const videoResponse = await fetch(seedVideoUrl);
+                          if (videoResponse.ok) {
+                            const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+                            const localKey = `pipeline/${pipelineId}/${label}-${nanoid(6)}.mp4`;
+                            const { url: localUrl } = await storagePut(localKey, videoBuffer, "video/mp4");
+                            console.log(`[Seedance] ${label} saved locally: ${localUrl}`);
+                            return localUrl;
+                          }
+                        }
+                      }
+                      break;
+                    } else if (statusData.status === "FAILED") {
+                      console.error(`[Seedance] ${label} generation failed:`, statusData);
+                      break;
+                    }
+                  }
+                  attempts++;
+                }
+                return null;
+              } catch (err) {
+                console.error(`[Seedance] Error generating ${label}:`, err);
+                return null;
+              }
+            };
+
+            if (input.seedanceIntro) {
+              const introPrompt = input.seedanceIntroPrompt || `Professional lecture intro animation with modern tech visuals, title: ${input.title}, cinematic quality, smooth camera movement`;
+              introVideoUrl = await generateSeedanceVideo(introPrompt, "intro");
+            }
+            if (input.seedanceOutro) {
+              const outroPrompt = input.seedanceOutroPrompt || `Professional lecture outro animation with thank you message, modern tech visuals, smooth fade out, cinematic quality`;
+              outroVideoUrl = await generateSeedanceVideo(outroPrompt, "outro");
+            }
+          }
+
           // Mark as completed
           await db.updateProductionPipeline(pipelineId, {
             status: "completed",
             progressPercent: 100,
             currentStep: "완료",
-            audioUrls: JSON.stringify(audioUrls),
-            totalDurationSec: totalDuration,
+            avatarVideoUrls: avatarVideoUrls.length > 0 ? JSON.stringify(avatarVideoUrls) : null,
+            introVideoUrl: introVideoUrl || null,
+            outroVideoUrl: outroVideoUrl || null,
             completedAt: new Date(),
           });
 
-          return { id: pipelineId, status: "completed", audioUrls, totalDurationSec: totalDuration };
+          return {
+            id: pipelineId,
+            status: "completed",
+            audioUrls,
+            avatarVideoUrls: avatarVideoUrls.length > 0 ? avatarVideoUrls : undefined,
+            introVideoUrl: introVideoUrl || undefined,
+            outroVideoUrl: outroVideoUrl || undefined,
+            totalDurationSec: totalDuration,
+          };
         } catch (error) {
           await db.updateProductionPipeline(pipelineId, {
             status: "failed",

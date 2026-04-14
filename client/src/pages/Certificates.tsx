@@ -7,7 +7,9 @@ import Navbar from "@/components/Navbar";
 import { Award, Download, ExternalLink, Loader2 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function Certificates() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const { data: certificates, isLoading } = trpc.certificate.myCertificates.useQuery(undefined, {
     enabled: !!user,
@@ -18,8 +20,8 @@ export default function Certificates() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container py-16 text-center">
-          <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
-          <Button asChild><a href={getLoginUrl()}>로그인</a></Button>
+          <h2 className="text-2xl font-bold mb-4">{t("cert.loginRequired")}</h2>
+          <Button asChild><a href={getLoginUrl()}>{t("cert.login")}</a></Button>
         </div>
       </div>
     );
@@ -40,9 +42,9 @@ export default function Certificates() {
         <div className="absolute inset-0 flex items-center">
           <div className="container">
             <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-2">
-              <Award className="h-8 w-8" /> 내 수료증
+              <Award className="h-8 w-8" /> {t("cert.myCertificates")}
             </h1>
-            <p className="text-white/70 text-lg mt-2">완료한 강의의 수료증을 확인하고 다운로드하세요</p>
+            <p className="text-white/70 text-lg mt-2">{t("cert.description")}</p>
           </div>
         </div>
       </div>
@@ -62,18 +64,18 @@ export default function Certificates() {
                         <Award className="h-7 w-7 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold">{cert.lectureTitle || `강의 #${cert.lectureId}`}</h3>
+                        <h3 className="font-semibold">{cert.lectureTitle || t("cert.lectureId", { id: cert.lectureId })}</h3>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
-                            {cert.completionPercent}% 완료
+                            {t("cert.completionPercent", { percent: cert.completionPercent })}
                           </Badge>
                           <span className="text-sm text-muted-foreground">
-                            발급일: {new Date(cert.issuedAt).toLocaleDateString("ko-KR")}
+                            {t("cert.issuedAt", { date: new Date(cert.issuedAt).toLocaleDateString("ko-KR") })}
                           </span>
                         </div>
                         {cert.certificateNumber && (
                           <p className="text-xs text-muted-foreground mt-1">
-                            인증번호: {cert.certificateNumber}
+                            {t("cert.certificateNumber", { number: cert.certificateNumber })}
                           </p>
                         )}
                       </div>
@@ -89,7 +91,7 @@ export default function Certificates() {
                       {cert.verifyUrl && (
                         <Button variant="outline" size="sm" asChild>
                           <a href={cert.verifyUrl} target="_blank" rel="noopener noreferrer">
-                            <ExternalLink className="h-4 w-4 mr-1" /> 검증
+                            <ExternalLink className="h-4 w-4 mr-1" /> {t("cert.verify")}
                           </a>
                         </Button>
                       )}
@@ -102,8 +104,8 @@ export default function Certificates() {
         ) : (
           <Card className="py-16 text-center text-muted-foreground">
             <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">아직 수료증이 없습니다</p>
-            <p className="text-sm mt-1">강의를 완료하면 자동으로 수료증이 발급됩니다</p>
+            <p className="text-lg font-medium">{t("cert.noCertificates")}</p>
+            <p className="text-sm mt-1">{t("cert.noCertificatesDescription")}</p>
           </Card>
         )}
       </div>

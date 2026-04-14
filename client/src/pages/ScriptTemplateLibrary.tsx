@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import EmptyState from "@/components/EmptyState";
@@ -13,29 +14,32 @@ import { toast } from "sonner";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import Navbar from "@/components/Navbar";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   BookTemplate, Plus, Search, Trash2, Edit3, Copy, ArrowLeft, Layers, Clock,
   Loader2, Sparkles, BookOpen, FileText, Tag, BarChart3, Wand2
 } from "lucide-react";
 
-const CATEGORIES = [
-  { value: "all", label: "전체" },
-  { value: "web3", label: "Web3" },
-  { value: "ai", label: "AI / 인공지능" },
-  { value: "blockchain", label: "블록체인" },
-  { value: "defi", label: "DeFi" },
-  { value: "nft", label: "NFT" },
-  { value: "metaverse", label: "메타버스" },
-  { value: "general", label: "일반" },
-];
-
-const DIFFICULTIES = [
-  { value: "beginner", label: "초급", color: "bg-green-500/20 text-green-400" },
-  { value: "intermediate", label: "중급", color: "bg-yellow-500/20 text-yellow-400" },
-  { value: "advanced", label: "고급", color: "bg-red-500/20 text-red-400" },
-];
-
 export default function ScriptTemplateLibrary() {
+  const { t } = useTranslation();
+
+  const CATEGORIES = [
+    { value: "all", label: t("stl.category.all") },
+    { value: "web3", label: "Web3" },
+    { value: "ai", label: t("stl.category.ai") },
+    { value: "blockchain", label: t("stl.category.blockchain") },
+    { value: "defi", label: "DeFi" },
+    { value: "nft", label: "NFT" },
+    { value: "metaverse", label: t("stl.category.metaverse") },
+    { value: "general", label: t("stl.category.general") },
+  ];
+
+  const DIFFICULTIES = [
+    { value: "beginner", label: t("stl.difficulty.beginner"), color: "bg-green-500/20 text-green-400" },
+    { value: "intermediate", label: t("stl.difficulty.intermediate"), color: "bg-yellow-500/20 text-yellow-400" },
+    { value: "advanced", label: t("stl.difficulty.advanced"), color: "bg-red-500/20 text-red-400" },
+  ];
+
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
@@ -51,9 +55,9 @@ export default function ScriptTemplateLibrary() {
   const [formDurationMin, setFormDurationMin] = useState(10);
   const [formTags, setFormTags] = useState("");
   const [formSections, setFormSections] = useState<{ title: string; description: string; durationPercent: number; slideNotes: string }[]>([
-    { title: "도입", description: "주제 소개 및 학습 목표", durationPercent: 15, slideNotes: "" },
-    { title: "본론", description: "핵심 내용 전달", durationPercent: 60, slideNotes: "" },
-    { title: "결론", description: "요약 및 정리", durationPercent: 25, slideNotes: "" },
+    { title: t("stl.section.introduction"), description: t("stl.section.introduction.desc"), durationPercent: 15, slideNotes: "" },
+    { title: t("stl.section.main"), description: t("stl.section.main.desc"), durationPercent: 60, slideNotes: "" },
+    { title: t("stl.section.conclusion"), description: t("stl.section.conclusion.desc"), durationPercent: 25, slideNotes: "" },
   ]);
 
   // Queries
@@ -65,7 +69,7 @@ export default function ScriptTemplateLibrary() {
   // Mutations
   const createTemplate = trpc.scriptTemplate.create.useMutation({
     onSuccess: () => {
-      toast.success("템플릿이 생성되었습니다.");
+      toast.success(t("stl.toast.templateCreated"));
       templatesQuery.refetch();
       setShowCreateDialog(false);
       resetForm();
@@ -75,7 +79,7 @@ export default function ScriptTemplateLibrary() {
 
   const updateTemplate = trpc.scriptTemplate.update.useMutation({
     onSuccess: () => {
-      toast.success("템플릿이 수정되었습니다.");
+      toast.success(t("stl.toast.templateUpdated"));
       templatesQuery.refetch();
       setShowEditDialog(false);
       setEditingTemplate(null);
@@ -85,14 +89,14 @@ export default function ScriptTemplateLibrary() {
 
   const deleteTemplate = trpc.scriptTemplate.delete.useMutation({
     onSuccess: () => {
-      toast.success("템플릿이 삭제되었습니다.");
+      toast.success(t("stl.toast.templateDeleted"));
       templatesQuery.refetch();
     },
   });
 
   const seedBuiltIn = trpc.scriptTemplate.seedBuiltIn.useMutation({
     onSuccess: (data) => {
-      toast.success(`기본 템플릿 ${data.created}개 추가됨 (총 ${data.total}개)`);
+      toast.success(t("stl.toast.builtInTemplatesAdded", { created: data.created, total: data.total }));
       templatesQuery.refetch();
     },
   });
@@ -105,15 +109,15 @@ export default function ScriptTemplateLibrary() {
     setFormDurationMin(10);
     setFormTags("");
     setFormSections([
-      { title: "도입", description: "주제 소개 및 학습 목표", durationPercent: 15, slideNotes: "" },
-      { title: "본론", description: "핵심 내용 전달", durationPercent: 60, slideNotes: "" },
-      { title: "결론", description: "요약 및 정리", durationPercent: 25, slideNotes: "" },
+      { title: t("stl.section.introduction"), description: t("stl.section.introduction.desc"), durationPercent: 15, slideNotes: "" },
+      { title: t("stl.section.main"), description: t("stl.section.main.desc"), durationPercent: 60, slideNotes: "" },
+      { title: t("stl.section.conclusion"), description: t("stl.section.conclusion.desc"), durationPercent: 25, slideNotes: "" },
     ]);
   };
 
   const handleCreate = () => {
-    if (!formName.trim()) { toast.error("템플릿 이름을 입력하세요."); return; }
-    if (formSections.length === 0) { toast.error("최소 1개 섹션이 필요합니다."); return; }
+    if (!formName.trim()) { toast.error(t("stl.toast.enterTemplateName")); return; }
+    if (formSections.length === 0) { toast.error(t("stl.toast.atLeastOneSection")); return; }
     createTemplate.mutate({
       name: formName,
       description: formDescription,
@@ -158,7 +162,7 @@ export default function ScriptTemplateLibrary() {
   };
 
   const handleDuplicate = (template: any) => {
-    setFormName(`${template.name} (복사)`);
+    setFormName(`${template.name} ${t("stl.copySuffix")}`);
     setFormDescription(template.description || "");
     setFormCategory(template.category || "general");
     setFormDifficulty(template.difficulty || "beginner");
@@ -174,7 +178,7 @@ export default function ScriptTemplateLibrary() {
 
   const addSection = () => {
     const remaining = 100 - formSections.reduce((s, sec) => s + sec.durationPercent, 0);
-    setFormSections([...formSections, { title: `섹션 ${formSections.length + 1}`, description: "", durationPercent: Math.max(5, remaining), slideNotes: "" }]);
+    setFormSections([...formSections, { title: t("stl.section.newTitle", { number: formSections.length + 1 }), description: "", durationPercent: Math.max(5, remaining), slideNotes: "" }]);
   };
 
   const removeSection = (index: number) => {
@@ -202,16 +206,16 @@ export default function ScriptTemplateLibrary() {
   const TemplateFormContent = () => (
     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
       <div>
-        <Label>템플릿 이름</Label>
-        <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="예: 기본 강의 (도입-본론-결론)" className="mt-1" />
+        <Label>{t("stl.form.templateName")}</Label>
+        <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder={t("stl.form.templateName.placeholder")} className="mt-1" />
       </div>
       <div>
-        <Label>설명</Label>
-        <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder="이 템플릿의 용도와 특징을 설명하세요." className="mt-1" rows={2} />
+        <Label>{t("stl.form.description")}</Label>
+        <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} placeholder={t("stl.form.description.placeholder")} className="mt-1" rows={2} />
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <Label>카테고리</Label>
+          <Label>{t("stl.form.category")}</Label>
           <Select value={formCategory} onValueChange={setFormCategory}>
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -220,7 +224,7 @@ export default function ScriptTemplateLibrary() {
           </Select>
         </div>
         <div>
-          <Label>난이도</Label>
+          <Label>{t("stl.form.difficulty")}</Label>
           <Select value={formDifficulty} onValueChange={setFormDifficulty}>
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -229,40 +233,41 @@ export default function ScriptTemplateLibrary() {
           </Select>
         </div>
         <div>
-          <Label>목표 시간 (분)</Label>
+          <Label>{t("stl.form.targetDuration")}</Label>
           <Input type="number" min={1} max={120} value={formDurationMin} onChange={(e) => setFormDurationMin(parseInt(e.target.value) || 10)} className="mt-1" />
         </div>
       </div>
       <div>
-        <Label>태그 (쉼표로 구분)</Label>
-        <Input value={formTags} onChange={(e) => setFormTags(e.target.value)} placeholder="예: 기본, 입문, 3단계" className="mt-1" />
+        <Label>{t("stl.form.tags")}</Label>
+        <Input value={formTags} onChange={(e) => setFormTags(e.target.value)} placeholder={t("stl.form.tags.placeholder")} className="mt-1" />
       </div>
 
       {/* Section Editor */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <Label className="text-base font-semibold">섹션 구조 ({formSections.length}개)</Label>
-          <Button size="sm" variant="outline" onClick={addSection}><Plus className="w-3 h-3 mr-1" />섹션 추가</Button>
+          <Label className="text-base font-semibold">{t("stl.form.sectionStructure", { count: formSections.length })}</Label>
+          <Button size="sm" variant="outline" onClick={addSection}><Plus className="w-3 h-3 mr-1" />{t("stl.button.addSection")}</Button>
         </div>
         <div className="space-y-3">
           {formSections.map((section, i) => (
             <div key={i} className="p-3 bg-card/80 rounded-lg border border-border/50 space-y-2">
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="shrink-0">{i + 1}</Badge>
-                <Input value={section.title} onChange={(e) => updateSection(i, "title", e.target.value)} placeholder="섹션 제목" className="flex-1" />
+                <Input value={section.title} onChange={(e) => updateSection(i, "title", e.target.value)} placeholder={t("stl.form.sectionTitle")} className="flex-1" />
                 <Input type="number" min={1} max={100} value={section.durationPercent} onChange={(e) => updateSection(i, "durationPercent", parseInt(e.target.value) || 0)} className="w-20" />
                 <span className="text-sm text-muted-foreground">%</span>
                 <Button size="icon" variant="ghost" className="text-destructive shrink-0" onClick={() => removeSection(i)} disabled={formSections.length <= 1}>
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
-              <Input value={section.description} onChange={(e) => updateSection(i, "description", e.target.value)} placeholder="이 섹션에서 다룰 내용 설명" className="text-sm" />
+              <Input value={section.description} onChange={(e) => updateSection(i, "description", e.target.value)} placeholder={t("stl.form.sectionDescription.placeholder")} className="mt-1" />
+              <Textarea value={section.slideNotes} onChange={(e) => updateSection(i, "slideNotes", e.target.value)} placeholder={t("stl.form.slideNotes.placeholder")} className="mt-1" rows={3} />
             </div>
           ))}
         </div>
         {formSections.length > 0 && (
           <div className="mt-2 text-sm text-muted-foreground text-right">
-            총 비율: {formSections.reduce((s, sec) => s + sec.durationPercent, 0)}% {formSections.reduce((s, sec) => s + sec.durationPercent, 0) !== 100 && <span className="text-yellow-400">(100%가 아닙니다)</span>}
+            {t("stl.form.totalRatio", { ratio: formSections.reduce((s, sec) => s + sec.durationPercent, 0) })} {formSections.reduce((s, sec) => s + sec.durationPercent, 0) !== 100 && <span className="text-yellow-400">({t("stl.form.not100percent")})</span>}
           </div>
         )}
       </div>
@@ -285,7 +290,7 @@ export default function ScriptTemplateLibrary() {
           <div className="container">
             <div className="flex items-center gap-3 mb-3">
               <Link href="/studio">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20"><ArrowLeft className="w-4 h-4 mr-1" /> 스튜디오</Button>
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20"><ArrowLeft className="w-4 h-4 mr-1" /> {t("stl.button.studio")}</Button>
               </Link>
             </div>
             <div className="flex items-center justify-between">
@@ -294,17 +299,17 @@ export default function ScriptTemplateLibrary() {
                   <BookTemplate className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-bold text-white">스크립트 템플릿 라이브러리</h1>
-                  <p className="text-white/70 mt-1">자주 사용하는 강의 구조를 템플릿으로 저장하고 재사용하세요.</p>
+                  <h1 className="text-3xl md:text-4xl font-bold text-white">{t("stl.title")}</h1>
+                  <p className="text-white/70 mt-1">{t("stl.description")}</p>
                 </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="border-white/30 text-white hover:bg-white/10" onClick={() => seedBuiltIn.mutate()} disabled={seedBuiltIn.isPending}>
                   {seedBuiltIn.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-                  기본 템플릿 추가
+                  {t("stl.button.addBuiltIn")}
                 </Button>
                 <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700">
-                  <Plus className="w-4 h-4 mr-2" />새 템플릿
+                  <Plus className="w-4 h-4 mr-2" />{t("stl.button.newTemplate")}
                 </Button>
               </div>
             </div>
@@ -317,7 +322,7 @@ export default function ScriptTemplateLibrary() {
         <div className="flex items-center gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="템플릿 검색..." className="pl-10" />
+            <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder={t("stl.search.placeholder")} className="pl-10" />
           </div>
           <div className="flex gap-2">
             {CATEGORIES.map((c) => (
@@ -337,15 +342,15 @@ export default function ScriptTemplateLibrary() {
           <div>
             <EmptyState
               type="scripts"
-              title="아직 템플릿이 없습니다"
-              description="기본 템플릿을 불러오거나, 직접 새 템플릿을 만들어보세요."
+              title={t("stl.empty.title")}
+              description={t("stl.empty.description")}
             />
             <div className="flex gap-2 justify-center -mt-4">
               <Button variant="outline" onClick={() => seedBuiltIn.mutate()}>
-                <Sparkles className="w-4 h-4 mr-2" />기본 템플릿 추가
+                <Sparkles className="w-4 h-4 mr-2" />{t("stl.button.addBuiltIn")}
               </Button>
               <Button onClick={() => { resetForm(); setShowCreateDialog(true); }}>
-                <Plus className="w-4 h-4 mr-2" />새 템플릿 만들기
+                <Plus className="w-4 h-4 mr-2" />{t("stl.button.createNewTemplate")}
               </Button>
             </div>
           </div>
@@ -373,8 +378,8 @@ export default function ScriptTemplateLibrary() {
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge variant="outline" className={diffInfo?.color || ""}>{diffInfo?.label || template.difficulty}</Badge>
                     <Badge variant="outline">{catInfo?.label || template.category}</Badge>
-                    <Badge variant="outline" className="text-xs"><Clock className="w-3 h-3 mr-1" />{template.targetDurationMin}분</Badge>
-                    <Badge variant="outline" className="text-xs"><Layers className="w-3 h-3 mr-1" />{template.sectionCount}섹션</Badge>
+                    <Badge variant="outline" className="text-xs"><Clock className="w-3 h-3 mr-1" />{t("stl.card.duration", { min: template.targetDurationMin })}</Badge>
+                    <Badge variant="outline" className="text-xs"><Layers className="w-3 h-3 mr-1" />{t("stl.card.sections", { count: template.sectionCount })}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -387,7 +392,7 @@ export default function ScriptTemplateLibrary() {
                         <span className="text-muted-foreground text-xs shrink-0">{s.durationPercent}%</span>
                       </div>
                     ))}
-                    {sections.length > 5 && <p className="text-xs text-muted-foreground pl-7">+{sections.length - 5}개 더</p>}
+                    {sections.length > 5 && <p className="text-xs text-muted-foreground pl-7">{t("stl.card.moreSections", { count: sections.length - 5 })}</p>}
                   </div>
 
                   {/* Tags */}
@@ -402,12 +407,12 @@ export default function ScriptTemplateLibrary() {
                   {/* Stats & Actions */}
                   <div className="flex items-center justify-between pt-3 border-t border-border/50">
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" />{template.usageCount || 0}회 사용</span>
+                      <span className="flex items-center gap-1"><BarChart3 className="w-3 h-3" />{t("stl.card.usageCount", { count: template.usageCount || 0 })}</span>
                     </div>
                     <div className="flex gap-1">
                       <Link href={`/studio?templateId=${template.id}`}>
                         <Button size="sm" variant="default" className="bg-amber-600 hover:bg-amber-700">
-                          <Wand2 className="w-3 h-3 mr-1" />사용
+                          <Wand2 className="w-3 h-3 mr-1" />{t("stl.button.use")}
                         </Button>
                       </Link>
                       <Button size="sm" variant="ghost" onClick={() => handleDuplicate(template)}><Copy className="w-3 h-3" /></Button>
@@ -430,15 +435,15 @@ export default function ScriptTemplateLibrary() {
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>새 스크립트 템플릿</DialogTitle>
-            <DialogDescription>강의 구조를 정의하여 재사용 가능한 템플릿을 만드세요.</DialogDescription>
+            <DialogTitle>{t("stl.dialog.create.title")}</DialogTitle>
+            <DialogDescription>{t("stl.dialog.create.description")}</DialogDescription>
           </DialogHeader>
           <TemplateFormContent />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>취소</Button>
+            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>{t("stl.button.cancel")}</Button>
             <Button onClick={handleCreate} disabled={createTemplate.isPending} className="bg-amber-600 hover:bg-amber-700">
               {createTemplate.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              템플릿 생성
+              {t("stl.button.createTemplate")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -448,15 +453,15 @@ export default function ScriptTemplateLibrary() {
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>템플릿 수정</DialogTitle>
-            <DialogDescription>템플릿의 구조와 설정을 수정합니다.</DialogDescription>
+            <DialogTitle>{t("stl.dialog.edit.title")}</DialogTitle>
+            <DialogDescription>{t("stl.dialog.edit.description")}</DialogDescription>
           </DialogHeader>
           <TemplateFormContent />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>취소</Button>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>{t("stl.button.cancel")}</Button>
             <Button onClick={handleUpdate} disabled={updateTemplate.isPending} className="bg-amber-600 hover:bg-amber-700">
               {updateTemplate.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Edit3 className="w-4 h-4 mr-2" />}
-              수정 완료
+              {t("stl.button.updateComplete")}
             </Button>
           </DialogFooter>
         </DialogContent>

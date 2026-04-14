@@ -26,7 +26,7 @@ import {
   Building2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
 
 /* ── Hero carousel images ── */
 const heroSlides = [
@@ -47,42 +47,9 @@ const heroSlides = [
   },
 ];
 
-/* ── AI Instructor personas for showcase ── */
-const aiInstructors = [
-  { name: "Dr. Anya Sharma", role: "AI & Tech Expert", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-1-CJqmfL44AkNaCDPzpx8GyZ.webp", lang: "한국어 / English" },
-  { name: "Prof. Elias Thorne", role: "History & Ethics", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-2-MtSBCs2n7hXCoo4JGser92.webp", lang: "English / 日本語" },
-  { name: "Dr. Nia Adebayo", role: "Machine Learning", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-3-LgLxHvyTnfBeSrLijSXYyT.webp", lang: "English / Français" },
-  { name: "Kenji Tanaka", role: "Blockchain & Crypto", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-4-GBDjdyfCtR3JghrAsqk2n4.webp", lang: "한국어 / 中文" },
-  { name: "Rajiv Kapoor", role: "Data Science Lead", image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-5-n282i3ov9kpDxnzMDBhoZB.webp", lang: "English / हिन्दी" },
-];
-
-const featureKeys = [
-  { icon: User2, titleKey: "home.feat.deepfake", descKey: "home.feat.deepfake_desc", badge: "NEW" },
-  { icon: Volume2, titleKey: "home.feat.voice", descKey: "home.feat.voice_desc", badge: "NEW" },
-  { icon: Monitor, titleKey: "home.feat.platform", descKey: "home.feat.platform_desc", badge: "NEW" },
-  { icon: Mic, titleKey: "home.feat.clone", descKey: "home.feat.clone_desc" },
-  { icon: Brain, titleKey: "home.feat.avatar", descKey: "home.feat.avatar_desc" },
-  { icon: MessageSquare, titleKey: "home.feat.qa", descKey: "home.feat.qa_desc" },
-  { icon: Palette, titleKey: "home.feat.whiteboard", descKey: "home.feat.whiteboard_desc" },
-  { icon: Video, titleKey: "home.feat.vod", descKey: "home.feat.vod_desc" },
-  { icon: Globe, titleKey: "home.feat.translate", descKey: "home.feat.translate_desc" },
-  { icon: BookOpen, titleKey: "home.feat.context", descKey: "home.feat.context_desc" },
-  { icon: Award, titleKey: "home.feat.cert", descKey: "home.feat.cert_desc" },
-  { icon: Wand2, titleKey: "home.feat.prompt", descKey: "home.feat.prompt_desc" },
-];
-
-const platforms = [
-  { name: "Zoom", icon: "📹" },
-  { name: "Google Meet", icon: "🎥" },
-  { name: "Webex", icon: "🌐" },
-  { name: "Tencent Meeting", icon: "💬" },
-  { name: "MS Teams", icon: "💼" },
-  { name: "OBS Studio", icon: "🎬" },
-];
-
 export default function Home() {
   const { isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -91,6 +58,39 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(timer);
   }, []);
+
+  /* ── AI Instructor personas for showcase ── */
+  const aiInstructors = [
+    { name: "Dr. Anya Sharma", role: t("home.instructor.role1"), image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-1-CJqmfL44AkNaCDPzpx8GyZ.webp", lang: t("home.instructor.lang_ko_en") },
+    { name: "Prof. Elias Thorne", role: t("home.instructor.role2"), image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-2-MtSBCs2n7hXCoo4JGser92.webp", lang: t("home.instructor.lang_en_ja") },
+    { name: "Dr. Nia Adebayo", role: t("home.instructor.role3"), image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-3-LgLxHvyTnfBeSrLijSXYyT.webp", lang: t("home.instructor.lang_en_fr") },
+    { name: "Kenji Tanaka", role: t("home.instructor.role4"), image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-4-GBDjdyfCtR3JghrAsqk2n4.webp", lang: t("home.instructor.lang_ko_zh") },
+    { name: "Rajiv Kapoor", role: t("home.instructor.role5"), image: "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/face-sample-5-n282i3ov9kpDxnzMDBhoZB.webp", lang: t("home.instructor.lang_en_hi") },
+  ];
+
+  const featureKeys = [
+    { icon: User2, titleKey: "home.feat.deepfake", descKey: "home.feat.deepfake_desc", badge: "NEW" },
+    { icon: Volume2, titleKey: "home.feat.voice", descKey: "home.feat.voice_desc", badge: "NEW" },
+    { icon: Monitor, titleKey: "home.feat.platform", descKey: "home.feat.platform_desc", badge: "NEW" },
+    { icon: Mic, titleKey: "home.feat.clone", descKey: "home.feat.clone_desc" },
+    { icon: Brain, titleKey: "home.feat.avatar", descKey: "home.feat.avatar_desc" },
+    { icon: MessageSquare, titleKey: "home.feat.qa", descKey: "home.feat.qa_desc" },
+    { icon: Palette, titleKey: "home.feat.whiteboard", descKey: "home.feat.whiteboard_desc" },
+    { icon: Video, titleKey: "home.feat.vod", descKey: "home.feat.vod_desc" },
+    { icon: Globe, titleKey: "home.feat.translate", descKey: "home.feat.translate_desc" },
+    { icon: BookOpen, titleKey: "home.feat.context", descKey: "home.feat.context_desc" },
+    { icon: Award, titleKey: "home.feat.cert", descKey: "home.feat.cert_desc" },
+    { icon: Wand2, titleKey: "home.feat.prompt", descKey: "home.feat.prompt_desc" },
+  ];
+
+  const platforms = [
+    { name: "Zoom", icon: "📹" },
+    { name: "Google Meet", icon: "🎥" },
+    { name: "Webex", icon: "🌐" },
+    { name: "Tencent Meeting", icon: "💬" },
+    { name: "MS Teams", icon: "💼" },
+    { name: "OBS Studio", icon: "🎬" },
+  ];
 
   const pricingPlans = [
     {
@@ -103,7 +103,7 @@ export default function Home() {
       features: [
         `${t("pricing.credits_month")}: 100`,
         t("home.step2.tag1"),
-        `TTS 5${t("home.face.presets").includes("预设") ? "种" : t("home.face.presets").includes("プリセット") ? "種" : "종"}`,
+        `TTS 5${t("home.pricing.unit_type")}`,
         `${t("home.face.presets")} 10`,
         "720p HD",
         "Zoom",
@@ -257,193 +257,86 @@ export default function Home() {
             <img
               src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/ai-face-transform-gP9a9AqM42hnrzuU5ur2vP.webp"
               alt={t("home.face.alt")}
-              className="w-full h-auto"
+              className="w-full h-full object-cover"
             />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10 max-w-4xl mx-auto">
-            <div className="text-center p-6 rounded-xl bg-card border border-border">
-              <div className="text-3xl font-bold text-primary mb-2">50+</div>
-              <div className="text-sm text-muted-foreground">{t("home.face.presets")}</div>
-            </div>
-            <div className="text-center p-6 rounded-xl bg-card border border-border">
-              <div className="text-3xl font-bold text-primary mb-2">99.2%</div>
-              <div className="text-sm text-muted-foreground">{t("home.face.naturalness")}</div>
-            </div>
-            <div className="text-center p-6 rounded-xl bg-card border border-border">
-              <div className="text-3xl font-bold text-primary mb-2">&lt;0.5s</div>
-              <div className="text-sm text-muted-foreground">{t("home.face.speed")}</div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════ AI Instructor Gallery ═══════════ */}
+      {/* ═══════════ AI Instructor Showcase ═══════════ */}
       <section className="py-16 md:py-24">
         <div className="container">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("home.gallery.title")}</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              {t("home.gallery.desc")}
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("home.instructors.title")}</h2>
+            <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+              {t("home.instructors.desc")}
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {aiInstructors.map((instructor) => (
-              <div key={instructor.name} className="group relative">
-                <div className="aspect-square rounded-2xl overflow-hidden border-2 border-border group-hover:border-primary transition-colors shadow-lg">
-                  <img
-                    src={instructor.image}
-                    alt={instructor.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+            {aiInstructors.map((instructor, i) => (
+              <div key={i} className="text-center group">
+                <div className="relative aspect-square rounded-full overflow-hidden w-32 mx-auto mb-4 border-2 border-transparent group-hover:border-primary transition-all duration-300 transform group-hover:scale-105">
+                  <img src={instructor.image} alt={instructor.name} className="w-full h-full object-cover" />
                 </div>
-                <div className="mt-3 text-center">
-                  <div className="font-semibold text-sm">{instructor.name}</div>
-                  <div className="text-xs text-primary">{instructor.role}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{instructor.lang}</div>
-                </div>
+                <h3 className="font-semibold">{instructor.name}</h3>
+                <p className="text-sm text-muted-foreground">{instructor.role}</p>
+                <p className="text-xs text-muted-foreground/70">{instructor.lang}</p>
               </div>
             ))}
           </div>
-
-          <div className="text-center mt-10">
-            <Link href={isAuthenticated ? "/face-gallery" : "#"}>
-              <Button variant="outline" size="lg" className="gap-2" onClick={(e) => { if (!isAuthenticated) { e.preventDefault(); window.location.href = getLoginUrl(); } }}>
-                {t("home.gallery.view_all")}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* ═══════════ How it Works with real conference images ═══════════ */}
+      {/* ═══════════ Features ═══════════ */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("home.steps.title")}</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              {t("home.steps.desc")}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("home.features.title")}</h2>
+            <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+              {t("home.features.desc")}
             </p>
           </div>
 
-          {/* Step 1 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-20">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border">
-              <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/ai-instructor-gallery-bUZZDyeAqg6Dkq2uDiRpUK.webp"
-                alt={t("home.step1.title")}
-                className="w-full h-auto"
-              />
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">Step 1</div>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-2xl md:text-3xl font-bold">{t("home.step1.title")}</h3>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                {t("home.step1.desc")}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step1.tag1")}</span>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step1.tag2")}</span>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step1.tag3")}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Step 2 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-20">
-            <div className="space-y-4 order-2 lg:order-1">
-              <h3 className="text-2xl md:text-3xl font-bold">{t("home.step2.title")}</h3>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                {t("home.step2.desc")}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step2.tag1")}</span>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step2.tag2")}</span>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step2.tag3")}</span>
-              </div>
-            </div>
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border order-1 lg:order-2">
-              <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-script-R59hKy4f2UyZt7RXjFfw6Y.webp"
-                alt={t("home.step2.title")}
-                className="w-full h-auto"
-              />
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">Step 2</div>
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-border">
-              <img
-                src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/hero-zoom-lecture-RcYw5EPDZvzFEWss9eDRtH.webp"
-                alt={t("home.step3.title")}
-                className="w-full h-auto"
-              />
-              <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-sm font-bold">Step 3</div>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-2xl md:text-3xl font-bold">{t("home.step3.title")}</h3>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                {t("home.step3.desc")}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step3.tag1")}</span>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step3.tag2")}</span>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">{t("home.step3.tag3")}</span>
-              </div>
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {featureKeys.map((feature, i) => (
+              <Card key={i} className="bg-background/80 backdrop-blur-sm hover:shadow-lg transition-shadow flex flex-col">
+                <CardContent className="p-6 flex-grow flex flex-col">
+                  <div className="flex items-start justify-between mb-4">
+                    <feature.icon className="h-8 w-8 text-primary" />
+                    {feature.badge && (
+                      <div className="px-2 py-0.5 text-xs font-semibold tracking-wider text-primary-foreground bg-primary rounded-full uppercase">
+                        {feature.badge}
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-lg mb-2 flex-grow">{t(feature.titleKey)}</h3>
+                  <p className="text-sm text-muted-foreground">{t(feature.descKey)}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════ Supported Platforms ═══════════ */}
-      <section className="container py-12">
-        <div className="text-center mb-8">
-          <h3 className="text-xl font-semibold mb-2">{t("home.platforms.title")}</h3>
-        </div>
-        <div className="flex flex-wrap gap-4 justify-center">
-          {platforms.map((p) => (
-            <div key={p.name} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-card border border-border">
-              <span className="text-xl">{p.icon}</span>
-              <span className="font-medium text-sm">{p.name}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ═══════════ Platform Integrations ═══════════ */}
+      <section className="py-16 md:py-24">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("home.platforms.title")}</h2>
+            <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
+              {t("home.platforms.desc")}
+            </p>
+          </div>
 
-      {/* ═══════════ All Features ═══════════ */}
-      <section className="container py-16 md:py-24">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("home.features.title")}</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            {t("home.features.desc")}
-          </p>
-          <Link href="/features">
-            <Button variant="link" className="gap-1 mt-2 text-primary">
-              {t("home.features.view_all")}
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featureKeys.map((feature) => (
-            <Card key={feature.titleKey} className="bg-card border-border hover:border-primary/50 transition-colors group relative overflow-hidden">
-              <CardContent className="p-6">
-                {"badge" in feature && feature.badge && (
-                  <span className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">
-                    {feature.badge}
-                  </span>
-                )}
-                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                  <feature.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{t(feature.titleKey)}</h3>
-                <p className="text-muted-foreground text-sm">{t(feature.descKey)}</p>
-              </CardContent>
-            </Card>
-          ))}
+          <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+            {platforms.map((platform, i) => (
+              <div key={i} className="flex items-center gap-2 text-lg text-muted-foreground font-medium">
+                <span>{platform.icon}</span>
+                <span>{platform.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -452,53 +345,46 @@ export default function Home() {
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("home.pricing.title")}</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
               {t("home.pricing.desc")}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingPlans.map((plan) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto items-start">
+            {pricingPlans.map((plan, i) => (
               <Card
-                key={plan.name}
-                className={`relative overflow-hidden ${
-                  plan.popular ? "border-primary shadow-xl shadow-primary/10 scale-105" : "border-border"
-                }`}
+                key={i}
+                className={`flex flex-col ${plan.popular ? "border-primary shadow-primary/20 shadow-lg -translate-y-4" : ""}`}
               >
                 {plan.popular && (
-                  <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
-                    POPULAR
+                  <div className="bg-primary text-primary-foreground text-center py-1.5 text-sm font-semibold rounded-t-lg">
+                    {t("home.pricing.popular")}
                   </div>
                 )}
-                <CardContent className="p-8">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${plan.popular ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"}`}>
-                      <plan.icon className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-xl font-bold">{plan.name}</h3>
-                  </div>
-
-                  <div className="mb-4">
+                <CardContent className="p-8 flex-grow flex flex-col">
+                  <plan.icon className="h-8 w-8 text-primary mb-4" />
+                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                  <p className="text-muted-foreground mb-4 h-10">{plan.desc}</p>
+                  <div className="mb-6">
                     <span className="text-4xl font-bold">${plan.price}</span>
-                    <span className="text-muted-foreground">{plan.period}</span>
+                    <span className="text-muted-foreground"> / {plan.period}</span>
                   </div>
-
-                  <p className="text-muted-foreground text-sm mb-6">{plan.desc}</p>
-
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <span>{f}</span>
+                  <ul className="space-y-3 mb-8 text-muted-foreground flex-grow">
+                    {plan.features.map((feature, j) => (
+                      <li key={j} className="flex items-center gap-3">
+                        <Check className="h-5 w-5 text-green-500" />
+                        <span>{feature}</span>
                       </li>
                     ))}
                   </ul>
-
                   <Button
-                    className="w-full"
+                    size="lg"
                     variant={plan.popular ? "default" : "outline"}
+                    className="w-full"
                     onClick={() => {
-                      if (!isAuthenticated) {
+                      if (isAuthenticated) {
+                        window.location.href = "/billing";
+                      } else {
                         window.location.href = getLoginUrl();
                       }
                     }}

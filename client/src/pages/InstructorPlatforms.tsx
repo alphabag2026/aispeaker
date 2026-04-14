@@ -12,27 +12,29 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, Plus, Trash2, Monitor, Settings, ExternalLink, Sparkles, Copy, CheckCircle } from "lucide-react";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 const platformInfo: Record<string, { name: string; color: string; icon: string; guide: string }> = {
-  zoom: { name: "Zoom", color: "bg-blue-500/10 text-blue-400", icon: "📹", guide: "Zoom 설정 > 가상 카메라/마이크를 활성화하세요" },
-  webex: { name: "Webex", color: "bg-green-500/10 text-green-400", icon: "🌐", guide: "Webex 설정 > 오디오/비디오에서 가상 장치를 선택하세요" },
-  google_meet: { name: "Google Meet", color: "bg-red-500/10 text-red-400", icon: "🎥", guide: "Chrome 확장 프로그램으로 가상 카메라를 연결하세요" },
-  tencent: { name: "Tencent Meeting", color: "bg-purple-500/10 text-purple-400", icon: "💬", guide: "텐센트 회의 설정에서 가상 카메라를 선택하세요" },
-  teams: { name: "MS Teams", color: "bg-indigo-500/10 text-indigo-400", icon: "💼", guide: "Teams 설정 > 장치에서 가상 카메라/마이크를 선택하세요" },
-  obs: { name: "OBS Studio", color: "bg-gray-500/10 text-gray-300", icon: "🎬", guide: "OBS 가상 카메라 출력을 활성화하여 다른 플랫폼에서 사용하세요" },
-  custom: { name: "기타", color: "bg-orange-500/10 text-orange-400", icon: "⚙️", guide: "RTMP 또는 WebRTC 스트림 URL을 입력하세요" },
+  zoom: { name: "Zoom", color: "bg-blue-500/10 text-blue-400", icon: "📹", guide: "ip.zoom_guide" },
+  webex: { name: "Webex", color: "bg-green-500/10 text-green-400", icon: "🌐", guide: "ip.webex_guide" },
+  google_meet: { name: "Google Meet", color: "bg-red-500/10 text-red-400", icon: "🎥", guide: "ip.chrome_extension" },
+  tencent: { name: "Tencent Meeting", color: "bg-purple-500/10 text-purple-400", icon: "💬", guide: "ip.tencent_guide" },
+  teams: { name: "MS Teams", color: "bg-indigo-500/10 text-indigo-400", icon: "💼", guide: "ip.teams_guide" },
+  obs: { name: "OBS Studio", color: "bg-gray-500/10 text-gray-300", icon: "🎬", guide: "ip.obs_virtual_camera" },
+  custom: { name: "ip.other", color: "bg-orange-500/10 text-orange-400", icon: "⚙️", guide: "ip.rtmp_url" },
 };
 
 export default function InstructorPlatforms() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const integrations = trpc.platform.list.useQuery(undefined, { enabled: !!user });
   const createIntegration = trpc.platform.create.useMutation({
-    onSuccess: () => { integrations.refetch(); toast.success("플랫폼 연동이 추가되었습니다."); },
+    onSuccess: () => { integrations.refetch(); toast.success(t("ip.integration_added")); },
   });
   const updateIntegration = trpc.platform.update.useMutation({
-    onSuccess: () => { integrations.refetch(); toast.success("설정이 업데이트되었습니다."); },
+    onSuccess: () => { integrations.refetch(); toast.success(t("ip.settings_updated")); },
   });
   const deleteIntegration = trpc.platform.delete.useMutation({
-    onSuccess: () => { integrations.refetch(); toast.success("연동이 삭제되었습니다."); },
+    onSuccess: () => { integrations.refetch(); toast.success(t("ip.integration_deleted")); },
   });
 
   const [showForm, setShowForm] = useState(false);
@@ -47,7 +49,7 @@ export default function InstructorPlatforms() {
   const handleCreate = () => {
     createIntegration.mutate({
       platform: form.platformType as any,
-      name: form.name || platformInfo[form.platformType]?.name || form.platformType,
+      name: form.name || t(platformInfo[form.platformType]?.name) || form.platformType,
       meetingUrl: form.streamUrl || undefined,
       config: form.settings || undefined,
     });
@@ -70,8 +72,8 @@ export default function InstructorPlatforms() {
             <div className="flex items-center gap-3 mb-2">
               <Link href="/instructor"><Button variant="ghost" size="icon" className="text-white hover:bg-white/20"><ArrowLeft className="h-5 w-5" /></Button></Link>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2"><Monitor className="h-6 w-6" /> 외부 플랫폼 연동</h1>
-            <p className="text-white/70 mt-1">Zoom, Google Meet, Webex 등에서 AI 강의를 송출합니다</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2"><Monitor className="h-6 w-6" /> {t("ip.title")}</h1>
+            <p className="text-white/70 mt-1">{t("ip.description")}</p>
           </div>
         </div>
       </div>
@@ -83,10 +85,10 @@ export default function InstructorPlatforms() {
             <div className="flex items-start gap-3">
               <Sparkles className="h-5 w-5 text-primary mt-0.5" />
               <div>
-                <p className="font-medium">외부 회의 플랫폼 연동 가이드</p>
+                <p className="font-medium">{t("ip.guide_title")}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  AI가 생성한 강의 영상/음성을 외부 회의 플랫폼에서 사용할 수 있습니다.
-                  가상 카메라/마이크를 통해 Zoom, Google Meet, Webex, Tencent Meeting 등에서 AI 강사가 직접 강의하는 것처럼 송출됩니다.
+                  {t("ip.guide_desc1")}
+                  {t("ip.guide_desc2")}
                 </p>
               </div>
             </div>
@@ -96,71 +98,71 @@ export default function InstructorPlatforms() {
         {/* How it works */}
         <Card className="mb-6">
           <CardContent className="py-4">
-            <h3 className="font-semibold mb-3">작동 방식</h3>
+            <h3 className="font-semibold mb-3">{t("ip.how_it_works")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="p-3 rounded-lg bg-muted/50">
-                <p className="font-medium mb-1">1. AI 강의 생성</p>
-                <p className="text-muted-foreground">프롬프트 또는 교안 기반으로 AI가 강의 콘텐츠를 생성합니다</p>
+                <p className="font-medium mb-1">{t("ip.step1_title")}</p>
+                <p className="text-muted-foreground">{t("ip.step1_desc")}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
-                <p className="font-medium mb-1">2. 가상 장치 연결</p>
-                <p className="text-muted-foreground">AI 아바타 영상 + 변조된 음성이 가상 카메라/마이크로 출력됩니다</p>
+                <p className="font-medium mb-1">{t("ip.step2_title")}</p>
+                <p className="text-muted-foreground">{t("ip.step2_desc")}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50">
-                <p className="font-medium mb-1">3. 외부 플랫폼 송출</p>
-                <p className="text-muted-foreground">Zoom 등 회의 플랫폼에서 가상 장치를 선택하면 AI 강의가 송출됩니다</p>
+                <p className="font-medium mb-1">{t("ip.step3_title")}</p>
+                <p className="text-muted-foreground">{t("ip.step3_desc")}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {!showForm ? (
-          <Button onClick={() => setShowForm(true)} className="mb-6"><Plus className="h-4 w-4 mr-2" /> 플랫폼 추가</Button>
+          <Button onClick={() => setShowForm(true)} className="mb-6"><Plus className="h-4 w-4 mr-2" /> {t("ip.add_platform")}</Button>
         ) : (
           <Card className="mb-6">
             <CardContent className="py-6 space-y-4">
               <div>
-                <Label>플랫폼 선택</Label>
-                <Select value={form.platformType} onValueChange={v => setForm({ ...form, platformType: v, name: platformInfo[v]?.name || "" })}>
+                <Label>{t("ip.select_platform")}</Label>
+                <Select value={form.platformType} onValueChange={v => setForm({ ...form, platformType: v, name: t(platformInfo[v]?.name) || "" })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {Object.entries(platformInfo).map(([key, info]) => (
-                      <SelectItem key={key} value={key}>{info.icon} {info.name}</SelectItem>
+                      <SelectItem key={key} value={key}>{info.icon} {t(info.name)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>연동 이름</Label>
-                <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={platformInfo[form.platformType]?.name} />
+                <Label>{t("ip.integration_name")}</Label>
+                <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder={t(platformInfo[form.platformType]?.name)} />
               </div>
               {(form.platformType === "obs" || form.platformType === "custom") && (
                 <>
                   <div>
-                    <Label>스트림 URL (RTMP)</Label>
+                    <Label>{t("ip.stream_url")}</Label>
                     <Input value={form.streamUrl} onChange={e => setForm({ ...form, streamUrl: e.target.value })} placeholder="rtmp://live.example.com/app" />
                   </div>
                   <div>
-                    <Label>스트림 키</Label>
+                    <Label>{t("ip.stream_key")}</Label>
                     <Input value={form.streamKey} onChange={e => setForm({ ...form, streamKey: e.target.value })} placeholder="stream-key-xxxx" type="password" />
                   </div>
                 </>
               )}
               <div>
-                <Label>추가 설정 (JSON, 선택사항)</Label>
+                <Label>{t("ip.extra_settings")}</Label>
                 <Textarea value={form.settings} onChange={e => setForm({ ...form, settings: e.target.value })} placeholder='{"resolution": "1080p", "fps": 30}' rows={3} className="font-mono text-sm" />
               </div>
               {platformInfo[form.platformType] && (
                 <div className="p-3 rounded-lg bg-muted/50 text-sm">
-                  <p className="font-medium">설정 가이드:</p>
-                  <p className="text-muted-foreground">{platformInfo[form.platformType].guide}</p>
+                  <p className="font-medium">{t("ip.settings_guide")}</p>
+                  <p className="text-muted-foreground">{t(platformInfo[form.platformType].guide)}</p>
                 </div>
               )}
               <div className="flex gap-2">
                 <Button onClick={handleCreate} disabled={createIntegration.isPending}>
-                  {createIntegration.isPending ? "추가 중..." : "추가"}
+                  {createIntegration.isPending ? t("ip.adding") : t("ip.add")}
                 </Button>
-                <Button variant="outline" onClick={() => setShowForm(false)}>취소</Button>
+                <Button variant="outline" onClick={() => setShowForm(false)}>{t("ip.cancel")}</Button>
               </div>
             </CardContent>
           </Card>
@@ -178,15 +180,15 @@ export default function InstructorPlatforms() {
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold">{integration.name}</h3>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${info?.color}`}>{info?.name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${info?.color}`}>{t(info?.name)}</span>
                           {integration.isActive ? (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-500">활성</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-500">{t("ip.active")}</span>
                           ) : (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/10 text-gray-400">비활성</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-500/10 text-gray-400">{t("ip.inactive")}</span>
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {integration.streamUrl ? `URL: ${integration.streamUrl.substring(0, 40)}...` : "가상 카메라/마이크 모드"}
+                          {integration.streamUrl ? `URL: ${integration.streamUrl.substring(0, 40)}...` : t("ip.virtual_camera_mode")}
                         </p>
                       </div>
                     </div>
@@ -206,8 +208,8 @@ export default function InstructorPlatforms() {
           })}
           {integrations.data?.length === 0 && (
             <Card className="py-12 text-center text-muted-foreground">
-              <p>아직 연동된 플랫폼이 없습니다.</p>
-              <p className="text-sm mt-1">"플랫폼 추가" 버튼을 클릭하여 시작하세요.</p>
+              <p>{t("ip.no_platforms")}</p>
+              <p className="text-sm mt-1">{t("ip.click_add_platform")}</p>
             </Card>
           )}
         </div>

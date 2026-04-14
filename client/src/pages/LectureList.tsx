@@ -8,32 +8,35 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useState, useMemo } from "react";
 import { BookOpen, Search, Users, Clock, Mic, MessageSquare, Monitor } from "lucide-react";
-
-const categoryLabels: Record<string, string> = {
-  web3: "Web3",
-  ai: "AI",
-  blockchain: "Blockchain",
-  defi: "DeFi",
-  nft: "NFT",
-  metaverse: "Metaverse",
-  general: "일반",
-};
-
-const statusLabels: Record<string, { label: string; color: string }> = {
-  draft: { label: "준비중", color: "bg-muted text-muted-foreground" },
-  scheduled: { label: "예정", color: "bg-blue-500/20 text-blue-400" },
-  live: { label: "LIVE", color: "bg-green-500/20 text-green-400" },
-  completed: { label: "완료", color: "bg-gray-500/20 text-gray-400" },
-  archived: { label: "보관", color: "bg-gray-500/20 text-gray-400" },
-};
-
-const aiModeIcons: Record<string, React.ReactNode> = {
-  voice: <Mic className="h-3.5 w-3.5" />,
-  text: <MessageSquare className="h-3.5 w-3.5" />,
-  avatar: <Monitor className="h-3.5 w-3.5" />,
-};
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function LectureList() {
+  const { t } = useTranslation();
+
+  const categoryLabels: Record<string, string> = {
+    web3: "Web3",
+    ai: "AI",
+    blockchain: "Blockchain",
+    defi: "DeFi",
+    nft: "NFT",
+    metaverse: "Metaverse",
+    general: t("ll.general"),
+  };
+
+  const statusLabels: Record<string, { label: string; color: string }> = {
+    draft: { label: t("ll.draft"), color: "bg-muted text-muted-foreground" },
+    scheduled: { label: t("ll.scheduled"), color: "bg-blue-500/20 text-blue-400" },
+    live: { label: "LIVE", color: "bg-green-500/20 text-green-400" },
+    completed: { label: t("ll.completed"), color: "bg-gray-500/20 text-gray-400" },
+    archived: { label: t("ll.archived"), color: "bg-gray-500/20 text-gray-400" },
+  };
+
+  const aiModeIcons: Record<string, React.ReactNode> = {
+    voice: <Mic className="h-3.5 w-3.5" />,
+    text: <MessageSquare className="h-3.5 w-3.5" />,
+    avatar: <Monitor className="h-3.5 w-3.5" />,
+  };
+
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
@@ -58,8 +61,8 @@ export default function LectureList() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
         <div className="absolute inset-0 flex items-center">
           <div className="container">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">강의 목록</h1>
-            <p className="text-white/70 text-lg">AI 강사가 진행하는 다양한 강의를 둘러보세요</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t("ll.lectureList")}</h1>
+            <p className="text-white/70 text-lg">{t("ll.exploreLectures")}</p>
           </div>
         </div>
       </div>
@@ -71,7 +74,7 @@ export default function LectureList() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="강의 검색..."
+              placeholder={t("ll.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -85,7 +88,7 @@ export default function LectureList() {
                 size="sm"
                 onClick={() => setSelectedCategory(cat)}
               >
-                {cat ? categoryLabels[cat] : "전체"}
+                {cat ? categoryLabels[cat] : t("ll.all")}
               </Button>
             ))}
           </div>
@@ -118,7 +121,7 @@ export default function LectureList() {
                         </Badge>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           {aiModeIcons[lecture.aiMode]}
-                          <span>{lecture.aiMode === "voice" ? "음성" : lecture.aiMode === "text" ? "텍스트" : "아바타"}</span>
+                          <span>{lecture.aiMode === "voice" ? t("ll.voice") : lecture.aiMode === "text" ? t("ll.text") : t("ll.avatar")}</span>
                         </div>
                       </div>
 
@@ -149,8 +152,8 @@ export default function LectureList() {
         ) : (
           <EmptyState
             type="lectures"
-            title="강의가 없습니다"
-            description="아직 등록된 강의가 없습니다. 강사가 새 강의를 만들면 여기에 표시됩니다."
+            title={t("ll.noLectures")}
+            description={t("ll.noLecturesDescription")}
           />
         )}
       </div>

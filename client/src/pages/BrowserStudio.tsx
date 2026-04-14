@@ -17,10 +17,12 @@ import {
   RotateCcw, Download, Layers, Video, Tv,
   ChevronLeft, ChevronRight, Move, GripVertical
 } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 type LayoutMode = "pip-bottom-right" | "pip-bottom-left" | "pip-top-right" | "pip-top-left" | "side-by-side" | "camera-only" | "slides-only";
 
 export default function BrowserStudio() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
@@ -126,7 +128,7 @@ export default function BrowserStudio() {
           stream.getAudioTracks().forEach(t => t.enabled = false);
         }
       } catch (err) {
-        toast.error("카메라 접근 권한이 필요합니다.");
+        toast.error(t("bs.camAccessError"));
       }
     }
   };
@@ -144,11 +146,11 @@ export default function BrowserStudio() {
           audioStream.getAudioTracks().forEach(t => cameraStreamRef.current!.addTrack(t));
           setMicEnabled(true);
         } catch {
-          toast.error("마이크 접근 권한이 필요합니다.");
+          toast.error(t("bs.micAccessError"));
         }
       }
     } else {
-      toast.info("먼저 카메라를 켜주세요.");
+      toast.info(t("bs.camFirst"));
     }
   };
 
@@ -175,7 +177,7 @@ export default function BrowserStudio() {
           screenStreamRef.current = null;
         };
       } catch {
-        toast.error("화면 공유가 취소되었습니다.");
+        toast.error(t("bs.screenShareCancelled"));
       }
     }
   };
@@ -202,7 +204,7 @@ export default function BrowserStudio() {
       if (hasCamera) {
         drawVideoFill(ctx, videoRef.current!, 0, 0, W, H);
       } else {
-        drawPlaceholder(ctx, W, H, "카메라를 켜주세요");
+        drawPlaceholder(ctx, W, H, t("bs.turnOnCam"));
       }
     } else if (layoutMode === "slides-only") {
       if (hasSlide) {
@@ -210,7 +212,7 @@ export default function BrowserStudio() {
       } else if (hasScreen) {
         drawVideoFit(ctx, screenRef.current!, 0, 0, W, H);
       } else {
-        drawPlaceholder(ctx, W, H, "PPT를 선택하거나 화면을 공유하세요");
+        drawPlaceholder(ctx, W, H, t("bs.selectPptOrShareScreen"));
       }
     } else if (layoutMode === "side-by-side") {
       const halfW = W / 2;
@@ -222,7 +224,7 @@ export default function BrowserStudio() {
       } else {
         ctx.fillStyle = "#111";
         ctx.fillRect(0, 0, halfW, H);
-        drawPlaceholderAt(ctx, halfW / 2, H / 2, "슬라이드");
+        drawPlaceholderAt(ctx, halfW / 2, H / 2, t("bs.slides"));
       }
       // Right: camera
       if (hasCamera) {
@@ -230,7 +232,7 @@ export default function BrowserStudio() {
       } else {
         ctx.fillStyle = "#1a1a2e";
         ctx.fillRect(halfW, 0, halfW, H);
-        drawPlaceholderAt(ctx, halfW + halfW / 2, H / 2, "카메라");
+        drawPlaceholderAt(ctx, halfW + halfW / 2, H / 2, t("bs.camera"));
       }
       // Divider
       ctx.strokeStyle = "#333";
@@ -247,7 +249,7 @@ export default function BrowserStudio() {
       } else if (hasScreen) {
         drawVideoFit(ctx, screenRef.current!, 0, 0, W, H);
       } else {
-        drawPlaceholder(ctx, W, H, "PPT를 선택하거나 화면을 공유하세요");
+        drawPlaceholder(ctx, W, H, t("bs.selectPptOrShareScreen"));
       }
 
       // PIP overlay: camera
@@ -280,225 +282,243 @@ export default function BrowserStudio() {
 
         // Border
         ctx.save();
-        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
         ctx.lineWidth = 2;
-        ctx.beginPath();
         if (pipShape === "circle") {
           const cx = pipX + pipW / 2;
           const cy = pipY + pipH / 2;
           const r = Math.min(pipW, pipH) / 2;
+          ctx.beginPath();
           ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
         } else if (pipShape === "rounded") {
+          ctx.beginPath();
           roundRect(ctx, pipX, pipY, pipW, pipH, 16);
+          ctx.stroke();
         } else {
-          ctx.rect(pipX, pipY, pipW, pipH);
+          ctx.strokeRect(pipX, pipY, pipW, pipH);
         }
-        ctx.stroke();
         ctx.restore();
       }
     }
 
-    // Overlay text
+    // Overlay
     if (showOverlay && isStreaming) {
-      ctx.save();
-      ctx.fillStyle = "rgba(255,0,0,0.8)";
+      ctx.fillStyle = "red";
       ctx.beginPath();
-      roundRect(ctx, 16, 16, 80, 28, 6);
+      ctx.arc(25, 25, 8, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 14px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("● LIVE", 56, 35);
-      ctx.restore();
+
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillStyle = "white";
+      ctx.fillText("LIVE", 40, 30);
     }
 
     animFrameRef.current = requestAnimationFrame(drawFrame);
-  }, [cameraEnabled, screenShareEnabled, layoutMode, pipSize, pipOpacity, pipShape, pipPosition, showOverlay, isStreaming, currentSlideIndex]);
+  }, [cameraEnabled, screenShareEnabled, layoutMode, pipSize, pipOpacity, pipShape, pipPosition, currentSlideIndex, selectedPptId, showOverlay, isStreaming]);
 
-  // Start/stop canvas rendering
+  // Start/stop canvas loop
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.width = 1920;
-      canvas.height = 1080;
-    }
     animFrameRef.current = requestAnimationFrame(drawFrame);
     return () => cancelAnimationFrame(animFrameRef.current);
   }, [drawFrame]);
 
-  // Create canvas stream for output
-  useEffect(() => {
-    if (canvasRef.current) {
-      canvasStreamRef.current = canvasRef.current.captureStream(30);
-      if (outputRef.current) {
-        outputRef.current.srcObject = canvasStreamRef.current;
-        outputRef.current.play().catch(() => {});
-      }
-    }
-  }, []);
-
-  // Start streaming (capture canvas as virtual camera)
+  // Start/stop streaming
   const startStreaming = () => {
-    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvasStreamRef.current = canvas.captureStream(30); // 30 FPS
+
+    if (outputRef.current) {
+      outputRef.current.srcObject = canvasStreamRef.current;
+      outputRef.current.play();
+    }
     setIsStreaming(true);
-    toast.success("스트리밍이 시작되었습니다! 이 화면을 Zoom/Meet에서 '화면 공유'로 선택하세요.");
   };
 
   const stopStreaming = () => {
+    canvasStreamRef.current?.getTracks().forEach(t => t.stop());
+    canvasStreamRef.current = null;
+    if (outputRef.current) outputRef.current.srcObject = null;
     setIsStreaming(false);
-    toast.info("스트리밍이 중지되었습니다.");
   };
 
-  // PIP drag handlers
-  const handlePipDragStart = (e: React.MouseEvent) => {
-    if (layoutMode.startsWith("pip-") || !layoutMode.includes("pip")) return;
+  // Helper to draw placeholder text
+  const drawPlaceholder = (ctx: CanvasRenderingContext2D, w: number, h: number, text: string) => {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.font = "20px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, w / 2, h / 2);
+  };
+
+  const drawPlaceholderAt = (ctx: CanvasRenderingContext2D, x: number, y: number, text: string) => {
+    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+    ctx.font = "16px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+  };
+
+  // Fullscreen handler
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    if (!mainRef.current) return;
+    if (!document.fullscreenElement) {
+      mainRef.current.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const onFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  // PIP Drag handlers
+  const onPipMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canvasRef.current) return;
     setIsDragging(true);
+    const canvasRect = canvasRef.current.getBoundingClientRect();
     dragStartRef.current = {
       x: e.clientX,
       y: e.clientY,
       pipX: pipPosition.x,
       pipY: pipPosition.y,
     };
+    e.preventDefault();
   };
 
-  // Slide navigation
-  const goToPrevSlide = () => {
-    if (currentSlideIndex > 0) setCurrentSlideIndex(currentSlideIndex - 1);
-  };
-  const goToNextSlide = () => {
-    if (currentSlideIndex < slideImages.length - 1) setCurrentSlideIndex(currentSlideIndex + 1);
-  };
+  const onPipMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !canvasRef.current) return;
+    const canvasRect = canvasRef.current.getBoundingClientRect();
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaY = e.clientY - dragStartRef.current.y;
 
-  // Canvas mouse events for PIP dragging
-  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !layoutMode.startsWith("pip-")) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const mouseX = (e.clientX - rect.left) * scaleX;
-    const mouseY = (e.clientY - rect.top) * scaleY;
+    const newPipX = dragStartRef.current.pipX + (deltaX / canvasRect.width) * 100;
+    const newPipY = dragStartRef.current.pipY + (deltaY / canvasRect.height) * 100;
 
-    const pipW = canvas.width * (pipSize / 100);
-    const pipH = pipW * (9 / 16);
-    const pipX = (canvas.width - pipW) * (pipPosition.x / 100);
-    const pipY = (canvas.height - pipH) * (pipPosition.y / 100);
+    setPipPosition({
+      x: Math.max(0, Math.min(100, newPipX)),
+      y: Math.max(0, Math.min(100, newPipY)),
+    });
+  }, [isDragging]);
 
-    if (mouseX >= pipX && mouseX <= pipX + pipW && mouseY >= pipY && mouseY <= pipY + pipH) {
-      setIsDragging(true);
-      dragStartRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-        pipX: pipPosition.x,
-        pipY: pipPosition.y,
-      };
-      e.preventDefault();
-    }
-  };
-
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDragging) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
-    
-    const percentDx = (dx / rect.width) * 100;
-    const percentDy = (dy / rect.height) * 100;
-    
-    const newX = Math.max(0, Math.min(100, dragStartRef.current.pipX + percentDx));
-    const newY = Math.max(0, Math.min(100, dragStartRef.current.pipY + percentDy));
-    
-    setPipPosition({ x: newX, y: newY });
-  };
-
-  const handleCanvasMouseUp = () => {
-    if (isDragging) {
-      // Persist custom position to backend
-      updatePipMutation.mutate({
-        position: "custom" as any,
-        customX: Math.round(pipPosition.x),
-        customY: Math.round(pipPosition.y),
-      });
-    }
+  const onPipMouseUp = useCallback(() => {
     setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", onPipMouseMove);
+      window.addEventListener("mouseup", onPipMouseUp);
+    } else {
+      window.removeEventListener("mousemove", onPipMouseMove);
+      window.removeEventListener("mouseup", onPipMouseUp);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onPipMouseMove);
+      window.removeEventListener("mouseup", onPipMouseUp);
+    };
+  }, [isDragging, onPipMouseMove, onPipMouseUp]);
+
+  const savePipSettings = async () => {
+    try {
+      await updatePipMutation.mutateAsync({
+        shape: pipShape,
+        size: pipSize < 20 ? "small" : pipSize > 35 ? "large" : "medium",
+        opacity: pipOpacity,
+        position: "custom",
+        customX: pipPosition.x,
+        customY: pipPosition.y,
+      });
+      toast.success(t("bs.pipSettingsSaved"));
+    } catch (err: any) {
+      toast.error(`${t("bs.pipSettingsSaveError")}: ${err.message}`);
+    }
   };
 
-  // Preset PIP positions
-  const setPipPreset = (preset: string) => {
-    const presetPositions: Record<string, { x: number; y: number }> = {
+  const setPipPreset = (pos: string) => {
+    const presetMap: Record<string, { x: number; y: number }> = {
       "bottom-right": { x: 85, y: 85 },
       "bottom-left": { x: 5, y: 85 },
       "top-right": { x: 85, y: 5 },
       "top-left": { x: 5, y: 5 },
     };
-    const pos = presetPositions[preset];
-    if (pos) {
-      setPipPosition(pos);
-      setLayoutMode("pip-bottom-right");
-      // Persist preset position
-      updatePipMutation.mutate({
-        position: preset as any,
-      });
+    if (presetMap[pos]) {
+      setPipPosition(presetMap[pos]);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {/* Hidden video elements */}
-      <video ref={videoRef} className="hidden" muted playsInline />
-      <video ref={screenRef} className="hidden" muted playsInline />
+  const goToPrevSlide = () => setCurrentSlideIndex(i => Math.max(0, i - 1));
+  const goToNextSlide = () => setCurrentSlideIndex(i => Math.min(slideImages.length - 1, i + 1));
 
-      {/* Top Bar */}
-      <div className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/broadcasts")} className="text-gray-400 hover:text-white">
+  return (
+    <div className="bg-gray-950 text-white min-h-screen flex flex-col p-4 sm:p-6 lg:p-8" ref={mainRef}>
+      <header className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-gray-400 hover:text-white">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <Tv className="w-5 h-5 text-violet-400" />
-            <span className="font-semibold text-sm">브라우저 라이브 스튜디오</span>
-            {isStreaming && (
-              <Badge className="bg-red-500 text-white animate-pulse ml-2">● LIVE</Badge>
-            )}
+          <div>
+            <h2 className="text-xl font-bold tracking-tight">{t("bs.title")}</h2>
+            <p className="text-sm text-gray-400">{t("bs.subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-gray-400 text-xs">
-            OBS 불필요 · 브라우저에서 직접 송출
-          </Badge>
+          <Button variant="outline" onClick={() => navigate('/')} className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white">
+            {t("bs.exit")}
+          </Button>
+          <Button variant="outline" onClick={toggleFullscreen} className="gap-2 border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white">
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            {isFullscreen ? t("bs.exitFullscreen") : t("bs.fullscreen")}
+          </Button>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
-      <div className="flex h-[calc(100vh-3.5rem)]">
-        {/* Preview Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Canvas Preview */}
-          <div className="flex-1 flex items-center justify-center p-4 bg-gray-950 relative">
-            <div className="relative w-full max-w-5xl aspect-video">
-              <canvas
-                ref={canvasRef}
-                className={`w-full h-full rounded-lg border border-gray-800 ${isDragging ? "cursor-grabbing" : layoutMode.startsWith("pip-") ? "cursor-grab" : ""}`}
-                onMouseDown={handleCanvasMouseDown}
-                onMouseMove={handleCanvasMouseMove}
-                onMouseUp={handleCanvasMouseUp}
-                onMouseLeave={handleCanvasMouseUp}
-              />
+      <div className="flex-1 flex gap-6 min-h-0">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col gap-4 min-w-0">
+          <Card className="flex-1 bg-gray-900 border-gray-800 flex flex-col min-h-0 relative">
+            <CardHeader className="border-b border-gray-800 py-3 px-4">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Tv className="w-5 h-5 text-green-400" />
+                {t("bs.liveOutput")}
+              </CardTitle>
+              <p className="text-xs text-gray-500">{t("bs.shareTabHint")}</p>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 relative">
+              <canvas ref={canvasRef} width={1920} height={1080} className="w-full h-full object-contain" />
               {layoutMode.startsWith("pip-") && cameraEnabled && (
-                <div className="absolute bottom-2 left-2 bg-black/60 text-xs text-gray-300 px-2 py-1 rounded flex items-center gap-1">
-                  <Move className="w-3 h-3" />
-                  PIP를 드래그하여 위치 조정
+                <div
+                  className="absolute border-2 border-dashed border-transparent hover:border-violet-500 cursor-move transition-colors"
+                  style={{
+                    width: `${pipSize}%`,
+                    height: `${pipSize * (9/16)}%`,
+                    left: `${pipPosition.x}%`,
+                    top: `${pipPosition.y}%`,
+                    transform: `translate(-${pipPosition.x}%, -${pipPosition.y}%)`,
+                    aspectRatio: '16 / 9'
+                  }}
+                  onMouseDown={onPipMouseDown}
+                >
+                  <div className="w-full h-full relative">
+                    <GripVertical className="absolute top-1/2 -right-5 -translate-y-1/2 text-gray-500" />
+                    <GripVertical className="absolute top-1/2 -left-5 -translate-y-1/2 text-gray-500" />
+                  </div>
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Controls Bar */}
-          <div className="h-20 bg-gray-900 border-t border-gray-800 flex items-center justify-between px-6">
+          <div className="flex items-center justify-between bg-gray-900/50 rounded-lg p-3 border border-gray-800">
             {/* Media Controls */}
             <div className="flex items-center gap-3">
               <Button
@@ -508,7 +528,7 @@ export default function BrowserStudio() {
                 className={`gap-2 ${cameraEnabled ? "bg-violet-600 hover:bg-violet-700" : "border-gray-600 text-gray-400"}`}
               >
                 {cameraEnabled ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}
-                카메라
+                {t("bs.camera")}
               </Button>
               <Button
                 variant={micEnabled ? "default" : "outline"}
@@ -517,7 +537,7 @@ export default function BrowserStudio() {
                 className={`gap-2 ${micEnabled ? "bg-green-600 hover:bg-green-700" : "border-gray-600 text-gray-400"}`}
               >
                 {micEnabled ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
-                마이크
+                {t("bs.mic")}
               </Button>
               <Button
                 variant={screenShareEnabled ? "default" : "outline"}
@@ -526,7 +546,7 @@ export default function BrowserStudio() {
                 className={`gap-2 ${screenShareEnabled ? "bg-blue-600 hover:bg-blue-700" : "border-gray-600 text-gray-400"}`}
               >
                 {screenShareEnabled ? <Monitor className="w-5 h-5" /> : <MonitorOff className="w-5 h-5" />}
-                화면 공유
+                {t("bs.screenShare")}
               </Button>
             </div>
 
@@ -550,12 +570,12 @@ export default function BrowserStudio() {
               {!isStreaming ? (
                 <Button onClick={startStreaming} className="gap-2 bg-red-600 hover:bg-red-700" size="lg">
                   <Play className="w-5 h-5" />
-                  방송 시작
+                  {t("bs.startBroadcast")}
                 </Button>
               ) : (
                 <Button onClick={stopStreaming} variant="destructive" className="gap-2" size="lg">
                   <Square className="w-5 h-5" />
-                  방송 중지
+                  {t("bs.stopBroadcast")}
                 </Button>
               )}
             </div>
@@ -567,20 +587,20 @@ export default function BrowserStudio() {
           <div className="p-4 border-b border-gray-800">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <Settings className="w-4 h-4 text-violet-400" />
-              스튜디오 설정
+              {t("bs.studioSettings")}
             </h3>
           </div>
 
           {/* Layout Selection */}
           <div className="p-4 space-y-3 border-b border-gray-800">
-            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">레이아웃</h4>
+            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">{t("bs.layout")}</h4>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "pip-bottom-right", label: "PIP 우하", icon: "◻️" },
-                { id: "pip-top-left", label: "PIP 좌상", icon: "◻️" },
-                { id: "side-by-side", label: "좌우 분할", icon: "▣" },
-                { id: "camera-only", label: "카메라만", icon: "📷" },
-                { id: "slides-only", label: "슬라이드만", icon: "📊" },
+                { id: "pip-bottom-right", label: t("bs.pipBottomRight") },
+                { id: "pip-top-left", label: t("bs.pipTopLeft") },
+                { id: "side-by-side", label: t("bs.sideBySide") },
+                { id: "camera-only", label: t("bs.cameraOnly") },
+                { id: "slides-only", label: t("bs.slidesOnly") },
               ].map((layout) => (
                 <Button
                   key={layout.id}
@@ -602,11 +622,11 @@ export default function BrowserStudio() {
           {/* PIP Settings */}
           {layoutMode.startsWith("pip-") && (
             <div className="p-4 space-y-4 border-b border-gray-800">
-              <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">PIP 설정</h4>
+              <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">{t("bs.pipSettings")}</h4>
               
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">크기</span>
+                  <span className="text-gray-400">{t("bs.size")}</span>
                   <span className="text-gray-300">{pipSize}%</span>
                 </div>
                 <Slider
@@ -621,7 +641,7 @@ export default function BrowserStudio() {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">투명도</span>
+                  <span className="text-gray-400">{t("bs.opacity")}</span>
                   <span className="text-gray-300">{pipOpacity}%</span>
                 </div>
                 <Slider
@@ -635,12 +655,12 @@ export default function BrowserStudio() {
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs text-gray-400">모양</span>
+                <span className="text-xs text-gray-400">{t("bs.shape")}</span>
                 <div className="flex gap-2">
                   {[
-                    { id: "rounded", label: "둥근 사각" },
-                    { id: "circle", label: "원형" },
-                    { id: "square", label: "사각" },
+                    { id: "rounded", label: t("bs.roundedSquare") },
+                    { id: "circle", label: t("bs.circle") },
+                    { id: "square", label: t("bs.square") },
                   ].map((shape) => (
                     <Button
                       key={shape.id}
@@ -656,13 +676,13 @@ export default function BrowserStudio() {
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs text-gray-400">빠른 위치</span>
+                <span className="text-xs text-gray-400">{t("bs.quickPosition")}</span>
                 <div className="grid grid-cols-2 gap-1">
                   {[
-                    { id: "top-left", label: "↖ 좌상" },
-                    { id: "top-right", label: "↗ 우상" },
-                    { id: "bottom-left", label: "↙ 좌하" },
-                    { id: "bottom-right", label: "↘ 우하" },
+                    { id: "top-left", label: t("bs.topLeft") },
+                    { id: "top-right", label: t("bs.topRight") },
+                    { id: "bottom-left", label: t("bs.bottomLeft") },
+                    { id: "bottom-right", label: t("bs.bottomRight") },
                   ].map((pos) => (
                     <Button
                       key={pos.id}
@@ -677,7 +697,7 @@ export default function BrowserStudio() {
                 </div>
                 <p className="text-[10px] text-gray-500 flex items-center gap-1">
                   <Move className="w-3 h-3" />
-                  미리보기 화면에서 PIP를 드래그하여 자유롭게 위치 조정 가능
+                  {t("bs.dragPipHint")}
                 </p>
               </div>
             </div>
@@ -687,16 +707,16 @@ export default function BrowserStudio() {
           <div className="p-4 space-y-3 border-b border-gray-800">
             <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider flex items-center gap-1">
               <Presentation className="w-3 h-3" />
-              PPT 슬라이드
+              {t("bs.pptSlides")}
             </h4>
             <Select value={selectedPptId} onValueChange={(v) => { setSelectedPptId(v); setCurrentSlideIndex(0); }}>
               <SelectTrigger className="bg-gray-800 border-gray-700 text-sm">
-                <SelectValue placeholder="PPT 파일 선택..." />
+                <SelectValue placeholder={t("bs.selectPptFile")} />
               </SelectTrigger>
               <SelectContent>
                 {pptList.data?.map((ppt: any) => (
                   <SelectItem key={ppt.id} value={ppt.id.toString()}>
-                    {ppt.title} ({ppt.totalSlides}장)
+                    {t("bs.slideCount", { title: ppt.title, count: ppt.totalSlides })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -713,7 +733,7 @@ export default function BrowserStudio() {
                       idx === currentSlideIndex ? "border-violet-500 ring-1 ring-violet-500/50" : "border-gray-700 hover:border-gray-500"
                     }`}
                   >
-                    <img src={url} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                    <img src={url} alt={`${t("bs.slide")} ${idx + 1}`} className="w-full h-full object-cover" />
                     <span className="absolute bottom-0 right-0 bg-black/70 text-[9px] px-1 text-gray-300">
                       {idx + 1}
                     </span>
@@ -725,42 +745,44 @@ export default function BrowserStudio() {
 
           {/* Overlay Settings */}
           <div className="p-4 space-y-3 border-b border-gray-800">
-            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">오버레이</h4>
+            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">{t("bs.overlay")}</h4>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-300">LIVE 배지 표시</span>
+              <span className="text-sm text-gray-300">{t("bs.showLiveBadge")}</span>
               <Switch checked={showOverlay} onCheckedChange={setShowOverlay} />
             </div>
           </div>
 
           {/* Usage Guide */}
           <div className="p-4 space-y-2">
-            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">사용 방법</h4>
+            <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wider">{t("bs.usageGuide")}</h4>
             <div className="space-y-2 text-xs text-gray-500">
               <div className="flex gap-2">
                 <Badge variant="outline" className="text-[10px] shrink-0">1</Badge>
-                <span>카메라와 마이크를 켭니다</span>
+                <span>{t("bs.guide1")}</span>
               </div>
               <div className="flex gap-2">
                 <Badge variant="outline" className="text-[10px] shrink-0">2</Badge>
-                <span>PPT를 선택하거나 화면을 공유합니다</span>
+                <span>{t("bs.guide2")}</span>
               </div>
               <div className="flex gap-2">
                 <Badge variant="outline" className="text-[10px] shrink-0">3</Badge>
-                <span>레이아웃과 PIP 설정을 조정합니다</span>
+                <span>{t("bs.guide3")}</span>
               </div>
               <div className="flex gap-2">
                 <Badge variant="outline" className="text-[10px] shrink-0">4</Badge>
-                <span>방송 시작 후 Zoom/Meet에서 이 브라우저 탭을 화면 공유하세요</span>
+                <span>{t("bs.guide4")}</span>
               </div>
             </div>
             <Separator className="bg-gray-800" />
             <p className="text-[10px] text-gray-600 leading-relaxed">
-              이 스튜디오는 OBS 없이 브라우저에서 직접 PPT + 카메라를 합성합니다.
-              Zoom이나 Google Meet에서 "브라우저 탭 공유"를 선택하면 합성된 화면이 전달됩니다.
+              {t("bs.studioDescription")}
             </p>
           </div>
         </div>
       </div>
+      <video ref={videoRef} playsInline muted className="hidden" />
+      <video ref={screenRef} playsInline muted className="hidden" />
+      <video ref={outputRef} playsInline controls muted className="hidden" />
     </div>
   );
 }
@@ -769,59 +791,80 @@ export default function BrowserStudio() {
 function drawVideoFill(ctx: CanvasRenderingContext2D, video: HTMLVideoElement, x: number, y: number, w: number, h: number) {
   const vw = video.videoWidth || 1;
   const vh = video.videoHeight || 1;
-  const scale = Math.max(w / vw, h / vh);
-  const sw = w / scale;
-  const sh = h / scale;
-  const sx = (vw - sw) / 2;
-  const sy = (vh - sh) / 2;
+  const vRatio = vw / vh;
+  const cRatio = w / h;
+
+  let sx, sy, sw, sh;
+
+  if (vRatio > cRatio) { // Video is wider than container
+    sh = vh;
+    sw = vh * cRatio;
+    sx = (vw - sw) / 2;
+    sy = 0;
+  } else { // Video is taller or same ratio
+    sw = vw;
+    sh = vw / cRatio;
+    sx = 0;
+    sy = (vh - sh) / 2;
+  }
+
   ctx.drawImage(video, sx, sy, sw, sh, x, y, w, h);
 }
 
 function drawVideoFit(ctx: CanvasRenderingContext2D, video: HTMLVideoElement, x: number, y: number, w: number, h: number) {
   const vw = video.videoWidth || 1;
   const vh = video.videoHeight || 1;
-  const scale = Math.min(w / vw, h / vh);
-  const dw = vw * scale;
-  const dh = vh * scale;
-  const dx = x + (w - dw) / 2;
-  const dy = y + (h - dh) / 2;
+  const vRatio = vw / vh;
+  const cRatio = w / h;
+
+  let dw, dh, dx, dy;
+
+  if (vRatio > cRatio) { // Video is wider than container
+    dw = w;
+    dh = w / vRatio;
+    dx = x;
+    dy = y + (h - dh) / 2;
+  } else { // Video is taller or same ratio
+    dh = h;
+    dw = h * vRatio;
+    dy = y;
+    dx = x + (w - dw) / 2;
+  }
+
   ctx.drawImage(video, dx, dy, dw, dh);
 }
 
 function drawImageFit(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
   const iw = img.naturalWidth || 1;
   const ih = img.naturalHeight || 1;
-  const scale = Math.min(w / iw, h / ih);
-  const dw = iw * scale;
-  const dh = ih * scale;
-  const dx = x + (w - dw) / 2;
-  const dy = y + (h - dh) / 2;
+  const iRatio = iw / ih;
+  const cRatio = w / h;
+
+  let dw, dh, dx, dy;
+
+  if (iRatio > cRatio) {
+    dw = w;
+    dh = w / iRatio;
+    dx = x;
+    dy = y + (h - dh) / 2;
+  } else {
+    dh = h;
+    dw = h * iRatio;
+    dy = y;
+    dx = x + (w - dw) / 2;
+  }
+
   ctx.drawImage(img, dx, dy, dw, dh);
 }
 
-function drawPlaceholder(ctx: CanvasRenderingContext2D, w: number, h: number, text: string) {
-  ctx.fillStyle = "#1a1a2e";
-  ctx.fillRect(0, 0, w, h);
-  drawPlaceholderAt(ctx, w / 2, h / 2, text);
-}
-
-function drawPlaceholderAt(ctx: CanvasRenderingContext2D, x: number, y: number, text: string) {
-  ctx.fillStyle = "#555";
-  ctx.font = "24px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, x, y);
-}
-
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  ctx.beginPath();
   ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }

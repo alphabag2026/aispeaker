@@ -27,7 +27,9 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function InstructorLectureForm() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
   const isEdit = !!params.id;
@@ -55,20 +57,20 @@ export default function InstructorLectureForm() {
 
   const createMutation = trpc.lecture.create.useMutation({
     onSuccess: (data) => {
-      toast.success("강의가 생성되었습니다!");
+      toast.success(t("ilf.lecture_created"));
       navigate(`/instructor/lectures/${data.id}/edit`);
     },
     onError: (err) => toast.error(err.message),
   });
 
   const updateMutation = trpc.lecture.update.useMutation({
-    onSuccess: () => toast.success("강의가 수정되었습니다!"),
+    onSuccess: () => toast.success(t("ilf.lecture_updated")),
     onError: (err) => toast.error(err.message),
   });
 
   const uploadMutation = trpc.material.upload.useMutation({
     onSuccess: () => {
-      toast.success("자료가 업로드되었습니다!");
+      toast.success(t("ilf.material_uploaded"));
       refetchMaterials();
     },
     onError: (err) => toast.error(err.message),
@@ -76,7 +78,7 @@ export default function InstructorLectureForm() {
 
   const deleteMaterialMutation = trpc.material.delete.useMutation({
     onSuccess: () => {
-      toast.success("자료가 삭제되었습니다.");
+      toast.success(t("ilf.material_deleted"));
       refetchMaterials();
     },
   });
@@ -94,7 +96,7 @@ export default function InstructorLectureForm() {
 
   const handleSubmit = () => {
     if (!title.trim()) {
-      toast.error("강의 제목을 입력해주세요.");
+      toast.error(t("ilf.enter_title"));
       return;
     }
     const data = {
@@ -158,7 +160,7 @@ export default function InstructorLectureForm() {
                 </Button>
               </Link>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{isEdit ? "강의 수정" : "새 강의 만들기"}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">{isEdit ? t("ilf.edit_lecture") : t("ilf.new_lecture")}</h1>
           </div>
         </div>
       </div>
@@ -169,29 +171,29 @@ export default function InstructorLectureForm() {
           {/* Basic Info */}
           <Card className="bg-card">
             <CardHeader>
-              <CardTitle className="text-lg">기본 정보</CardTitle>
+              <CardTitle className="text-lg">{t("ilf.basic_info")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>강의 제목</Label>
+                <Label>{t("ilf.lecture_title")}</Label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="예: Web3 기초부터 DeFi까지"
+                  placeholder={t("ilf.title_placeholder")}
                 />
               </div>
               <div>
-                <Label>설명</Label>
+                <Label>{t("ilf.description")}</Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="강의에 대한 설명을 입력하세요"
+                  placeholder={t("ilf.enter_description")}
                   rows={3}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>카테고리</Label>
+                  <Label>{t("ilf.category")}</Label>
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger>
                       <SelectValue />
@@ -203,20 +205,20 @@ export default function InstructorLectureForm() {
                       <SelectItem value="defi">DeFi</SelectItem>
                       <SelectItem value="nft">NFT</SelectItem>
                       <SelectItem value="metaverse">Metaverse</SelectItem>
-                      <SelectItem value="general">일반</SelectItem>
+                      <SelectItem value="general">{t("ilf.general")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>AI 표현 방식</Label>
+                  <Label>{t("ilf.ai_expression_method")}</Label>
                   <Select value={aiMode} onValueChange={setAiMode}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="voice">음성</SelectItem>
-                      <SelectItem value="text">텍스트</SelectItem>
-                      <SelectItem value="avatar">아바타</SelectItem>
+                      <SelectItem value="voice">{t("ilf.voice")}</SelectItem>
+                      <SelectItem value="text">{t("ilf.text")}</SelectItem>
+                      <SelectItem value="avatar">{t("ilf.avatar")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -227,17 +229,17 @@ export default function InstructorLectureForm() {
           {/* Voice Profile */}
           <Card className="bg-card">
             <CardHeader>
-              <CardTitle className="text-lg">음성 프로필</CardTitle>
+              <CardTitle className="text-lg">{t("ilf.voice_profile")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div>
-                <Label>사용할 음성 프로필</Label>
+                <Label>{t("ilf.voice_profile_to_use")}</Label>
                 <Select value={voiceProfileId} onValueChange={setVoiceProfileId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="기본 AI 음성 사용" />
+                    <SelectValue placeholder={t("ilf.default_ai_voice")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">기본 AI 음성</SelectItem>
+                    <SelectItem value="none">{t("ilf.default_ai_voice_option")}</SelectItem>
                     {voiceProfiles?.map((vp) => (
                       <SelectItem key={vp.id} value={vp.id.toString()}>
                         {vp.name} ({vp.ttsVoiceId})
@@ -246,11 +248,11 @@ export default function InstructorLectureForm() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-2">
-                  음성 프로필이 없으면{" "}
+                  {t("ilf.no_voice_profile_pre")}{" "}
                   <Link href="/instructor/voice-profiles" className="text-primary underline">
-                    여기서 생성
+                    {t("ilf.create_here")}
                   </Link>
-                  하세요.
+                  {t("ilf.no_voice_profile_post")}
                 </p>
               </div>
             </CardContent>
@@ -261,26 +263,26 @@ export default function InstructorLectureForm() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Brain className="h-5 w-5 text-purple-400" />
-                AI 컨텍스트
+                {t("ilf.ai_context")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Template selector */}
               {templates && templates.length > 0 && (
                 <div>
-                  <Label>템플릿에서 불러오기</Label>
+                  <Label>{t("ilf.load_from_template")}</Label>
                   <Select
                     value=""
                     onValueChange={(val) => {
                       const tpl = templates.find((t: any) => t.id.toString() === val);
                       if (tpl) {
                         setAiContext((prev) => prev ? prev + "\n\n" + tpl.systemPrompt : tpl.systemPrompt);
-                        toast.success(`"${tpl.name}" 템플릿이 적용되었습니다.`);
+                        toast.success(`"${tpl.name}" ${t("ilf.template_applied")}`);
                       }
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="템플릿 선택..." />
+                      <SelectValue placeholder={t("ilf.select_template")} />
                     </SelectTrigger>
                     <SelectContent>
                       {templates.map((tpl: any) => (
@@ -291,23 +293,23 @@ export default function InstructorLectureForm() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground mt-1">
-                    카테고리별 사전 정의된 템플릿을 불러와 컨텍스트에 추가합니다.
+                    {t("ilf.template_description")}
                     <Link href="/instructor/templates" className="text-primary underline ml-1">
-                      템플릿 관리
+                      {t("ilf.manage_templates")}
                     </Link>
                   </p>
                 </div>
               )}
               <div>
-                <Label>AI 강사 추가 지식</Label>
+                <Label>{t("ilf.ai_instructor_additional_knowledge")}</Label>
                 <Textarea
                   value={aiContext}
                   onChange={(e) => setAiContext(e.target.value)}
-                  placeholder="AI 강사가 참고할 추가 정보를 입력하세요. 예: 이 강의는 초보자를 대상으로 합니다. 스마트 컨트랙트의 기초 개념을 중심으로 설명합니다."
+                  placeholder={t("ilf.ai_context_placeholder")}
                   rows={5}
                 />
                 <p className="text-xs text-muted-foreground mt-2">
-                  AI가 Q&A 답변 시 참고할 추가 컨텍스트입니다.
+                  {t("ilf.ai_context_description")}
                 </p>
               </div>
             </CardContent>
@@ -318,7 +320,7 @@ export default function InstructorLectureForm() {
             <Card className="bg-card">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center justify-between">
-                  강의 자료
+                  {t("ilf.lecture_materials")}
                   <Button
                     variant="outline"
                     size="sm"
@@ -331,7 +333,7 @@ export default function InstructorLectureForm() {
                     ) : (
                       <Upload className="h-4 w-4" />
                     )}
-                    업로드
+                    {t("ilf.upload")}
                   </Button>
                   <input
                     ref={fileInputRef}
@@ -372,7 +374,7 @@ export default function InstructorLectureForm() {
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    아직 업로드된 자료가 없습니다. PDF, PPT, 이미지 파일을 업로드하세요.
+                    {t("ilf.no_materials_uploaded")}
                   </p>
                 )}
               </CardContent>
@@ -382,7 +384,7 @@ export default function InstructorLectureForm() {
           {/* Submit */}
           <div className="flex justify-end gap-3">
             <Link href="/instructor/lectures">
-              <Button variant="outline">취소</Button>
+              <Button variant="outline">{t("ilf.cancel")}</Button>
             </Link>
             <Button
               onClick={handleSubmit}
@@ -394,7 +396,7 @@ export default function InstructorLectureForm() {
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              {isEdit ? "수정" : "생성"}
+              {isEdit ? t("ilf.edit") : t("ilf.create")}
             </Button>
           </div>
         </div>

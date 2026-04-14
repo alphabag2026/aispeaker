@@ -29,8 +29,10 @@ import {
   PlayCircle,
   Tv,
 } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function InstructorDashboard() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const switchRole = trpc.user.setRole.useMutation({
     onSuccess: () => window.location.reload(),
@@ -51,9 +53,9 @@ export default function InstructorDashboard() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container py-16 text-center">
-          <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
+          <h2 className="text-2xl font-bold mb-4">{t("id.loginRequired")}</h2>
           <Button asChild>
-            <a href={getLoginUrl()}>로그인</a>
+            <a href={getLoginUrl()}>{t("id.login")}</a>
           </Button>
         </div>
       </div>
@@ -66,10 +68,9 @@ export default function InstructorDashboard() {
         <Navbar />
         <div className="container py-16 text-center">
           <Mic className="h-16 w-16 text-primary mx-auto mb-6" />
-          <h2 className="text-2xl font-bold mb-4">강사로 시작하기</h2>
+          <h2 className="text-2xl font-bold mb-4">{t("id.startAsInstructor")}</h2>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            강사로 전환하면 AI 강의를 만들고 관리할 수 있습니다.
-            음성 프로필을 등록하고 AI가 당신의 목소리로 강의합니다.
+            {t("id.instructorDescription")}
           </p>
           <Button
             size="lg"
@@ -81,7 +82,7 @@ export default function InstructorDashboard() {
             ) : (
               <Mic className="h-4 w-4 mr-2" />
             )}
-            강사로 전환
+            {t("id.switchToInstructor")}
           </Button>
         </div>
       </div>
@@ -104,13 +105,13 @@ export default function InstructorDashboard() {
           <div className="container">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-white">강사 대시보드</h1>
-                <p className="text-white/70 text-lg mt-2">강의를 관리하고 AI 음성 프로필을 설정하세요</p>
+                <h1 className="text-3xl md:text-4xl font-bold text-white">{t("id.instructorDashboard")}</h1>
+                <p className="text-white/70 text-lg mt-2">{t("id.dashboardSubtitle")}</p>
               </div>
               <Link href="/instructor/lectures/new">
                 <Button className="gap-2">
                   <Plus className="h-4 w-4" />
-                  새 강의 만들기
+                  {t("id.createNewLecture")}
                 </Button>
               </Link>
             </div>
@@ -130,7 +131,7 @@ export default function InstructorDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats?.totalLectures ?? 0}</p>
-                  <p className="text-sm text-muted-foreground">전체 강의</p>
+                  <p className="text-sm text-muted-foreground">{t("id.totalLectures")}</p>
                 </div>
               </div>
             </CardContent>
@@ -143,7 +144,7 @@ export default function InstructorDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats?.totalStudents ?? 0}</p>
-                  <p className="text-sm text-muted-foreground">총 수강생</p>
+                  <p className="text-sm text-muted-foreground">{t("id.totalStudents")}</p>
                 </div>
               </div>
             </CardContent>
@@ -156,7 +157,7 @@ export default function InstructorDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{stats?.liveLectures ?? 0}</p>
-                  <p className="text-sm text-muted-foreground">진행 중</p>
+                  <p className="text-sm text-muted-foreground">{t("id.inProgress")}</p>
                 </div>
               </div>
             </CardContent>
@@ -173,8 +174,8 @@ export default function InstructorDashboard() {
                     <BookOpen className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">강의 관리</h3>
-                    <p className="text-sm text-muted-foreground">강의 생성, 수정, 교안 업로드</p>
+                    <h3 className="font-semibold">{t("id.lectureManagement")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.lectureManagementDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -189,8 +190,8 @@ export default function InstructorDashboard() {
                     <Mic className="h-5 w-5 text-accent" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">음성 프로필</h3>
-                    <p className="text-sm text-muted-foreground">음성 클로닝 및 강의 스타일 설정</p>
+                    <h3 className="font-semibold">{t("id.voiceProfile")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.voiceProfileDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -205,8 +206,8 @@ export default function InstructorDashboard() {
                     <Video className="h-5 w-5 text-green-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">VOD 아카이브</h3>
-                    <p className="text-sm text-muted-foreground">녹화된 강의 관리 및 조회</p>
+                    <h3 className="font-semibold">{t("id.vodArchive")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.vodArchiveDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -221,8 +222,8 @@ export default function InstructorDashboard() {
                     <Brain className="h-5 w-5 text-purple-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">AI 템플릿</h3>
-                    <p className="text-sm text-muted-foreground">카테고리별 AI 컨텍스트 관리</p>
+                    <h3 className="font-semibold">{t("id.aiTemplates")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.aiTemplatesDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -241,8 +242,8 @@ export default function InstructorDashboard() {
                     <User2 className="h-5 w-5 text-pink-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">딥페이크 얼굴</h3>
-                    <p className="text-sm text-muted-foreground">AI 얼굴 변환 프로필 관리</p>
+                    <h3 className="font-semibold">{t("id.deepfakeFace")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.deepfakeFaceDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -257,8 +258,8 @@ export default function InstructorDashboard() {
                     <Volume2 className="h-5 w-5 text-orange-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">음성 변조</h3>
-                    <p className="text-sm text-muted-foreground">목소리 톤/말투 변환 관리</p>
+                    <h3 className="font-semibold">{t("id.voiceModulation")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.voiceModulationDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -273,8 +274,8 @@ export default function InstructorDashboard() {
                     <MonitorIcon className="h-5 w-5 text-cyan-500" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">외부 플랫폼</h3>
-                    <p className="text-sm text-muted-foreground">Zoom/Meet/Webex 연동</p>
+                    <h3 className="font-semibold">{t("id.externalPlatforms")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.externalPlatformsDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -293,8 +294,8 @@ export default function InstructorDashboard() {
                     <Play className="h-5 w-5 text-violet-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">원클릭 스튜디오</h3>
-                    <p className="text-sm text-muted-foreground">프롬프트 → 스크립트 → TTS → 아바타 영상 자동 생성</p>
+                    <h3 className="font-semibold">{t("id.oneClickStudio")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.oneClickStudioDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 transition-colors" />
@@ -309,8 +310,8 @@ export default function InstructorDashboard() {
                     <HelpCircle className="h-5 w-5 text-green-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">OBS 가상 카메라 가이드</h3>
-                    <p className="text-sm text-muted-foreground">딥페이크 + 음성 변조를 Zoom/Meet에서 사용하는 방법</p>
+                    <h3 className="font-semibold">{t("id.obsGuide")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.obsGuideDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-green-400 transition-colors" />
@@ -326,8 +327,8 @@ export default function InstructorDashboard() {
                     <History className="h-5 w-5 text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">제작 히스토리 대시보드</h3>
-                    <p className="text-sm text-muted-foreground">강의 영상 제작 통계 및 히스토리 확인</p>
+                    <h3 className="font-semibold">{t("id.productionHistoryDashboard")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.productionHistoryDashboardDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-400 transition-colors" />
@@ -337,7 +338,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* v2.3 Quick Actions */}
-        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">v2.3 신규 도구</h2>
+        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">{t("id.v2_3_tools")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Link href="/script-templates">
             <Card className="bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30 hover:border-amber-500/50 transition-colors cursor-pointer group">
@@ -347,8 +348,8 @@ export default function InstructorDashboard() {
                     <BookTemplate className="h-5 w-5 text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">스크립트 템플릿 라이브러리</h3>
-                    <p className="text-sm text-muted-foreground">강의 구조 템플릿 저장 및 재사용</p>
+                    <h3 className="font-semibold">{t("id.scriptTemplateLibrary")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.scriptTemplateLibraryDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-amber-400 transition-colors" />
@@ -363,8 +364,8 @@ export default function InstructorDashboard() {
                     <ListChecks className="h-5 w-5 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">배치 영상 제작</h3>
-                    <p className="text-sm text-muted-foreground">여러 스크립트 일괄 영상 생성</p>
+                    <h3 className="font-semibold">{t("id.batchVideoProduction")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.batchVideoProductionDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-blue-400 transition-colors" />
@@ -379,8 +380,8 @@ export default function InstructorDashboard() {
                     <Image className="h-5 w-5 text-pink-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">AI 썸네일 생성</h3>
-                    <p className="text-sm text-muted-foreground">강의 주제 기반 썸네일 자동 생성</p>
+                    <h3 className="font-semibold">{t("id.aiThumbnailGeneration")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.aiThumbnailGenerationDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-pink-400 transition-colors" />
@@ -390,7 +391,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* v2.4 Quick Actions */}
-        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">v2.4 신규 도구</h2>
+        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">{t("id.v2_4_tools")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Link href="/studio">
             <Card className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/30 hover:border-emerald-500/50 transition-colors cursor-pointer group">
@@ -400,8 +401,8 @@ export default function InstructorDashboard() {
                     <GitBranch className="h-5 w-5 text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">스크립트 버전 관리</h3>
-                    <p className="text-sm text-muted-foreground">수정 이력 자동 기록 및 롤백</p>
+                    <h3 className="font-semibold">{t("id.scriptVersionControl")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.scriptVersionControlDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-emerald-400 transition-colors" />
@@ -416,8 +417,8 @@ export default function InstructorDashboard() {
                     <PlayCircle className="h-5 w-5 text-violet-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">통합 미리보기 플레이어</h3>
-                    <p className="text-sm text-muted-foreground">슬라이드 + 오디오 동기화 재생</p>
+                    <h3 className="font-semibold">{t("id.integratedPreviewPlayer")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.integratedPreviewPlayerDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 transition-colors" />
@@ -432,8 +433,8 @@ export default function InstructorDashboard() {
                     <BarChart3 className="h-5 w-5 text-orange-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">AI 콘텐츠 분석</h3>
-                    <p className="text-sm text-muted-foreground">가독성/난이도/키워드 분석 리포트</p>
+                    <h3 className="font-semibold">{t("id.aiContentAnalysis")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.aiContentAnalysisDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-orange-400 transition-colors" />
@@ -443,7 +444,7 @@ export default function InstructorDashboard() {
         </div>
 
         {/* v2.5 Quick Actions */}
-        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">v2.5 신규 도구</h2>
+        <h2 className="text-lg font-semibold mb-3 text-muted-foreground">{t("id.v2_5_tools")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <Link href="/broadcasts">
             <Card className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-red-500/30 hover:border-red-500/50 transition-colors cursor-pointer group">
@@ -453,8 +454,8 @@ export default function InstructorDashboard() {
                     <Tv className="h-5 w-5 text-red-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">라이브 방송</h3>
-                    <p className="text-sm text-muted-foreground">AI 강사 실시간 강의 방송</p>
+                    <h3 className="font-semibold">{t("id.liveBroadcast")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.liveBroadcastDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-red-400 transition-colors" />
@@ -469,8 +470,8 @@ export default function InstructorDashboard() {
                     <Radio className="h-5 w-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">방송 관리</h3>
-                    <p className="text-sm text-muted-foreground">방송 생성, 예약, 이력 관리</p>
+                    <h3 className="font-semibold">{t("id.broadcastManagement")}</h3>
+                    <p className="text-sm text-muted-foreground">{t("id.broadcastManagementDesc")}</p>
                   </div>
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-cyan-400 transition-colors" />
@@ -482,7 +483,7 @@ export default function InstructorDashboard() {
         {/* Recent Lectures */}
         {myLectures && myLectures.length > 0 && (
           <div>
-            <h2 className="text-xl font-bold mb-4">최근 강의</h2>
+            <h2 className="text-xl font-bold mb-4">{t("id.recentLectures")}</h2>
             <div className="space-y-3">
               {myLectures.slice(0, 5).map((lecture: any) => (
                 <Link key={lecture.id} href={`/instructor/lectures/${lecture.id}/edit`}>

@@ -13,6 +13,7 @@ import { useParams } from "wouter";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Streamdown } from "streamdown";
 import { toast } from "sonner";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   BookOpen,
   Bookmark,
@@ -61,6 +62,7 @@ const LANGUAGES = [
 ];
 
 export default function LectureRoom() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const lectureId = Number(params.id);
   const { user, isAuthenticated } = useAuth();
@@ -85,6 +87,7 @@ export default function LectureRoom() {
   // Avatar state
   const [avatarSpeaking, setAvatarSpeaking] = useState(false);
   const [avatarVideoUrl, setAvatarVideoUrl] = useState<string | null>(null);
+  const [isAvatarMode, setIsAvatarMode] = useState(false);
 
   // Bookmark state
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<number>>(new Set());
@@ -112,15 +115,15 @@ export default function LectureRoom() {
   const translateMutation = trpc.translation.translate.useMutation();
   const avatarMutation = trpc.avatar.generate.useMutation();
   const bookmarkAddMutation = trpc.bookmark.add.useMutation({
-    onSuccess: () => toast.success("북마크에 추가되었습니다!"),
+    onSuccess: () => toast.success(t("lr.bookmarkAdded")),
   });
   const bookmarkRemoveMutation = trpc.bookmark.remove.useMutation({
-    onSuccess: () => toast.success("북마크가 제거되었습니다."),
+    onSuccess: () => toast.success(t("lr.bookmarkRemoved")),
   });
   const progressMutation = trpc.progress.update.useMutation();
   const createVodMutation = trpc.vod.createFromLecture.useMutation({
     onSuccess: (data) => {
-      toast.success(`VOD가 생성되었습니다! (ID: ${data.vodId})`);
+      toast.success(t("lr.vodCreated", { vodId: data.vodId }));
     },
     onError: (err) => toast.error(err.message),
   });
@@ -260,7 +263,7 @@ export default function LectureRoom() {
       setIsRecording(true);
     } catch (err) {
       console.error("Microphone access denied:", err);
-      toast.error("마이크 접근이 거부되었습니다.");
+      toast.error(t("lr.micAccessDenied"));
     }
   };
 
@@ -294,209 +297,168 @@ export default function LectureRoom() {
         text: content,
         targetLang: selectedLang,
         sourceLang: "ko",
-        sourceType: "qa_message",
-        sourceId: messageId,
+        sourceType: "qa",
       });
-      setTranslatedMessages((prev) => ({
-        ...prev,
-        [messageId]: result.translatedText,
-      }));
-    } catch {
-      // ignore
+      setTranslatedMessages(prev => ({ ...prev, [messageId]: result.translatedText }));
+    } catch (err) {
+      console.error("Translation error:", err);
     }
   };
 
-  const isAvatarMode = lecture?.aiMode === "avatar";
+  const handleAvatarGeneration = async (text: string) => {
+    if (!lecture?.instructor.avatarUrl) return;
+    setAvatarVideoUrl(null);
+    try {
+      const result = await avatarMutation.mutateAsync({
+        text,
+        avatarUrl: lecture.instructor.avatarUrl,
+      });
+      setAvatarVideoUrl(result.videoUrl);
+    } catch (err) {
+      console.error("Avatar generation error:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (isAvatarMode && messages) {
+      const lastAnswer = [...messages].reverse().find(m => m.message.messageType === "answer");
+      if (lastAnswer) {
+        handleAvatarGeneration(lastAnswer.message.content);
+      }
+    }
+  }, [isAvatarMode, messages]);
 
   if (!lecture) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <div className="container py-16 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">강의를 불러오는 중...</p>
-        </div>
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !isEnrolled) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="flex flex-col min-h-screen bg-background">
         <Navbar />
-        <div className="container py-16 text-center">
-          <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
-          <p className="text-muted-foreground mb-6">강의에 참여하려면 먼저 로그인해주세요.</p>
-          <Button asChild>
-            <a href={getLoginUrl()}>로그인</a>
-          </Button>
+        <div className="flex-1 flex items-center justify-center">
+          <Card className="w-[380px] text-center p-8">
+            <CardContent>
+              <BookOpen className="h-12 w-12 mx-auto text-primary mb-4" />
+              <h2 className="text-xl font-bold mb-2">{t("lr.enrollToJoin")}</h2>
+              <p className="text-sm text-muted-foreground mb-6">{t("lr.enrollToJoinDescription")}</p>
+              <Button onClick={() => enrollMutation.mutate({ lectureId })}>{t("lr.enrollNow")}</Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="flex flex-col min-h-screen bg-background">
       <Navbar />
-
-      {/* Lecture Header */}
-      <div className="border-b border-border bg-card/50">
-        <div className="container py-3 flex items-center justify-between">
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Left: Lecture Info & Controls */}
+        <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border p-4 space-y-6 bg-card/50">
           <div>
-            <h1 className="text-xl font-bold">{lecture.title}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className="text-xs">
-                {lecture.category}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={
-                  lecture.status === "live"
-                    ? "bg-green-500/20 text-green-400 border-0"
-                    : "text-muted-foreground"
-                }
-              >
-                {lecture.status === "live" ? "LIVE" : lecture.status}
-              </Badge>
-              <Badge variant="outline" className="text-xs gap-1">
-                {lecture.aiMode === "avatar" ? (
-                  <><User className="h-3 w-3" /> 아바타</>
-                ) : lecture.aiMode === "voice" ? (
-                  <><Volume2 className="h-3 w-3" /> 음성</>
-                ) : (
-                  <><MessageSquare className="h-3 w-3" /> 텍스트</>
-                )}
-              </Badge>
+            <h2 className="text-2xl font-bold">{lecture?.title}</h2>
+            <Badge variant="secondary" className="mt-2">{lecture.category.name}</Badge>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <h3 className="text-lg font-semibold mb-2">{t("lr.lectureOutline")}</h3>
+            <p className="text-sm text-muted-foreground">{lecture?.description}</p>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">{t("lr.instructor")}</span>
+              <div className="flex items-center gap-2">
+                <img src={lecture.instructor.avatarUrl || ""} alt={lecture.instructor.name} className="h-6 w-6 rounded-full" />
+                <span>{lecture.instructor.name}</span>
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">{t("lr.totalLearningTime")}</span>
+              <span>{t("lr.minutes", { minutes: lecture?.totalTimeMinutes })}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Language selector */}
-            <div className="relative">
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setShowLangPicker(!showLangPicker)}
-              >
-                <Globe className="h-3.5 w-3.5" />
-                {LANGUAGES.find((l) => l.code === selectedLang)?.flag}
+
+          <Separator />
+
+          {/* VOD & Settings */}
+          <div className="space-y-4">
+            <div className="p-3 rounded-lg bg-secondary/30">
+              <p className="font-semibold">{t("lr.createVod")}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("lr.createVodDescription")}</p>
+              <Button size="sm" onClick={() => createVodMutation.mutate({ lectureId })} disabled={createVodMutation.isPending} className="mt-3 w-full">
+                {createVodMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Video className="h-4 w-4 mr-2"/>}
+                {t("lr.create")}
               </Button>
-              {showLangPicker && (
-                <div className="absolute right-0 top-full mt-2 z-50 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-2 w-64 max-h-80 overflow-y-auto">
-                  <div className="grid grid-cols-2 gap-1">
-                    {LANGUAGES.map((lang) => (
-                      <button
-                        key={lang.code}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${
-                          selectedLang === lang.code ? "bg-accent text-accent-foreground" : ""
-                        }`}
-                        onClick={() => {
-                          setSelectedLang(lang.code);
-                          setShowLangPicker(false);
-                          setTranslatedMessages({});
-                        }}
-                      >
-                        <span className="text-base">{lang.flag}</span>
-                        <span className="truncate">{lang.name}</span>
-                      </button>
-                    ))}
-                  </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-secondary/30">
+              <p className="font-semibold">{t("lr.selectLanguage")}</p>
+              <div className="relative mt-2">
+                <Button variant="outline" className="w-full justify-between" onClick={() => setShowLangPicker(!showLangPicker)}>
+                  <span>{LANGUAGES.find(l => l.code === selectedLang)?.name}</span>
+                  <ChevronRight className={`h-4 w-4 transition-transform ${showLangPicker ? 'transform rotate-90' : ''}`} />
+                </Button>
+                {showLangPicker && (
+                  <Card className="absolute bottom-full mb-2 w-full max-h-48 overflow-y-auto z-10">
+                    <ScrollArea className="h-full">
+                      {LANGUAGES.map(lang => (
+                        <div key={lang.code} onClick={() => { setSelectedLang(lang.code); setShowLangPicker(false); }} className="flex items-center gap-2 p-2 hover:bg-accent cursor-pointer text-sm">
+                          <span>{lang.flag}</span>
+                          <span>{lang.name}</span>
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </Card>
+                )}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-secondary/30 flex items-center justify-between">
+              <div>
+                <p className="font-semibold">{t("lr.avatarMode")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("lr.avatarModeDescription")}</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked={isAvatarMode} onChange={(e) => setIsAvatarMode(e.target.checked)} className="sr-only peer" />
+                <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Center: Content Panel (Slides/Whiteboard) */}
+        <div className="flex-1 flex flex-col bg-card/80">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <div className="flex justify-between items-center border-b border-border px-4">
+              <TabsList>
+                <TabsTrigger value="slides">{t("lr.slides")}</TabsTrigger>
+                <TabsTrigger value="whiteboard">{t("lr.whiteboard")}</TabsTrigger>
+              </TabsList>
+              {isAvatarMode && (
+                <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary">
+                  {avatarVideoUrl ? (
+                    <video src={avatarVideoUrl} autoPlay className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={lecture.instructor.avatarUrl || ""} alt="AI Avatar" className="w-full h-full object-cover" />
+                  )}
+                  {avatarSpeaking && <div className="absolute inset-0 border-4 border-green-500 rounded-full animate-pulse"></div>}
                 </div>
               )}
             </div>
 
-            {/* Save as VOD button (instructor only) */}
-            {(user?.platformRole === "instructor" || user?.role === "admin") && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => createVodMutation.mutate({ lectureId })}
-                disabled={createVodMutation.isPending}
-              >
-                {createVodMutation.isPending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Save className="h-3.5 w-3.5" />
-                )}
-                VOD 저장
-              </Button>
-            )}
-
-            {!isEnrolled && (
-              <Button
-                size="sm"
-                onClick={() => enrollMutation.mutate({ lectureId })}
-                disabled={enrollMutation.isPending}
-              >
-                {enrollMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "수강 신청"
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Left: Content Area */}
-        <div className="flex-1 flex flex-col">
-          {/* Avatar Panel (shown in avatar mode) */}
-          {isAvatarMode && (
-            <div className="border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 p-4">
-              <div className="flex items-center gap-4">
-                <div className={`relative h-20 w-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center ${avatarSpeaking ? "ring-4 ring-primary/50 ring-offset-2 ring-offset-background" : ""} transition-all`}>
-                  <Bot className="h-10 w-10 text-white" />
-                  {avatarSpeaking && (
-                    <div className="absolute -bottom-1 -right-1">
-                      <div className="flex gap-0.5">
-                        <div className="w-1.5 h-3 bg-primary rounded-full animate-pulse" />
-                        <div className="w-1.5 h-4 bg-primary rounded-full animate-pulse delay-75" />
-                        <div className="w-1.5 h-2 bg-primary rounded-full animate-pulse delay-150" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold flex items-center gap-2">
-                    AI 강사 아바타
-                    {avatarSpeaking && (
-                      <Badge className="bg-green-500/20 text-green-400 border-0 text-xs animate-pulse">
-                        말하는 중...
-                      </Badge>
-                    )}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {lecture.title} - AI가 실시간으로 답변합니다
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <div className="border-b border-border px-4">
-              <TabsList className="bg-transparent">
-                <TabsTrigger value="slides" className="gap-2">
-                  <BookOpen className="h-4 w-4" />
-                  슬라이드
-                </TabsTrigger>
-                <TabsTrigger value="whiteboard" className="gap-2">
-                  <Palette className="h-4 w-4" />
-                  화이트보드
-                </TabsTrigger>
-              </TabsList>
-            </div>
-
-            <TabsContent value="slides" className="flex-1 m-0 p-4">
+            <TabsContent value="slides" className="flex-1 m-0">
               {materials && materials.length > 0 ? (
-                <div className="h-full flex flex-col">
-                  <div className="flex-1 bg-muted rounded-lg flex items-center justify-center relative overflow-hidden min-h-[400px]">
-                    {materials[currentSlide]?.fileUrl ? (
+                <div className="h-full flex flex-col justify-between p-4">
+                  <div className="flex-1 flex items-center justify-center bg-secondary/20 rounded-lg overflow-hidden min-h-[400px]">
+                    {materials[currentSlide] ? (
                       materials[currentSlide].fileType === "image" ? (
                         <img
                           src={materials[currentSlide].fileUrl}
@@ -513,8 +475,8 @@ export default function LectureRoom() {
                     ) : (
                       <div className="text-center text-muted-foreground">
                         <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">{materials[currentSlide]?.title || "슬라이드"}</p>
-                        <p className="text-sm">슬라이드 {currentSlide + 1} / {materials.length}</p>
+                        <p className="text-lg font-medium">{materials[currentSlide]?.title || t("lr.slide")}</p>
+                        <p className="text-sm">{t("lr.slideProgress", { current: currentSlide + 1, total: materials.length })}</p>
                       </div>
                     )}
                   </div>
@@ -543,11 +505,11 @@ export default function LectureRoom() {
                   </div>
                 </div>
               ) : (
-                <div className="h-full flex items-center justify-center min-h-[400px]">
+                <div className="h-full flex items-center justify-center min-h-[400px]\">
                   <div className="text-center text-muted-foreground">
                     <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium">강의 자료가 없습니다</p>
-                    <p className="text-sm">강사가 자료를 업로드하면 여기에 표시됩니다.</p>
+                    <p className="text-lg font-medium">{t("lr.noMaterials")}</p>
+                    <p className="text-sm">{t("lr.materialsWillBeHere")}</p>
                   </div>
                 </div>
               )}
@@ -570,7 +532,7 @@ export default function LectureRoom() {
                   <Eraser className="h-4 w-4" />
                 </Button>
                 <Separator orientation="vertical" className="h-6" />
-                {["#3b82f6", "#ef4444", "#22c55e", "#eab308", "#ffffff"].map((color) => (
+                {['#3b82f6', '#ef4444', '#22c55e', '#eab308', '#ffffff'].map((color) => (
                   <button
                     key={color}
                     className={`h-6 w-6 rounded-full border-2 ${
@@ -607,13 +569,13 @@ export default function LectureRoom() {
           <div className="p-4 border-b border-border">
             <h3 className="font-semibold flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-primary" />
-              AI Q&A
+              {t("lr.aiQa")}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              텍스트 또는 음성으로 질문하세요
+              {t("lr.askByTextOrVoice")}
               {selectedLang !== "ko" && (
                 <span className="ml-1">
-                  · {LANGUAGES.find((l) => l.code === selectedLang)?.flag} 번역 활성화
+                  · {t("lr.translationEnabled", { flag: LANGUAGES.find((l) => l.code === selectedLang)?.flag })}
                 </span>
               )}
             </p>
@@ -633,8 +595,8 @@ export default function LectureRoom() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs text-muted-foreground">
                         {msg.message.messageType === "question"
-                          ? msg.user?.name || "수강생"
-                          : isAvatarMode ? "AI 아바타" : "AI 강사"}
+                          ? msg.user?.name || t("lr.student")
+                          : isAvatarMode ? t("lr.aiAvatar") : t("lr.aiInstructor")}
                       </span>
                       {msg.message.inputMethod === "voice" && (
                         <Mic className="h-3 w-3 text-muted-foreground" />
@@ -671,7 +633,7 @@ export default function LectureRoom() {
                           ) : (
                             <Volume2 className="h-3 w-3" />
                           )}
-                          음성
+                          {t("lr.voice")}
                         </Button>
                         <Button
                           variant="ghost"
@@ -684,7 +646,7 @@ export default function LectureRoom() {
                           ) : (
                             <Bookmark className="h-3 w-3" />
                           )}
-                          북마크
+                          {t("lr.bookmark")}
                         </Button>
                         {selectedLang !== "ko" && (
                           <>
@@ -710,7 +672,7 @@ export default function LectureRoom() {
                                 ) : (
                                   <Globe className="h-3 w-3" />
                                 )}
-                                번역
+                                {t("lr.translate")}
                               </Button>
                             )}
                           </>
@@ -722,8 +684,8 @@ export default function LectureRoom() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">아직 질문이 없습니다</p>
-                  <p className="text-xs">첫 번째 질문을 해보세요!</p>
+                  <p className="text-sm">{t("lr.noQuestionsYet")}</p>
+                  <p className="text-xs">{t("lr.askFirstQuestion")}</p>
                 </div>
               )}
               <div ref={chatEndRef} />
@@ -737,7 +699,7 @@ export default function LectureRoom() {
                 variant={isRecording ? "destructive" : "outline"}
                 size="icon"
                 onClick={handleVoiceRecord}
-                title={isRecording ? "녹음 중지" : "음성으로 질문"}
+                title={isRecording ? t("lr.stopRecording") : t("lr.askWithVoice")}
               >
                 {isRecording ? (
                   <StopCircle className="h-4 w-4" />
@@ -746,7 +708,7 @@ export default function LectureRoom() {
                 )}
               </Button>
               <Input
-                placeholder="질문을 입력하세요..."
+                placeholder={t("lr.enterQuestion")}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAsk()}

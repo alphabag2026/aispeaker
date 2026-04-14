@@ -1,3 +1,4 @@
+
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { DollarSign, Users, TrendingUp, CreditCard, Coins, Bitcoin, Loader2, ArrowLeft, BarChart3 } from "lucide-react";
@@ -6,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 
+import { useTranslation } from "@/contexts/LanguageContext";
+
 export default function AdminRevenue() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const authLoading = !isAuthenticated && !user;
   const { data: overview, isLoading } = trpc.revenue.overview.useQuery(undefined, {
@@ -30,8 +34,8 @@ export default function AdminRevenue() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <BarChart3 className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">접근 권한 없음</h2>
-            <p className="text-muted-foreground">관리자만 접근할 수 있습니다.</p>
+            <h2 className="text-xl font-bold mb-2">{t("ar.noAccess")}</h2>
+            <p className="text-muted-foreground">{t("ar.adminOnly")}</p>
           </CardContent>
         </Card>
       </div>
@@ -58,8 +62,8 @@ export default function AdminRevenue() {
             <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">매출 대시보드</h1>
-            <p className="text-muted-foreground">수익 현황 및 구독 통계</p>
+            <h1 className="text-3xl font-bold">{t("ar.title")}</h1>
+            <p className="text-muted-foreground">{t("ar.description")}</p>
           </div>
         </div>
 
@@ -72,7 +76,7 @@ export default function AdminRevenue() {
                   <DollarSign className="w-6 h-6 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">총 매출</p>
+                  <p className="text-sm text-muted-foreground">{t("ar.totalRevenue")}</p>
                   <p className="text-2xl font-bold">${((stats.totalRevenue || 0) / 100).toLocaleString()}</p>
                 </div>
               </div>
@@ -85,7 +89,7 @@ export default function AdminRevenue() {
                   <TrendingUp className="w-6 h-6 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">예상 MRR</p>
+                  <p className="text-sm text-muted-foreground">{t("ar.estimatedMrr")}</p>
                   <p className="text-2xl font-bold">${(mrr / 100).toLocaleString()}</p>
                 </div>
               </div>
@@ -98,7 +102,7 @@ export default function AdminRevenue() {
                   <Users className="w-6 h-6 text-purple-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">활성 구독</p>
+                  <p className="text-sm text-muted-foreground">{t("ar.activeSubscriptions")}</p>
                   <p className="text-2xl font-bold">{(stats as any).activeSubscriptions || 0}</p>
                 </div>
               </div>
@@ -111,7 +115,7 @@ export default function AdminRevenue() {
                   <CreditCard className="w-6 h-6 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">총 결제 건수</p>
+                  <p className="text-sm text-muted-foreground">{t("ar.totalPayments")}</p>
                   <p className="text-2xl font-bold">{stats.completedPayments || 0}</p>
                 </div>
               </div>
@@ -124,14 +128,14 @@ export default function AdminRevenue() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5" /> 월별 매출 추이
+                <BarChart3 className="w-5 h-5" /> {t("ar.monthlyRevenueTrend")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {monthlyRevenue.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>아직 매출 데이터가 없습니다</p>
+                  <p>{t("ar.noRevenueData")}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -161,14 +165,14 @@ export default function AdminRevenue() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" /> 플랜별 가입자 분포
+                <Users className="w-5 h-5" /> {t("ar.planDistribution")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {planDistribution.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>아직 구독자 데이터가 없습니다</p>
+                  <p>{t("ar.noSubscriberData")}</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -201,7 +205,7 @@ export default function AdminRevenue() {
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
                           <p className="text-2xl font-bold">{planDistribution.reduce((s: number, p: any) => s + (p.count || 0), 0)}</p>
-                          <p className="text-xs text-muted-foreground">총 구독자</p>
+                          <p className="text-xs text-muted-foreground">{t("ar.totalSubscribers")}</p>
                         </div>
                       </div>
                     </div>
@@ -214,7 +218,7 @@ export default function AdminRevenue() {
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: planColors[i % planColors.length] }} />
                           <span className="text-sm">{plan.planName || "Unknown"}</span>
                         </div>
-                        <span className="font-medium">{plan.count || 0}명</span>
+                        <span className="font-medium">{t("ar.subscriberCount", { count: plan.count || 0 })}</span>
                       </div>
                     ))}
                   </div>
@@ -228,14 +232,14 @@ export default function AdminRevenue() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Coins className="w-5 h-5" /> 크레딧 소비 추이 (최근 30일)
+              <Coins className="w-5 h-5" /> {t("ar.creditConsumptionTrend")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {creditTrend.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Coins className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>아직 크레딧 사용 데이터가 없습니다</p>
+                <p>{t("ar.noCreditData")}</p>
               </div>
             ) : (
               <div className="h-48 flex items-end gap-1">
@@ -243,13 +247,17 @@ export default function AdminRevenue() {
                   const maxCredits = Math.max(...creditTrend.map((c: any) => c.creditsUsed || 0));
                   const pct = maxCredits > 0 ? ((item.creditsUsed || 0) / maxCredits) * 100 : 0;
                   return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${item.date}: ${item.creditsUsed || 0} 크레딧`}>
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1" title={t("ar.creditUsageTooltip", { date: item.date, credits: item.creditsUsed || 0 })}>
                       <div
                         className="w-full bg-gradient-to-t from-purple-500 to-pink-400 rounded-t transition-all duration-300 min-h-[2px]"
                         style={{ height: `${Math.max(pct, 2)}%` }}
                       />
                       {i % 5 === 0 && (
-                        <span className="text-[10px] text-muted-foreground rotate-45 origin-left">{item.date?.slice(5)}</span>
+                        <span
+                          className="text-xs text-muted-foreground mt-1 transform -translate-x-1/2 whitespace-nowrap"
+                        >
+                          {item.date.slice(5)}
+                        </span>
                       )}
                     </div>
                   );
@@ -263,26 +271,26 @@ export default function AdminRevenue() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CreditCard className="w-5 h-5" /> 최근 결제 내역
+              <CreditCard className="w-5 h-5" /> {t("ar.recentPayments")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {!recentPayments || recentPayments.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <CreditCard className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p>아직 결제 내역이 없습니다</p>
+                <p>{t("ar.noPaymentHistory")}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">날짜</th>
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">유저</th>
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">유형</th>
-                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">결제수단</th>
-                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">금액</th>
-                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">상태</th>
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">{t("ar.date")}</th>
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">{t("ar.user")}</th>
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">{t("ar.type")}</th>
+                      <th className="text-left py-3 px-2 font-medium text-muted-foreground">{t("ar.paymentMethod")}</th>
+                      <th className="text-right py-3 px-2 font-medium text-muted-foreground">{t("ar.amount")}</th>
+                      <th className="text-center py-3 px-2 font-medium text-muted-foreground">{t("ar.status")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -292,19 +300,19 @@ export default function AdminRevenue() {
                         <td className="py-3 px-2">User #{p.userId}</td>
                         <td className="py-3 px-2">
                           <Badge variant="outline" className="text-xs">
-                            {p.paymentType === "subscription" ? "구독" : "크레딧"}
+                            {p.paymentType === "subscription" ? t("ar.subscription") : t("ar.credit")}
                           </Badge>
                         </td>
                         <td className="py-3 px-2">
                           <span className="flex items-center gap-1">
                             {p.paymentMethod === "stripe" ? <CreditCard className="w-3 h-3" /> : <Bitcoin className="w-3 h-3" />}
-                            {p.paymentMethod === "stripe" ? "카드" : "암호화폐"}
+                            {p.paymentMethod === "stripe" ? t("ar.card") : t("ar.crypto")}
                           </span>
                         </td>
                         <td className="py-3 px-2 text-right font-medium">${(p.amountCents / 100).toFixed(2)}</td>
                         <td className="py-3 px-2 text-center">
                           <Badge variant={p.status === "completed" ? "default" : "secondary"} className="text-xs">
-                            {p.status === "completed" ? "완료" : p.status === "pending" ? "대기" : p.status}
+                            {p.status === "completed" ? t("ar.completed") : p.status === "pending" ? t("ar.pending") : p.status}
                           </Badge>
                         </td>
                       </tr>

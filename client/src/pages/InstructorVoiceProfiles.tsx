@@ -36,9 +36,11 @@ import {
 } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 // Voices loaded from server API
 
 export default function InstructorVoiceProfiles() {
+  const { t } = useTranslation();
   const { data: profiles, refetch } = trpc.voiceProfile.list.useQuery();
   const utils = trpc.useUtils();
 
@@ -63,7 +65,7 @@ export default function InstructorVoiceProfiles() {
 
   const createMutation = trpc.voiceProfile.create.useMutation({
     onSuccess: () => {
-      toast.success("음성 프로필이 생성되었습니다!");
+      toast.success(t("ivp.profile_created"));
       resetForm();
       setDialogOpen(false);
       utils.voiceProfile.list.invalidate();
@@ -73,7 +75,7 @@ export default function InstructorVoiceProfiles() {
 
   const updateMutation = trpc.voiceProfile.update.useMutation({
     onSuccess: () => {
-      toast.success("음성 프로필이 수정되었습니다!");
+      toast.success(t("ivp.profile_updated"));
       resetForm();
       setDialogOpen(false);
       utils.voiceProfile.list.invalidate();
@@ -83,14 +85,14 @@ export default function InstructorVoiceProfiles() {
 
   const deleteMutation = trpc.voiceProfile.delete.useMutation({
     onSuccess: () => {
-      toast.success("음성 프로필이 삭제되었습니다.");
+      toast.success(t("ivp.profile_deleted"));
       utils.voiceProfile.list.invalidate();
     },
   });
 
   const uploadSampleMutation = trpc.voiceProfile.uploadSample.useMutation({
     onSuccess: (data) => {
-      toast.success("음성 샘플이 업로드되고 분석되었습니다!");
+      toast.success(t("ivp.sample_uploaded"));
       utils.voiceProfile.list.invalidate();
     },
     onError: (err) => toast.error(err.message),
@@ -110,7 +112,7 @@ export default function InstructorVoiceProfiles() {
 
   const handleSubmit = () => {
     if (!name.trim()) {
-      toast.error("프로필 이름을 입력해주세요.");
+      toast.error(t("ivp.enter_name"));
       return;
     }
     if (editId) {
@@ -175,16 +177,16 @@ export default function InstructorVoiceProfiles() {
 
       mediaRecorder.start();
       setIsRecording(true);
-      toast.info("녹음이 시작되었습니다. 30초~1분 정도 자연스럽게 강의하듯 말씀해주세요.");
+      toast.info(t("ivp.recording_started"));
     } catch (err) {
-      toast.error("마이크 접근이 거부되었습니다.");
+      toast.error(t("ivp.mic_denied"));
     }
   };
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const handleAnalyze = (profileId: number) => {
     if (!voiceDescription && !teachingStyle) {
-      toast.error("음성 특성이나 강의 스타일을 먼저 입력해주세요.");
+      toast.error(t("ivp.enter_style_first"));
       return;
     }
     setIsAnalyzing(true);
@@ -200,7 +202,7 @@ export default function InstructorVoiceProfiles() {
   const handlePreviewVoice = async (voiceId: string) => {
     try {
       const result = await ttsMutation.mutateAsync({
-        text: "안녕하세요, 저는 AI 강사입니다. 오늘 Web3에 대해 알아보겠습니다.",
+        text: t("ivp.preview_text"),
         voiceId,
       });
       if (result.audioUrl) {
@@ -208,7 +210,7 @@ export default function InstructorVoiceProfiles() {
         audio.play();
       }
     } catch (err) {
-      toast.error("음성 미리듣기에 실패했습니다.");
+      toast.error(t("ivp.preview_failed"));
     }
   };
 
@@ -233,8 +235,8 @@ export default function InstructorVoiceProfiles() {
                 </Button>
               </Link>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">음성 프로필 관리</h1>
-            <p className="text-white/70 mt-1">AI가 사용할 음성과 강의 스타일을 설정하세요</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">{t("ivp.manage_voice_profiles")}</h1>
+            <p className="text-white/70 mt-1">{t("ivp.set_voice_and_style")}</p>
           </div>
         </div>
       </div>
@@ -249,24 +251,24 @@ export default function InstructorVoiceProfiles() {
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                새 프로필
+                {t("ivp.new_profile")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
-                <DialogTitle>{editId ? "프로필 수정" : "새 음성 프로필"}</DialogTitle>
+                <DialogTitle>{editId ? t("ivp.edit_profile") : t("ivp.new_voice_profile")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <Label>프로필 이름</Label>
+                  <Label>{t("ivp.profile_name")}</Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="예: 기본 강의 목소리"
+                    placeholder={t("ivp.name_placeholder")}
                   />
                 </div>
                 <div>
-                  <Label>TTS 음성</Label>
+                  <Label>{t("ivp.tts_voice")}</Label>
                   <div className="flex items-center gap-2">
                     <Select value={ttsVoiceId} onValueChange={setTtsVoiceId}>
                       <SelectTrigger>
@@ -284,20 +286,20 @@ export default function InstructorVoiceProfiles() {
                   </div>
                 </div>
                 <div>
-                  <Label>음성 특성 설명</Label>
+                  <Label>{t("ivp.voice_desc")}</Label>
                   <Textarea
                     value={voiceDescription}
                     onChange={(e) => setVoiceDescription(e.target.value)}
-                    placeholder="예: 차분하고 명확한 발음, 중간 속도, 핵심 개념 강조 시 톤 높임"
+                    placeholder={t("ivp.voice_desc_placeholder")}
                     rows={2}
                   />
                 </div>
                 <div>
-                  <Label>강의 스타일</Label>
+                  <Label>{t("ivp.teaching_style")}</Label>
                   <Textarea
                     value={teachingStyle}
                     onChange={(e) => setTeachingStyle(e.target.value)}
-                    placeholder="예: 비유를 자주 사용, 단계별 설명, 질문을 던지며 진행"
+                    placeholder={t("ivp.teaching_style_placeholder")}
                     rows={2}
                   />
                 </div>
@@ -306,16 +308,16 @@ export default function InstructorVoiceProfiles() {
                     resetForm();
                     setDialogOpen(false);
                   }}>
-                    취소
+                    {t("ivp.cancel")}
                   </Button>
                   <Button
                     onClick={handleSubmit}
                     disabled={createMutation.isPending || updateMutation.isPending}
                   >
-                    {(createMutation.isPending || updateMutation.isPending) ? (
+                    {(createMutation.isPending || updateMutation.isPending) && (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : null}
-                    {editId ? "수정" : "생성"}
+                    )}
+                    {editId ? t("ivp.edit") : t("ivp.create")}
                   </Button>
                 </div>
               </div>
@@ -336,12 +338,12 @@ export default function InstructorVoiceProfiles() {
                         {profile.name}
                         {profile.isDefault && (
                           <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-                            기본
+                            {t("ivp.default")}
                           </span>
                         )}
                       </h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        TTS 음성: {ttsVoices.find((v) => v.id === profile.ttsVoiceId)?.name || profile.ttsVoiceId}
+                        {t("ivp.tts_voice_label")} {ttsVoices.find((v) => v.id === profile.ttsVoiceId)?.name || profile.ttsVoiceId}
                       </p>
                     </div>
                     <div className="flex gap-2">
@@ -357,7 +359,7 @@ export default function InstructorVoiceProfiles() {
                         ) : (
                           <Volume2 className="h-3.5 w-3.5" />
                         )}
-                        미리듣기
+                        {t("ivp.preview")}
                       </Button>
                       <Button
                         variant="outline"
@@ -366,14 +368,14 @@ export default function InstructorVoiceProfiles() {
                         onClick={() => handleEdit(profile)}
                       >
                         <Edit className="h-3.5 w-3.5" />
-                        수정
+                        {t("ivp.edit_button")}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         className="gap-1 text-destructive"
                         onClick={() => {
-                          if (confirm("정말 삭제하시겠습니까?")) {
+                          if (confirm(t("ivp.confirm_delete"))) {
                             deleteMutation.mutate({ id: profile.id });
                           }
                         }}
@@ -385,14 +387,14 @@ export default function InstructorVoiceProfiles() {
 
                   {profile.voiceDescription && (
                     <div className="mb-3">
-                      <p className="text-xs text-muted-foreground mb-1">음성 특성</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t("ivp.voice_trait")}</p>
                       <p className="text-sm">{profile.voiceDescription}</p>
                     </div>
                   )}
 
                   {profile.teachingStyle && (
                     <div className="mb-3">
-                      <p className="text-xs text-muted-foreground mb-1">강의 스타일</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t("ivp.teaching_style")}</p>
                       <p className="text-sm">{profile.teachingStyle}</p>
                     </div>
                   )}
@@ -401,7 +403,7 @@ export default function InstructorVoiceProfiles() {
                     <div className="mb-3 p-3 rounded-lg bg-secondary/50">
                       <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                         <Brain className="h-3 w-3" />
-                        AI 시스템 프롬프트 (자동 생성)
+                        {t("ivp.ai_system_prompt")}
                       </p>
                       <p className="text-xs text-muted-foreground line-clamp-3">
                         {profile.systemPrompt}
@@ -420,17 +422,17 @@ export default function InstructorVoiceProfiles() {
                       {isRecording ? (
                         <>
                           <StopCircle className="h-3.5 w-3.5 text-destructive" />
-                          녹음 중지
+                          {t("ivp.stop_recording")}
                         </>
                       ) : uploadSampleMutation.isPending ? (
                         <>
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          분석 중...
+                          {t("ivp.analyzing")}
                         </>
                       ) : (
                         <>
                           <Mic className="h-3.5 w-3.5" />
-                          음성 녹음
+                          {t("ivp.record_voice")}
                         </>
                       )}
                     </Button>
@@ -450,12 +452,12 @@ export default function InstructorVoiceProfiles() {
                       ) : (
                         <Brain className="h-3.5 w-3.5" />
                       )}
-                      스타일 분석
+                      {t("ivp.analyze_style")}
                     </Button>
                     {profile.sampleUrl && (
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Upload className="h-3 w-3" />
-                        샘플 업로드됨
+                        {t("ivp.sample_uploaded_label")}
                       </span>
                     )}
                   </div>
@@ -466,13 +468,13 @@ export default function InstructorVoiceProfiles() {
         ) : (
           <div className="text-center py-16">
             <Mic className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">음성 프로필이 없습니다</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("ivp.no_voice_profiles")}</h3>
             <p className="text-muted-foreground mb-4">
-              AI 강사가 사용할 음성 프로필을 만들어보세요.
+              {t("ivp.create_first_profile_desc")}
             </p>
             <Button className="gap-2" onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4" />
-              첫 프로필 만들기
+              {t("ivp.create_first_profile_button")}
             </Button>
           </div>
         )}

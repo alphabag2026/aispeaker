@@ -890,3 +890,22 @@
 ## v5.4.4 파이프라인 실패 에러 수정 + 진행률 표시 UI
 - [x] 파이프라인 실행 실패 에러 수정 (원인: TTS API 한도 초과, 에러 메시지 구체적으로 표시하도록 개선)
 - [x] 제작 진행률(%) 실시간 표시 UI 추가 (프로그레스 바 + 퍼센트 표시 + 자동 폴링)
+## v5.4.5 Bugfix - D-ID 영상 URL 만료 + Gemini 모델 에러 + 아바타 영상 UI
+- [ ] D-ID 영상 URL이 임시 서명 URL이라 24시간 후 만료됨 → 영상을 로컬 서버에 다운로드하여 영구 저장
+- [ ] Gemini 이미지 생성 모델 404 에러 수정 (gemini-2.0-flash-exp → gemini-2.5-flash-preview-04-17 변경)
+- [ ] 아바타 영상이 제작 이력 UI에 표시되지 않는 문제 수정
+
+## v5.5 - D-ID + HeyGen + Seedance 2.0 통합
+- [ ] HeyGen API 통합 - 아바타 강의 영상 생성 (D-ID 대안)
+- [ ] Seedance 2.0 (fal.ai) API 통합 - 인트로/아웃트로/B-roll 보조 영상 생성
+- [ ] 프론트엔드 UI - 아바타 엔진 선택 드롭다운 (D-ID / HeyGen)
+- [ ] 프론트엔드 UI - Seedance 2.0 인트로/아웃트로 영상 생성 옵션
+- [ ] API 키 환경변수 설정 (HEYGEN_API_KEY, FAL_API_KEY)
+- [ ] 프로덕션 배포 및 테스트
+
+## 전체 UI 다국어 현지화 (i18n)
+- [x] LanguageContext에 vi, th 등 20개 언어 추가
+- [x] 모든 페이지(40개) 한국어 하드코딩 → t() 키로 변환 및 42개 번역 파일 작성
+- [x] 컴포넌트(CreditGuardModal, VoicePreviewButton, Navbar, DashboardLayout) 현지화
+- [x] 빌드 및 테스트
+- [ ] 프로덕션 배포

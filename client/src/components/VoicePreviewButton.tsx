@@ -1,9 +1,11 @@
+
 import { useState, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Volume2, Loader2, Square } from "lucide-react";
 import { toast } from "sonner";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface VoicePreviewButtonProps {
   voiceId: string;
   size?: "sm" | "default" | "icon";
@@ -17,6 +19,7 @@ export default function VoicePreviewButton({
   variant = "ghost",
   className = "",
 }: VoicePreviewButtonProps) {
+  const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const previewMutation = trpc.tts.preview.useMutation();
@@ -54,7 +57,7 @@ export default function VoicePreviewButton({
         audio.onerror = () => {
           setIsPlaying(false);
           audioRef.current = null;
-          toast.error("오디오 재생에 실패했습니다.");
+          toast.error(t("vpb.audioPlaybackFailed"));
         };
 
         await audio.play();
@@ -62,12 +65,12 @@ export default function VoicePreviewButton({
     } catch (err: any) {
       setIsPlaying(false);
       if (err?.message?.includes("한도")) {
-        toast.error("API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
+        toast.error(t("vpb.apiLimitExceeded"));
       } else {
-        toast.error("음성 미리듣기에 실패했습니다.");
+        toast.error(t("vpb.previewFailed"));
       }
     }
-  }, [voiceId, isPlaying, stopAudio, previewMutation]);
+  }, [voiceId, isPlaying, stopAudio, previewMutation, t]);
 
   const isLoading = previewMutation.isPending && !isPlaying;
 
@@ -79,7 +82,7 @@ export default function VoicePreviewButton({
       className={`${className} ${isPlaying ? "text-violet-400 animate-pulse" : "text-muted-foreground hover:text-violet-400"}`}
       onClick={handlePreview}
       disabled={isLoading || !voiceId}
-      title={isPlaying ? "재생 중지" : "음성 미리듣기"}
+      title={isPlaying ? t("vpb.stopPlayback") : t("vpb.voicePreview")}
     >
       {isLoading ? (
         <Loader2 className="w-4 h-4 animate-spin" />

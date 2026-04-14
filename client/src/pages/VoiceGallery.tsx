@@ -9,43 +9,46 @@ import { Search, Crown, Mic, Play, Pause, Volume2, Globe, Sparkles, ChevronRight
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-
-const LANGUAGES = [
-  { value: "all", label: "전체 언어" },
-  { value: "ko", label: "🇰🇷 한국어" },
-  { value: "en", label: "🇺🇸 English" },
-  { value: "ja", label: "🇯🇵 日本語" },
-  { value: "zh", label: "🇨🇳 中文" },
-];
-
-const TONES = [
-  { value: "all", label: "전체 톤" },
-  { value: "warm", label: "따뜻한" },
-  { value: "professional", label: "전문적인" },
-  { value: "energetic", label: "에너지 넘치는" },
-  { value: "authoritative", label: "권위 있는" },
-  { value: "calm", label: "차분한" },
-];
-
-const GENDERS = [
-  { value: "all", label: "전체" },
-  { value: "male", label: "남성" },
-  { value: "female", label: "여성" },
-];
-
-const TONE_COLORS: Record<string, string> = {
-  warm: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
-  professional: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  energetic: "bg-green-500/10 text-green-600 dark:text-green-400",
-  authoritative: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
-  calm: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
-};
-
-const LANG_FLAGS: Record<string, string> = {
-  ko: "🇰🇷", en: "🇺🇸", ja: "🇯🇵", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷",
-};
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function VoiceGallery() {
+  const { t } = useTranslation();
+
+  const LANGUAGES = [
+    { value: "all", label: t("vg.allLanguages") },
+    { value: "ko", label: `🇰🇷 ${t("vg.korean")}` },
+    { value: "en", label: `🇺🇸 ${t("vg.english")}` },
+    { value: "ja", label: `🇯🇵 ${t("vg.japanese")}` },
+    { value: "zh", label: `🇨🇳 ${t("vg.chinese")}` },
+  ];
+
+  const TONES = [
+    { value: "all", label: t("vg.allTones") },
+    { value: "warm", label: t("vg.warm") },
+    { value: "professional", label: t("vg.professional") },
+    { value: "energetic", label: t("vg.energetic") },
+    { value: "authoritative", label: t("vg.authoritative") },
+    { value: "calm", label: t("vg.calm") },
+  ];
+
+  const GENDERS = [
+    { value: "all", label: t("vg.allGenders") },
+    { value: "male", label: t("vg.male") },
+    { value: "female", label: t("vg.female") },
+  ];
+
+  const TONE_COLORS: Record<string, string> = {
+    warm: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
+    professional: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    energetic: "bg-green-500/10 text-green-600 dark:text-green-400",
+    authoritative: "bg-purple-500/10 text-purple-600 dark:text-purple-400",
+    calm: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
+  };
+
+  const LANG_FLAGS: Record<string, string> = {
+    ko: "🇰🇷", en: "🇺🇸", ja: "🇯🇵", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷",
+  };
+
   const { user } = useAuth();
   const [selectedLanguage, setSelectedLanguage] = useState("all");
   const [selectedTone, setSelectedTone] = useState("all");
@@ -73,27 +76,23 @@ export default function VoiceGallery() {
   });
 
   const handlePlay = async (voice: any) => {
-    // If currently playing this voice, pause it
     if (playingId === voice.id) {
       audioRef.current?.pause();
       setPlayingId(null);
       return;
     }
 
-    // Stop any currently playing audio
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
       setPlayingId(null);
     }
 
-    // If voice already has a sample audio URL, play it directly
     if (voice.sampleAudioUrl) {
       playAudio(voice.sampleAudioUrl, voice.id);
       return;
     }
 
-    // Generate TTS demo on-the-fly
     setLoadingId(voice.id);
     try {
       const result = await previewMutation.mutateAsync({ id: voice.id });
@@ -101,7 +100,7 @@ export default function VoiceGallery() {
         playAudio(result.audioUrl, voice.id);
       }
     } catch (err: any) {
-      toast.error(err.message || "음성 미리듣기 생성에 실패했습니다.");
+      toast.error(err.message || t("vg.previewFailed"));
     } finally {
       setLoadingId(null);
     }
@@ -111,7 +110,7 @@ export default function VoiceGallery() {
     const audio = new Audio(url);
     audioRef.current = audio;
     audio.play().catch(() => {
-      toast.error("오디오 재생에 실패했습니다.");
+      toast.error(t("vg.playbackFailed"));
       setPlayingId(null);
     });
     setPlayingId(voiceId);
@@ -129,7 +128,6 @@ export default function VoiceGallery() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Banner */}
       <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 py-16">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTMwVjBoLTEydjRoMTJ6TTI0IDI0aDEydi0ySDI0djJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
         <div className="container relative z-10">
@@ -138,16 +136,16 @@ export default function VoiceGallery() {
               <Volume2 className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">AI 목소리 갤러리</h1>
-              <p className="text-emerald-100 mt-1">강의에 사용할 AI 음성을 선택하세요</p>
+              <h1 className="text-3xl md:text-4xl font-bold text-white">{t("vg.galleryTitle")}</h1>
+              <p className="text-emerald-100 mt-1">{t("vg.gallerySubtitle")}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 mt-6">
             <Badge variant="secondary" className="bg-white/20 text-white border-0 px-3 py-1">
-              <Sparkles className="w-3 h-3 mr-1" /> {voices.length}+ 음성
+              <Sparkles className="w-3 h-3 mr-1" /> {voices.length}+ {t("vg.voices")}
             </Badge>
             <Badge variant="secondary" className="bg-white/20 text-white border-0 px-3 py-1">
-              <Globe className="w-3 h-3 mr-1" /> 다국어 지원
+              <Globe className="w-3 h-3 mr-1" /> {t("vg.multilingualSupport")}
             </Badge>
             <Badge variant="secondary" className="bg-white/20 text-white border-0 px-3 py-1">
               <Mic className="w-3 h-3 mr-1" /> Gemini TTS
@@ -157,12 +155,11 @@ export default function VoiceGallery() {
       </div>
 
       <div className="container py-8">
-        {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="이름, 설명으로 검색..."
+              placeholder={t("vg.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -170,7 +167,7 @@ export default function VoiceGallery() {
           </div>
           <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
             <SelectTrigger className="w-full md:w-[160px]">
-              <SelectValue placeholder="언어" />
+              <SelectValue placeholder={t("vg.language")} />
             </SelectTrigger>
             <SelectContent>
               {LANGUAGES.map((l) => (
@@ -180,7 +177,7 @@ export default function VoiceGallery() {
           </Select>
           <Select value={selectedTone} onValueChange={setSelectedTone}>
             <SelectTrigger className="w-full md:w-[160px]">
-              <SelectValue placeholder="톤" />
+              <SelectValue placeholder={t("vg.tone")} />
             </SelectTrigger>
             <SelectContent>
               {TONES.map((t) => (
@@ -190,7 +187,7 @@ export default function VoiceGallery() {
           </Select>
           <Select value={selectedGender} onValueChange={setSelectedGender}>
             <SelectTrigger className="w-full md:w-[120px]">
-              <SelectValue placeholder="성별" />
+              <SelectValue placeholder={t("vg.gender")} />
             </SelectTrigger>
             <SelectContent>
               {GENDERS.map((g) => (
@@ -200,7 +197,6 @@ export default function VoiceGallery() {
           </Select>
         </div>
 
-        {/* Voice Cards */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -216,8 +212,8 @@ export default function VoiceGallery() {
         ) : filteredVoices.length === 0 ? (
           <div className="text-center py-20">
             <Volume2 className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground">검색 결과가 없습니다</h3>
-            <p className="text-sm text-muted-foreground/70 mt-1">다른 필터를 시도해보세요</p>
+            <h3 className="text-lg font-medium text-muted-foreground">{t("vg.noResults")}</h3>
+            <p className="text-sm text-muted-foreground/70 mt-1">{t("vg.tryDifferentFilters")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -227,7 +223,6 @@ export default function VoiceGallery() {
                 className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 border-border/50 overflow-hidden"
               >
                 <CardContent className="p-0">
-                  {/* Voice Header */}
                   <div className="p-5 pb-3">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -258,15 +253,14 @@ export default function VoiceGallery() {
                         {voice.tone}
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">
-                        속도: {voice.speed}x
+                        {t("vg.speed")}: {voice.speed}x
                       </Badge>
                       <Badge variant="outline" className="text-[10px]">
-                        엔진: {voice.ttsVoiceId}
+                        {t("vg.engine")}: {voice.ttsVoiceId}
                       </Badge>
                     </div>
                   </div>
 
-                  {/* Play Bar */}
                   <div className="border-t border-border/50 bg-muted/30 px-5 py-3 flex items-center justify-between">
                     <Button
                       variant="ghost"
@@ -276,11 +270,11 @@ export default function VoiceGallery() {
                       disabled={loadingId === voice.id}
                     >
                       {loadingId === voice.id ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> 생성 중...</>
+                        <><Loader2 className="w-4 h-4 animate-spin" /> {t("vg.generating")}...</>
                       ) : playingId === voice.id ? (
-                        <><Pause className="w-4 h-4" /> 정지</>
+                        <><Pause className="w-4 h-4" /> {t("vg.stop")}</>
                       ) : (
-                        <><Play className="w-4 h-4" /> 미리듣기</>
+                        <><Play className="w-4 h-4" /> {t("vg.preview")}</>
                       )}
                     </Button>
                     <Button
@@ -289,17 +283,17 @@ export default function VoiceGallery() {
                       className="gap-1 text-xs"
                       onClick={() => {
                         if (!user) {
-                          toast.error("로그인이 필요합니다.");
+                          toast.error(t("vg.loginRequired"));
                           return;
                         }
                         if (voice.isPremium) {
-                          toast.info("Pro 플랜 이상에서 사용 가능합니다.");
+                          toast.info(t("vg.proPlanRequired"));
                           return;
                         }
-                        toast.success(`${voice.name} 음성이 선택되었습니다.`);
+                        toast.success(`${voice.name} ${t("vg.voiceSelected")}`);
                       }}
                     >
-                      선택 <ChevronRight className="w-3 h-3" />
+                      {t("vg.select")} <ChevronRight className="w-3 h-3" />
                     </Button>
                   </div>
                 </CardContent>

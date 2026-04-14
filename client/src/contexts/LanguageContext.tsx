@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-export type SupportedLang = "ko" | "en" | "zh" | "ja";
+export type SupportedLang = "ko" | "en" | "zh" | "ja" | "vi" | "th" | "es" | "fr" | "de" | "pt" | "ru" | "ar" | "hi" | "id" | "ms" | "tr" | "it" | "pl" | "nl" | "sv";
 
 export interface LangInfo {
   code: SupportedLang;
@@ -11,15 +11,33 @@ export interface LangInfo {
 
 export const SUPPORTED_LANGUAGES: LangInfo[] = [
   { code: "ko", name: "Korean", nativeName: "한국어", flag: "🇰🇷" },
-  { code: "en", name: "English", nativeName: "English", flag: "🇺🇸" },
   { code: "zh", name: "Chinese", nativeName: "中文", flag: "🇨🇳" },
+  { code: "en", name: "English", nativeName: "English", flag: "🇺🇸" },
   { code: "ja", name: "Japanese", nativeName: "日本語", flag: "🇯🇵" },
+  { code: "vi", name: "Vietnamese", nativeName: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "th", name: "Thai", nativeName: "ภาษาไทย", flag: "🇹🇭" },
+  { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷" },
+  { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
+  { code: "pt", name: "Portuguese", nativeName: "Português", flag: "🇧🇷" },
+  { code: "ru", name: "Russian", nativeName: "Русский", flag: "🇷🇺" },
+  { code: "ar", name: "Arabic", nativeName: "العربية", flag: "🇸🇦" },
+  { code: "hi", name: "Hindi", nativeName: "हिन्दी", flag: "🇮🇳" },
+  { code: "id", name: "Indonesian", nativeName: "Bahasa Indonesia", flag: "🇮🇩" },
+  { code: "ms", name: "Malay", nativeName: "Bahasa Melayu", flag: "🇲🇾" },
+  { code: "tr", name: "Turkish", nativeName: "Türkçe", flag: "🇹🇷" },
+  { code: "it", name: "Italian", nativeName: "Italiano", flag: "🇮🇹" },
+  { code: "pl", name: "Polish", nativeName: "Polski", flag: "🇵🇱" },
+  { code: "nl", name: "Dutch", nativeName: "Nederlands", flag: "🇳🇱" },
+  { code: "sv", name: "Swedish", nativeName: "Svenska", flag: "🇸🇪" },
 ];
+
+const ALL_LANG_CODES = SUPPORTED_LANGUAGES.map(l => l.code);
 
 interface LanguageContextType {
   lang: SupportedLang;
   setLang: (lang: SupportedLang) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   langInfo: LangInfo;
 }
 
@@ -27,17 +45,14 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 // Translation dictionaries
 type TranslationDict = Record<string, string>;
-type Translations = Record<SupportedLang, TranslationDict>;
+type Translations = Record<string, TranslationDict>;
 
-const translations: Translations = {
-  ko: {},
-  en: {},
-  zh: {},
-  ja: {},
-};
+const translations: Translations = {};
+ALL_LANG_CODES.forEach(code => { translations[code] = {}; });
 
 // Register translations from external files
-export function registerTranslations(lang: SupportedLang, dict: TranslationDict) {
+export function registerTranslations(lang: string, dict: TranslationDict) {
+  if (!translations[lang]) translations[lang] = {};
   translations[lang] = { ...translations[lang], ...dict };
 }
 
@@ -52,12 +67,12 @@ export function LanguageProvider({
 }: LanguageProviderProps) {
   const [lang, setLangState] = useState<SupportedLang>(() => {
     const stored = localStorage.getItem("preferredLang");
-    if (stored && ["ko", "en", "zh", "ja"].includes(stored)) {
+    if (stored && ALL_LANG_CODES.includes(stored as SupportedLang)) {
       return stored as SupportedLang;
     }
     // Detect browser language
     const browserLang = navigator.language.slice(0, 2);
-    if (["ko", "en", "zh", "ja"].includes(browserLang)) {
+    if (ALL_LANG_CODES.includes(browserLang as SupportedLang)) {
       return browserLang as SupportedLang;
     }
     return defaultLang;
@@ -73,9 +88,15 @@ export function LanguageProvider({
   }, [lang]);
 
   const t = useCallback(
-    (key: string): string => {
-      // Try current language first, fallback to Korean, then key itself
-      return translations[lang]?.[key] || translations["ko"]?.[key] || key;
+    (key: string, params?: Record<string, string | number>): string => {
+      // Try current language first, fallback to English, then Korean, then key itself
+      let text = translations[lang]?.[key] || translations["en"]?.[key] || translations["ko"]?.[key] || key;
+      if (params) {
+        Object.entries(params).forEach(([k, v]) => {
+          text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+        });
+      }
+      return text;
     },
     [lang]
   );
@@ -96,3 +117,6 @@ export function useLanguage() {
   }
   return context;
 }
+
+// Alias for convenience - both useLanguage and useTranslation return the same context
+export const useTranslation = useLanguage;
