@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -14,6 +15,7 @@ import {
   ArrowLeft, Plus, BookOpen, Brain, Sparkles, Trash2, Edit, Copy,
   GraduationCap, Loader2, Zap, Search, Filter
 } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 const CATEGORIES = [
   { value: "web3", label: "Web3", icon: "🌐" },
@@ -25,13 +27,15 @@ const CATEGORIES = [
   { value: "general", label: "General", icon: "📚" },
 ];
 
-const DIFFICULTIES = [
-  { value: "beginner", label: "초급", color: "bg-green-500/20 text-green-400" },
-  { value: "intermediate", label: "중급", color: "bg-yellow-500/20 text-yellow-400" },
-  { value: "advanced", label: "고급", color: "bg-red-500/20 text-red-400" },
-];
-
 export default function InstructorTemplates() {
+  const { t } = useTranslation();
+
+  const DIFFICULTIES = [
+    { value: "beginner", label: t("it.difficulty.beginner"), color: "bg-green-500/20 text-green-400" },
+    { value: "intermediate", label: t("it.difficulty.intermediate"), color: "bg-yellow-500/20 text-yellow-400" },
+    { value: "advanced", label: t("it.difficulty.advanced"), color: "bg-red-500/20 text-red-400" },
+  ];
+
   const { user } = useAuth();
   const utils = trpc.useUtils();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -53,14 +57,14 @@ export default function InstructorTemplates() {
 
   const seedMutation = trpc.template.seed.useMutation({
     onSuccess: () => {
-      toast.success("기본 템플릿이 생성되었습니다!");
+      toast.success(t("it.toast.seedSuccess"));
       utils.template.list.invalidate();
     },
   });
 
   const createMutation = trpc.template.create.useMutation({
     onSuccess: () => {
-      toast.success("템플릿이 생성되었습니다!");
+      toast.success(t("it.toast.createSuccess"));
       utils.template.list.invalidate();
       setDialogOpen(false);
       resetForm();
@@ -70,7 +74,7 @@ export default function InstructorTemplates() {
 
   const updateMutation = trpc.template.update.useMutation({
     onSuccess: () => {
-      toast.success("템플릿이 수정되었습니다!");
+      toast.success(t("it.toast.updateSuccess"));
       utils.template.list.invalidate();
       setDialogOpen(false);
       resetForm();
@@ -80,7 +84,7 @@ export default function InstructorTemplates() {
 
   const deleteMutation = trpc.template.delete.useMutation({
     onSuccess: () => {
-      toast.success("템플릿이 삭제되었습니다!");
+      toast.success(t("it.toast.deleteSuccess"));
       utils.template.list.invalidate();
     },
   });
@@ -108,7 +112,7 @@ export default function InstructorTemplates() {
 
   const handleDuplicate = (template: any) => {
     setEditId(null);
-    setName(`${template.name} (복사)`);
+    setName(`${template.name} ${t("it.duplicateSuffix")}`);
     setDescription(template.description || "");
     setCategory(template.category);
     setSystemPrompt(template.systemPrompt);
@@ -119,7 +123,7 @@ export default function InstructorTemplates() {
 
   const handleSubmit = () => {
     if (!name.trim() || !systemPrompt.trim()) {
-      toast.error("이름과 시스템 프롬프트는 필수입니다.");
+      toast.error(t("it.toast.requiredFields"));
       return;
     }
     if (editId) {
@@ -156,9 +160,9 @@ export default function InstructorTemplates() {
             </div>
             <h1 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-2">
               <Brain className="h-6 w-6" />
-              AI 컨텍스트 템플릿
+              {t("it.title")}
             </h1>
-            <p className="text-white/70 mt-1">카테고리별 AI 강사 프롬프트 템플릿 관리</p>
+            <p className="text-white/70 mt-1">{t("it.subtitle")}</p>
           </div>
         </div>
       </div>
@@ -170,24 +174,24 @@ export default function InstructorTemplates() {
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={() => seedMutation.mutate()} disabled={seedMutation.isPending}>
                 {seedMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Sparkles className="h-4 w-4 mr-1" />}
-                기본 템플릿 생성
+                {t("it.button.seedTemplates")}
               </Button>
               <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
                 <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="h-4 w-4 mr-1" /> 새 템플릿</Button>
+                  <Button size="sm"><Plus className="h-4 w-4 mr-1" /> {t("it.button.newTemplate")}</Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>{editId ? "템플릿 수정" : "새 템플릿 만들기"}</DialogTitle>
+                    <DialogTitle>{editId ? t("it.dialog.title.edit") : t("it.dialog.title.create")}</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium mb-1 block">템플릿 이름</label>
-                        <Input value={name} onChange={e => setName(e.target.value)} placeholder="예: Web3 기초 입문" />
+                        <label className="text-sm font-medium mb-1 block">{t("it.form.label.templateName")}</label>
+                        <Input value={name} onChange={e => setName(e.target.value)} placeholder={t("it.form.placeholder.templateName")} />
                       </div>
                       <div>
-                        <label className="text-sm font-medium mb-1 block">카테고리</label>
+                        <label className="text-sm font-medium mb-1 block">{t("it.form.label.category")}</label>
                         <Select value={category} onValueChange={setCategory}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
@@ -199,7 +203,7 @@ export default function InstructorTemplates() {
                       </div>
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-1 block">난이도</label>
+                      <label className="text-sm font-medium mb-1 block">{t("it.form.label.difficulty")}</label>
                       <Select value={difficulty} onValueChange={setDifficulty}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -210,26 +214,26 @@ export default function InstructorTemplates() {
                       </Select>
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-1 block">설명</label>
+                      <label className="text-sm font-medium mb-1 block">{t("it.form.label.description")}</label>
                       <Textarea value={description} onChange={e => setDescription(e.target.value)}
-                        placeholder="이 템플릿이 다루는 내용을 간략히 설명하세요" rows={2} />
+                        placeholder={t("it.form.placeholder.description")} rows={2} />
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-1 block">AI 시스템 프롬프트</label>
+                      <label className="text-sm font-medium mb-1 block">{t("it.form.label.systemPrompt")}</label>
                       <Textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)}
-                        placeholder="AI 강사의 역할, 전문 분야, 답변 스타일 등을 정의하세요..." rows={6}
+                        placeholder={t("it.form.placeholder.systemPrompt")} rows={6}
                         className="font-mono text-sm" />
-                      <p className="text-xs text-muted-foreground mt-1">이 프롬프트가 AI 강사의 답변 스타일과 전문성을 결정합니다.</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("it.form.help.systemPrompt")}</p>
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-1 block">주요 토픽</label>
+                      <label className="text-sm font-medium mb-1 block">{t("it.form.label.topics")}</label>
                       <Input value={topics} onChange={e => setTopics(e.target.value)}
-                        placeholder="예: Solidity, Hardhat, 스마트 컨트랙트 (쉼표로 구분)" />
+                        placeholder={t("it.form.placeholder.topics")} />
                     </div>
                     <Button onClick={handleSubmit} className="w-full"
                       disabled={createMutation.isPending || updateMutation.isPending}>
                       {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                      {editId ? "수정" : "생성"}
+                      {editId ? t("it.button.update") : t("it.button.create")}
                     </Button>
                   </div>
                 </DialogContent>
@@ -245,11 +249,11 @@ export default function InstructorTemplates() {
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="템플릿 검색..." className="pl-9" />
+              placeholder={t("it.searchPlaceholder")} className="pl-9" />
           </div>
           <div className="flex gap-1 flex-wrap">
             <Button variant={selectedCategory === "" ? "default" : "outline"} size="sm"
-              onClick={() => setSelectedCategory("")}>전체</Button>
+              onClick={() => setSelectedCategory("")}>{t("it.filter.all")}</Button>
             {CATEGORIES.map(c => (
               <Button key={c.value} variant={selectedCategory === c.value ? "default" : "outline"} size="sm"
                 onClick={() => setSelectedCategory(c.value)}>
@@ -266,10 +270,9 @@ export default function InstructorTemplates() {
           <Card className="border-dashed">
             <CardContent className="flex flex-col items-center justify-center py-16">
               <Brain className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">템플릿이 없습니다</h3>
-              <p className="text-muted-foreground text-sm mb-4">기본 템플릿을 생성하거나 새 템플릿을 만들어보세요.</p>
+              <h3 className="text-lg font-semibold mb-2">{t("it.empty.title")}</h3>
               <Button onClick={() => seedMutation.mutate()} disabled={seedMutation.isPending}>
-                <Sparkles className="h-4 w-4 mr-1" /> 기본 템플릿 생성
+                <Sparkles className="h-4 w-4 mr-1" /> {t("it.button.seedTemplates")}
               </Button>
             </CardContent>
           </Card>
@@ -288,7 +291,7 @@ export default function InstructorTemplates() {
                         <Badge className={`text-xs ${diff?.color}`}>{diff?.label}</Badge>
                       </div>
                       {template.isBuiltIn && (
-                        <Badge variant="secondary" className="text-xs"><Zap className="h-3 w-3 mr-1" />내장</Badge>
+                        <Badge variant="secondary" className="text-xs"><Zap className="h-3 w-3 mr-1" />{t("it.badge.builtIn")}</Badge>
                       )}
                     </div>
                     <CardTitle className="text-base mt-2">{template.name}</CardTitle>
@@ -310,22 +313,22 @@ export default function InstructorTemplates() {
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <GraduationCap className="h-3 w-3" />
-                        {template.usageCount || 0}회 사용
+                        {t("it.usageCount", { count: template.usageCount || 0 })}
                       </span>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" className="h-7 w-7"
-                          onClick={() => handleDuplicate(template)} title="복제">
+                          onClick={() => handleDuplicate(template)} title={t("it.tooltip.duplicate")}>
                           <Copy className="h-3.5 w-3.5" />
                         </Button>
                         {!template.isBuiltIn && (
                           <>
                             <Button variant="ghost" size="icon" className="h-7 w-7"
-                              onClick={() => handleEdit(template)} title="수정">
+                              onClick={() => handleEdit(template)} title={t("it.tooltip.edit")}>
                               <Edit className="h-3.5 w-3.5" />
                             </Button>
                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                              onClick={() => { if (confirm("삭제하시겠습니까?")) deleteMutation.mutate({ id: template.id }); }}
-                              title="삭제">
+                              onClick={() => { if (confirm(t("it.confirm.delete"))) deleteMutation.mutate({ id: template.id }); }}
+                              title={t("it.tooltip.delete")}>
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </>

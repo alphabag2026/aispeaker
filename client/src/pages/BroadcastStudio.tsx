@@ -13,6 +13,7 @@ import {
   MessageSquare, Send, ChevronLeft, ChevronRight, Volume2, VolumeX,
   ArrowLeft, Pin, Maximize2, Minimize2
 } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface Section {
   title: string;
@@ -22,6 +23,7 @@ interface Section {
 }
 
 export default function BroadcastStudio() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const params = useParams<{ id: string }>();
@@ -45,7 +47,7 @@ export default function BroadcastStudio() {
   });
 
   const startBroadcast = trpc.broadcast.start.useMutation({
-    onSuccess: () => { toast.success("방송이 시작되었습니다!"); broadcast.refetch(); },
+    onSuccess: () => { toast.success(t("bs.toast.broadcastStarted")); broadcast.refetch(); },
     onError: (err) => toast.error(err.message),
   });
   const pauseBroadcast = trpc.broadcast.pause.useMutation({
@@ -55,7 +57,7 @@ export default function BroadcastStudio() {
     onSuccess: () => { broadcast.refetch(); },
   });
   const endBroadcast = trpc.broadcast.end.useMutation({
-    onSuccess: () => { toast.success("방송이 종료되었습니다."); navigate("/broadcasts"); },
+    onSuccess: () => { toast.success(t("bs.toast.broadcastEnded")); navigate("/broadcasts"); },
     onError: (err) => toast.error(err.message),
   });
   const updateSlide = trpc.broadcast.updateSlide.useMutation();
@@ -133,7 +135,7 @@ export default function BroadcastStudio() {
   const playCurrentAudio = () => {
     const url = audioUrls[currentSlide];
     if (!url) {
-      toast.error("이 섹션의 오디오가 없습니다.");
+      toast.error(t("bs.toast.noAudioForSection"));
       return;
     }
     if (audioRef.current) {
@@ -201,7 +203,7 @@ export default function BroadcastStudio() {
   if (!broadcast.data) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">방송 정보를 불러오는 중...</p>
+        <p className="text-muted-foreground">{t("bs.loadingBroadcastInfo")}</p>
       </div>
     );
   }
@@ -220,19 +222,19 @@ export default function BroadcastStudio() {
           </Button>
           <div className="flex items-center gap-2">
             {isLive && <Badge className="bg-red-500 text-white animate-pulse"><Radio className="w-3 h-3 mr-1" />LIVE</Badge>}
-            {isPaused && <Badge className="bg-yellow-500 text-black"><Pause className="w-3 h-3 mr-1" />일시정지</Badge>}
-            {!isLive && !isPaused && <Badge variant="outline" className="text-gray-400">대기</Badge>}
+            {isPaused && <Badge className="bg-yellow-500 text-black"><Pause className="w-3 h-3 mr-1" />{t("bs.status.paused")}</Badge>}
+            {!isLive && !isPaused && <Badge variant="outline" className="text-gray-400">{t("bs.status.waiting")}</Badge>}
             <span className="font-semibold text-sm truncate max-w-[300px]">{broadcast.data.title}</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400 flex items-center gap-1">
             <Users className="w-4 h-4" />
-            {viewers.data?.length || 0}명 시청 중
+            {t("bs.viewersCount", { count: viewers.data?.length || 0 })}
           </span>
           <Button variant="ghost" size="sm" className="text-gray-400 gap-1" onClick={() => {
             navigator.clipboard.writeText(broadcast.data!.roomCode);
-            toast.success("방송 코드 복사됨!");
+            toast.success(t("bs.toast.roomCodeCopied"));
           }}>
             <Copy className="w-3 h-3" />
             {broadcast.data.roomCode}
@@ -253,10 +255,10 @@ export default function BroadcastStudio() {
                   {/* Section Number */}
                   <div className="flex items-center justify-between mb-6">
                     <Badge variant="outline" className="text-violet-400 border-violet-400">
-                      섹션 {currentSlide + 1} / {sections.length}
+                      {t("bs.slide.sectionProgress", { current: currentSlide + 1, total: sections.length })}
                     </Badge>
                     <span className="text-xs text-gray-500">
-                      {currentSection.durationSec ? `${Math.round(currentSection.durationSec / 60)}분` : ""}
+                      {currentSection.durationSec ? `${Math.round(currentSection.durationSec / 60)}${t("bs.slide.minutes")}` : ""}
                     </span>
                   </div>
                   {/* Section Title */}
@@ -275,8 +277,8 @@ export default function BroadcastStudio() {
               </div>
             ) : (
               <div className="text-center text-gray-500">
-                <p className="text-xl mb-2">슬라이드가 없습니다</p>
-                <p className="text-sm">스크립트에 섹션이 포함되어야 합니다.</p>
+                <p className="text-xl mb-2">{t("bs.slide.noSlides")}</p>
+                <p className="text-sm">{t("bs.slide.noSlidesDesc")}</p>
               </div>
             )}
             {/* Fullscreen Toggle */}
@@ -315,12 +317,12 @@ export default function BroadcastStudio() {
               {isPlaying ? (
                 <Button onClick={pauseAudio} variant="outline" size="lg" className="gap-2 border-yellow-500 text-yellow-500">
                   <Pause className="w-5 h-5" />
-                  일시정지
+                  {t("bs.controls.pause")}
                 </Button>
               ) : (
                 <Button onClick={playCurrentAudio} variant="outline" size="lg" className="gap-2 border-green-500 text-green-500">
                   <Play className="w-5 h-5" />
-                  재생
+                  {t("bs.controls.play")}
                 </Button>
               )}
               <Button variant="ghost" size="icon" onClick={() => {
@@ -336,22 +338,22 @@ export default function BroadcastStudio() {
               {!isLive && !isPaused && (
                 <Button onClick={() => startBroadcast.mutate({ broadcastId })} className="gap-2 bg-red-600 hover:bg-red-700">
                   <Radio className="w-4 h-4" />
-                  방송 시작
+                  {t("bs.controls.startBroadcast")}
                 </Button>
               )}
               {isLive && (
                 <>
                   <Button onClick={() => pauseBroadcast.mutate({ broadcastId })} variant="outline" className="gap-2 border-yellow-500 text-yellow-500">
                     <Pause className="w-4 h-4" />
-                    일시정지
+                    {t("bs.controls.pause")}
                   </Button>
                   <Button onClick={() => {
-                    if (confirm("방송을 종료하시겠습니까?")) {
+                    if (confirm(t("bs.confirm.endBroadcast"))) {
                       endBroadcast.mutate({ broadcastId });
                     }
                   }} variant="destructive" className="gap-2">
                     <Square className="w-4 h-4" />
-                    방송 종료
+                    {t("bs.controls.endBroadcast")}
                   </Button>
                 </>
               )}
@@ -359,15 +361,15 @@ export default function BroadcastStudio() {
                 <>
                   <Button onClick={() => resumeBroadcast.mutate({ broadcastId })} className="gap-2 bg-green-600 hover:bg-green-700">
                     <Play className="w-4 h-4" />
-                    재개
+                    {t("bs.controls.resume")}
                   </Button>
                   <Button onClick={() => {
-                    if (confirm("방송을 종료하시겠습니까?")) {
+                    if (confirm(t("bs.confirm.endBroadcast"))) {
                       endBroadcast.mutate({ broadcastId });
                     }
                   }} variant="destructive" className="gap-2">
                     <Square className="w-4 h-4" />
-                    종료
+                    {t("bs.controls.end")}
                   </Button>
                 </>
               )}
@@ -379,7 +381,7 @@ export default function BroadcastStudio() {
         <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col">
           <div className="h-12 flex items-center px-4 border-b border-gray-800">
             <MessageSquare className="w-4 h-4 mr-2 text-gray-400" />
-            <span className="text-sm font-medium">실시간 채팅</span>
+            <span className="text-sm font-medium">{t("bs.chat.title")}</span>
             <Badge variant="secondary" className="ml-auto text-xs">{chatMessages.length}</Badge>
           </div>
 
@@ -410,7 +412,7 @@ export default function BroadcastStudio() {
           <div className="p-3 border-t border-gray-800">
             <div className="flex gap-2">
               <Input
-                placeholder="메시지를 입력하세요..."
+                placeholder={t("bs.chat.placeholder")}
                 value={chatMessage}
                 onChange={(e) => setChatMessage(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
@@ -426,12 +428,12 @@ export default function BroadcastStudio() {
           <div className="border-t border-gray-800 p-3">
             <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
               <Users className="w-3 h-3" />
-              시청자 ({viewers.data?.length || 0})
+              {t("bs.chat.viewersTitle", { count: viewers.data?.length || 0 })}
             </p>
             <div className="flex flex-wrap gap-1">
               {viewers.data?.slice(0, 20).map((v: any) => (
                 <Badge key={v.id} variant="secondary" className="text-[10px]">
-                  {v.displayName || "시청자"}
+                  {v.displayName || t("bs.chat.viewer")}
                 </Badge>
               ))}
               {(viewers.data?.length || 0) > 20 && (
@@ -456,7 +458,7 @@ export default function BroadcastStudio() {
                 : "border-gray-700 bg-gray-800 hover:border-gray-600"
             }`}
           >
-            <p className="text-[10px] text-gray-500">섹션 {idx + 1}</p>
+            <p className="text-[10px] text-gray-500">{t("bs.thumbnail.section", { index: idx + 1 })}</p>
             <p className="text-xs truncate text-gray-300">{sec.title}</p>
           </button>
         ))}

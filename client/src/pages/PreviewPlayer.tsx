@@ -12,8 +12,10 @@ import {
   Clock, FileText, Loader2, Maximize2, Minimize2, ChevronRight,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function PreviewPlayer() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -169,9 +171,9 @@ export default function PreviewPlayer() {
     return `${m}:${String(s).padStart(2, "0")}`;
   };
 
-  if (!user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">로그인이 필요합니다.</div>;
+  if (!user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">{t('pp.loginRequired')}</div>;
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
-  if (!data) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">미리보기 데이터를 찾을 수 없습니다.</div>;
+  if (!data) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">{t('pp.noPreviewData')}</div>;
 
   const currentSec = sections[currentSection];
 
@@ -193,7 +195,7 @@ export default function PreviewPlayer() {
                 </>
               )}
               <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {formatTime(totalDuration)}</span>
-              <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {sections.length}개 섹션</span>
+              <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {t('pp.sectionsCount', { count: sections.length })}</span>
             </div>
           </div>
         </div>
@@ -208,7 +210,7 @@ export default function PreviewPlayer() {
             {currentSec ? (
               <div className="max-w-3xl w-full text-center">
                 <Badge className="mb-6 text-sm" variant="secondary">
-                  섹션 {currentSection + 1} / {sections.length}
+                  {t('pp.sectionProgress', { current: currentSection + 1, total: sections.length })}
                 </Badge>
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
                   {currentSec.title}
@@ -227,7 +229,7 @@ export default function PreviewPlayer() {
             ) : (
               <div className="text-white/50 text-center">
                 <Play className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                <p>재생 버튼을 눌러 미리보기를 시작하세요</p>
+                <p>{t('pp.startPreview')}</p>
               </div>
             )}
 
@@ -296,8 +298,8 @@ export default function PreviewPlayer() {
         {/* Section Sidebar */}
         <div className="w-80 border-l bg-card hidden lg:flex flex-col">
           <div className="p-4 border-b">
-            <h3 className="font-semibold text-sm">강의 구성</h3>
-            <p className="text-xs text-muted-foreground mt-1">{sections.length}개 섹션 · {formatTime(totalDuration)}</p>
+            <h3 className="font-semibold text-sm">{t('pp.lectureStructure')}</h3>
+            <p className="text-xs text-muted-foreground mt-1">{t('pp.sidebarHeader', { count: sections.length, time: formatTime(totalDuration) })}</p>
           </div>
           <ScrollArea className="flex-1">
             <div className="p-2">
@@ -346,7 +348,7 @@ export default function PreviewPlayer() {
           <details className="group">
             <summary className="container py-2 cursor-pointer flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
               <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
-              강사 스크립트 보기
+              {t('pp.showScript')}
             </summary>
             <div className="container pb-4">
               <div className="bg-muted/30 rounded-lg p-4 max-h-40 overflow-y-auto">

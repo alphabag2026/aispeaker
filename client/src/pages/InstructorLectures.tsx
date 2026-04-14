@@ -16,16 +16,19 @@ import {
   BookOpen,
   ArrowLeft,
 } from "lucide-react";
-
-const statusLabels: Record<string, { label: string; color: string }> = {
-  draft: { label: "준비중", color: "bg-muted text-muted-foreground" },
-  scheduled: { label: "예정", color: "bg-blue-500/20 text-blue-400" },
-  live: { label: "LIVE", color: "bg-green-500/20 text-green-400" },
-  completed: { label: "완료", color: "bg-gray-500/20 text-gray-400" },
-  archived: { label: "보관", color: "bg-gray-500/20 text-gray-400" },
-};
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function InstructorLectures() {
+  const { t } = useTranslation();
+
+  const statusLabels: Record<string, { label: string; color: string }> = {
+    draft: { label: t("il.status.draft"), color: "bg-muted text-muted-foreground" },
+    scheduled: { label: t("il.status.scheduled"), color: "bg-blue-500/20 text-blue-400" },
+    live: { label: t("il.status.live"), color: "bg-green-500/20 text-green-400" },
+    completed: { label: t("il.status.completed"), color: "bg-gray-500/20 text-gray-400" },
+    archived: { label: t("il.status.archived"), color: "bg-gray-500/20 text-gray-400" },
+  };
+
   const { user } = useAuth();
   const { data: lectures, refetch } = trpc.lecture.list.useQuery(
     { instructorId: user?.id },
@@ -35,7 +38,7 @@ export default function InstructorLectures() {
 
   const deleteMutation = trpc.lecture.delete.useMutation({
     onSuccess: () => {
-      toast.success("강의가 삭제되었습니다.");
+      toast.success(t("il.toast.lectureDeleted"));
       refetch();
     },
   });
@@ -48,13 +51,13 @@ export default function InstructorLectures() {
 
   const handleGoLive = (id: number) => {
     updateMutation.mutate({ id, status: "live" }, {
-      onSuccess: () => toast.success("강의가 시작되었습니다!"),
+      onSuccess: () => toast.success(t("il.toast.lectureStarted")),
     });
   };
 
   const handleEndLecture = (id: number) => {
     updateMutation.mutate({ id, status: "completed" }, {
-      onSuccess: () => toast.success("강의가 종료되었습니다."),
+      onSuccess: () => toast.success(t("il.toast.lectureEnded")),
     });
   };
 
@@ -80,14 +83,14 @@ export default function InstructorLectures() {
                   </Button>
                 </Link>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-white">강의 관리</h1>
-                  <p className="text-white/70">강의를 생성하고 관리하세요</p>
+                  <h1 className="text-2xl md:text-3xl font-bold text-white">{t("il.title")}</h1>
+                  <p className="text-white/70">{t("il.description")}</p>
                 </div>
               </div>
               <Link href="/instructor/lectures/new">
                 <Button className="gap-2">
                   <Plus className="h-4 w-4" />
-                  새 강의
+                  {t("il.newLecture")}
                 </Button>
               </Link>
             </div>
@@ -113,7 +116,7 @@ export default function InstructorLectures() {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {lecture.category} · AI 모드: {lecture.aiMode} · {new Date(lecture.createdAt).toLocaleDateString("ko-KR")}
+                          {lecture.category} · {t("il.aiMode")} {lecture.aiMode} · {new Date(lecture.createdAt).toLocaleDateString("ko-KR")}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 ml-4">
@@ -126,7 +129,7 @@ export default function InstructorLectures() {
                             disabled={updateMutation.isPending}
                           >
                             <Radio className="h-3.5 w-3.5" />
-                            시작
+                            {t("il.start")}
                           </Button>
                         )}
                         {lecture.status === "live" && (
@@ -138,13 +141,13 @@ export default function InstructorLectures() {
                             disabled={updateMutation.isPending}
                           >
                             <StopCircle className="h-3.5 w-3.5" />
-                            종료
+                            {t("il.end")}
                           </Button>
                         )}
                         <Link href={`/instructor/lectures/${lecture.id}/edit`}>
                           <Button variant="outline" size="sm" className="gap-1">
                             <Edit className="h-3.5 w-3.5" />
-                            편집
+                            {t("il.edit")}
                           </Button>
                         </Link>
                         <Button
@@ -152,7 +155,7 @@ export default function InstructorLectures() {
                           size="sm"
                           className="gap-1 text-destructive"
                           onClick={() => {
-                            if (confirm("정말 삭제하시겠습니까?")) {
+                            if (confirm(t("il.confirmDelete"))) {
                               deleteMutation.mutate({ id: lecture.id });
                             }
                           }}
@@ -170,9 +173,9 @@ export default function InstructorLectures() {
         ) : (
           <EmptyState
             type="lectures"
-            title="강의가 없습니다"
-            description="첫 번째 AI 강의를 만들어보세요!"
-            actionLabel="새 강의 만들기"
+            title={t("il.empty.title")}
+            description={t("il.empty.description")}
+            actionLabel={t("il.empty.action")}
             actionHref="/instructor/lectures/new"
           />
         )}

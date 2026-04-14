@@ -17,10 +17,10 @@ import {
   ArrowLeft, Tv, MessageSquare, Eye, Monitor
 } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
-
-// Voices loaded from server API
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function BroadcastManager() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [showCreate, setShowCreate] = useState(false);
@@ -29,11 +29,9 @@ export default function BroadcastManager() {
   const [selectedScript, setSelectedScript] = useState("");
   const [ttsVoice, setTtsVoice] = useState("");
 
-  // Load voices from server
   const { data: voicesData } = trpc.tts.voices.useQuery();
   const TTS_VOICES = useMemo(() => voicesData || [], [voicesData]);
 
-  // Set default voice when loaded
   useEffect(() => {
     if (TTS_VOICES.length > 0 && !ttsVoice) setTtsVoice(TTS_VOICES[0].id);
   }, [TTS_VOICES]);
@@ -43,7 +41,7 @@ export default function BroadcastManager() {
   const broadcasts = trpc.broadcast.list.useQuery(undefined, { enabled: !!user });
   const createBroadcast = trpc.broadcast.create.useMutation({
     onSuccess: (data) => {
-      toast.success(`방송방이 생성되었습니다! 코드: ${data.roomCode}`);
+      toast.success(`${t("bm.broadcast_created_code")}: ${data.roomCode}`);
       setShowCreate(false);
       setTitle("");
       setDescription("");
@@ -62,7 +60,7 @@ export default function BroadcastManager() {
 
   const handleCreate = () => {
     if (!selectedScript || !title.trim()) {
-      toast.error("스크립트와 제목을 입력해주세요.");
+      toast.error(t("bm.enter_script_title"));
       return;
     }
     createBroadcast.mutate({
@@ -75,15 +73,15 @@ export default function BroadcastManager() {
 
   const copyRoomCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast.success("방송 코드가 복사되었습니다!");
+    toast.success(t("bm.code_copied"));
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "scheduled": return <Badge variant="outline" className="text-blue-400 border-blue-400"><Clock className="w-3 h-3 mr-1" />예정</Badge>;
+      case "scheduled": return <Badge variant="outline" className="text-blue-400 border-blue-400"><Clock className="w-3 h-3 mr-1" />{t("bm.scheduled")}</Badge>;
       case "live": return <Badge className="bg-red-500 text-white animate-pulse"><Radio className="w-3 h-3 mr-1" />LIVE</Badge>;
-      case "paused": return <Badge variant="outline" className="text-yellow-400 border-yellow-400"><Pause className="w-3 h-3 mr-1" />일시정지</Badge>;
-      case "ended": return <Badge variant="secondary"><Square className="w-3 h-3 mr-1" />종료</Badge>;
+      case "paused": return <Badge variant="outline" className="text-yellow-400 border-yellow-400"><Pause className="w-3 h-3 mr-1" />{t("bm.paused")}</Badge>;
+      case "ended": return <Badge variant="secondary"><Square className="w-3 h-3 mr-1" />{t("bm.ended")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -93,7 +91,7 @@ export default function BroadcastManager() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container py-20 text-center">
-          <p className="text-muted-foreground">로그인이 필요합니다.</p>
+          <p className="text-muted-foreground">{t("bm.login_required")}</p>
         </div>
       </div>
     );
@@ -103,7 +101,6 @@ export default function BroadcastManager() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Banner */}
       <div className="relative h-48 md:h-56 overflow-hidden">
         <img
           src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-broadcast-VqgzPLgr6PKLpmSfakoS73.webp"
@@ -120,71 +117,70 @@ export default function BroadcastManager() {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
               <Tv className="w-8 h-8" />
-              라이브 방송 관리
+              {t("bm.live_broadcast_management")}
             </h1>
-            <p className="text-white/70 text-lg mt-2">AI 강사가 슬라이드를 보여주며 실시간 강의를 진행합니다</p>
+            <p className="text-white/70 text-lg mt-2">{t("bm.broadcast_management_description")}</p>
           </div>
         </div>
       </div>
 
       <div className="container py-8 max-w-6xl mx-auto px-4">
-        {/* Header Actions */}
         <div className="flex items-center justify-end gap-3 mb-8">
           <Button variant="outline" className="gap-2 border-violet-500/50 text-violet-400 hover:bg-violet-500/10" onClick={() => navigate("/browser-studio")}>
             <Monitor className="w-4 h-4" />
-            브라우저 스튜디오
+            {t("bm.browser_studio")}
           </Button>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="w-4 h-4" />
-                새 방송 만들기
+                {t("bm.create_new_broadcast")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>새 라이브 방송 만들기</DialogTitle>
+                <DialogTitle>{t("bm.create_new_live_broadcast")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">방송 제목 *</label>
+                  <label className="text-sm font-medium mb-2 block">{t("bm.broadcast_title")}</label>
                   <Input
-                    placeholder="예: Web3 기초 강의 - 블록체인의 이해"
+                    placeholder={t("bm.title_placeholder")}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">방송 설명</label>
+                  <label className="text-sm font-medium mb-2 block">{t("bm.broadcast_description")}</label>
                   <Textarea
-                    placeholder="방송 내용을 간단히 설명해주세요..."
+                    placeholder={t("bm.broadcast_desc_placeholder")}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">강의 스크립트 선택 *</label>
+                  <label className="text-sm font-medium mb-2 block">{t("bm.select_lecture_script")}</label>
                   <Select value={selectedScript} onValueChange={setSelectedScript}>
                     <SelectTrigger>
-                      <SelectValue placeholder="스크립트를 선택하세요" />
+                      <SelectValue placeholder={t("bm.select_script")} />
                     </SelectTrigger>
                     <SelectContent>
                       {readyScripts.map((s: any) => (
                         <SelectItem key={s.id} value={String(s.id)}>
-                          {s.title} ({s.sectionCount}개 섹션)
+                          {s.title} ({t("bm.section_count", { count: s.sectionCount })})
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                   {readyScripts.length === 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      준비 완료된 스크립트가 없습니다. 먼저 스크립트를 생성해주세요.
+                      {t("bm.no_ready_scripts")}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">TTS 음성</label>
+                  <label className="text-sm font-medium mb-2 block">{t("bm.tts_voice")}</label>
                   <div className="flex items-center gap-2">
                     <Select value={ttsVoice} onValueChange={setTtsVoice}>
                       <SelectTrigger>
@@ -203,22 +199,21 @@ export default function BroadcastManager() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowCreate(false)}>취소</Button>
+                <Button variant="outline" onClick={() => setShowCreate(false)}>{t("bm.cancel")}</Button>
                 <Button onClick={handleCreate} disabled={createBroadcast.isPending}>
-                  {createBroadcast.isPending ? "생성 중..." : "방송방 생성"}
+                  {createBroadcast.isPending ? t("bm.creating") : t("bm.create_broadcast")}
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Filter Tabs */}
         <div className="flex gap-2 mb-6">
           {[
-            { key: "all", label: "전체" },
-            { key: "live", label: "방송 중" },
-            { key: "scheduled", label: "예정" },
-            { key: "ended", label: "종료" },
+            { key: "all", label: t("bm.all") },
+            { key: "live", label: t("bm.broadcasting") },
+            { key: "scheduled", label: t("bm.scheduled_tab") },
+            { key: "ended", label: t("bm.ended_tab") },
           ].map((f) => (
             <Button
               key={f.key}
@@ -231,13 +226,12 @@ export default function BroadcastManager() {
           ))}
         </div>
 
-        {/* Broadcast List */}
         {filteredBroadcasts.length === 0 ? (
           <EmptyState
             type="broadcast"
-            title={filter === "all" ? "아직 방송이 없습니다" : `${filter === "live" ? "진행 중인" : filter === "scheduled" ? "예정된" : "종료된"} 방송이 없습니다`}
-            description="스크립트를 선택하고 라이브 방송을 시작해보세요."
-            actionLabel="첫 방송 만들기"
+            title={filter === "all" ? t("bm.no_broadcasts") : `${filter === "live" ? t("bm.live") : filter === "scheduled" ? t("bm.scheduled_broadcast") : t("bm.ended_broadcast")} ${t("bm.no_broadcasts_suffix")}`}
+            description={t("bm.select_script_start")}
+            actionLabel={t("bm.create_first")}
             onAction={() => setShowCreate(true)}
           />
         ) : (
@@ -260,20 +254,20 @@ export default function BroadcastManager() {
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Copy className="w-3 h-3" />
-                            코드: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{b.roomCode}</code>
-                            <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={() => copyRoomCode(b.roomCode)}>
+                            {t("bm.code")}: <code className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs">{b.roomCode}</code>
+                            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyRoomCode(b.roomCode)}>
                               <Copy className="w-3 h-3" />
                             </Button>
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3" />
-                            {b.currentViewers || 0}명 시청
-                            {b.peakViewers ? ` (최대 ${b.peakViewers})` : ""}
+                            {t("bm.viewers", { count: b.currentViewers || 0 })}
+                            {b.peakViewers ? ` (${t("bm.peak_viewers", { count: b.peakViewers })})` : ""}
                           </span>
                           {s && (
                             <span className="flex items-center gap-1">
                               <MessageSquare className="w-3 h-3" />
-                              {s.sectionCount || 0}개 섹션
+                              {t("bm.section_count", { count: s.sectionCount || 0 })}
                             </span>
                           )}
                           <span>
@@ -289,7 +283,7 @@ export default function BroadcastManager() {
                             variant={b.status === "live" ? "destructive" : "default"}
                           >
                             {b.status === "live" ? <Radio className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                            {b.status === "live" ? "스튜디오" : "방송 시작"}
+                            {b.status === "live" ? t("bm.studio") : t("bm.start_broadcast")}
                           </Button>
                         )}
                         <Button
@@ -298,7 +292,7 @@ export default function BroadcastManager() {
                           className="gap-2"
                         >
                           <Eye className="w-4 h-4" />
-                          시청자 뷰
+                          {t("bm.viewer_view")}
                         </Button>
                       </div>
                     </div>
@@ -309,11 +303,10 @@ export default function BroadcastManager() {
           </div>
         )}
 
-        {/* Live Broadcasts Section (Public) */}
         <div className="mt-12">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Radio className="w-5 h-5 text-red-500" />
-            현재 진행 중인 방송
+            {t("bm.live_broadcasts_now")}
           </h2>
           <LiveBroadcastList />
         </div>
@@ -323,6 +316,7 @@ export default function BroadcastManager() {
 }
 
 function LiveBroadcastList() {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
   const liveBroadcasts = trpc.broadcast.liveList.useQuery(undefined, {
     refetchInterval: 5000,
@@ -332,7 +326,7 @@ function LiveBroadcastList() {
     return (
       <Card className="border-dashed">
         <CardContent className="py-8 text-center">
-          <p className="text-muted-foreground">현재 진행 중인 방송이 없습니다.</p>
+          <p className="text-muted-foreground">{t("bm.no_live_broadcasts_now")}</p>
         </CardContent>
       </Card>
     );
@@ -357,13 +351,13 @@ function LiveBroadcastList() {
               </div>
               <CardTitle className="text-base mt-2">{b.title}</CardTitle>
               <CardDescription>
-                {instructor?.name || "강사"} 
+                {instructor?.name || t("bm.instructor")}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full gap-2" variant="outline" size="sm">
                 <ExternalLink className="w-4 h-4" />
-                시청하기
+                {t("bm.watch")}
               </Button>
             </CardContent>
           </Card>

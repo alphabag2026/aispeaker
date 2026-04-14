@@ -21,6 +21,7 @@ import {
   Globe,
   Clock,
 } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 const LANGUAGES = [
   { code: "ko", name: "한국어", flag: "🇰🇷" },
@@ -46,6 +47,7 @@ const LANGUAGES = [
 ];
 
 export default function VodPlayer() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const vodId = Number(params.id);
   const [selectedLang, setSelectedLang] = useState("ko");
@@ -82,7 +84,7 @@ export default function VodPlayer() {
         <Navbar />
         <div className="container py-16 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground mt-4">VOD를 불러오는 중...</p>
+          <p className="text-muted-foreground mt-4">{t("vod.loading")}</p>
         </div>
       </div>
     );
@@ -122,7 +124,7 @@ export default function VodPlayer() {
               <span>{lecture.title}</span>
               <span className="flex items-center gap-1">
                 <Eye className="h-3.5 w-3.5" />
-                {vod.viewCount || 0}회
+                {vod.viewCount || 0}{t("vod.viewsUnit")}
               </span>
               <span>
                 {vod.createdAt
@@ -142,7 +144,7 @@ export default function VodPlayer() {
             >
               <Globe className="h-4 w-4" />
               {LANGUAGES.find((l) => l.code === selectedLang)?.flag}{" "}
-              {LANGUAGES.find((l) => l.code === selectedLang)?.name}
+              {t(`vod.lang.${selectedLang}`)}
             </Button>
             {showLangPicker && (
               <div className="absolute right-0 top-full mt-2 z-50 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-2 w-64 max-h-80 overflow-y-auto">
@@ -160,7 +162,7 @@ export default function VodPlayer() {
                       }}
                     >
                       <span className="text-base">{lang.flag}</span>
-                      <span className="truncate">{lang.name}</span>
+                      <span className="truncate">{t(`vod.lang.${lang.code}`)}</span>
                     </button>
                   ))}
                 </div>
@@ -177,11 +179,11 @@ export default function VodPlayer() {
               <TabsList className="mb-4">
                 <TabsTrigger value="snapshots" className="gap-2">
                   <Palette className="h-4 w-4" />
-                  화이트보드 스냅샷 ({snapshotEvents.length})
+                  {t("vod.whiteboardSnapshots")} ({snapshotEvents.length})
                 </TabsTrigger>
                 <TabsTrigger value="info" className="gap-2">
                   <Clock className="h-4 w-4" />
-                  강의 정보
+                  {t("vod.lectureInfo")}
                 </TabsTrigger>
               </TabsList>
 
@@ -193,9 +195,9 @@ export default function VodPlayer() {
                       <div className="aspect-video bg-muted flex items-center justify-center relative">
                         <div className="text-center text-muted-foreground">
                           <Palette className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">스냅샷 {currentSnapshotIdx + 1}</p>
+                          <p className="text-sm">{t("vod.snapshot")} {currentSnapshotIdx + 1}</p>
                           <p className="text-xs mt-1">
-                            {formatOffset(snapshotEvents[currentSnapshotIdx]?.event.offsetSeconds || 0)} 시점
+                            {t("vod.atTime", { time: formatOffset(snapshotEvents[currentSnapshotIdx]?.event.offsetSeconds || 0) })}
                           </p>
                         </div>
                       </div>
@@ -252,7 +254,7 @@ export default function VodPlayer() {
                 ) : (
                   <div className="text-center py-16">
                     <Palette className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                    <p className="text-muted-foreground">화이트보드 스냅샷이 없습니다</p>
+                    <p className="text-muted-foreground">{t("vod.noSnapshots")}</p>
                   </div>
                 )}
               </TabsContent>
@@ -261,32 +263,32 @@ export default function VodPlayer() {
                 <Card className="bg-card">
                   <CardContent className="p-6 space-y-4">
                     <div>
-                      <h3 className="font-semibold mb-2">강의 정보</h3>
+                      <h3 className="font-semibold mb-2">{t("vod.lectureInfo")}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {lecture.description || "설명이 없습니다."}
+                        {lecture.description || t("vod.noDescription")}
                       </p>
                     </div>
                     <Separator />
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-muted-foreground">카테고리</p>
+                        <p className="text-muted-foreground">{t("vod.category")}</p>
                         <Badge variant="outline" className="mt-1">
                           {lecture.category}
                         </Badge>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">AI 모드</p>
+                        <p className="text-muted-foreground">{t("vod.aiMode")}</p>
                         <Badge variant="outline" className="mt-1">
                           {lecture.aiMode}
                         </Badge>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Q&A 수</p>
-                        <p className="font-medium mt-1">{qaEvents.length}개</p>
+                        <p className="text-muted-foreground">{t("vod.qaCount")}</p>
+                        <p className="font-medium mt-1">{qaEvents.length}{t("vod.itemUnit")}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">스냅샷 수</p>
-                        <p className="font-medium mt-1">{snapshotEvents.length}개</p>
+                        <p className="text-muted-foreground">{t("vod.snapshotCount")}</p>
+                        <p className="font-medium mt-1">{snapshotEvents.length}{t("vod.itemUnit")}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -301,11 +303,11 @@ export default function VodPlayer() {
               <div className="p-4 border-b border-border">
                 <h3 className="font-semibold flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-primary" />
-                  Q&A 기록 ({qaEvents.length})
+                  {t("vod.qaHistory")} ({qaEvents.length})
                 </h3>
                 {selectedLang !== "ko" && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    답변 클릭 시 {LANGUAGES.find((l) => l.code === selectedLang)?.name}로 번역됩니다
+                    {t("vod.translationNotice", { lang: t(`vod.lang.${selectedLang}`) })}
                   </p>
                 )}
               </div>
@@ -341,7 +343,7 @@ export default function VodPlayer() {
                                     <div className="p-2 rounded bg-accent/30 text-xs">
                                       <span className="text-muted-foreground block mb-1">
                                         {LANGUAGES.find((l) => l.code === selectedLang)?.flag}{" "}
-                                        번역:
+                                        {t("vod.translationLabel")}
                                       </span>
                                       <Streamdown>{translatedMessages[item.event.id]}</Streamdown>
                                     </div>
@@ -360,7 +362,7 @@ export default function VodPlayer() {
                                       ) : (
                                         <Globe className="h-3 w-3" />
                                       )}
-                                      번역하기
+                                      {t("vod.translate")}
                                     </Button>
                                   )}
                                 </div>
@@ -375,7 +377,7 @@ export default function VodPlayer() {
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Q&A 기록이 없습니다</p>
+                      <p className="text-sm">{t("vod.noQA")}</p>
                     </div>
                   )}
                 </div>

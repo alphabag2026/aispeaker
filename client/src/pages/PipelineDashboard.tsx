@@ -11,6 +11,7 @@ import {
   Loader2, Subtitles, ArrowLeft, TrendingUp, PieChart, Image, Play,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart as RePieChart, Pie, Cell, Legend,
@@ -24,14 +25,15 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: "#4ade80", intermediate: "#fbbf24", advanced: "#f87171",
 };
 const CATEGORY_LABELS: Record<string, string> = {
-  web3: "Web3", ai: "AI", blockchain: "블록체인", defi: "DeFi",
-  nft: "NFT", metaverse: "메타버스", general: "일반",
+  web3: "Web3", ai: "AI", blockchain: "Blockchain", defi: "DeFi",
+  nft: "NFT", metaverse: "Metaverse", general: "General",
 };
 const DIFFICULTY_LABELS: Record<string, string> = {
-  beginner: "초급", intermediate: "중급", advanced: "고급",
+  beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced",
 };
 
 export default function PipelineDashboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [, navigate] = useLocation();
 
@@ -40,7 +42,7 @@ export default function PipelineDashboard() {
 
   const generateSubtitlesMutation = trpc.pipeline.generateSubtitles.useMutation({
     onSuccess: (data) => {
-      toast.success(`자막 생성 완료! ${data.subtitleCount}개 자막 생성됨`);
+      toast.success(t("pd.subtitle_generation_complete", { count: data.subtitleCount }));
     },
     onError: (e) => toast.error(e.message),
   });
@@ -50,7 +52,7 @@ export default function PipelineDashboard() {
 
   const generateThumbnailMutation = trpc.pipeline.generateThumbnail.useMutation({
     onSuccess: (data) => {
-      toast.success("썸네일이 생성되었습니다!");
+      toast.success(t("pd.thumbnail_generated"));
       setGeneratingThumbnailId(null);
     },
     onError: (e) => {
@@ -64,7 +66,7 @@ export default function PipelineDashboard() {
     await generateThumbnailMutation.mutateAsync({ pipelineId });
   };
 
-  if (!user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">로그인이 필요합니다.</div>;
+  if (!user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">{t("pd.login_required")}</div>;
 
   const handleGenerateSubtitles = async (pipelineId: number) => {
     setGeneratingSubtitleId(pipelineId);
@@ -78,8 +80,8 @@ export default function PipelineDashboard() {
   const formatDuration = (sec: number) => {
     const h = Math.floor(sec / 3600);
     const m = Math.floor((sec % 3600) / 60);
-    if (h > 0) return `${h}시간 ${m}분`;
-    return `${m}분`;
+    if (h > 0) return t("pd.hours_minutes", { h, m });
+    return t("pd.minutes", { m });
   };
 
   return (
@@ -99,8 +101,8 @@ export default function PipelineDashboard() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">제작 히스토리 대시보드</h1>
-            <p className="text-white/70 mt-1">강의 영상 제작 통계 및 히스토리</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">{t("pd.dashboard_title")}</h1>
+            <p className="text-white/70 mt-1">{t("pd.dashboard_subtitle")}</p>
           </div>
         </div>
       </div>
@@ -116,35 +118,35 @@ export default function PipelineDashboard() {
                 <CardContent className="p-4 text-center">
                   <Film className="h-8 w-8 mx-auto mb-2 text-primary" />
                   <div className="text-2xl font-bold">{stats.totalPipelines}</div>
-                  <div className="text-xs text-muted-foreground">총 제작</div>
+                  <div className="text-xs text-muted-foreground">{t("pd.total_productions")}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-green-500" />
                   <div className="text-2xl font-bold">{stats.completedPipelines}</div>
-                  <div className="text-xs text-muted-foreground">완료</div>
+                  <div className="text-xs text-muted-foreground">{t("pd.completed")}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <XCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
                   <div className="text-2xl font-bold">{stats.failedPipelines}</div>
-                  <div className="text-xs text-muted-foreground">실패</div>
+                  <div className="text-xs text-muted-foreground">{t("pd.failed")}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <Clock className="h-8 w-8 mx-auto mb-2 text-blue-500" />
                   <div className="text-2xl font-bold">{formatDuration(stats.totalDurationSec)}</div>
-                  <div className="text-xs text-muted-foreground">총 시간</div>
+                  <div className="text-xs text-muted-foreground">{t("pd.total_duration")}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
                   <TrendingUp className="h-8 w-8 mx-auto mb-2 text-purple-500" />
                   <div className="text-2xl font-bold">{stats.successRate}%</div>
-                  <div className="text-xs text-muted-foreground">성공률</div>
+                  <div className="text-xs text-muted-foreground">{t("pd.success_rate")}</div>
                 </CardContent>
               </Card>
             </div>
@@ -155,7 +157,7 @@ export default function PipelineDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" /> 월별 제작 현황
+                    <BarChart3 className="h-4 w-4" /> {t("pd.monthly_production_status")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -169,11 +171,11 @@ export default function PipelineDashboard() {
                           contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px" }}
                           labelStyle={{ color: "hsl(var(--foreground))" }}
                         />
-                        <Bar dataKey="count" fill="#6c63ff" radius={[4, 4, 0, 0]} name="제작 수" />
+                        <Bar dataKey="count" fill="#6c63ff" radius={[4, 4, 0, 0]} name={t("pd.production_count")} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">데이터가 없습니다.</div>
+                    <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">{t("pd.no_data")}</div>
                   )}
                 </CardContent>
               </Card>
@@ -182,7 +184,7 @@ export default function PipelineDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
-                    <PieChart className="h-4 w-4" /> 카테고리 분포
+                    <PieChart className="h-4 w-4" /> {t("pd.category_distribution")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -207,7 +209,7 @@ export default function PipelineDashboard() {
                       </RePieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">데이터가 없습니다.</div>
+                    <div className="h-[250px] flex items-center justify-center text-muted-foreground text-sm">{t("pd.no_data")}</div>
                   )}
                 </CardContent>
               </Card>
@@ -217,7 +219,7 @@ export default function PipelineDashboard() {
             {stats.difficultyDistribution.length > 0 && (
               <Card className="mb-6">
                 <CardHeader>
-                  <CardTitle className="text-base">난이도 분포</CardTitle>
+                  <CardTitle className="text-base">{t("pd.difficulty_distribution")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-4">
@@ -239,7 +241,7 @@ export default function PipelineDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Film className="h-4 w-4" /> 제작 히스토리
+              <Film className="h-4 w-4" /> {t("pd.production_history")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -268,7 +270,7 @@ export default function PipelineDashboard() {
                           <Badge variant="outline" className="text-xs">{s.category}</Badge>
                           <span>{formatDuration(p.totalDurationSec || 0)}</span>
                           <span>{new Date(p.createdAt).toLocaleDateString("ko-KR")}</span>
-                          {audioUrls.length > 0 && <span>{audioUrls.length}개 오디오</span>}
+                          {audioUrls.length > 0 && <span>{t("pd.audio_count", { count: audioUrls.length })}</span>}
                         </div>
                       </div>
                       <div className="flex gap-2 shrink-0">
@@ -292,13 +294,13 @@ export default function PipelineDashboard() {
                                 ) : (
                                   <Subtitles className="h-3 w-3 mr-1" />
                                 )}
-                                자막 생성
+                                {t("pd.generate_subtitles")}
                               </Button>
                             )}
                             {audioUrls.length > 0 && (
                               <Button variant="outline" size="sm" asChild>
                                 <a href={audioUrls[0]} download>
-                                  <Download className="h-3 w-3 mr-1" /> 오디오
+                                  <Download className="h-3 w-3 mr-1" /> {t("pd.audio")}
                                 </a>
                               </Button>
                             )}
@@ -307,12 +309,12 @@ export default function PipelineDashboard() {
                               size="sm"
                               onClick={() => navigate(`/preview/${p.id}`)}
                             >
-                              <Play className="h-3 w-3 mr-1" /> 미리보기
+                              <Play className="h-3 w-3 mr-1" /> {t("pd.preview")}
                             </Button>
                             {p.thumbnailUrl ? (
                               <Button variant="outline" size="sm" asChild>
                                 <a href={p.thumbnailUrl} target="_blank" rel="noopener noreferrer">
-                                  <Image className="h-3 w-3 mr-1" /> 썸네일
+                                  <Image className="h-3 w-3 mr-1" /> {t("pd.thumbnail")}
                                 </a>
                               </Button>
                             ) : (
@@ -327,7 +329,7 @@ export default function PipelineDashboard() {
                                 ) : (
                                   <Image className="h-3 w-3 mr-1" />
                                 )}
-                                썸네일 생성
+                                {t("pd.generate_thumbnail")}
                               </Button>
                             )}
                           </>
@@ -340,9 +342,9 @@ export default function PipelineDashboard() {
             ) : (
               <EmptyState
                 type="pipeline"
-                title="아직 제작 히스토리가 없습니다"
-                description="스튜디오에서 첫 강의 영상을 제작해보세요."
-                actionLabel="첫 강의 영상 제작하기"
+                title={t("pd.no_history")}
+                description={t("pd.create_first_desc")}
+                actionLabel={t("pd.create_first")}
                 actionHref="/studio"
               />
             )}

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { useState } from "react";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   Play,
   Clock,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 export default function VodList() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const { data: vods, isLoading } = trpc.vod.list.useQuery({});
 
@@ -50,9 +52,9 @@ export default function VodList() {
           <div className="container">
             <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
               <Video className="h-8 w-8" />
-              VOD 아카이브
+              {t("vl.archiveTitle")}
             </h1>
-            <p className="text-white/70 text-lg mt-2">지난 강의 녹화본을 다시 볼 수 있습니다</p>
+            <p className="text-white/70 text-lg mt-2">{t("vl.archiveDescription")}</p>
           </div>
         </div>
       </div>
@@ -62,7 +64,7 @@ export default function VodList() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="VOD 검색..."
+              placeholder={t("vl.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -73,7 +75,7 @@ export default function VodList() {
         {isLoading ? (
           <div className="text-center py-16">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="text-muted-foreground mt-4">로딩 중...</p>
+            <p className="text-muted-foreground mt-4">{t("vl.loading")}</p>
           </div>
         ) : filteredVods && filteredVods.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -100,7 +102,7 @@ export default function VodList() {
                     {item.vod.status === "processing" && (
                       <div className="absolute top-2 left-2">
                         <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-400 border-0">
-                          처리 중
+                          {t("vl.processing")}
                         </Badge>
                       </div>
                     )}
@@ -129,7 +131,7 @@ export default function VodList() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       {item.vod.createdAt
-                        ? new Date(item.vod.createdAt).toLocaleDateString("ko-KR")
+                        ? new Date(item.vod.createdAt).toLocaleDateString()
                         : ""}
                     </p>
                   </CardContent>
@@ -140,9 +142,9 @@ export default function VodList() {
         ) : (
           <EmptyState
             type="general"
-            title="아직 VOD가 없습니다"
-            description="강의가 종료되면 자동으로 VOD가 생성됩니다."
-            actionLabel="강의 둘러보기"
+            title={t("vl.emptyTitle")}
+            description={t("vl.emptyDescription")}
+            actionLabel={t("vl.emptyAction")}
             actionHref="/lectures"
           />
         )}

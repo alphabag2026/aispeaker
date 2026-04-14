@@ -7,8 +7,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { BookOpen, ArrowRight, GraduationCap } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function MyEnrollments() {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { data: enrollments, isLoading } = trpc.enrollment.myEnrollments.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -19,9 +21,9 @@ export default function MyEnrollments() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="container py-16 text-center">
-          <h2 className="text-2xl font-bold mb-4">로그인이 필요합니다</h2>
+          <h2 className="text-2xl font-bold mb-4">{t("me.loginRequired")}</h2>
           <Button asChild>
-            <a href={getLoginUrl()}>로그인</a>
+            <a href={getLoginUrl()}>{t("me.login")}</a>
           </Button>
         </div>
       </div>
@@ -42,8 +44,8 @@ export default function MyEnrollments() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
         <div className="absolute inset-0 flex items-center">
           <div className="container">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">내 수강 목록</h1>
-            <p className="text-white/70 text-lg">수강 신청한 강의를 확인하세요</p>
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">{t("me.myEnrollments")}</h1>
+            <p className="text-white/70 text-lg">{t("me.checkYourCourses")}</p>
           </div>
         </div>
       </div>
@@ -72,10 +74,10 @@ export default function MyEnrollments() {
                       </div>
                       <div>
                         <h3 className="font-medium group-hover:text-primary transition-colors">
-                          {item.lecture?.title || `강의 #${item.enrollment.lectureId}`}
+                          {item.lecture?.title || `${t("me.lecture")} #${item.enrollment.lectureId}`}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          수강 시작: {new Date(item.enrollment.joinedAt).toLocaleDateString("ko-KR")}
+                          {t("me.enrollmentStartDate")}: {new Date(item.enrollment.joinedAt).toLocaleDateString("ko-KR")}
                         </p>
                       </div>
                     </div>
@@ -88,12 +90,12 @@ export default function MyEnrollments() {
         ) : (
           <div className="text-center py-16">
             <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">수강 중인 강의가 없습니다</h3>
-            <p className="text-muted-foreground mb-4">강의를 둘러보고 수강 신청해보세요!</p>
+            <h3 className="text-lg font-semibold mb-2">{t("me.noCourses")}</h3>
+            <p className="text-muted-foreground mb-4">{t("me.browseAndEnroll")}</p>
             <Link href="/lectures">
               <Button className="gap-2">
                 <BookOpen className="h-4 w-4" />
-                강의 둘러보기
+                {t("me.browseCourses")}
               </Button>
             </Link>
           </div>

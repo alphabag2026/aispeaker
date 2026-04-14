@@ -502,6 +502,12 @@ export const productionPipelines = mysqlTable("productionPipelines", {
   thumbnailUrl: text("thumbnailUrl"),
   /** Subtitle file URL (SRT) */
   subtitleUrl: text("subtitleUrl"),
+  /** Intro video URL (Seedance 2.0) */
+  introVideoUrl: text("introVideoUrl"),
+  /** Outro video URL (Seedance 2.0) */
+  outroVideoUrl: text("outroVideoUrl"),
+  /** Avatar engine used (d-id or heygen) */
+  avatarEngine: varchar("avatarEngine", { length: 32 }).default("d-id"),
   /** Total duration in seconds */
   totalDurationSec: int("totalDurationSec").default(0),
   /** Error message if failed */

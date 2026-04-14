@@ -9,6 +9,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 const PLAN_ICONS: Record<string, any> = {
   free: Zap,
   pro: Crown,
@@ -16,6 +17,7 @@ const PLAN_ICONS: Record<string, any> = {
 };
 
 export default function MySubscription() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const { data: subData, isLoading } = trpc.subscription.my.useQuery(undefined, { enabled: !!user });
@@ -29,8 +31,8 @@ export default function MySubscription() {
         <Navbar />
         <div className="container py-20 text-center">
           <AlertCircle className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-          <h2 className="text-xl font-semibold mb-2">로그인이 필요합니다</h2>
-          <p className="text-muted-foreground mb-4">구독 정보를 확인하려면 로그인해주세요.</p>
+          <h2 className="text-xl font-semibold mb-2">{t("mysub.login_required")}</h2>
+          <p className="text-muted-foreground mb-4">{t("mysub.login_prompt")}</p>
         </div>
       </div>
     );
@@ -43,10 +45,10 @@ export default function MySubscription() {
   const creditPercent = plan?.monthlyCredits ? Math.min(100, (creditsUsed / plan.monthlyCredits) * 100) : 0;
 
   const handleCancel = async () => {
-    if (!confirm("정말로 구독을 취소하시겠습니까? 현재 결제 기간이 끝날 때까지 서비스를 이용할 수 있습니다.")) return;
+    if (!confirm(t("mysub.cancel_confirm"))) return;
     try {
       await cancelMutation.mutateAsync();
-      toast.success("구독 취소가 예약되었습니다.");
+      toast.success(t("mysub.cancel_scheduled_msg"));
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -57,7 +59,7 @@ export default function MySubscription() {
       <Navbar />
 
       <div className="container py-8 max-w-4xl">
-        <h1 className="text-2xl font-bold mb-6">내 구독</h1>
+        <h1 className="text-2xl font-bold mb-6">{t("mysub.my_subscription")}</h1>
 
         {isLoading ? (
           <div className="space-y-4">
@@ -78,39 +80,39 @@ export default function MySubscription() {
                       <Icon className="w-6 h-6 text-violet-500" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">{plan?.name || "Free"} 플랜</CardTitle>
+                      <CardTitle className="text-lg">{t("mysub.plan_title", { planName: plan?.name || "Free" })}</CardTitle>
                       <p className="text-sm text-muted-foreground mt-0.5">
-                        {subscription?.status === "active" ? "활성" : subscription?.status || "활성"}
-                        {subscription?.cancelAtPeriodEnd && " (기간 종료 시 취소 예정)"}
+                        {subscription?.status === "active" ? t("mysub.active") : subscription?.status || t("mysub.active")}
+                        {subscription?.cancelAtPeriodEnd && t("mysub.cancel_scheduled")}
                       </p>
                     </div>
                   </div>
                   <Badge variant={plan?.slug === "pro" ? "default" : "secondary"} className={plan?.slug === "pro" ? "bg-violet-600" : ""}>
-                    {plan?.slug === "free" ? "무료" : plan?.slug === "pro" ? "PRO" : "Enterprise"}
+                    {plan?.slug === "free" ? t("mysub.free") : plan?.slug === "pro" ? "PRO" : "Enterprise"}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-xs text-muted-foreground">결제 주기</p>
-                    <p className="font-medium text-sm">{subscription?.billingCycle === "yearly" ? "연간" : "월간"}</p>
+                    <p className="text-xs text-muted-foreground">{t("mysub.billing_cycle")}</p>
+                    <p className="font-medium text-sm">{subscription?.billingCycle === "yearly" ? t("mysub.annual") : t("mysub.monthly")}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">현재 기간</p>
+                    <p className="text-xs text-muted-foreground">{t("mysub.current_period")}</p>
                     <p className="font-medium text-sm">
-                      {subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR") : "-"}까지
+                      {subscription?.currentPeriodEnd ? `${new Date(subscription.currentPeriodEnd).toLocaleDateString("ko-KR")}${t("mysub.until_date")}` : "-"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">영상 품질</p>
+                    <p className="text-xs text-muted-foreground">{t("mysub.video_quality")}</p>
                     <p className="font-medium text-sm">{plan?.maxVideoQuality || "720p"}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">이번 달 강의</p>
+                    <p className="text-xs text-muted-foreground">{t("mysub.monthly_lectures")}</p>
                     <p className="font-medium text-sm">
                       {subscription?.lecturesUsedThisPeriod || 0}
-                      {plan?.maxLecturesPerMonth ? ` / ${plan.maxLecturesPerMonth}` : " / 무제한"}
+                      {plan?.maxLecturesPerMonth ? ` / ${plan.maxLecturesPerMonth}` : t("mysub.unlimited")}
                     </p>
                   </div>
                 </div>
@@ -118,12 +120,12 @@ export default function MySubscription() {
                 <div className="flex gap-3">
                   {plan?.slug !== "pro" && (
                     <Button onClick={() => navigate("/pricing")} className="bg-violet-600 hover:bg-violet-700">
-                      <ArrowUpRight className="w-4 h-4 mr-1" /> 업그레이드
+                      <ArrowUpRight className="w-4 h-4 mr-1" /> {t("mysub.upgrade")}
                     </Button>
                   )}
                   {plan?.slug !== "free" && !subscription?.cancelAtPeriodEnd && (
                     <Button variant="outline" onClick={handleCancel} disabled={cancelMutation.isPending}>
-                      구독 취소
+                      {t("mysub.cancel_subscription")}
                     </Button>
                   )}
                 </div>
@@ -134,19 +136,19 @@ export default function MySubscription() {
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-amber-500" /> 크레딧 사용량
+                  <CreditCard className="w-5 h-5 text-amber-500" /> {t("mysub.credit_usage")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">이번 달 사용</span>
+                  <span className="text-muted-foreground">{t("mysub.monthly_usage")}</span>
                   <span className="font-medium">
                     {creditsUsed.toLocaleString()} / {plan?.monthlyCredits?.toLocaleString() || 0}
                   </span>
                 </div>
                 <Progress value={creditPercent} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  남은 크레딧: <span className="font-medium text-foreground">{(subscription?.creditsRemaining ?? 0).toLocaleString()}</span>
+                  {t("mysub.remaining_credits")} <span className="font-medium text-foreground">{(subscription?.creditsRemaining ?? 0).toLocaleString()}</span>
                 </p>
               </CardContent>
             </Card>
@@ -155,12 +157,12 @@ export default function MySubscription() {
             <Card className="border-border/50">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-blue-500" /> 크레딧 이력
+                  <Clock className="w-5 h-5 text-blue-500" /> {t("mysub.credit_history")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {creditHistory.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">아직 크레딧 사용 이력이 없습니다.</p>
+                  <p className="text-sm text-muted-foreground text-center py-8">{t("mysub.no_credit_history")}</p>
                 ) : (
                   <div className="space-y-2">
                     {creditHistory.map((tx: any) => (
@@ -175,7 +177,7 @@ export default function MySubscription() {
                           <p className={`text-sm font-medium ${tx.amount > 0 ? "text-green-500" : "text-red-500"}`}>
                             {tx.amount > 0 ? "+" : ""}{tx.amount}
                           </p>
-                          <p className="text-xs text-muted-foreground">잔액: {tx.balanceAfter}</p>
+                          <p className="text-xs text-muted-foreground">{t("mysub.balance")} {tx.balanceAfter}</p>
                         </div>
                       </div>
                     ))}

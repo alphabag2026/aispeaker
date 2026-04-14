@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useState, useCallback, useRef, useEffect } from "react";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface Section {
   title: string;
   content: string;
@@ -28,6 +30,7 @@ interface Section {
 }
 
 export default function ScriptEditor() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -36,19 +39,19 @@ export default function ScriptEditor() {
   const { data: script, isLoading, refetch } = trpc.script.getById.useQuery({ id: scriptId }, { enabled: !!scriptId });
 
   const updateSectionMutation = trpc.script.updateSection.useMutation({
-    onSuccess: () => { toast.success("섹션이 업데이트되었습니다."); refetch(); },
+    onSuccess: () => { toast.success(t("se.section_updated")); refetch(); },
     onError: (e) => toast.error(e.message),
   });
   const regenerateSectionMutation = trpc.script.regenerateSection.useMutation({
-    onSuccess: () => { toast.success("섹션이 재생성되었습니다."); refetch(); },
+    onSuccess: () => { toast.success(t("se.section_regenerated")); refetch(); },
     onError: (e) => toast.error(e.message),
   });
   const reorderMutation = trpc.script.reorderSections.useMutation({
-    onSuccess: () => { toast.success("섹션 순서가 변경되었습니다."); refetch(); },
+    onSuccess: () => { toast.success(t("se.section_reordered")); refetch(); },
     onError: (e) => toast.error(e.message),
   });
   const updateScriptMutation = trpc.script.update.useMutation({
-    onSuccess: () => { toast.success("스크립트가 저장되었습니다."); refetch(); },
+    onSuccess: () => { toast.success(t("se.script_saved")); refetch(); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -70,17 +73,17 @@ export default function ScriptEditor() {
     { enabled: !!scriptId && versionPanelOpen }
   );
   const saveVersionMutation = trpc.script.saveVersion.useMutation({
-    onSuccess: () => { toast.success("버전이 저장되었습니다."); refetchVersions(); },
+    onSuccess: () => { toast.success(t("se.version_saved")); refetchVersions(); },
     onError: (e) => toast.error(e.message),
   });
   const rollbackMutation = trpc.script.rollback.useMutation({
-    onSuccess: () => { toast.success("이전 버전으로 복원되었습니다."); refetch(); refetchVersions(); setRollbackConfirm(null); },
+    onSuccess: () => { toast.success(t("se.restored")); refetch(); refetchVersions(); setRollbackConfirm(null); },
     onError: (e) => toast.error(e.message),
   });
 
   // v2.4: Content analysis
   const analyzeMutation = trpc.script.analyze.useMutation({
-    onSuccess: () => { toast.success("분석이 완료되었습니다."); setAnalysisPanelOpen(true); },
+    onSuccess: () => { toast.success(t("se.analysis_complete")); setAnalysisPanelOpen(true); },
     onError: (e) => toast.error(e.message),
   });
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -98,9 +101,9 @@ export default function ScriptEditor() {
     }
   }, [script]);
 
-  if (!user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">로그인이 필요합니다.</div>;
+  if (!user) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">{t("se.login_required")}</div>;
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
-  if (!script) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">스크립트를 찾을 수 없습니다.</div>;
+  if (!script) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">{t("se.script_not_found")}</div>;
 
   const totalDuration = sections.reduce((sum, s) => sum + (s.durationSec || 0), 0);
 
@@ -166,7 +169,7 @@ export default function ScriptEditor() {
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute inset-0 flex items-center">
           <div className="container">
-            <p className="text-white/70 text-sm">스크립트 에디터</p>
+            <p className="text-white/70 text-sm">{t("se.script_editor")}</p>
           </div>
         </div>
       </div>
@@ -188,80 +191,56 @@ export default function ScriptEditor() {
               <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                 <Badge variant="outline">{script.category}</Badge>
                 <Badge variant="outline">{script.difficulty}</Badge>
-                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {Math.round(totalDuration / 60)}분</span>
-                <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {sections.length}개 섹션</span>
+                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {Math.round(totalDuration / 60)}{t("se.minutes")}</span>
+                <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {sections.length}{t("se.sections_count")}</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => saveVersionMutation.mutate({ scriptId, changeDescription: "수동 저장" })}
+                onClick={() => saveVersionMutation.mutate({ scriptId, changeDescription: t("se.manual_save") })}
                 disabled={saveVersionMutation.isPending}
               >
                 {saveVersionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                <span className="hidden lg:inline ml-1">버전 저장</span>
+                <span className="hidden lg:inline ml-1">{t("se.save_version")}</span>
               </Button>
               <Sheet open={versionPanelOpen} onOpenChange={setVersionPanelOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" size="sm">
                     <History className="h-4 w-4" />
-                    <span className="hidden lg:inline ml-1">버전 이력</span>
+                    <span className="hidden lg:inline ml-1">{t("se.version_history")}</span>
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="w-[400px] sm:w-[450px]">
                   <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2"><History className="h-5 w-5" /> 버전 이력</SheetTitle>
+                    <SheetTitle className="flex items-center gap-2"><History className="h-5 w-5" /> {t("se.version_history")}</SheetTitle>
                   </SheetHeader>
                   <ScrollArea className="h-[calc(100vh-100px)] mt-4 pr-4">
                     {!versions || versions.length === 0 ? (
                       <div className="text-center py-12 text-muted-foreground">
                         <History className="h-10 w-10 mx-auto mb-3 opacity-40" />
-                        <p className="text-sm">아직 저장된 버전이 없습니다.</p>
-                        <p className="text-xs mt-1">"버전 저장" 버튼으로 현재 상태를 기록하세요.</p>
+                        <p className="text-sm">{t("se.no_versions_yet")}</p>
+                        <p className="text-xs mt-1">{t("se.use_save_version_button")}</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {versions.map((v: any) => (
                           <Card key={v.id} className="border">
                             <CardContent className="p-3">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={v.changeType === "rollback" ? "destructive" : v.changeType === "manual" ? "default" : "secondary"} className="text-xs">
-                                    v{v.versionNumber}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    {v.changeType === "auto" ? "자동" : v.changeType === "manual" ? "수동" : "롤백"}
-                                  </span>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-semibold text-sm flex items-center gap-1.5">
+                                    {v.version === script.version && <Badge variant="default" className="text-[10px] px-1.5 py-0">{t("se.current_version")}</Badge>}
+                                    {v.changeDescription}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">{new Date(v.createdAt).toLocaleString()}</p>
                                 </div>
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(v.createdAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-                                </span>
-                              </div>
-                              <p className="text-sm font-medium truncate">{v.title}</p>
-                              {v.changeDescription && (
-                                <p className="text-xs text-muted-foreground mt-1 truncate">{v.changeDescription}</p>
-                              )}
-                              <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                                <span>{v.sectionCount}개 섹션</span>
-                                <span>{Math.round((v.estimatedDurationSec || 0) / 60)}분</span>
-                              </div>
-                              {rollbackConfirm === v.id ? (
-                                <div className="mt-2 p-2 bg-destructive/10 rounded text-sm">
-                                  <p className="text-destructive font-medium text-xs">이 버전으로 복원하시겠습니까?</p>
-                                  <div className="flex gap-2 mt-2">
-                                    <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={() => rollbackMutation.mutate({ scriptId, versionId: v.id })} disabled={rollbackMutation.isPending}>
-                                      {rollbackMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
-                                      <span className="ml-1">복원</span>
-                                    </Button>
-                                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setRollbackConfirm(null)}>취소</Button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <Button size="sm" variant="ghost" className="mt-2 h-7 text-xs w-full" onClick={() => setRollbackConfirm(v.id)}>
-                                  <RotateCcw className="h-3 w-3 mr-1" /> 이 버전으로 복원
+                                <Button size="sm" variant="outline" onClick={() => setRollbackConfirm(v.version)} disabled={v.version === script.version || rollbackMutation.isPending}>
+                                  <RotateCcw className="h-3 w-3 mr-1" />
+                                  {t("se.restore")}
                                 </Button>
-                              )}
+                              </div>
                             </CardContent>
                           </Card>
                         ))}
@@ -270,234 +249,255 @@ export default function ScriptEditor() {
                   </ScrollArea>
                 </SheetContent>
               </Sheet>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAnalyze}
-                disabled={analyzeMutation.isPending}
-              >
-                {analyzeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
-                <span className="hidden lg:inline ml-1">AI 분석</span>
-              </Button>
-              <Button onClick={() => navigate("/studio")} variant="outline" size="sm">
-                <SlidersHorizontal className="h-4 w-4 mr-1" /> 스튜디오
-              </Button>
+              <Dialog open={rollbackConfirm !== null} onOpenChange={(open) => !open && setRollbackConfirm(null)}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t("se.confirm_restore_title")}</DialogTitle>
+                  </DialogHeader>
+                  <p>{t("se.confirm_restore")}</p>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={() => setRollbackConfirm(null)}>{t("se.cancel")}</Button>
+                    <Button variant="destructive" onClick={() => rollbackMutation.mutate({ scriptId, version: rollbackConfirm! })} disabled={rollbackMutation.isPending}>
+                      {rollbackMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                      <span className="ml-1">{t("se.restore")}</span>
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Sheet open={analysisPanelOpen} onOpenChange={setAnalysisPanelOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={handleAnalyze} disabled={analyzeMutation.isPending}>
+                    {analyzeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <BarChart3 className="h-4 w-4" />}
+                    <span className="hidden lg:inline ml-1">{t("se.content_analysis")}</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-[400px] sm:w-[450px]">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5" /> {t("se.content_analysis")}</SheetTitle>
+                  </SheetHeader>
+                  <ScrollArea className="h-[calc(100vh-100px)] mt-4 pr-4">
+                    {analysisResult ? (
+                      <div className="space-y-4 text-sm">
+                        <Card>
+                          <CardHeader className="p-3">
+                            <CardTitle className="text-base flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> {t("se.target_audience_and_difficulty")}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                            <p><strong>{t("se.target_audience")}:</strong> {analysisResult.targetAudience}</p>
+                            <p><strong>{t("se.difficulty")}:</strong> {analysisResult.difficulty}</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="p-3">
+                            <CardTitle className="text-base flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> {t("se.core_keywords")}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                            <div className="flex flex-wrap gap-1">
+                              {analysisResult.keywords.map((kw: string) => <Badge key={kw} variant="secondary">{kw}</Badge>)}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader className="p-3">
+                            <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> {t("se.summary")}</CardTitle>
+                          </CardHeader>
+                          <CardContent className="p-3 pt-0">
+                            <p>{analysisResult.summary}</p>
+                          </CardContent>
+                        </Card>
+                        {analysisResult.suggestions && analysisResult.suggestions.length > 0 && (
+                          <Card>
+                            <CardHeader className="p-3">
+                              <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> {t("se.ai_improvement_suggestions")}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-3 pt-0">
+                              <div className="space-y-2">
+                                {analysisResult.suggestions.map((s: any, i: number) => (
+                                  <div key={i} className="flex items-start gap-2 p-2 rounded bg-muted/30">
+                                    {s.priority === "high" ? (
+                                      <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                                    ) : s.priority === "medium" ? (
+                                      <TrendingUp className="h-4 w-4 text-yellow-500 shrink-0 mt-0.5" />
+                                    ) : (
+                                      <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                                    )}
+                                    <div>
+                                      <Badge variant="outline" className="text-[10px] mb-1">
+                                        {s.category === "readability" ? t("se.readability") : s.category === "difficulty" ? t("se.difficulty") : s.category === "keyword" ? t("se.keywords") : s.category === "structure" ? t("se.structure") : t("se.engagement")}
+                                      </Badge>
+                                      <p className="text-sm">{s.suggestion}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                        <p className="text-sm">{t("se.run_analysis_prompt")}</p>
+                        <Button size="sm" className="mt-3" onClick={handleAnalyze} disabled={analyzeMutation.isPending}>
+                          {analyzeMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
+                          {t("se.start_analysis")}
+                        </Button>
+                      </div>
+                    )}
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Section List */}
-      <div className="container py-6 max-w-4xl">
-        <div className="space-y-3">
-          {sections.map((section, idx) => (
-            <Card
-              key={idx}
-              draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragOver={(e) => handleDragOver(e, idx)}
-              onDragEnd={handleDragEnd}
-              onDrop={() => handleDrop(idx)}
-              className={`transition-all cursor-grab active:cursor-grabbing ${
-                dragIdx === idx ? "opacity-50 scale-95" : ""
-              } ${dragOverIdx === idx && dragIdx !== idx ? "border-primary border-2" : ""} ${
-                editingIdx === idx ? "ring-2 ring-primary" : ""
-              }`}
-            >
-              <CardContent className="p-4">
+      {/* Main Content */}
+      <main className="container py-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2
+"><SlidersHorizontal className="h-5 w-5" /> {t("se.script_structure")}</h2>
+          <Button size="sm" onClick={() => {}}><Plus className="h-4 w-4 mr-1" /> {t("se.add_section")}</Button>
+        </div>
+
+        {sections.length > 0 ? (
+          <div className="space-y-2">
+            {sections.map((section, idx) => (
+              <div
+                key={idx}
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDragEnd={handleDragEnd}
+                onDrop={() => handleDrop(idx)}
+                className={`transition-all duration-300 ${dragIdx === idx ? "opacity-50" : ""} ${dragOverIdx === idx ? "bg-primary/10" : ""}`}
+              >
                 {editingIdx === idx ? (
-                  /* Inline Edit Mode */
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge className="shrink-0">{idx + 1}</Badge>
+                  <Card>
+                    <CardContent className="p-4 space-y-3">
                       <Input
                         value={editForm.title}
                         onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                        placeholder="섹션 제목"
-                        className="font-semibold"
+                        placeholder={t("se.section_title")}
+                        className="font-bold text-base"
                       />
-                    </div>
-                    <Textarea
-                      value={editForm.content}
-                      onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                      placeholder="강사 스크립트 내용"
-                      rows={6}
-                      className="text-sm"
-                    />
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <label className="text-xs text-muted-foreground">예상 시간 (초)</label>
+                      <Textarea
+                        value={editForm.content}
+                        onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                        rows={6}
+                      />
+                      <div className="flex items-center gap-2">
                         <Input
                           type="number"
                           value={editForm.durationSec}
                           onChange={(e) => setEditForm({ ...editForm, durationSec: Number(e.target.value) })}
+                          className="w-24"
                         />
+                        <span>{t("se.seconds")}</span>
                       </div>
-                      <div className="flex-[2]">
-                        <label className="text-xs text-muted-foreground">슬라이드 노트</label>
-                        <Input
-                          value={editForm.slideNotes}
-                          onChange={(e) => setEditForm({ ...editForm, slideNotes: e.target.value })}
-                        />
+                      <Textarea
+                        value={editForm.slideNotes}
+                        onChange={(e) => setEditForm({ ...editForm, slideNotes: e.target.value })}
+                        placeholder={t("se.slide_notes")}
+                        rows={3}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" onClick={cancelEdit}>{t("se.cancel")}</Button>
+                        <Button onClick={saveEdit} disabled={updateSectionMutation.isPending}>
+                          {updateSectionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                          <span className="ml-1">{t("se.save")}</span>
+                        </Button>
                       </div>
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={cancelEdit}><X className="h-4 w-4 mr-1" /> 취소</Button>
-                      <Button size="sm" onClick={saveEdit} disabled={updateSectionMutation.isPending}>
-                        {updateSectionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-                        저장
-                      </Button>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ) : (
-                  /* View Mode */
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center gap-1 shrink-0 pt-1">
-                      <GripVertical className="h-5 w-5 text-muted-foreground" />
-                      <Badge variant="secondary" className="text-xs">{idx + 1}</Badge>
-                      <div className="flex flex-col gap-0.5 mt-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSection(idx, "up")} disabled={idx === 0 || reorderMutation.isPending}>
-                          <ChevronUp className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveSection(idx, "down")} disabled={idx === sections.length - 1 || reorderMutation.isPending}>
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </div>
+                  <Card className="group relative overflow-hidden">
+                    <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-md p-1 z-10">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(idx)}><Edit3 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startRegen(idx)}><Wand2 className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(idx, "up")} disabled={idx === 0}><ChevronUp className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(idx, "down")} disabled={idx === sections.length - 1}><ChevronDown className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => {}}><Trash2 className="h-4 w-4" /></Button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold text-base">{section.title}</h3>
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {Math.round(section.durationSec / 60)}분 {section.durationSec % 60}초
-                          </span>
+                    <CardHeader className="flex-row items-start gap-3 p-4 cursor-grab active:cursor-grabbing bg-card">
+                      <GripVertical className="h-5 w-5 text-muted-foreground mt-1 shrink-0" />
+                      <div>
+                        <CardTitle className="text-base mb-1">{section.title}</CardTitle>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {section.durationSec} {t("se.seconds")}</span>
+                          <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {section.content.split(" ").length} {t("se.words")}</span>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-3 mb-2">{section.content}</p>
-                      {section.slideNotes && (
-                        <div className="text-xs bg-muted/50 rounded px-2 py-1 text-muted-foreground mb-2">
-                          📝 {section.slideNotes}
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => startEdit(idx)}>
-                          <Edit3 className="h-3 w-3 mr-1" /> 편집
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => startRegen(idx)} disabled={regenerateSectionMutation.isPending}>
-                          {regenerateSectionMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wand2 className="h-3 w-3 mr-1" />}
-                          AI 재생성
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 text-sm text-muted-foreground leading-relaxed">
+                      <p className="line-clamp-3">{section.content}</p>
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {sections.length === 0 && (
-          <div className="text-center py-16 text-muted-foreground">
-            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>섹션이 없습니다. 스튜디오에서 스크립트를 먼저 생성해주세요.</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-16 border-2 border-dashed rounded-lg text-muted-foreground">
+            <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
+            <p className="font-semibold">{t("se.script_empty")}</p>
+            <p className="text-sm mt-1">{t("se.add_first_section_prompt")}</p>
           </div>
         )}
 
-        {/* Summary */}
-        {sections.length > 0 && (
-          <Card className="mt-6">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  총 {sections.length}개 섹션 · 예상 시간 {Math.round(totalDuration / 60)}분 {totalDuration % 60}초
-                </div>
-                <Button onClick={() => navigate("/studio")} className="gap-2">
-                  <SlidersHorizontal className="h-4 w-4" /> 영상 제작하기
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+        <Separator className="my-6" />
 
-      {/* AI Content Analysis Panel */}
-      <Dialog open={analysisPanelOpen && !!analysisResult} onOpenChange={setAnalysisPanelOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <div className="flex justify-end items-center gap-3">
+          <span className="text-sm text-muted-foreground">{t("se.total_length")}: {Math.floor(totalDuration / 60)}{t("se.minutes")} {totalDuration % 60}{t("se.seconds")}</span>
+          <Button size="lg" onClick={() => navigate(`/studio/generate/${scriptId}`)}>
+            <Sparkles className="h-5 w-5 mr-2" />
+            {t("se.generate_video")}
+          </Button>
+        </div>
+      </main>
+
+      {/* Analysis Result Dialog */}
+      <Dialog open={analysisPanelOpen && !!analysisResult} onOpenChange={(open) => !open && setAnalysisPanelOpen(false)}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5 text-primary" /> AI 콘텐츠 분석 리포트</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><BarChart3 className="h-5 w-5" /> {t("se.analysis_results")}</DialogTitle>
           </DialogHeader>
           {analysisResult && (
-            <div className="space-y-6">
-              {/* Overall Score */}
-              <div className="text-center p-6 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl">
-                <div className="text-5xl font-bold text-primary mb-1">{analysisResult.overall}</div>
-                <p className="text-sm text-muted-foreground">종합 점수</p>
-              </div>
-
-              {/* Score Cards */}
-              <div className="grid grid-cols-5 gap-2">
-                {[
-                  { key: "readability", label: "가독성", icon: BookOpen, color: "text-blue-500" },
-                  { key: "difficulty", label: "난이도", icon: Target, color: "text-green-500" },
-                  { key: "keyword", label: "키워드", icon: Sparkles, color: "text-purple-500" },
-                  { key: "structure", label: "구조", icon: FileText, color: "text-orange-500" },
-                  { key: "engagement", label: "참여도", icon: MessageSquare, color: "text-pink-500" },
-                ].map(({ key, label, icon: Icon, color }) => (
-                  <div key={key} className="text-center p-3 rounded-lg bg-card border">
-                    <Icon className={`h-4 w-4 mx-auto mb-1 ${color}`} />
-                    <div className="text-lg font-bold">{analysisResult.scores?.[key] || 0}</div>
-                    <p className="text-[10px] text-muted-foreground">{label}</p>
-                    <Progress value={analysisResult.scores?.[key] || 0} className="h-1 mt-1" />
+            <div className="max-h-[80vh] overflow-y-auto pr-2 space-y-4 text-sm">
+              <Card>
+                <CardHeader className="p-4">
+                  <CardTitle className="text-base flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> {t("se.target_audience_and_difficulty")}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p><strong>{t("se.target_audience")}:</strong> {analysisResult.targetAudience}</p>
+                  <p><strong>{t("se.difficulty")}:</strong> {analysisResult.difficulty}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="p-4">
+                  <CardTitle className="text-base flex items-center gap-2"><BookOpen className="h-4 w-4 text-primary" /> {t("se.core_keywords")}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <div className="flex flex-wrap gap-1">
+                    {analysisResult.keywords.map((kw: string) => <Badge key={kw} variant="secondary">{kw}</Badge>)}
                   </div>
-                ))}
-              </div>
-
-              {/* Metrics */}
-              {analysisResult.metrics && (
-                <Card>
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4" /> 주요 지표</h4>
-                    <div className="grid grid-cols-3 gap-3 text-center">
-                      <div className="p-2 bg-muted/50 rounded">
-                        <div className="text-lg font-bold">{analysisResult.metrics.totalWords?.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">총 단어 수</p>
-                      </div>
-                      <div className="p-2 bg-muted/50 rounded">
-                        <div className="text-lg font-bold">{analysisResult.metrics.avgSentenceLength}</div>
-                        <p className="text-xs text-muted-foreground">평균 문장 길이</p>
-                      </div>
-                      <div className="p-2 bg-muted/50 rounded">
-                        <div className="text-lg font-bold">{analysisResult.metrics.estimatedReadingTime}분</div>
-                        <p className="text-xs text-muted-foreground">예상 읽기 시간</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* AI Analysis Details */}
-              {analysisResult.analysis && (
-                <div className="space-y-3">
-                  {analysisResult.analysis.keywords?.topKeywords && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <h4 className="font-semibold text-sm mb-2">주요 키워드</h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {analysisResult.analysis.keywords.topKeywords.map((kw: string, i: number) => (
-                            <Badge key={i} variant="secondary" className="text-xs">{kw}</Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
-
-              {/* Suggestions */}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="p-4">
+                  <CardTitle className="text-base flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> {t("se.summary")}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p>{analysisResult.summary}</p>
+                </CardContent>
+              </Card>
               {analysisResult.suggestions && analysisResult.suggestions.length > 0 && (
                 <Card>
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-sm mb-3 flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> AI 개선 제안</h4>
+                  <CardHeader className="p-4">
+                    <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> {t("se.ai_improvement_suggestions")}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
                     <div className="space-y-2">
                       {analysisResult.suggestions.map((s: any, i: number) => (
                         <div key={i} className="flex items-start gap-2 p-2 rounded bg-muted/30">
@@ -510,7 +510,7 @@ export default function ScriptEditor() {
                           )}
                           <div>
                             <Badge variant="outline" className="text-[10px] mb-1">
-                              {s.category === "readability" ? "가독성" : s.category === "difficulty" ? "난이도" : s.category === "keyword" ? "키워드" : s.category === "structure" ? "구조" : "참여도"}
+                              {s.category === "readability" ? t("se.readability") : s.category === "difficulty" ? t("se.difficulty") : s.category === "keyword" ? t("se.keywords") : s.category === "structure" ? t("se.structure") : t("se.engagement")}
                             </Badge>
                             <p className="text-sm">{s.suggestion}</p>
                           </div>
@@ -529,27 +529,27 @@ export default function ScriptEditor() {
       <Dialog open={regenIdx !== null} onOpenChange={(open) => !open && setRegenIdx(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>섹션 AI 재생성</DialogTitle>
+            <DialogTitle>{t("se.ai_regenerate_section")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             {regenIdx !== null && sections[regenIdx] && (
               <div className="bg-muted/50 rounded p-3 text-sm">
-                <p className="font-medium mb-1">현재 섹션: {sections[regenIdx].title}</p>
+                <p className="font-medium mb-1">{t("se.current_section")}: {sections[regenIdx].title}</p>
                 <p className="text-muted-foreground line-clamp-2">{sections[regenIdx].content}</p>
               </div>
             )}
             <Textarea
               value={regenPrompt}
               onChange={(e) => setRegenPrompt(e.target.value)}
-              placeholder="수정 요청을 입력하세요 (비워두면 자동으로 개선됩니다)"
+              placeholder={t("se.edit_request_placeholder")}
               rows={3}
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setRegenIdx(null)}>취소</Button>
+            <Button variant="ghost" onClick={() => setRegenIdx(null)}>{t("se.cancel")}</Button>
             <Button onClick={doRegen} disabled={regenerateSectionMutation.isPending}>
               {regenerateSectionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
-              재생성
+              {t("se.regenerate")}
             </Button>
           </DialogFooter>
         </DialogContent>

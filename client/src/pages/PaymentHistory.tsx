@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function PaymentHistory() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const authLoading = !isAuthenticated && !user;
   const { data: payments, isLoading } = trpc.payment.myPayments.useQuery(undefined, { enabled: !!user });
@@ -26,10 +28,10 @@ export default function PaymentHistory() {
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <CreditCard className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-xl font-bold mb-2">로그인이 필요합니다</h2>
-            <p className="text-muted-foreground mb-4">결제 내역을 확인하려면 로그인해 주세요.</p>
+            <h2 className="text-xl font-bold mb-2">{t("ph.loginRequired")}</h2>
+            <p className="text-muted-foreground mb-4">{t("ph.loginToView")}</p>
             <a href={getLoginUrl()}>
-              <Button>로그인</Button>
+              <Button>{t("ph.login")}</Button>
             </a>
           </CardContent>
         </Card>
@@ -38,11 +40,11 @@ export default function PaymentHistory() {
   }
 
   const statusConfig: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
-    completed: { icon: <CheckCircle className="w-4 h-4" />, label: "완료", color: "bg-green-500/10 text-green-500" },
-    pending: { icon: <Clock className="w-4 h-4" />, label: "대기중", color: "bg-yellow-500/10 text-yellow-500" },
-    processing: { icon: <Loader2 className="w-4 h-4 animate-spin" />, label: "처리중", color: "bg-blue-500/10 text-blue-500" },
-    failed: { icon: <XCircle className="w-4 h-4" />, label: "실패", color: "bg-red-500/10 text-red-500" },
-    refunded: { icon: <XCircle className="w-4 h-4" />, label: "환불", color: "bg-gray-500/10 text-gray-500" },
+    completed: { icon: <CheckCircle className="w-4 h-4" />, label: t("ph.statusCompleted"), color: "bg-green-500/10 text-green-500" },
+    pending: { icon: <Clock className="w-4 h-4" />, label: t("ph.statusPending"), color: "bg-yellow-500/10 text-yellow-500" },
+    processing: { icon: <Loader2 className="w-4 h-4 animate-spin" />, label: t("ph.statusProcessing"), color: "bg-blue-500/10 text-blue-500" },
+    failed: { icon: <XCircle className="w-4 h-4" />, label: t("ph.statusFailed"), color: "bg-red-500/10 text-red-500" },
+    refunded: { icon: <XCircle className="w-4 h-4" />, label: t("ph.statusRefunded"), color: "bg-gray-500/10 text-gray-500" },
   };
 
   const methodIcon = (method: string) => {
@@ -61,8 +63,8 @@ export default function PaymentHistory() {
             <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">결제 내역</h1>
-            <p className="text-muted-foreground">모든 결제 기록을 확인하세요</p>
+            <h1 className="text-3xl font-bold">{t("ph.title")}</h1>
+            <p className="text-muted-foreground">{t("ph.subtitle")}</p>
           </div>
         </div>
 
@@ -74,10 +76,10 @@ export default function PaymentHistory() {
           <Card>
             <CardContent className="py-12 text-center">
               <CreditCard className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">결제 내역이 없습니다</h3>
-              <p className="text-muted-foreground mb-4">아직 결제한 내역이 없습니다.</p>
+              <h3 className="text-lg font-semibold mb-2">{t("ph.noPaymentsTitle")}</h3>
+              <p className="text-muted-foreground mb-4">{t("ph.noPaymentsSubtitle")}</p>
               <Link href="/pricing">
-                <Button>요금제 보기</Button>
+                <Button>{t("ph.viewPricing")}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -102,7 +104,7 @@ export default function PaymentHistory() {
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               {methodIcon(payment.paymentMethod)}
-                              {payment.paymentMethod === "stripe" ? "카드" : "암호화폐"}
+                              {payment.paymentMethod === "stripe" ? t("ph.methodCard") : t("ph.methodCrypto")}
                             </span>
                             <span>·</span>
                             <span>{new Date(payment.createdAt).toLocaleDateString("ko-KR")}</span>

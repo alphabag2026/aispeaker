@@ -20,10 +20,11 @@ import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, User2, Settings2, Edit3, History,
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera,
-  Presentation
+  Presentation, Video, Zap, Film
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 const CATEGORIES = [
   { value: "web3", label: "Web3" },
@@ -44,6 +45,7 @@ const DIFFICULTIES = [
 // Voices loaded from server API (Gemini TTS voices)
 
 export default function ProductionStudio() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("create");
 
@@ -61,6 +63,14 @@ export default function ProductionStudio() {
   const [ttsVoiceId, setTtsVoiceId] = useState("");
   const [selectedVoiceModId, setSelectedVoiceModId] = useState<string>("none");
   const [selectedFaceSwapId, setSelectedFaceSwapId] = useState<string>("none");
+
+  // Avatar engine selection
+  const [avatarEngine, setAvatarEngine] = useState<"d-id" | "heygen">("d-id");
+  // Seedance 2.0 intro/outro
+  const [seedanceIntro, setSeedanceIntro] = useState(false);
+  const [seedanceOutro, setSeedanceOutro] = useState(false);
+  const [seedanceIntroPrompt, setSeedanceIntroPrompt] = useState("");
+  const [seedanceOutroPrompt, setSeedanceOutroPrompt] = useState("");
 
   // PIP mode + PPT upload
   const [pipEnabled, setPipEnabled] = useState(false);
@@ -126,9 +136,9 @@ export default function ProductionStudio() {
     sectionAudioRef.current = audio;
     setPlayingUrl(url);
     audio.onended = () => { setPlayingUrl(null); sectionAudioRef.current = null; };
-    audio.onerror = () => { setPlayingUrl(null); sectionAudioRef.current = null; toast.error("오디오 재생에 실패했습니다."); };
-    audio.play().catch(() => { setPlayingUrl(null); toast.error("오디오 재생에 실패했습니다."); });
-  }, [playingUrl, stopSectionAudio]);
+    audio.onerror = () => { setPlayingUrl(null); sectionAudioRef.current = null; toast.error(t("ps.audioPlayFailed")); };
+    audio.play().catch(() => { setPlayingUrl(null); toast.error(t("ps.audioPlayFailed")); });
+  }, [playingUrl, stopSectionAudio, t]);
 
   // Credit guard
   const { modalState, checkCredits, closeModal } = useCreditGuard();
@@ -156,19 +166,19 @@ export default function ProductionStudio() {
   const pptListQuery = trpc.ppt.list.useQuery(undefined, { enabled: !!user });
   const pptUploadMutation = trpc.ppt.upload.useMutation({
     onSuccess: (data) => {
-      toast.success("PPT 업로드 완료!");
+      toast.success(t("ps.pptUploadSuccess"));
       pptListQuery.refetch();
       setSelectedPptId(data.id.toString());
       setPptUploadTitle("");
     },
-    onError: (err) => toast.error("PPT 업로드 실패: " + err.message),
+    onError: (err) => toast.error(`${t("ps.pptUploadFailed")}: ${err.message}`),
   });
   const pipSettingsQuery = trpc.pip.get.useQuery(undefined, { enabled: !!user });
 
   // Mutations
   const generateScript = trpc.script.generate.useMutation({
     onSuccess: (data) => {
-      toast.success(`스크립트 생성 완료! ${data.sectionCount}개 섹션, 약 ${Math.round((data.estimatedDurationSec || 0) / 60)}분`);
+      toast.success(t("ps.scriptGenerationSuccess", { sectionCount: data.sectionCount, minutes: Math.round((data.estimatedDurationSec || 0) / 60) }));
       scriptsQuery.refetch();
       subscriptionQuery.refetch();
       setActiveTab("scripts");
@@ -178,7 +188,7 @@ export default function ProductionStudio() {
 
   const startPipeline = trpc.pipeline.start.useMutation({
     onSuccess: (data) => {
-      toast.success("파이프라인 완료! 음성이 생성되었습니다.");
+      toast.success(t("ps.pipelineSuccess"));
       setActivePipelineId(null);
       pipelinesQuery.refetch();
       subscriptionQuery.refetch();
@@ -191,28 +201,28 @@ export default function ProductionStudio() {
   });
 
   const deleteScript = trpc.script.delete.useMutation({
-    onSuccess: () => { toast.success("스크립트 삭제됨"); scriptsQuery.refetch(); },
+    onSuccess: () => { toast.success(t("ps.scriptDeleted")); scriptsQuery.refetch(); },
   });
 
   const deletePipeline = trpc.pipeline.delete.useMutation({
-    onSuccess: () => { toast.success("파이프라인 삭제됨"); pipelinesQuery.refetch(); },
+    onSuccess: () => { toast.success(t("ps.pipelineDeleted")); pipelinesQuery.refetch(); },
   });
 
   const cancelPipeline = trpc.pipeline.cancel.useMutation({
     onSuccess: () => {
-      toast.success("작업이 취소되었습니다", {
-        description: "진행 중이던 제작이 중단되었습니다. 제작 이력에서 확인할 수 있습니다.",
+      toast.success(t("ps.jobCancelled"), {
+        description: t("ps.jobCancelledDesc"),
         duration: 5000,
       });
       pipelinesQuery.refetch();
     },
-    onError: (err) => toast.error("취소 실패: " + err.message),
+    onError: (err) => toast.error(`${t("ps.cancelFailed")}: ${err.message}`),
   });
 
   // Template-based script generation
   const generateFromTemplate = trpc.scriptTemplate.generateFromTemplate.useMutation({
     onSuccess: (data) => {
-      toast.success(`템플릿 기반 스크립트 생성 완료! ${data.sectionCount}개 섹션`);
+      toast.success(t("ps.templateScriptSuccess", { sectionCount: data.sectionCount }));
       scriptsQuery.refetch();
       setActiveTab("scripts");
     },
@@ -223,7 +233,7 @@ export default function ProductionStudio() {
   const batchStart = trpc.pipeline.batchStart.useMutation({
     onSuccess: (data) => {
       setBatchResults(data);
-      toast.success(`배치 완료: ${data.summary.completed}건 성공, ${data.summary.failed}건 실패`);
+      toast.success(t("ps.batchComplete", { completed: data.summary.completed, failed: data.summary.failed }));
       pipelinesQuery.refetch();
     },
     onError: (err) => toast.error(err.message),
@@ -232,7 +242,7 @@ export default function ProductionStudio() {
   // Thumbnail generation
   const generateThumbnail = trpc.pipeline.generateThumbnail.useMutation({
     onSuccess: (data) => {
-      toast.success("썸네일이 생성되었습니다!");
+      toast.success(t("ps.thumbnailGenerated"));
       pipelinesQuery.refetch();
     },
     onError: (err) => toast.error(err.message),
@@ -247,1210 +257,894 @@ export default function ProductionStudio() {
 
   // Apply template if coming from template library
   useEffect(() => {
-    if (templateId && selectedTemplateQuery.data) {
-      setActiveTab("create");
+    if (selectedTemplateQuery.data) {
+      const t = selectedTemplateQuery.data;
+      setTitle(t.name);
+      setPrompt(t.prompt);
+      setCategory(t.category);
+      setDifficulty(t.difficulty);
+      setLanguage(t.language);
+      setDurationMin(t.durationMin);
     }
-  }, [templateId, selectedTemplateQuery.data]);
+  }, [selectedTemplateQuery.data]);
 
   const handleGenerateScript = () => {
-    if (!title.trim() || !prompt.trim()) { toast.error("제목과 프롬프트를 입력하세요."); return; }
-    // Credit guard: script generation costs 5 credits
-    if (!checkCredits("script_generation", currentCredits)) return;
-    if (templateId) {
-      generateFromTemplate.mutate({ templateId, title, prompt, language, targetDurationMin: durationMin });
-    } else {
-      generateScript.mutate({ title, prompt, category: category as any, difficulty: difficulty as any, language, targetDurationMin: durationMin });
-    }
-  };
-
-  // Helper to parse avatar ID: returns { faceSwapProfileId, sampleFaceId }
-  const parseAvatarSelection = (val: string): { faceSwapProfileId?: number; sampleFaceId?: number } => {
-    if (val === "none") return {};
-    if (val.startsWith("sample-")) {
-      const num = parseInt(val.replace("sample-", ""));
-      return isNaN(num) ? {} : { sampleFaceId: num };
-    }
-    const num = parseInt(val.replace("user-", ""));
-    return isNaN(num) ? {} : { faceSwapProfileId: num };
-  };
-  // Legacy helper for backward compat
-  const parseFaceSwapId = (val: string): number | undefined => {
-    return parseAvatarSelection(val).faceSwapProfileId;
-  };
-
-  const handleBatchStart = () => {
-    if (batchSelectedIds.size === 0) { toast.error("스크립트를 선택하세요."); return; }
-    const readyScripts = scriptsQuery.data?.filter(s => s.status === "ready" && batchSelectedIds.has(s.id)) || [];
-    if (readyScripts.length === 0) { toast.error("준비된 스크립트가 없습니다."); return; }
-    const pipSettings = pipSettingsQuery.data;
-    // Build batch items, omitting undefined fields to prevent superjson null serialization issues
-    const batchVoiceMod = batchVoiceModId !== "none" ? parseInt(batchVoiceModId) : undefined;
-    const batchAvatarSel = parseAvatarSelection(batchFaceSwapId);
-    const batchItems = readyScripts.map(s => {
-      const item: Record<string, any> = { scriptId: s.id, title: s.title, ttsVoiceId: batchTtsVoiceId };
-      if (batchVoiceMod !== undefined && !isNaN(batchVoiceMod)) item.voiceModProfileId = batchVoiceMod;
-      if (batchAvatarSel.faceSwapProfileId !== undefined) item.faceSwapProfileId = batchAvatarSel.faceSwapProfileId;
-      if (batchAvatarSel.sampleFaceId !== undefined) item.sampleFaceId = batchAvatarSel.sampleFaceId;
-      return item;
+    const cost = templateId ? 1 : 5; // Template-based is cheaper
+    checkCredits(cost, () => {
+      if (templateId) {
+        generateFromTemplate.mutate({ templateId });
+      } else {
+        generateScript.mutate({ title, prompt, category, difficulty, language, durationMin });
+      }
     });
-    const batchParams: Record<string, any> = { items: batchItems };
-    if (batchPipEnabled) {
-      batchParams.pipEnabled = true;
-      batchParams.pipPosition = pipSettings?.position || "bottom-right";
-      batchParams.pipSize = pipSettings?.size || "medium";
-      batchParams.pipShape = pipSettings?.shape || "circle";
-      batchParams.pipOpacity = pipSettings?.opacity ?? 100;
-      const batchPptId = batchSelectedPptId !== "none" ? parseInt(batchSelectedPptId) : undefined;
-      if (batchPptId !== undefined && !isNaN(batchPptId)) batchParams.pptUploadId = batchPptId;
-    }
-    batchStart.mutate(batchParams as any);
-  };
-
-  const toggleBatchSelect = (id: number) => {
-    setBatchSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    const readyScripts = scriptsQuery.data?.filter(s => s.status === "ready") || [];
-    if (batchSelectedIds.size === readyScripts.length) {
-      setBatchSelectedIds(new Set());
-    } else {
-      setBatchSelectedIds(new Set(readyScripts.map(s => s.id)));
-    }
   };
 
   const handleStartPipeline = () => {
-    if (!selectedScriptId || !pipelineTitle.trim()) { toast.error("스크립트를 선택하고 제목을 입력하세요."); return; }
-    // Credit guard: TTS generation costs 10 credits
-    if (!checkCredits("tts_generation", currentCredits)) return;
-    // Build params, omitting undefined fields to prevent superjson null serialization issues
-    const params: Record<string, any> = {
-      scriptId: selectedScriptId,
-      title: pipelineTitle,
-      ttsVoiceId,
-      pipEnabled,
-      pipPosition: pipSettingsQuery.data?.position as any || "bottom-right",
-      pipSize: pipSettingsQuery.data?.size as any || "medium",
-      pipShape: pipSettingsQuery.data?.shape as any || "rounded",
-      pipOpacity: pipSettingsQuery.data?.opacity ?? 100,
-    };
-    const voiceModId = selectedVoiceModId !== "none" ? parseInt(selectedVoiceModId) : undefined;
-    if (voiceModId !== undefined && !isNaN(voiceModId)) params.voiceModProfileId = voiceModId;
-    const avatarSel = parseAvatarSelection(selectedFaceSwapId);
-    if (avatarSel.faceSwapProfileId !== undefined) params.faceSwapProfileId = avatarSel.faceSwapProfileId;
-    if (avatarSel.sampleFaceId !== undefined) params.sampleFaceId = avatarSel.sampleFaceId;
-    const pptId = selectedPptId !== "none" ? parseInt(selectedPptId) : undefined;
-    if (pptId !== undefined && !isNaN(pptId)) params.pptUploadId = pptId;
-    startPipeline.mutate(params as any);
+    if (!selectedScriptId) { toast.error(t("ps.noScriptSelected")); return; }
+    if (selectedVoiceModId !== "none" && !voiceModsQuery.data?.find(v => v.id === selectedVoiceModId)) { toast.error(t("ps.selectVoiceModProfile")); return; }
+    if (selectedFaceSwapId !== "none" && !faceSwapsQuery.data?.find(f => f.id === selectedFaceSwapId)) { toast.error(t("ps.selectFaceSwapProfile")); return; }
+    if (pipEnabled && selectedPptId === "none") { toast.error(t("ps.selectPpt")); return; }
+
+    const cost = 10; // TODO: more granular cost calculation
+    checkCredits(cost, () => {
+      toast.info(t("ps.startingVideoProduction"));
+      startPipeline.mutate({
+        scriptId: selectedScriptId!,
+        title: pipelineTitle,
+        ttsVoiceId,
+        voiceModId: selectedVoiceModId === "none" ? null : selectedVoiceModId,
+        faceSwapId: selectedFaceSwapId === "none" ? null : selectedFaceSwapId,
+        avatarEngine,
+        useSeedanceIntro: seedanceIntro,
+        useSeedanceOutro: seedanceOutro,
+        seedanceIntroPrompt: seedanceIntro ? seedanceIntroPrompt : null,
+        seedanceOutroPrompt: seedanceOutro ? seedanceOutroPrompt : null,
+        pipEnabled,
+        pptId: pipEnabled && selectedPptId !== "none" ? parseInt(selectedPptId) : null,
+      }, {
+        onSuccess: (data: any) => {
+          setActivePipelineId(data.id);
+        }
+      });
+    });
+  };
+
+  const handleBatchStart = () => {
+    if (batchSelectedIds.size === 0) { toast.error(t("ps.noScriptsSelectedForBatch")); return; }
+    if (batchVoiceModId !== "none" && !voiceModsQuery.data?.find(v => v.id === batchVoiceModId)) { toast.error(t("ps.selectVoiceModProfile")); return; }
+    if (batchFaceSwapId !== "none" && !faceSwapsQuery.data?.find(f => f.id === batchFaceSwapId)) { toast.error(t("ps.selectFaceSwapProfile")); return; }
+    if (batchPipEnabled && batchSelectedPptId === "none") { toast.error(t("ps.selectPpt")); return; }
+
+    const cost = 10 * batchSelectedIds.size;
+    checkCredits(cost, () => {
+      toast.info(t("ps.startingBatchJob"));
+      batchStart.mutate({
+        scriptIds: Array.from(batchSelectedIds),
+        ttsVoiceId: batchTtsVoiceId,
+        voiceModId: batchVoiceModId === "none" ? null : batchVoiceModId,
+        faceSwapId: batchFaceSwapId === "none" ? null : batchFaceSwapId,
+        pipEnabled: batchPipEnabled,
+        pptId: batchPipEnabled && batchSelectedPptId !== "none" ? parseInt(batchSelectedPptId) : null,
+      });
+    });
   };
 
   const handlePptUpload = async (file: File) => {
-    if (!pptUploadTitle.trim()) {
-      toast.error("PPT 제목을 입력하세요.");
-      return;
-    }
-    if (file.size > 50 * 1024 * 1024) {
-      toast.error("파일 크기는 50MB 이하여야 합니다.");
-      return;
-    }
+    if (!file) { toast.error(t("ps.selectPptFile")); return; }
+    if (!pptUploadTitle) { toast.error(t("ps.enterPptTitle")); return; }
+
     setPptUploading(true);
+    toast.info(t("ps.uploadingFile"));
     try {
       const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve((reader.result as string).split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      pptUploadMutation.mutate({
-        title: pptUploadTitle,
-        fileName: file.name,
-        fileData: base64,
-        mimeType: file.type,
-      });
-    } catch (err) {
-      toast.error("파일 읽기에 실패했습니다.");
-    } finally {
-      setPptUploading(false);
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        await pptUploadMutation.mutateAsync({ title: pptUploadTitle, file: base64 });
+        toast.success(t("ps.fileUploadSuccess"));
+      };
+    } catch (error) {
+      toast.error(t("ps.fileUploadFailed"));
+    }
+    setPptUploading(false);
+  };
+
+  const handleQuickAvatar = async (file: File) => {
+    if (!file) { toast.error(t("ps.uploadFacePhoto")); return; }
+    const profileName = prompt(t("ps.enterProfileName"));
+    if (!profileName) return;
+
+    toast.info(t("ps.creatingFaceProfile"));
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        const { url } = await uploadFaceMutation.mutateAsync({ file: base64 });
+        await createFaceProfile.mutateAsync({ name: profileName, imageUrl: url });
+        toast.success(t("ps.faceProfileCreated"));
+      };
+    } catch (error) {
+      toast.error(t("ps.faceProfileFailed"));
     }
   };
 
+  const toggleBatchSelection = (id: number) => {
+    const newSet = new Set(batchSelectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setBatchSelectedIds(newSet);
+  };
+
+  const selectAllForBatch = () => {
+    const allReadyIds = scriptsQuery.data?.filter(s => s.status === "ready").map(s => s.id) || [];
+    setBatchSelectedIds(new Set(allReadyIds));
+  };
+
+  const deselectAllForBatch = () => {
+    setBatchSelectedIds(new Set());
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Banner */}
-      <div className="relative h-48 md:h-56 overflow-hidden">
-        <img
-          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/banner-studio-HS5V7dEHhBG4GbPuHinSnZ.webp"
-          alt=""
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-        <div className="absolute inset-0 flex items-center">
-          <div className="container">
-            <div className="flex items-center gap-3 mb-3">
-              <Link href="/instructor">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20"><ArrowLeft className="w-4 h-4 mr-1" /> 대시보드</Button>
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold text-white">원클릭 강의 제작 스튜디오</h1>
-                <p className="text-white/70 mt-1">프롬프트 입력 → AI 스크립트 생성 → TTS 음성 → 강의 영상 자동 제작</p>
-              </div>
-            </div>
-          </div>
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <CreditGuardModal {...modalState} subscription={subscriptionQuery.data?.subscription} />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t("ps.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("ps.subtitle")}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/studio/history"><History className="w-4 h-4 mr-2" />{t("ps.viewHistory")}</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/deepfake"><UserCircle2 className="w-4 h-4 mr-2" />{t("ps.manageAvatars")}</Link>
+          </Button>
         </div>
       </div>
 
-      <div className="container py-8">
-        {/* Pipeline Steps Visual */}
-        <Card className="mb-8 bg-gradient-to-r from-violet-500/5 via-purple-500/5 to-pink-500/5 border-violet-500/20">
-          <CardContent className="py-6">
-            <div className="flex items-center justify-between">
-              {[
-                { icon: FileText, label: "1. 프롬프트 입력", desc: "주제와 요구사항" },
-                { icon: Wand2, label: "2. AI 스크립트 생성", desc: "GPT가 강의 대본 작성" },
-                { icon: Volume2, label: "3. TTS 음성 생성", desc: "음성 변조 적용" },
-                { icon: UserCircle2, label: "4. 아바타 영상", desc: "딥페이크 적용 (선택)" },
-                { icon: Download, label: "5. 완성 & 배포", desc: "Zoom/Meet에서 사용" },
-              ].map((step, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center mb-2">
-                      <step.icon className="w-5 h-5 text-violet-400" />
-                    </div>
-                    <span className="text-xs font-medium">{step.label}</span>
-                    <span className="text-xs text-muted-foreground">{step.desc}</span>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5 mb-4">
+          <TabsTrigger value="create"><Wand2 className="w-4 h-4 mr-2" />{t("ps.tabCreate")}</TabsTrigger>
+          <TabsTrigger value="scripts"><FileText className="w-4 h-4 mr-2" />{t("ps.tabMyScripts")} ({scriptsQuery.data?.length || 0})</TabsTrigger>
+          <TabsTrigger value="produce"><Play className="w-4 h-4 mr-2" />{t("ps.tabProduceVideo")}</TabsTrigger>
+          <TabsTrigger value="pipelines"><Layers className="w-4 h-4 mr-2" />{t("ps.tabPipelines")} ({pipelinesQuery.data?.length || 0})</TabsTrigger>
+          <TabsTrigger value="batch"><ListChecks className="w-4 h-4 mr-2" />{t("ps.tabBatchProcessing")}</TabsTrigger>
+        </TabsList>
+
+        {/* Tab 1: Create Script */}
+        <TabsContent value="create">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Wand2 className="w-5 h-5 text-violet-400" />{t("ps.createScriptTitle")}</CardTitle>
+                  <CardDescription>{t("ps.createScriptDesc")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="title">{t("ps.lectureTitle")}</Label>
+                    <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("ps.lectureTitlePlaceholder")} className="mt-1" />
                   </div>
-                  {i < 4 && <ChevronRight className="w-5 h-5 text-muted-foreground mx-2 mt-[-20px]" />}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="create"><Wand2 className="w-4 h-4 mr-2" />스크립트 생성</TabsTrigger>
-            <TabsTrigger value="scripts"><FileText className="w-4 h-4 mr-2" />내 스크립트 ({scriptsQuery.data?.length || 0})</TabsTrigger>
-            <TabsTrigger value="produce"><Play className="w-4 h-4 mr-2" />영상 제작</TabsTrigger>
-            <TabsTrigger value="batch"><ListChecks className="w-4 h-4 mr-2" />배치 제작</TabsTrigger>
-            <TabsTrigger value="pipelines"><Layers className="w-4 h-4 mr-2" />제작 이력 ({pipelinesQuery.data?.length || 0})</TabsTrigger>
-          </TabsList>
-
-          {/* Tab 1: Create Script */}
-          <TabsContent value="create">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Wand2 className="w-5 h-5 text-violet-400" /> AI 강의 스크립트 생성</CardTitle>
-                    <CardDescription>프롬프트를 입력하면 AI가 전문 강의 스크립트를 자동으로 작성합니다.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
+                  <div>
+                    <Label htmlFor="prompt">{t("ps.promptLabel")}</Label>
+                    <Textarea id="prompt" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={t("ps.promptPlaceholder")} className="mt-1 min-h-[150px]" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>강의 제목</Label>
-                      <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="예: DeFi 유동성 풀의 원리와 수익 구조" className="mt-1" />
+                      <Label>{t("ps.categoryLabel")}</Label>
+                      <Select value={category} onValueChange={setCategory}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label.includes("/") ? c.label : t(`ps.cat${c.value.charAt(0).toUpperCase() + c.value.slice(1)}`)}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
-                      <Label>상세 프롬프트</Label>
-                      <Textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="강의에서 다룰 내용을 상세히 설명하세요. 예: DeFi에서 유동성 풀이 어떻게 작동하는지, AMM의 원리, 임시 손실 개념, 실제 수익률 계산 방법 등을 초보자도 이해할 수 있게 설명해주세요." className="mt-1 min-h-[150px]" />
+                      <Label>{t("ps.difficultyLabel")}</Label>
+                      <Select value={difficulty} onValueChange={setDifficulty}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {DIFFICULTIES.map(d => <SelectItem key={d.value} value={d.value}>{t(`ps.diff${d.value.charAt(0).toUpperCase() + d.value.slice(1)}`)}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>카테고리</Label>
-                        <Select value={category} onValueChange={setCategory}>
-                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>난이도</Label>
-                        <Select value={difficulty} onValueChange={setDifficulty}>
-                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {DIFFICULTIES.map((d) => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>{t("ps.languageLabel")}</Label>
+                      <Select value={language} onValueChange={setLanguage}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ko">{t("ps.langKo")}</SelectItem>
+                          <SelectItem value="en">{t("ps.langEn")}</SelectItem>
+                          <SelectItem value="ja">{t("ps.langJa")}</SelectItem>
+                          <SelectItem value="zh">{t("ps.langZh")}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>언어</Label>
-                        <Select value={language} onValueChange={setLanguage}>
-                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ko">한국어</SelectItem>
-                            <SelectItem value="en">English</SelectItem>
-                            <SelectItem value="ja">日本語</SelectItem>
-                            <SelectItem value="zh">中文</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>목표 시간 (분)</Label>
-                        <Input type="number" min={1} max={120} value={durationMin} onChange={(e) => setDurationMin(parseInt(e.target.value) || 10)} className="mt-1" />
-                      </div>
+                    <div>
+                      <Label>{t("ps.targetDurationLabel")}</Label>
+                      <Input type="number" min={1} max={120} value={durationMin} onChange={(e) => setDurationMin(parseInt(e.target.value) || 10)} className="mt-1" />
                     </div>
-                    {/* Template indicator */}
-                    {templateId && selectedTemplateQuery.data && (
-                      <Card className="bg-amber-500/10 border-amber-500/30">
-                        <CardContent className="py-3">
-                          <div className="flex items-center gap-2">
-                            <BookTemplate className="w-4 h-4 text-amber-400" />
-                            <span className="text-sm font-medium text-amber-300">템플릿 적용: {selectedTemplateQuery.data.name}</span>
-                            <Badge variant="outline" className="text-xs">{selectedTemplateQuery.data.sectionCount}섹션</Badge>
-                            <Link href="/studio">
-                              <Button size="sm" variant="ghost" className="text-xs ml-auto">템플릿 해제</Button>
-                            </Link>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                    <Button onClick={handleGenerateScript} disabled={generateScript.isPending || generateFromTemplate.isPending} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
-                      {(generateScript.isPending || generateFromTemplate.isPending) ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />AI가 스크립트를 작성하고 있습니다...</> : <><Sparkles className="w-4 h-4 mr-2" />{templateId ? "템플릿 기반 스크립트 생성" : "AI 스크립트 생성"}</>}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Tips sidebar */}
-              <div>
-                <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20">
-                  <CardHeader>
-                    <CardTitle className="text-lg">프롬프트 작성 팁</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm text-muted-foreground">
-                    <div className="p-3 bg-violet-500/10 rounded-lg">
-                      <p className="font-medium text-violet-300 mb-1">구체적인 주제 명시</p>
-                      <p>"블록체인" 보다 "이더리움 스마트 컨트랙트의 가스비 최적화 방법"이 더 좋은 결과를 만듭니다.</p>
-                    </div>
-                    <div className="p-3 bg-violet-500/10 rounded-lg">
-                      <p className="font-medium text-violet-300 mb-1">대상 청중 지정</p>
-                      <p>"프로그래밍 경험이 없는 일반인 대상" 또는 "Solidity 개발 경험이 있는 개발자 대상"</p>
-                    </div>
-                    <div className="p-3 bg-violet-500/10 rounded-lg">
-                      <p className="font-medium text-violet-300 mb-1">포함할 내용 나열</p>
-                      <p>다룰 세부 주제를 나열하면 더 체계적인 스크립트가 생성됩니다.</p>
-                    </div>
-                    <div className="p-3 bg-violet-500/10 rounded-lg">
-                      <p className="font-medium text-violet-300 mb-1">실습/예시 요청</p>
-                      <p>"실제 코드 예시 포함" 또는 "실제 사례 분석 포함"을 추가하세요.</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Tab 2: My Scripts */}
-          <TabsContent value="scripts">
-            <div className="space-y-4">
-              {scriptsQuery.isLoading && <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-violet-400" /></div>}
-              {scriptsQuery.data?.length === 0 && (
-                <EmptyState
-                  type="scripts"
-                  title="아직 생성된 스크립트가 없습니다"
-                  description="AI로 강의 스크립트를 자동 생성해보세요."
-                  actionLabel="스크립트 생성하기"
-                  onAction={() => setActiveTab("create")}
-                />
-              )}
-              {scriptsQuery.data?.map((script) => {
-                const sections = script.sections ? JSON.parse(script.sections) : [];
-                return (
-                  <Card key={script.id} className="hover:border-violet-500/30 transition-colors">
-                    <CardContent className="py-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-lg">{script.title}</h3>
-                            <Badge variant="outline" className={DIFFICULTIES.find(d => d.value === script.difficulty)?.color || ""}>
-                              {DIFFICULTIES.find(d => d.value === script.difficulty)?.label}
-                            </Badge>
-                            <Badge variant="outline">{CATEGORIES.find(c => c.value === script.category)?.label}</Badge>
-                            <Badge variant={script.status === "ready" ? "default" : script.status === "generating" ? "secondary" : "destructive"}>
-                              {script.status === "ready" ? "완료" : script.status === "generating" ? "생성 중" : "오류"}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{script.prompt}</p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1"><Layers className="w-4 h-4" />{script.sectionCount}개 섹션</span>
-                            <span className="flex items-center gap-1"><Clock className="w-4 h-4" />약 {Math.round((script.estimatedDurationSec || 0) / 60)}분</span>
-                            <span>{new Date(script.createdAt).toLocaleDateString("ko-KR")}</span>
-                          </div>
-                          {sections.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {sections.slice(0, 5).map((s: any, i: number) => (
-                                <Badge key={i} variant="outline" className="text-xs">{i + 1}. {s.title}</Badge>
-                              ))}
-                              {sections.length > 5 && <Badge variant="outline" className="text-xs">+{sections.length - 5}개</Badge>}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-2 ml-4">
-                          <Link href={`/script/${script.id}`}>
-                            <Button size="sm" variant="outline">
-                              <Edit3 className="w-4 h-4 mr-1" />편집
-                            </Button>
+                  </div>
+                  {/* Template indicator */}
+                  {templateId && selectedTemplateQuery.data && (
+                    <Card className="bg-amber-500/10 border-amber-500/30">
+                      <CardContent className="py-3">
+                        <div className="flex items-center gap-2">
+                          <BookTemplate className="w-4 h-4 text-amber-400" />
+                          <span className="text-sm font-medium text-amber-300">{t("ps.templateApplied")} {selectedTemplateQuery.data.name}</span>
+                          <Badge variant="outline" className="text-xs">{t("ps.sectionCountBadge", { count: selectedTemplateQuery.data.sectionCount })}</Badge>
+                          <Link href="/studio">
+                            <Button size="sm" variant="ghost" className="text-xs ml-auto">{t("ps.removeTemplate")}</Button>
                           </Link>
-                          <Button size="sm" variant="default" onClick={() => { setSelectedScriptId(script.id); setPipelineTitle(script.title); setActiveTab("produce"); }} disabled={script.status !== "ready"}>
-                            <Play className="w-4 h-4 mr-1" />영상 제작
-                          </Button>
-                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteScript.mutate({ id: script.id })}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
-
-          {/* Tab 3: Produce Video */}
-          <TabsContent value="produce">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Play className="w-5 h-5 text-violet-400" /> 원클릭 영상 제작</CardTitle>
-                    <CardDescription>스크립트를 선택하고 음성/아바타 설정을 적용하여 강의 영상을 자동 제작합니다.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div>
-                      <Label>스크립트 선택</Label>
-                      <Select value={selectedScriptId?.toString() || ""} onValueChange={(v) => { setSelectedScriptId(parseInt(v)); const s = scriptsQuery.data?.find(s => s.id === parseInt(v)); if (s) setPipelineTitle(s.title); }}>
-                        <SelectTrigger className="mt-1"><SelectValue placeholder="스크립트를 선택하세요" /></SelectTrigger>
-                        <SelectContent>
-                          {scriptsQuery.data?.filter(s => s.status === "ready").map((s) => (
-                            <SelectItem key={s.id} value={s.id.toString()}>{s.title} ({s.sectionCount}섹션, ~{Math.round((s.estimatedDurationSec || 0) / 60)}분)</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>제작 제목</Label>
-                      <Input value={pipelineTitle} onChange={(e) => setPipelineTitle(e.target.value)} placeholder="영상 제목" className="mt-1" />
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                      <Label className="flex items-center gap-2 mb-3"><Volume2 className="w-4 h-4 text-violet-400" />음성 설정</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm text-muted-foreground">TTS 음성</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Select value={ttsVoiceId} onValueChange={setTtsVoiceId}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                            <VoicePreviewButton voiceId={ttsVoiceId} />
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-sm text-muted-foreground">음성 변조 프로필</Label>
-                          <Select value={selectedVoiceModId} onValueChange={setSelectedVoiceModId}>
-                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">변조 없음</SelectItem>
-                              {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={v.id.toString()}>{v.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="flex items-center gap-2 mb-3"><UserCircle2 className="w-4 h-4 text-violet-400" />AI 아바타 (선택)</Label>
-                      <Select value={selectedFaceSwapId} onValueChange={setSelectedFaceSwapId}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">아바타 없음 (음성만)</SelectItem>
-                          {sampleFacesQuery.data && sampleFacesQuery.data.length > 0 && (
-                            <>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">기본 제공 아바타</div>
-                              {sampleFacesQuery.data.map((f) => (
-                                <SelectItem key={`sample-${f.id}`} value={`sample-${f.id}`}>
-                                  <div className="flex items-center gap-2">
-                                    <img src={f.thumbnailUrl || f.imageUrl} alt={f.name} className="w-6 h-6 rounded-full object-cover" />
-                                    <span>{f.name}</span>
-                                    {f.isPremium && <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-500/50 text-amber-400">PRO</Badge>}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </>
-                          )}
-                          {faceSwapsQuery.data && faceSwapsQuery.data.length > 0 && (
-                            <>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-1">내 아바타</div>
-                              {faceSwapsQuery.data.map((f) => (
-                                <SelectItem key={`user-${f.id}`} value={`user-${f.id}`}>{f.name} ({f.method})</SelectItem>
-                              ))}
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {selectedFaceSwapId !== "none" && selectedFaceSwapId.startsWith("sample-") && sampleFacesQuery.data && (() => {
-                        const face = sampleFacesQuery.data.find(f => `sample-${f.id}` === selectedFaceSwapId);
-                        if (!face) return null;
-                        return (
-                          <div className="mt-2 flex items-center gap-3 p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                            <img src={face.thumbnailUrl || face.imageUrl} alt={face.name} className="w-12 h-12 rounded-full object-cover border-2 border-violet-500/30" />
-                            <div>
-                              <p className="text-sm font-medium">{face.name}</p>
-                              <p className="text-xs text-muted-foreground">{face.description}</p>
-                            </div>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Quick Upload Avatar */}
-                      <div className="mt-3 p-3 rounded-lg border border-dashed border-violet-500/30 bg-violet-500/5">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Camera className="w-4 h-4 text-violet-400" />
-                            <span className="text-sm text-muted-foreground">내 사진으로 아바타 만들기</span>
-                          </div>
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file) return;
-                                if (file.size > 5 * 1024 * 1024) { toast.error("파일 크기는 5MB 이하로 제한됩니다."); return; }
-                                const name = file.name.replace(/\.[^.]+$/, "").slice(0, 20) || "내 아바타";
-                                try {
-                                  toast.info("아바타 업로드 중...");
-                                  const reader = new FileReader();
-                                  reader.onload = async (ev) => {
-                                    const base64 = (ev.target?.result as string).split(",")[1];
-                                    const uploadResult = await uploadFaceMutation.mutateAsync({ imageData: base64, fileName: file.name, type: "source" });
-                                    await createFaceProfile.mutateAsync({ name, method: "builtin", settings: JSON.stringify({ uploadedImage: true }), sourceFaceUrl: uploadResult.url });
-                                    toast.success(`"${name}" 아바타가 생성되었습니다!`);
-                                    faceSwapsQuery.refetch();
-                                  };
-                                  reader.readAsDataURL(file);
-                                } catch (err: any) {
-                                  toast.error(err.message || "아바타 업로드에 실패했습니다.");
-                                }
-                                e.target.value = "";
-                              }}
-                            />
-                            <Button variant="outline" size="sm" asChild>
-                              <span><Upload className="w-3 h-3 mr-1" />사진 업로드</span>
-                            </Button>
-                          </label>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">정면 얼굴 사진을 업로드하면 내 아바타로 등록됩니다 (5MB 이하)</p>
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* PPT + PIP Lecture Mode */}
-                    <div>
-                      <Label className="flex items-center gap-2 mb-3"><Presentation className="w-4 h-4 text-violet-400" />PPT + PIP 강의 모드 (선택)</Label>
-                      <div className="flex items-center gap-3 mb-3">
-                        <button
-                          type="button"
-                          onClick={() => setPipEnabled(!pipEnabled)}
-                          className={`relative w-11 h-6 rounded-full transition-colors ${
-                            pipEnabled ? "bg-violet-600" : "bg-muted"
-                          }`}
-                        >
-                          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                            pipEnabled ? "translate-x-5" : ""
-                          }`} />
-                        </button>
-                        <span className="text-sm text-muted-foreground">
-                          {pipEnabled ? "PIP 모드 활성화" : "PIP 모드 비활성화"}
-                        </span>
-                      </div>
-
-                      {pipEnabled && (
-                        <div className="space-y-3 p-3 rounded-lg border border-violet-500/20 bg-violet-500/5">
-                          {/* PPT file selection or upload */}
-                          <div>
-                            <Label className="text-sm text-muted-foreground">PPT 파일 선택</Label>
-                            <Select value={selectedPptId} onValueChange={setSelectedPptId}>
-                              <SelectTrigger className="mt-1"><SelectValue placeholder="PPT를 선택하세요" /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">PPT 없음 (PIP만 사용)</SelectItem>
-                                {pptListQuery.data?.map((p: any) => (
-                                  <SelectItem key={p.id} value={p.id.toString()}>
-                                    {p.title} ({p.originalFileName})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          {/* PPT Slide Thumbnails Preview */}
-                          {selectedPptId !== "none" && (() => {
-                            const ppt = pptListQuery.data?.find((p: any) => p.id.toString() === selectedPptId);
-                            if (!ppt) return null;
-                            const slides: string[] = ppt.slideImages ? (typeof ppt.slideImages === "string" ? JSON.parse(ppt.slideImages) : ppt.slideImages) : [];
-                            if (slides.length === 0) return (
-                              <div className="p-3 rounded-lg bg-muted/30 text-center">
-                                <p className="text-sm text-muted-foreground">슬라이드 이미지가 아직 생성되지 않았습니다.</p>
-                              </div>
-                            );
-                            return (
-                              <div>
-                                <Label className="text-sm text-muted-foreground mb-2 block">슬라이드 미리보기 ({slides.length}장)</Label>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {slides.map((url: string, i: number) => (
-                                    <div
-                                      key={i}
-                                      className="relative aspect-[16/9] rounded-lg overflow-hidden border border-border/50 cursor-pointer hover:border-violet-500/50 transition-colors group"
-                                      onClick={() => setPreviewSlideIdx(i)}
-                                    >
-                                      <img src={url} alt={`슬라이드 ${i + 1}`} className="w-full h-full object-cover" />
-                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                                        <span className="text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">#{i + 1}</span>
-                                      </div>
-                                      <span className="absolute bottom-1 right-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">{i + 1}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                                {/* Enlarged preview modal with PIP overlay */}
-                                {previewSlideIdx !== null && slides[previewSlideIdx] && (() => {
-                                  const ps = pipSettingsQuery.data;
-                                  const pipPos = ps?.position || "bottom-right";
-                                  const pipSz = ps?.size || "medium";
-                                  const pipSh = ps?.shape || "rounded";
-                                  const pipOp = ps?.opacity ?? 100;
-                                  const pipSizeClass: Record<string, string> = { small: "w-[60px] h-[60px] md:w-[80px] md:h-[80px]", medium: "w-[80px] h-[80px] md:w-[120px] md:h-[120px]", large: "w-[100px] h-[100px] md:w-[160px] md:h-[160px]" };
-                                  const pipPosClass: Record<string, string> = { "bottom-right": "bottom-3 right-3", "bottom-left": "bottom-3 left-3", "top-right": "top-3 right-3", "top-left": "top-3 left-3" };
-                                  const pipShapeClass: Record<string, string> = { circle: "rounded-full", rounded: "rounded-2xl", rectangle: "rounded-md" };
-                                  // Get selected face image
-                                  let faceImgUrl = "";
-                                  if (selectedFaceSwapId.startsWith("user-")) {
-                                    const fid = parseInt(selectedFaceSwapId.replace("user-", ""));
-                                    const fp = faceSwapsQuery.data?.find((f: any) => f.id === fid);
-                                    faceImgUrl = fp?.sourceFaceUrl || "";
-                                  } else if (selectedFaceSwapId.startsWith("sample-")) {
-                                    const sid = parseInt(selectedFaceSwapId.replace("sample-", ""));
-                                    const sf = sampleFacesQuery.data?.find((f: any) => f.id === sid);
-                                    faceImgUrl = sf?.imageUrl || "";
-                                  }
-                                  return (
-                                    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewSlideIdx(null)}>
-                                      <div className="relative max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
-                                        <div className="relative">
-                                          <img src={slides[previewSlideIdx]} alt={`슬라이드 ${previewSlideIdx + 1}`} className="w-full rounded-lg shadow-2xl" />
-                                          {/* PIP Face Overlay */}
-                                          {faceImgUrl && (
-                                            <div
-                                              className={`absolute ${pipPosClass[pipPos]} ${pipSizeClass[pipSz]} ${pipShapeClass[pipSh]} overflow-hidden border-2 border-white/40 shadow-2xl transition-all duration-300`}
-                                              style={{ opacity: pipOp / 100 }}
-                                            >
-                                              <img src={faceImgUrl} alt="PIP 얼굴" className="w-full h-full object-cover" />
-                                              <div className="absolute top-0.5 left-0.5 flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-red-500/80 text-white text-[8px]">
-                                                <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
-                                                PIP
-                                              </div>
-                                            </div>
-                                          )}
-                                          {!faceImgUrl && (
-                                            <div className={`absolute ${pipPosClass[pipPos]} ${pipSizeClass[pipSz]} ${pipShapeClass[pipSh]} overflow-hidden border-2 border-dashed border-white/30 bg-white/10 backdrop-blur-sm flex items-center justify-center transition-all duration-300`} style={{ opacity: pipOp / 100 }}>
-                                              <div className="text-center">
-                                                <User2 className="w-6 h-6 text-white/50 mx-auto" />
-                                                <span className="text-[9px] text-white/50">얼굴 선택</span>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                        <div className="absolute top-4 right-4 flex items-center gap-2">
-                                          <Badge className="bg-black/60 text-white">{previewSlideIdx + 1} / {slides.length}</Badge>
-                                          {faceImgUrl && <Badge className="bg-violet-600/80 text-white">PIP 미리보기</Badge>}
-                                          <button onClick={() => setPreviewSlideIdx(null)} className="w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80">×</button>
-                                        </div>
-                                        <div className="absolute top-1/2 -translate-y-1/2 left-2">
-                                          <button
-                                            onClick={() => setPreviewSlideIdx(Math.max(0, previewSlideIdx - 1))}
-                                            disabled={previewSlideIdx === 0}
-                                            className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
-                                          >←</button>
-                                        </div>
-                                        <div className="absolute top-1/2 -translate-y-1/2 right-2">
-                                          <button
-                                            onClick={() => setPreviewSlideIdx(Math.min(slides.length - 1, previewSlideIdx + 1))}
-                                            disabled={previewSlideIdx === slides.length - 1}
-                                            className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
-                                          >→</button>
-                                        </div>
-                                        {/* PIP settings info bar */}
-                                        <div className="mt-2 flex items-center justify-center gap-3 text-xs text-white/60">
-                                          <span>위치: {pipPos === "bottom-right" ? "우측 하단" : pipPos === "bottom-left" ? "좌측 하단" : pipPos === "top-right" ? "우측 상단" : "좌측 상단"}</span>
-                                          <span>·</span>
-                                          <span>크기: {pipSz === "small" ? "작게" : pipSz === "large" ? "크게" : "보통"}</span>
-                                          <span>·</span>
-                                          <span>모양: {pipSh === "circle" ? "원형" : pipSh === "rounded" ? "둥근 사각형" : "사각형"}</span>
-                                          <span>·</span>
-                                          <span>투명도: {pipOp}%</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            );
-                          })()}
-
-                          {/* Upload new PPT */}
-                          <div className="p-3 rounded-lg border border-dashed border-violet-500/30 bg-violet-500/5">
-                            <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
-                              <Upload className="w-3.5 h-3.5 text-violet-400" />
-                              새 PPT 업로드
-                            </p>
-                            <div className="space-y-2">
-                              <Input
-                                value={pptUploadTitle}
-                                onChange={(e) => setPptUploadTitle(e.target.value)}
-                                placeholder="PPT 제목 (예: 블록체인 기초)"
-                                className="text-sm"
-                              />
-                              <label className="cursor-pointer block">
-                                <input
-                                  type="file"
-                                  accept=".pptx,.pdf,.ppt"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handlePptUpload(file);
-                                    e.target.value = "";
-                                  }}
-                                />
-                                <div className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed transition-colors ${
-                                  pptUploading ? "border-violet-500/50 bg-violet-500/10" : "border-border hover:border-violet-500/50 hover:bg-violet-500/5"
-                                }`}>
-                                  {pptUploading || pptUploadMutation.isPending ? (
-                                    <><Loader2 className="w-4 h-4 animate-spin text-violet-400" /><span className="text-sm">업로드 중...</span></>
-                                  ) : (
-                                    <><Upload className="w-4 h-4 text-muted-foreground" /><span className="text-sm text-muted-foreground">PPT/PDF 파일을 클릭하여 선택 (최대 50MB)</span></>
-                                  )}
-                                </div>
-                              </label>
-                            </div>
-                          </div>
-
-                          <p className="text-xs text-muted-foreground">
-                            PIP 위치/크기/모양은 딥페이크 페이지의 PIP 설정에서 변경할 수 있습니다.
-                            {pipSettingsQuery.data && (
-                              <span className="ml-1 text-violet-400">
-                                (현재: {pipSettingsQuery.data.position === "bottom-right" ? "우측 하단" : pipSettingsQuery.data.position === "bottom-left" ? "좌측 하단" : pipSettingsQuery.data.position === "top-right" ? "우측 상단" : "좌측 상단"}, {pipSettingsQuery.data.size === "small" ? "작게" : pipSettingsQuery.data.size === "large" ? "크게" : "보통"})
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {startPipeline.isPending ? (() => {
-                      // Find the active pipeline for real-time progress
-                      const activePipeline = activePipelineId
-                        ? pipelinesQuery.data?.find((item: any) => item.pipeline.id === activePipelineId)?.pipeline
-                        : pipelinesQuery.data?.[0]?.pipeline;
-                      const progress = activePipeline?.progressPercent || 0;
-                      const step = activePipeline?.currentStep || "TTS 생성 준비 중...";
-                      return (
-                      <div className="space-y-2">
-                        <div className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/20 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
-                            <span className="text-sm font-medium">강의 영상을 제작하고 있습니다...</span>
-                          </div>
-                          <Progress value={progress} className="h-2.5" />
-                          <div className="flex items-center justify-between">
-                            <p className="text-xs text-muted-foreground">{step}</p>
-                            <p className="text-xs font-semibold text-violet-400">{progress}%</p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="destructive"
-                          className="w-full"
-                          disabled={cancelPipeline.isPending}
-                          onClick={() => {
-                            // If we have a pipeline ID from the response, cancel it server-side
-                            const pipelineId = (startPipeline.data as any)?.id;
-                            if (pipelineId) {
-                              cancelPipeline.mutate({ id: pipelineId });
-                            }
-                            toast.info("제작 중단 요청 중...");
-                            startPipeline.reset();
-                          }}
-                        >
-                          {cancelPipeline.isPending ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Square className="w-4 h-4 mr-2" />
-                          )}
-                          제작 중단
-                        </Button>
-                      </div>
-                      );
-                    })() : (
-                      <Button onClick={handleStartPipeline} disabled={!selectedScriptId} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
-                        <Sparkles className="w-4 h-4 mr-2" />원클릭 강의 영상 제작 시작
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Selected script preview */}
-              <div>
-                {selectedScriptId && scriptsQuery.data?.find(s => s.id === selectedScriptId) ? (() => {
-                  const script = scriptsQuery.data!.find(s => s.id === selectedScriptId)!;
-                  const sections = script.sections ? JSON.parse(script.sections) : [];
-                  return (
-                    <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20">
-                      <CardHeader>
-                        <CardTitle className="text-lg">스크립트 미리보기</CardTitle>
-                        <CardDescription>{script.title}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <ScrollArea className="h-[400px]">
-                          <div className="space-y-4">
-                            {sections.map((s: any, i: number) => (
-                              <div key={i} className="p-3 bg-card/50 rounded-lg border border-border/50">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="font-medium text-sm">{i + 1}. {s.title}</span>
-                                  <Badge variant="outline" className="text-xs"><Clock className="w-3 h-3 mr-1" />{Math.round(s.durationSec / 60)}분</Badge>
-                                </div>
-                                <p className="text-xs text-muted-foreground line-clamp-3">{s.content}</p>
-                                {s.slideNotes && <p className="text-xs text-violet-400 mt-2">📝 {s.slideNotes}</p>}
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
                       </CardContent>
                     </Card>
-                  );
-                })() : (
-                  <Card className="border-dashed">
-                    <CardContent className="py-12 text-center">
-                      <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground text-sm">스크립트를 선택하면 미리보기가 표시됩니다.</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                  )}
+                  <Button onClick={handleGenerateScript} disabled={generateScript.isPending || generateFromTemplate.isPending} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+                    {(generateScript.isPending || generateFromTemplate.isPending) ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("ps.generatingScript")}</> : <><Sparkles className="w-4 h-4 mr-2" />{templateId ? t("ps.generateFromTemplate") : t("ps.generateAIScript")}</>}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-          </TabsContent>
 
-          {/* Tab 4: Pipeline History */}
-          <TabsContent value="pipelines">
-            <div className="space-y-4">
-              {pipelinesQuery.isLoading && <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-violet-400" /></div>}
-              {pipelinesQuery.data?.length === 0 && (
-                <EmptyState
-                  type="pipeline"
-                  title="아직 제작 이력이 없습니다"
-                  description="스크립트를 선택하고 AI 영상을 제작해보세요."
-                  actionLabel="영상 제작하기"
-                  onAction={() => setActiveTab("produce")}
-                />
-              )}
-              {pipelinesQuery.data?.map((item) => {
-                const p = item.pipeline;
-                const s = item.script;
-                const audioUrls = p.audioUrls ? JSON.parse(p.audioUrls) : [];
-                const statusMap: Record<string, { label: string; color: string }> = {
-                  queued: { label: "대기 중", color: "bg-gray-500/20 text-gray-400" },
-                  script_gen: { label: "스크립트 생성", color: "bg-blue-500/20 text-blue-400" },
-                  tts_gen: { label: "TTS 생성", color: "bg-yellow-500/20 text-yellow-400" },
-                  avatar_gen: { label: "아바타 생성", color: "bg-purple-500/20 text-purple-400" },
-                  compositing: { label: "합성 중", color: "bg-orange-500/20 text-orange-400" },
-                  completed: { label: "완료", color: "bg-green-500/20 text-green-400" },
-                  failed: { label: "실패", color: "bg-red-500/20 text-red-400" },
-                  cancelled: { label: "취소됨", color: "bg-gray-500/20 text-gray-400" },
-                };
-                const status = statusMap[p.status] || statusMap.queued;
+            {/* Tips sidebar */}
+            <div>
+              <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20">
+                <CardHeader>
+                  <CardTitle className="text-lg">{t("ps.promptTipsTitle")}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 text-sm text-muted-foreground">
+                  <div className="p-3 bg-violet-500/10 rounded-lg">
+                    <p className="font-medium text-violet-300 mb-1">{t("ps.tip1Title")}</p>
+                    <p>{t("ps.tip1Desc")}</p>
+                  </div>
+                  <div className="p-3 bg-violet-500/10 rounded-lg">
+                    <p className="font-medium text-violet-300 mb-1">{t("ps.tip2Title")}</p>
+                    <p>{t("ps.tip2Desc")}</p>
+                  </div>
+                  <div className="p-3 bg-violet-500/10 rounded-lg">
+                    <p className="font-medium text-violet-300 mb-1">{t("ps.tip3Title")}</p>
+                    <p>{t("ps.tip3Desc")}</p>
+                  </div>
+                  <div className="p-3 bg-violet-500/10 rounded-lg">
+                    <p className="font-medium text-violet-300 mb-1">{t("ps.tip4Title")}</p>
+                    <p>{t("ps.tip4Desc")}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
 
-                return (
-                  <Card key={p.id} className="hover:border-violet-500/30 transition-colors">
-                    <CardContent className="py-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="font-semibold">{p.title}</h3>
-                            <Badge variant="outline" className={status.color}>{status.label}</Badge>
-                          </div>
-                          {p.status !== "completed" && p.status !== "failed" && p.status !== "cancelled" && (
-                            <div className="mb-3">
-                              <Progress value={p.progressPercent || 0} className="h-2" />
-                              <div className="flex items-center justify-between mt-1">
-                                <p className="text-xs text-muted-foreground">{p.currentStep} ({p.progressPercent}%)</p>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-red-400 hover:text-red-300 h-6 px-2 text-xs"
-                                  disabled={cancelPipeline.isPending}
-                                  onClick={() => cancelPipeline.mutate({ id: p.id })}
-                                >
-                                  <Square className="w-3 h-3 mr-1" />중단
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>스크립트: {s.title}</span>
-                            {p.totalDurationSec ? <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{Math.round(p.totalDurationSec / 60)}분</span> : null}
-                            <span>{new Date(p.createdAt).toLocaleDateString("ko-KR")}</span>
-                          </div>
-                          {p.status === "completed" && audioUrls.length > 0 && (
-                            <div className="mt-3 space-y-2">
-                              <p className="text-sm font-medium">생성된 음성 파일:</p>
-                              <div className="flex flex-wrap gap-2">
-                                {audioUrls.map((url: string, i: number) => (
-                                  <Badge
-                                    key={i}
-                                    variant="outline"
-                                    className={`cursor-pointer transition-colors ${
-                                      playingUrl === url
-                                        ? "bg-violet-500/30 text-violet-300 border-violet-500 animate-pulse"
-                                        : "hover:bg-violet-500/20"
-                                    }`}
-                                    onClick={() => playSectionAudio(url)}
-                                  >
-                                    {playingUrl === url ? (
-                                      <Square className="w-3 h-3 mr-1" />
-                                    ) : (
-                                      <Volume2 className="w-3 h-3 mr-1" />
-                                    )}
-                                    섹션 {i + 1}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {p.status === "completed" && (
-                            <div className="mt-3 flex items-center gap-2">
-                              {p.thumbnailUrl ? (
-                                <div className="flex items-center gap-2">
-                                  <img src={p.thumbnailUrl} alt="썸네일" className="w-24 h-14 object-cover rounded border border-border/50" />
-                                  <a href={p.thumbnailUrl} target="_blank" rel="noopener noreferrer">
-                                    <Button size="sm" variant="outline"><Download className="w-3 h-3 mr-1" />썸네일 다운로드</Button>
-                                  </a>
-                                  <Button size="sm" variant="ghost" onClick={() => generateThumbnail.mutate({ pipelineId: p.id })} disabled={generateThumbnail.isPending}>
-                                    <RefreshCw className="w-3 h-3 mr-1" />재생성
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button size="sm" variant="outline" onClick={() => generateThumbnail.mutate({ pipelineId: p.id })} disabled={generateThumbnail.isPending}>
-                                  {generateThumbnail.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Image className="w-3 h-3 mr-1" />}
-                                  AI 썸네일 생성
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                          {p.errorMessage && <p className="text-sm text-red-400 mt-2">오류: {p.errorMessage}</p>}
+        {/* Tab 2: My Scripts */}
+        <TabsContent value="scripts">
+          <div className="space-y-4">
+            {scriptsQuery.isLoading && <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-violet-400" /></div>}
+            {scriptsQuery.data?.length === 0 && (
+              <EmptyState
+                type="scripts"
+                title={t("ps.noScriptsTitle")}
+                description={t("ps.noScriptsDesc")}
+                actionLabel={t("ps.createScriptAction")}
+                onAction={() => setActiveTab("create")}
+              />
+            )}
+            {scriptsQuery.data?.map((script) => {
+              const sections = script.sections ? JSON.parse(script.sections) : [];
+              return (
+                <Card key={script.id} className="hover:border-violet-500/30 transition-colors">
+                  <CardContent className="py-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-lg">{script.title}</h3>
+                          <Badge variant="outline" className={DIFFICULTIES.find(d => d.value === script.difficulty)?.color || ""}>
+                            {t(`ps.diff${(script.difficulty || 'beginner').charAt(0).toUpperCase() + (script.difficulty || 'beginner').slice(1)}`)}
+                          </Badge>
+                          <Badge variant="outline">{CATEGORIES.find(c => c.value === script.category)?.label.includes("/") ? CATEGORIES.find(c => c.value === script.category)?.label : t(`ps.cat${(script.category || 'general').charAt(0).toUpperCase() + (script.category || 'general').slice(1)}`)}</Badge>
+                          <Badge variant={script.status === "ready" ? "default" : script.status === "generating" ? "secondary" : "destructive"}>
+                            {script.status === "ready" ? t("ps.statusReady") : script.status === "generating" ? t("ps.statusGenerating") : t("ps.statusError")}
+                          </Badge>
                         </div>
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deletePipeline.mutate({ id: p.id })}>
+                        <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{script.prompt}</p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1"><Layers className="w-4 h-4" />{t("ps.sectionCount", { count: script.sectionCount })}</span>
+                          <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{t("ps.durationMinutes", { minutes: Math.round((script.estimatedDurationSec || 0) / 60) })}</span>
+                          <span>{new Date(script.createdAt).toLocaleDateString("ko-KR")}</span>
+                        </div>
+                        {sections.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {sections.slice(0, 5).map((s: any, i: number) => (
+                              <Badge key={i} variant="outline" className="text-xs">{i + 1}. {s.title}</Badge>
+                            ))}
+                            {sections.length > 5 && <Badge variant="outline" className="text-xs">+{sections.length - 5}{t("ps.moreItems")}</Badge>}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        <Link href={`/script/${script.id}`}>
+                          <Button size="sm" variant="outline">
+                            <Edit3 className="w-4 h-4 mr-1" />{t("ps.edit")}
+                          </Button>
+                        </Link>
+                        <Button size="sm" variant="default" onClick={() => { setSelectedScriptId(script.id); setPipelineTitle(script.title); setActiveTab("produce"); }} disabled={script.status !== "ready"}>
+                          <Play className="w-4 h-4 mr-1" />{t("ps.produceVideo")}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteScript.mutate({ id: script.id })}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </TabsContent>
-          {/* Tab 5: Batch Production */}
-          <TabsContent value="batch">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><ListChecks className="w-5 h-5 text-violet-400" /> 배치 영상 제작</CardTitle>
-                    <CardDescription>여러 스크립트를 선택하여 한번에 일괄 영상을 생성합니다. (최대 10개)</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Select All */}
-                    <div className="flex items-center justify-between">
-                      <Button variant="outline" size="sm" onClick={toggleSelectAll}>
-                        <CheckSquare className="w-4 h-4 mr-2" />
-                        {batchSelectedIds.size === (scriptsQuery.data?.filter(s => s.status === "ready").length || 0) ? "전체 해제" : "전체 선택"}
-                      </Button>
-                      <Badge variant="outline">{batchSelectedIds.size}개 선택됨</Badge>
                     </div>
-
-                    {/* Script list with checkboxes */}
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      {scriptsQuery.data?.filter(s => s.status === "ready").map((script) => (
-                        <div key={script.id}
-                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                            batchSelectedIds.has(script.id) ? "border-violet-500/50 bg-violet-500/10" : "border-border/50 hover:border-violet-500/30"
-                          }`}
-                          onClick={() => toggleBatchSelect(script.id)}
-                        >
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
-                            batchSelectedIds.has(script.id) ? "border-violet-500 bg-violet-500" : "border-muted-foreground"
-                          }`}>
-                            {batchSelectedIds.has(script.id) && <CheckCircle2 className="w-3 h-3 text-white" />}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{script.title}</p>
-                            <p className="text-xs text-muted-foreground">{script.sectionCount}섹션 / ~{Math.round((script.estimatedDurationSec || 0) / 60)}분</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {CATEGORIES.find(c => c.value === script.category)?.label}
-                          </Badge>
-                        </div>
-                      ))}
-                      {(!scriptsQuery.data || scriptsQuery.data.filter(s => s.status === "ready").length === 0) && (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <FileText className="w-8 h-8 mx-auto mb-2" />
-                          <p className="text-sm">준비된 스크립트가 없습니다.</p>
-                        </div>
-                      )}
-                    </div>
-
-                    <Separator />
-
-                    {/* Batch voice settings */}
-                    <div>
-                      <Label className="flex items-center gap-2 mb-3"><Volume2 className="w-4 h-4 text-violet-400" />공통 음성 설정</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm text-muted-foreground">TTS 음성</Label>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Select value={batchTtsVoiceId} onValueChange={setBatchTtsVoiceId}>
-                              <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                            <VoicePreviewButton voiceId={batchTtsVoiceId} />
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-sm text-muted-foreground">음성 변조</Label>
-                          <Select value={batchVoiceModId} onValueChange={setBatchVoiceModId}>
-                            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">변조 없음</SelectItem>
-                              {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={v.id.toString()}>{v.name}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label className="flex items-center gap-2 mb-3"><UserCircle2 className="w-4 h-4 text-violet-400" />공통 AI 아바타 (선택)</Label>
-                      <Select value={batchFaceSwapId} onValueChange={setBatchFaceSwapId}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">아바타 없음 (음성만)</SelectItem>
-                          {sampleFacesQuery.data && sampleFacesQuery.data.length > 0 && (
-                            <>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">기본 제공 아바타</div>
-                              {sampleFacesQuery.data.map((f) => (
-                                <SelectItem key={`sample-${f.id}`} value={`sample-${f.id}`}>
-                                  <div className="flex items-center gap-2">
-                                    <img src={f.thumbnailUrl || f.imageUrl} alt={f.name} className="w-6 h-6 rounded-full object-cover" />
-                                    <span>{f.name}</span>
-                                    {f.isPremium && <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-500/50 text-amber-400">PRO</Badge>}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </>
-                          )}
-                          {faceSwapsQuery.data && faceSwapsQuery.data.length > 0 && (
-                            <>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-1">내 아바타</div>
-                              {faceSwapsQuery.data.map((f) => (
-                                <SelectItem key={`user-${f.id}`} value={`user-${f.id}`}>{f.name} ({f.method})</SelectItem>
-                              ))}
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {batchFaceSwapId !== "none" && batchFaceSwapId.startsWith("sample-") && sampleFacesQuery.data && (() => {
-                        const face = sampleFacesQuery.data.find(f => `sample-${f.id}` === batchFaceSwapId);
-                        if (!face) return null;
-                        return (
-                          <div className="mt-2 flex items-center gap-3 p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                            <img src={face.thumbnailUrl || face.imageUrl} alt={face.name} className="w-10 h-10 rounded-full object-cover border-2 border-violet-500/30" />
-                            <div>
-                              <p className="text-sm font-medium">{face.name}</p>
-                              <p className="text-xs text-muted-foreground">{face.description}</p>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Batch PIP Mode + PPT Selection */}
-                    <div>
-                      <Label className="flex items-center gap-2 mb-3"><Presentation className="w-4 h-4 text-violet-400" />공통 PIP 모드 (PPT + 얼굴)</Label>
-                      <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/50">
-                        <div>
-                          <p className="text-sm font-medium">PIP 모드 활성화</p>
-                          <p className="text-xs text-muted-foreground">PPT 슬라이드 + AI 얼굴 합성</p>
-                        </div>
-                        <Switch checked={batchPipEnabled} onCheckedChange={setBatchPipEnabled} />
-                      </div>
-                      {batchPipEnabled && (
-                        <div className="mt-3 space-y-3 p-3 rounded-lg border border-violet-500/20 bg-violet-500/5">
-                          <div>
-                            <Label className="text-sm text-muted-foreground">PPT 파일 선택</Label>
-                            <Select value={batchSelectedPptId} onValueChange={setBatchSelectedPptId}>
-                              <SelectTrigger className="mt-1"><SelectValue placeholder="PPT를 선택하세요" /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">PPT 없음 (PIP만 사용)</SelectItem>
-                                {pptListQuery.data?.map((p: any) => (
-                                  <SelectItem key={p.id} value={p.id.toString()}>
-                                    {p.title} ({p.originalFileName})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          {/* Batch PPT Slide Thumbnails */}
-                          {batchSelectedPptId !== "none" && (() => {
-                            const ppt = pptListQuery.data?.find((p: any) => p.id.toString() === batchSelectedPptId);
-                            if (!ppt) return null;
-                            const slides: string[] = ppt.slideImages ? (typeof ppt.slideImages === "string" ? JSON.parse(ppt.slideImages) : ppt.slideImages) : [];
-                            if (slides.length === 0) return null;
-                            return (
-                              <div>
-                                <Label className="text-sm text-muted-foreground mb-1 block">슬라이드 ({slides.length}장)</Label>
-                                <div className="grid grid-cols-4 gap-1.5">
-                                  {slides.slice(0, 8).map((url: string, i: number) => (
-                                    <div key={i} className="relative aspect-[16/9] rounded overflow-hidden border border-border/30">
-                                      <img src={url} alt={`슬라이드 ${i + 1}`} className="w-full h-full object-cover" />
-                                      <span className="absolute bottom-0.5 right-0.5 text-[9px] bg-black/60 text-white px-1 rounded">{i + 1}</span>
-                                    </div>
-                                  ))}
-                                  {slides.length > 8 && (
-                                    <div className="aspect-[16/9] rounded bg-muted/30 flex items-center justify-center text-xs text-muted-foreground">+{slides.length - 8}장</div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })()}
-                          <p className="text-xs text-muted-foreground">
-                            PIP 위치/크기/모양은 딥페이크 페이지의 PIP 설정에서 변경할 수 있습니다.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {batchStart.isPending ? (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
-                          <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
-                          <span className="text-sm">배치 처리 중... ({batchSelectedIds.size}건)</span>
-                        </div>
-                        <Button
-                           variant="destructive"
-                           className="w-full"
-                           onClick={() => {
-                             // Cancel all running pipelines from batch results
-                             const batchData = batchStart.data as any;
-                             if (batchData?.results) {
-                               for (const r of batchData.results) {
-                                 if (r.pipelineId && r.status !== 'completed' && r.status !== 'failed') {
-                                   cancelPipeline.mutate({ id: r.pipelineId });
-                                 }
-                               }
-                             }
-                             toast.info("배치 처리 중단 요청 중...");
-                             batchStart.reset();
-                           }}
-                         >
-                           <Square className="w-4 h-4 mr-2" />배치 중단
-                         </Button>
-                      </div>
-                    ) : (
-                      <Button onClick={handleBatchStart} disabled={batchSelectedIds.size === 0} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
-                        <ListChecks className="w-4 h-4 mr-2" />{batchSelectedIds.size}건 일괄 영상 제작 시작
-                      </Button>
-                    )}
                   </CardContent>
                 </Card>
-              </div>
+              );
+            })}
+          </div>
+        </TabsContent>
 
-              {/* Batch Results */}
-              <div>
-                <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20">
-                  <CardHeader>
-                    <CardTitle className="text-lg">배치 결과</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {!batchResults ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <ListChecks className="w-8 h-8 mx-auto mb-2" />
-                        <p className="text-sm">배치 제작을 시작하면 결과가 여기에 표시됩니다.</p>
+        {/* Tab 3: Produce Video */}
+        <TabsContent value="produce">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Play className="w-5 h-5 text-violet-400" /> {t("ps.oneClickVideoTitle")}</CardTitle>
+                  <CardDescription>{t("ps.oneClickVideoDesc")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <Label>{t("ps.selectScript")}</Label>
+                    <Select value={selectedScriptId?.toString() || ""} onValueChange={(v) => { setSelectedScriptId(parseInt(v)); const s = scriptsQuery.data?.find(s => s.id === parseInt(v)); if (s) setPipelineTitle(s.title); }}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder={t("ps.selectScriptPlaceholder")} /></SelectTrigger>
+                      <SelectContent>
+                        {scriptsQuery.data?.filter(s => s.status === "ready").map((s) => (
+                          <SelectItem key={s.id} value={s.id.toString()}>{s.title} ({t("ps.sectionCountDuration", { count: s.sectionCount, minutes: Math.round((s.estimatedDurationSec || 0) / 60) })})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{t("ps.productionTitle")}</Label>
+                    <Input value={pipelineTitle} onChange={(e) => setPipelineTitle(e.target.value)} placeholder={t("ps.videoTitlePlaceholder")} className="mt-1" />
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <Label className="flex items-center gap-2 mb-3"><Volume2 className="w-4 h-4 text-violet-400" />{t("ps.audioSettings")}</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">{t("ps.ttsVoice")}</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Select value={ttsVoiceId} onValueChange={setTtsVoiceId}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                          <VoicePreviewButton voiceId={ttsVoiceId} />
+                        </div>
                       </div>
-                    ) : (
+                      <div>
+                        <Label className="text-sm text-muted-foreground">{t("ps.voiceCloning")}</Label>
+                        <Select value={selectedVoiceModId} onValueChange={setSelectedVoiceModId}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">{t("ps.none")}</SelectItem>
+                            {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <Label className="flex items-center gap-2 mb-3"><User2 className="w-4 h-4 text-violet-400" />{t("ps.avatarSettings")}</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm text-muted-foreground">{t("ps.avatarEngine")}</Label>
+                        <Select value={avatarEngine} onValueChange={(v) => setAvatarEngine(v as any)}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="d-id">D-ID</SelectItem>
+                            <SelectItem value="heygen">HeyGen</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-muted-foreground">{t("ps.faceSwapProfile")}</Label>
+                        <Select value={selectedFaceSwapId} onValueChange={setSelectedFaceSwapId}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">{t("ps.none")}</SelectItem>
+                            {faceSwapsQuery.data?.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 rounded-lg border border-dashed border-violet-500/30 bg-violet-500/5">
+                      <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                        <Camera className="w-3.5 h-3.5 text-violet-400" />
+                        {t("ps.quickAvatarTitle")}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="cursor-pointer">
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleQuickAvatar(e.target.files[0])} />
+                          <div className="flex items-center justify-center gap-2 p-2 rounded-lg border-2 border-dashed border-border hover:border-violet-500/50 hover:bg-violet-500/5 transition-colors">
+                            <Upload className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{t("ps.uploadFacePhotoAction")}</span>
+                          </div>
+                        </label>
+                        <Select onValueChange={(val) => createFaceProfile.mutate({ name: val, imageUrl: sampleFacesQuery.data?.find(f => f.name === val)?.url || "" })}>
+                          <SelectTrigger className="text-xs h-auto py-2.5">
+                            <SelectValue placeholder={t("ps.selectSampleFace")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sampleFacesQuery.data?.map(f => <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="flex items-center gap-2"><Film className="w-4 h-4 text-violet-400" />{t("ps.introOutroTitle")}</Label>
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch id="seedance-intro" checked={seedanceIntro} onCheckedChange={setSeedanceIntro} />
+                          <Label htmlFor="seedance-intro" className="text-sm">{t("ps.intro")}</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch id="seedance-outro" checked={seedanceOutro} onCheckedChange={setSeedanceOutro} />
+                          <Label htmlFor="seedance-outro" className="text-sm">{t("ps.outro")}</Label>
+                        </div>
+                      </div>
+                    </div>
+                    {(seedanceIntro || seedanceOutro) && (
+                      <div className="space-y-3">
+                        {seedanceIntro && <Input value={seedanceIntroPrompt} onChange={e => setSeedanceIntroPrompt(e.target.value)} placeholder={t("ps.introPromptPlaceholder")} />}
+                        {seedanceOutro && <Input value={seedanceOutroPrompt} onChange={e => setSeedanceOutroPrompt(e.target.value)} placeholder={t("ps.outroPromptPlaceholder")} />}
+                        <p className="text-xs text-muted-foreground">{t("ps.introOutroDesc")}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="flex items-center gap-2"><Presentation className="w-4 h-4 text-violet-400" />{t("ps.pipModeTitle")}</Label>
+                      <Switch checked={pipEnabled} onCheckedChange={setPipEnabled} />
+                    </div>
+                    {pipEnabled && (
                       <div className="space-y-4">
-                        {/* Summary */}
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="p-3 bg-green-500/10 rounded-lg text-center">
-                            <CheckCircle2 className="w-5 h-5 text-green-400 mx-auto mb-1" />
-                            <p className="text-lg font-bold text-green-400">{batchResults.summary.completed}</p>
-                            <p className="text-xs text-muted-foreground">성공</p>
-                          </div>
-                          <div className="p-3 bg-red-500/10 rounded-lg text-center">
-                            <XCircle className="w-5 h-5 text-red-400 mx-auto mb-1" />
-                            <p className="text-lg font-bold text-red-400">{batchResults.summary.failed}</p>
-                            <p className="text-xs text-muted-foreground">실패</p>
-                          </div>
-                          <div className="p-3 bg-gray-500/10 rounded-lg text-center">
-                            <SkipForward className="w-5 h-5 text-gray-400 mx-auto mb-1" />
-                            <p className="text-lg font-bold text-gray-400">{batchResults.summary.skipped}</p>
-                            <p className="text-xs text-muted-foreground">건너뜀</p>
+                        <Select value={selectedPptId} onValueChange={setSelectedPptId}>
+                          <SelectTrigger><SelectValue placeholder={t("ps.selectPptPlaceholder")} /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">{t("ps.none")}</SelectItem>
+                            {pptListQuery.data?.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+
+                        {(() => {
+                          if (!selectedPptId || selectedPptId === "none") return null;
+                          const ppt = pptListQuery.data?.find(p => p.id.toString() === selectedPptId);
+                          if (!ppt) return null;
+                          const slides = ppt.slideUrls ? JSON.parse(ppt.slideUrls) as string[] : [];
+                          if (slides.length === 0) return <p className="text-sm text-center text-muted-foreground py-4">{t("ps.noSlidesPreview")}</p>;
+
+                          const pipPos = pipSettingsQuery.data?.position || "bottom-right";
+                          const pipSz = pipSettingsQuery.data?.size || "medium";
+                          const pipSh = pipSettingsQuery.data?.shape || "rounded";
+                          const pipOp = pipSettingsQuery.data?.opacity || 80;
+
+                          return (
+                            <div>
+                              <p className="text-sm text-muted-foreground mb-2">{t("ps.slidePreviewCount", { count: slides.length })}</p>
+                              {(() => {
+                                if (previewSlideIdx === null) {
+                                  return (
+                                    <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+                                      <Button onClick={() => setPreviewSlideIdx(0)}>{t("ps.showSlidePreview")}</Button>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <div className="relative">
+                                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                                      <img src={slides[previewSlideIdx]} className="w-full h-full object-contain" alt={`Slide ${previewSlideIdx + 1}`} />
+                                      <div className="absolute top-1/2 -translate-y-1/2 left-2">
+                                        <button
+                                          onClick={() => setPreviewSlideIdx(Math.max(0, previewSlideIdx - 1))}
+                                          disabled={previewSlideIdx === 0}
+                                          className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
+                                        >←</button>
+                                      </div>
+                                      <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                                        <button
+                                          onClick={() => setPreviewSlideIdx(Math.min(slides.length - 1, previewSlideIdx + 1))}
+                                          disabled={previewSlideIdx === slides.length - 1}
+                                          className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
+                                        >→</button>
+                                      </div>
+                                      {/* PIP settings info bar */}
+                                      <div className="mt-2 flex items-center justify-center gap-3 text-xs text-white/60">
+                                        <span>{t("ps.pipPositionLabel")} {t(`ps.pipPos${pipPos.replace(/-/g, "").split("").map(c => c.toUpperCase()).join("")}`)}</span>
+                                        <span>·</span>
+                                        <span>{t("ps.pipSizeLabel")} {t(`ps.pipSize${pipSz.charAt(0).toUpperCase() + pipSz.slice(1)}`)}</span>
+                                        <span>·</span>
+                                        <span>{t("ps.pipShapeLabel")} {t(`ps.pipShape${pipSh.charAt(0).toUpperCase() + pipSh.slice(1)}`)}</span>
+                                        <span>·</span>
+                                        <span>{t("ps.pipOpacityLabel")} {pipOp}%</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Upload new PPT */}
+                        <div className="p-3 rounded-lg border border-dashed border-violet-500/30 bg-violet-500/5">
+                          <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                            <Upload className="w-3.5 h-3.5 text-violet-400" />
+                            {t("ps.uploadNewPpt")}
+                          </p>
+                          <div className="space-y-2">
+                            <Input
+                              value={pptUploadTitle}
+                              onChange={(e) => setPptUploadTitle(e.target.value)}
+                              placeholder={t("ps.pptTitlePlaceholder")}
+                              className="text-sm"
+                            />
+                            <label className="cursor-pointer block">
+                              <input
+                                type="file"
+                                accept=".pptx,.pdf,.ppt"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handlePptUpload(file);
+                                  e.target.value = "";
+                                }}
+                              />
+                              <div className={`flex items-center justify-center gap-2 p-3 rounded-lg border-2 border-dashed transition-colors ${
+                                pptUploading ? "border-violet-500/50 bg-violet-500/10" : "border-border hover:border-violet-500/50 hover:bg-violet-500/5"
+                              }`}>
+                                {pptUploading || pptUploadMutation.isPending ? (
+                                  <><Loader2 className="w-4 h-4 animate-spin text-violet-400" /><span className="text-sm">{t("ps.uploading")}</span></>
+                                ) : (
+                                  <><Upload className="w-4 h-4 text-muted-foreground" /><span className="text-sm text-muted-foreground">{t("ps.selectPptFileAction")}</span></>
+                                )}
+                              </div>
+                            </label>
                           </div>
                         </div>
 
-                        {/* Individual results */}
-                        <div className="space-y-2">
-                          {batchResults.results.map((r: any, i: number) => (
-                            <div key={i} className={`p-2 rounded-lg text-sm flex items-center gap-2 ${
-                              r.status === "completed" ? "bg-green-500/10" : r.status === "failed" ? "bg-red-500/10" : "bg-gray-500/10"
-                            }`}>
-                              {r.status === "completed" ? <CheckCircle2 className="w-4 h-4 text-green-400" /> : r.status === "failed" ? <XCircle className="w-4 h-4 text-red-400" /> : <SkipForward className="w-4 h-4 text-gray-400" />}
-                              <span className="flex-1">스크립트 #{r.scriptId}</span>
-                              {r.error && <span className="text-xs text-red-400">{r.error}</span>}
+                        <p className="text-xs text-muted-foreground">
+                          {t("ps.pipSettingsNote")}
+                          {pipSettingsQuery.data && (
+                            <span className="ml-1 text-violet-400">
+                              ({t("ps.currentPipSettings")}: {t(`ps.pipPos${(pipSettingsQuery.data.position || 'bottom-right').replace(/-/g, "").split("").map(c => c.toUpperCase()).join("")}`)}, {t(`ps.pipSize${(pipSettingsQuery.data.size || 'medium').charAt(0).toUpperCase() + (pipSettingsQuery.data.size || 'medium').slice(1)}`)})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {startPipeline.isPending ? (() => {
+                    // Find the active pipeline for real-time progress
+                    const activePipeline = activePipelineId
+                      ? pipelinesQuery.data?.find((item: any) => item.pipeline.id === activePipelineId)?.pipeline
+                      : pipelinesQuery.data?.[0]?.pipeline;
+                    const progress = activePipeline?.progressPercent || 0;
+                    const step = activePipeline?.currentStep || t("ps.preparingTts");
+                    return (
+                    <div className="space-y-2">
+                      <div className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/20 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin text-violet-400" />
+                          <span className="text-sm font-medium">{t("ps.producingLectureVideo")}</span>
+                        </div>
+                        <Progress value={progress} className="h-2.5" />
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground">{step}</p>
+                          <p className="text-xs font-semibold text-violet-400">{progress}%</p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        disabled={cancelPipeline.isPending}
+                        onClick={() => {
+                          // If we have a pipeline ID from the response, cancel it server-side
+                          const pipelineId = (startPipeline.data as any)?.id;
+                          if (pipelineId) {
+                            cancelPipeline.mutate({ id: pipelineId });
+                          }
+                          toast.info(t("ps.cancellingProduction"));
+                          startPipeline.reset();
+                        }}
+                      >
+                        {cancelPipeline.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Square className="w-4 h-4 mr-2" />
+                        )}
+                        {t("ps.stopProduction")}
+                      </Button>
+                    </div>
+                    );
+                  })() : (
+                    <Button onClick={handleStartPipeline} disabled={!selectedScriptId} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+                      <Sparkles className="w-4 h-4 mr-2" />{t("ps.startOneClickProduction")}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Selected script preview */}
+            <div>
+              {selectedScriptId && scriptsQuery.data?.find(s => s.id === selectedScriptId) ? (() => {
+                const script = scriptsQuery.data!.find(s => s.id === selectedScriptId)!;
+                const sections = script.sections ? JSON.parse(script.sections) : [];
+                return (
+                  <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20">
+                    <CardHeader>
+                      <CardTitle className="text-lg">{t("ps.scriptPreview")}</CardTitle>
+                      <CardDescription>{script.title}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-[400px]">
+                        <div className="space-y-4">
+                          {sections.map((s: any, i: number) => (
+                            <div key={i} className="p-3 bg-card/50 rounded-lg border border-border/50">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-medium text-sm">{i + 1}. {s.title}</span>
+                                <Badge variant="outline" className="text-xs"><Clock className="w-3 h-3 mr-1" />{t("ps.durationMinutesShort", { minutes: Math.round(s.durationSec / 60) })}</Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-3">{s.content}</p>
+                              {s.slideNotes && <p className="text-xs text-violet-400 mt-2">📝 {s.slideNotes}</p>}
                             </div>
                           ))}
                         </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                );
+              })() : (
+                <Card className="border-dashed">
+                  <CardContent className="py-12 text-center">
+                    <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-medium">{t("ps.noScriptPreviewTitle")}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">{t("ps.noScriptPreviewDesc")}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Tab 4: Pipelines */}
+        <TabsContent value="pipelines">
+          <div className="space-y-4">
+            {pipelinesQuery.isLoading && <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-violet-400" /></div>}
+            {pipelinesQuery.data?.length === 0 && (
+              <EmptyState
+                type="pipelines"
+                title={t("ps.noPipelinesTitle")}
+                description={t("ps.noPipelinesDesc")}
+                actionLabel={t("ps.produceVideoAction")}
+                onAction={() => setActiveTab("produce")}
+              />
+            )}
+            {pipelinesQuery.data?.map(({ pipeline, script }) => {
+              const status = pipeline.status;
+              const isRunning = status !== 'completed' && status !== 'failed' && status !== 'cancelled';
+              const isSuccess = status === 'completed';
+              const isFailed = status === 'failed' || status === 'cancelled';
+
+              return (
+                <Card key={pipeline.id} className={`${isRunning ? "border-violet-500/50 bg-violet-500/5" : ""} transition-all`}>
+                  <CardContent className="py-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold text-lg">{pipeline.title}</h3>
+                          <Badge variant={isSuccess ? "success" : isFailed ? "destructive" : "secondary"}>
+                            {t(`ps.pipelineStatus${status.charAt(0).toUpperCase() + status.slice(1)}`)}
+                          </Badge>
+                          {pipeline.avatarEngine && <Badge variant="outline">{pipeline.avatarEngine}</Badge>}
+                        </div>
+                        <p className="text-sm text-muted-foreground line-clamp-1 mb-3">{t("ps.originalScript")}: {script.title}</p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1"><Layers className="w-4 h-4" />{t("ps.sections", { count: script.sectionCount })}</span>
+                          <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{t("ps.durationMinutes", { minutes: Math.round((script.estimatedDurationSec || 0) / 60) })}</span>
+                          <span>{new Date(pipeline.createdAt).toLocaleString("ko-KR")}</span>
+                        </div>
+                        {isRunning && (
+                          <div className="mt-3 space-y-2">
+                            <Progress value={pipeline.progressPercent || 0} className="h-2" />
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs text-muted-foreground">{pipeline.currentStep}</p>
+                              <p className="text-xs font-semibold text-violet-400">{pipeline.progressPercent || 0}%</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2 ml-4">
+                        {isSuccess && (
+                          <>
+                            <Button size="sm" variant="outline" asChild>
+                              <a href={pipeline.videoUrl!} target="_blank" rel="noreferrer"><Download className="w-4 h-4 mr-1" />{t("ps.downloadVideo")}</a>
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => generateThumbnail.mutate({ pipelineId: pipeline.id })} disabled={generateThumbnail.isPending && generateThumbnail.variables?.pipelineId === pipeline.id}>
+                              {generateThumbnail.isPending && generateThumbnail.variables?.pipelineId === pipeline.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4 mr-1" />}
+                              {t("ps.generateThumbnail")}
+                            </Button>
+                          </>
+                        )}
+                        {isRunning && (
+                          <Button size="sm" variant="destructive" onClick={() => cancelPipeline.mutate({ id: pipeline.id })} disabled={cancelPipeline.isPending}>
+                            {cancelPipeline.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deletePipeline.mutate({ id: pipeline.id })}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    {pipeline.status === 'failed' && pipeline.failReason && (
+                      <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive-foreground">
+                        <p className="font-semibold mb-1">{t("ps.failureReason")}</p>
+                        <p className="text-xs">{pipeline.failReason}</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              );
+            })}
+          </div>
+        </TabsContent>
+
+        {/* Tab 5: Batch Processing */}
+        <TabsContent value="batch">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><ListChecks className="w-5 h-5 text-violet-400" />{t("ps.batchProcessingTitle")}</CardTitle>
+                  <CardDescription>{t("ps.batchProcessingDesc")}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Button size="sm" onClick={selectAllForBatch}>{t("ps.selectAll")}</Button>
+                    <Button size="sm" variant="secondary" onClick={deselectAllForBatch}>{t("ps.deselectAll")}</Button>
+                    <span className="ml-auto text-sm font-medium">{t("ps.selectedCount", { count: batchSelectedIds.size })}</span>
+                  </div>
+                  <ScrollArea className="h-[400px] pr-4 -mr-4">
+                    <div className="space-y-2">
+                      {scriptsQuery.data?.filter(s => s.status === 'ready').map(script => (
+                        <div
+                          key={script.id}
+                          onClick={() => toggleBatchSelection(script.id)}
+                          className={`p-3 rounded-lg border flex items-center gap-3 cursor-pointer transition-colors ${
+                            batchSelectedIds.has(script.id)
+                              ? "bg-violet-500/10 border-violet-500/30"
+                              : "hover:bg-muted/50"
+                          }`}>
+                          {batchSelectedIds.has(script.id) ? <CheckSquare className="w-5 h-5 text-violet-400" /> : <Square className="w-5 h-5 text-muted-foreground" />}
+                          <div className="flex-1">
+                            <p className="font-medium">{script.title}</p>
+                            <p className="text-xs text-muted-foreground">{t("ps.sectionCountDuration", { count: script.sectionCount, minutes: Math.round((script.estimatedDurationSec || 0) / 60) })}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+              {batchResults && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t("ps.batchResultsTitle")}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p>{t("ps.batchSummary", { completed: batchResults.summary.completed, failed: batchResults.summary.failed, total: batchResults.summary.total })}</p>
+                      {batchResults.failedJobs.length > 0 && (
+                        <div>
+                          <p className="font-semibold mt-2">{t("ps.failedJobs")}:</p>
+                          <ul className="list-disc list-inside text-sm text-destructive">
+                            {batchResults.failedJobs.map((job: any) => (
+                              <li key={job.scriptId}>{t("ps.failedJobItem", { title: job.scriptTitle, reason: job.reason })}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <Button onClick={() => setBatchResults(null)} variant="outline" size="sm" className="mt-2">{t("ps.closeResults")}</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-      <CreditGuardModal
-        open={modalState.open}
-        onClose={closeModal}
-        featureKey={modalState.featureKey}
-        currentCredits={modalState.currentCredits}
-        requiredCredits={modalState.requiredCredits}
-      />
+            <div>
+              <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20 sticky top-20">
+                <CardHeader>
+                  <CardTitle>{t("ps.batchSettings")}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label className="text-sm">{t("ps.ttsVoice")}</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Select value={batchTtsVoiceId} onValueChange={setBatchTtsVoiceId}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {VOICES.map((v) => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <VoicePreviewButton voiceId={batchTtsVoiceId} />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm">{t("ps.voiceCloning")}</Label>
+                    <Select value={batchVoiceModId} onValueChange={setBatchVoiceModId}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t("ps.none")}</SelectItem>
+                        {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-sm">{t("ps.faceSwapProfile")}</Label>
+                    <Select value={batchFaceSwapId} onValueChange={setBatchFaceSwapId}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t("ps.none")}</SelectItem>
+                        {faceSwapsQuery.data?.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Separator />
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-sm">{t("ps.pipModeTitle")}</Label>
+                      <Switch checked={batchPipEnabled} onCheckedChange={setBatchPipEnabled} />
+                    </div>
+                    {batchPipEnabled && (
+                      <Select value={batchSelectedPptId} onValueChange={setBatchSelectedPptId}>
+                        <SelectTrigger><SelectValue placeholder={t("ps.selectPptPlaceholder")} /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{t("ps.none")}</SelectItem>
+                          {pptListQuery.data?.map(p => <SelectItem key={p.id} value={p.id.toString()}>{p.title}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                  <Button onClick={handleBatchStart} disabled={batchStart.isPending || batchSelectedIds.size === 0} className="w-full">
+                    {batchStart.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("ps.batchInProgress")}</> : <><Zap className="w-4 h-4 mr-2" />{t("ps.startBatchJobAction", { count: batchSelectedIds.size })}</>}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

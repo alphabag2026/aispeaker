@@ -20,15 +20,17 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 
+import { useTranslation } from "@/contexts/LanguageContext";
+
 // Credit costs per feature
-const FEATURE_COSTS: Record<string, { name: string; credits: number; icon: string }> = {
-  script_generation: { name: "스크립트 생성", credits: 5, icon: "📝" },
-  tts_generation: { name: "TTS 음성 변환", credits: 10, icon: "🔊" },
-  avatar_video: { name: "AI 아바타 영상", credits: 50, icon: "🎬" },
-  deepfake_face: { name: "딥페이크 얼굴 변환", credits: 30, icon: "🎭" },
-  subtitle_generation: { name: "자막 생성", credits: 3, icon: "📄" },
-  thumbnail_generation: { name: "썸네일 생성", credits: 5, icon: "🖼️" },
-  voice_cloning: { name: "음성 클로닝", credits: 20, icon: "🎤" },
+const FEATURE_COSTS: Record<string, { nameKey: string; credits: number; icon: string }> = {
+  script_generation: { nameKey: "cgm.feature.script_generation", credits: 5, icon: "📝" },
+  tts_generation: { nameKey: "cgm.feature.tts_generation", credits: 10, icon: "🔊" },
+  avatar_video: { nameKey: "cgm.feature.avatar_video", credits: 50, icon: "🎬" },
+  deepfake_face: { nameKey: "cgm.feature.deepfake_face", credits: 30, icon: "🎭" },
+  subtitle_generation: { nameKey: "cgm.feature.subtitle_generation", credits: 3, icon: "📄" },
+  thumbnail_generation: { nameKey: "cgm.feature.thumbnail_generation", credits: 5, icon: "🖼️" },
+  voice_cloning: { nameKey: "cgm.feature.voice_cloning", credits: 20, icon: "🎤" },
 };
 
 interface CreditGuardModalProps {
@@ -46,16 +48,19 @@ export default function CreditGuardModal({
   currentCredits = 0,
   requiredCredits,
 }: CreditGuardModalProps) {
+  const { t } = useTranslation();
   const [, navigate] = useLocation();
-  const feature = FEATURE_COSTS[featureKey] || { name: featureKey, credits: requiredCredits || 10, icon: "⚡" };
-  const needed = requiredCredits || feature.credits;
+  const featureInfo = FEATURE_COSTS[featureKey];
+  const featureName = featureInfo ? t(featureInfo.nameKey) : featureKey;
+  const featureIcon = featureInfo ? featureInfo.icon : "⚡";
+  const needed = requiredCredits || (featureInfo ? featureInfo.credits : 10);
   const deficit = Math.max(0, needed - currentCredits);
   const percentage = Math.min(100, (currentCredits / needed) * 100);
 
   const creditPackages = [
-    { name: "100 크레딧", price: "$9.99", credits: 100, best: false },
-    { name: "500 크레딧", price: "$39.99", credits: 500, best: true },
-    { name: "1,200 크레딧", price: "$79.99", credits: 1200, best: false },
+    { credits: 100, price: "$9.99", best: false },
+    { credits: 500, price: "$39.99", best: true },
+    { credits: 1200, price: "$79.99", best: false },
   ];
 
   return (
@@ -67,9 +72,9 @@ export default function CreditGuardModal({
               <AlertTriangle className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <DialogTitle className="text-lg">크레딧이 부족합니다</DialogTitle>
+              <DialogTitle className="text-lg">{t("cgm.title")}</DialogTitle>
               <DialogDescription className="text-xs">
-                이 기능을 사용하려면 크레딧을 충전해주세요
+                {t("cgm.description")}
               </DialogDescription>
             </div>
           </div>
@@ -79,19 +84,19 @@ export default function CreditGuardModal({
         <div className="bg-muted/50 rounded-lg p-4 mb-2">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{feature.icon}</span>
-              <span className="font-medium">{feature.name}</span>
+              <span className="text-2xl">{featureIcon}</span>
+              <span className="font-medium">{featureName}</span>
             </div>
             <Badge variant="secondary" className="font-mono">
-              {needed} 크레딧 필요
+              {needed} {t("cgm.credits_needed")}
             </Badge>
           </div>
 
           {/* Credit bar */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>보유: <span className="text-foreground font-medium">{currentCredits}</span> 크레딧</span>
-              <span className="text-red-400">부족: {deficit} 크레딧</span>
+              <span>{t("cgm.current")}: <span className="text-foreground font-medium">{currentCredits}</span> {t("cgm.credits")}</span>
+              <span className="text-red-400">{t("cgm.deficit")}: {deficit} {t("cgm.credits")}</span>
             </div>
             <Progress value={percentage} className="h-2" />
           </div>
@@ -101,12 +106,12 @@ export default function CreditGuardModal({
         <div className="space-y-2">
           <p className="text-sm font-medium flex items-center gap-1">
             <Zap className="w-4 h-4 text-cyan-500" />
-            빠른 충전
+            {t("cgm.quick_charge")}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {creditPackages.map((pkg) => (
               <button
-                key={pkg.name}
+                key={pkg.credits}
                 className={`relative rounded-lg border p-3 text-center transition-all hover:border-cyan-500/50 hover:bg-cyan-500/5 ${
                   pkg.best ? "border-cyan-500/30 bg-cyan-500/5" : "border-border/50"
                 }`}
@@ -117,7 +122,7 @@ export default function CreditGuardModal({
               >
                 {pkg.best && (
                   <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-cyan-500 text-[10px] px-1.5 py-0">
-                    인기
+                    {t("cgm.popular")}
                   </Badge>
                 )}
                 <div className="text-lg font-bold">{pkg.credits}</div>
@@ -131,16 +136,16 @@ export default function CreditGuardModal({
         <div className="bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles className="w-4 h-4 text-purple-400" />
-            <span className="text-sm font-medium">구독 업그레이드로 더 많은 크레딧을</span>
+            <span className="text-sm font-medium">{t("cgm.upgrade_title")}</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            Professional 플랜은 매월 500 크레딧이 포함되어 있어 개별 구매보다 60% 저렴합니다.
+            {t("cgm.upgrade_desc")}
           </p>
         </div>
 
         <DialogFooter className="flex gap-2 sm:gap-2">
           <Button variant="outline" onClick={onClose} className="flex-1">
-            나중에
+            {t("cgm.later")}
           </Button>
           <Button
             onClick={() => {
@@ -150,7 +155,7 @@ export default function CreditGuardModal({
             className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
           >
             <CreditCard className="w-4 h-4 mr-1" />
-            충전하기
+            {t("cgm.charge")}
             <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </DialogFooter>

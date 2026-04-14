@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -13,6 +14,7 @@ import {
   Pin, Maximize2, Minimize2, LogIn
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface Section {
   title: string;
@@ -22,6 +24,7 @@ interface Section {
 }
 
 export default function BroadcastViewer() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const params = useParams<{ roomCode: string }>();
@@ -195,9 +198,9 @@ export default function BroadcastViewer() {
           <div className="w-20 h-20 rounded-full bg-gray-800 flex items-center justify-center mx-auto mb-6">
             <Radio className="w-10 h-10 text-gray-500" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">방송이 종료되었습니다</h1>
+          <h1 className="text-2xl font-bold mb-2">{t("bv.broadcastEnded")}</h1>
           <p className="text-gray-400 mb-6">{broadcast.data?.title}</p>
-          <Button onClick={() => navigate("/")} variant="outline">홈으로 돌아가기</Button>
+          <Button onClick={() => navigate("/")} variant="outline">{t("bv.goHome")}</Button>
         </div>
       </div>
     );
@@ -211,13 +214,13 @@ export default function BroadcastViewer() {
           <div className="w-20 h-20 rounded-full bg-violet-500/20 flex items-center justify-center mx-auto mb-6 animate-pulse">
             <Radio className="w-10 h-10 text-violet-400" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">{broadcast.data?.title || "방송 대기 중"}</h1>
+          <h1 className="text-2xl font-bold mb-2">{broadcast.data?.title || t("bv.waitingForBroadcast")}</h1>
           <p className="text-gray-400 mb-2">
-            {broadcastStatus === "paused" ? "방송이 일시 정지되었습니다. 곧 재개됩니다." : "방송이 곧 시작됩니다. 잠시만 기다려주세요."}
+            {broadcastStatus === "paused" ? t("bv.broadcastPaused") : t("bv.broadcastStartingSoon")}
           </p>
           <p className="text-sm text-gray-500 flex items-center justify-center gap-1">
             <Users className="w-4 h-4" />
-            {viewerCount}명 대기 중
+            {viewerCount}{t("bv.waitingCount")}
           </p>
         </div>
       </div>
@@ -261,12 +264,12 @@ export default function BroadcastViewer() {
               <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-10 shadow-2xl border border-gray-700 min-h-[350px] flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <Badge variant="outline" className="text-violet-400 border-violet-400">
-                    섹션 {currentSlideIndex + 1} / {sections.length}
+                    {t("bv.sectionProgress")} {currentSlideIndex + 1} / {sections.length}
                   </Badge>
                   {isAudioPlaying && (
                     <div className="flex items-center gap-1 text-green-400 text-xs">
                       <Volume2 className="w-3 h-3 animate-pulse" />
-                      재생 중
+                      {t("bv.playing")}
                     </div>
                   )}
                 </div>
@@ -288,7 +291,7 @@ export default function BroadcastViewer() {
               </div>
             </div>
           ) : (
-            <p className="text-gray-500">슬라이드를 불러오는 중...</p>
+            <p className="text-gray-500">{t("bv.loadingSlides")}</p>
           )}
           <Button
             variant="ghost" size="icon"
@@ -299,11 +302,11 @@ export default function BroadcastViewer() {
           </Button>
         </div>
 
-        {/* Chat Sidebar */}
-        <div className="w-72 bg-gray-900 border-l border-gray-800 flex flex-col">
+        {/* Chat Area */}
+        <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col">
           <div className="h-10 flex items-center px-3 border-b border-gray-800">
             <MessageSquare className="w-3 h-3 mr-2 text-gray-400" />
-            <span className="text-xs font-medium">실시간 채팅</span>
+            <span className="text-xs font-medium">{t("bv.liveChat")}</span>
           </div>
 
           <ScrollArea className="flex-1 p-2">
@@ -329,7 +332,7 @@ export default function BroadcastViewer() {
             {isAuthenticated ? (
               <div className="flex gap-1.5">
                 <Input
-                  placeholder="메시지 입력..."
+                  placeholder={t("bv.enterMessage")}
                   value={chatMessage}
                   onChange={(e) => setChatMessage(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
@@ -347,7 +350,7 @@ export default function BroadcastViewer() {
                 onClick={() => window.location.href = getLoginUrl()}
               >
                 <LogIn className="w-3 h-3" />
-                로그인하여 채팅 참여
+                {t("bv.loginToChat")}
               </Button>
             )}
           </div>

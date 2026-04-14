@@ -11,22 +11,26 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
-const CATEGORIES = [
-  { value: "all", label: "전체" },
-  { value: "professional", label: "전문가" },
-  { value: "academic", label: "학술" },
-  { value: "corporate", label: "기업" },
-  { value: "casual", label: "캐주얼" },
-  { value: "creative", label: "크리에이티브" },
-];
-
-const GENDERS = [
-  { value: "all", label: "전체" },
-  { value: "male", label: "남성" },
-  { value: "female", label: "여성" },
-];
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function FaceGallery() {
+  const { t } = useTranslation();
+
+  const CATEGORIES = [
+    { value: "all", label: t("fg.all") },
+    { value: "professional", label: t("fg.expert") },
+    { value: "academic", label: t("fg.academic") },
+    { value: "corporate", label: t("fg.corporate") },
+    { value: "casual", label: t("fg.casual") },
+    { value: "creative", label: t("fg.creative") },
+  ];
+
+  const GENDERS = [
+    { value: "all", label: t("fg.all") },
+    { value: "male", label: t("fg.male") },
+    { value: "female", label: t("fg.female") },
+  ];
+
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedGender, setSelectedGender] = useState("all");
@@ -61,16 +65,16 @@ export default function FaceGallery() {
               <User className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">AI 얼굴 갤러리</h1>
-              <p className="text-purple-100 mt-1">강의에 사용할 AI 강사 페르소나를 선택하세요</p>
+              <h1 className="text-3xl md:text-4xl font-bold text-white">{t("fg.title")}</h1>
+              <p className="text-purple-100 mt-1">{t("fg.subtitle")}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 mt-6">
             <Badge variant="secondary" className="bg-white/20 text-white border-0 px-3 py-1">
-              <Sparkles className="w-3 h-3 mr-1" /> {faces.length}+ 프리셋
+              <Sparkles className="w-3 h-3 mr-1" /> {faces.length}+ {t("fg.presets")}
             </Badge>
             <Badge variant="secondary" className="bg-white/20 text-white border-0 px-3 py-1">
-              <Globe className="w-3 h-3 mr-1" /> 다국어 지원
+              <Globe className="w-3 h-3 mr-1" /> {t("fg.multilingual_support")}
             </Badge>
           </div>
         </div>
@@ -82,7 +86,7 @@ export default function FaceGallery() {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="이름, 설명, 태그로 검색..."
+              placeholder={t("fg.search_placeholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -90,7 +94,7 @@ export default function FaceGallery() {
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="카테고리" />
+              <SelectValue placeholder={t("fg.category_placeholder")} />
             </SelectTrigger>
             <SelectContent>
               {CATEGORIES.map((c) => (
@@ -100,7 +104,7 @@ export default function FaceGallery() {
           </Select>
           <Select value={selectedGender} onValueChange={setSelectedGender}>
             <SelectTrigger className="w-full md:w-[140px]">
-              <SelectValue placeholder="성별" />
+              <SelectValue placeholder={t("fg.gender_placeholder")} />
             </SelectTrigger>
             <SelectContent>
               {GENDERS.map((g) => (
@@ -126,8 +130,8 @@ export default function FaceGallery() {
         ) : filteredFaces.length === 0 ? (
           <div className="text-center py-20">
             <User className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-lg font-medium text-muted-foreground">검색 결과가 없습니다</h3>
-            <p className="text-sm text-muted-foreground/70 mt-1">다른 필터를 시도해보세요</p>
+            <h3 className="text-lg font-medium text-muted-foreground">{t("fg.no_results_title")}</h3>
+            <p className="text-sm text-muted-foreground/70 mt-1">{t("fg.no_results_subtitle")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -196,19 +200,19 @@ export default function FaceGallery() {
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-muted-foreground">카테고리</span>
+                    <span className="text-muted-foreground">{t("fg.category")}</span>
                     <p className="font-medium capitalize">{selectedFace.category}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">성별</span>
-                    <p className="font-medium">{selectedFace.gender === "male" ? "남성" : "여성"}</p>
+                    <span className="text-muted-foreground">{t("fg.gender")}</span>
+                    <p className="font-medium">{selectedFace.gender === "male" ? t("fg.male") : t("fg.female")}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">연령대</span>
+                    <span className="text-muted-foreground">{t("fg.age_range")}</span>
                     <p className="font-medium">{selectedFace.ageRange}</p>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">지원 언어</span>
+                    <span className="text-muted-foreground">{t("fg.supported_languages")}</span>
                     <p className="font-medium">{(selectedFace.languages as string[])?.join(", ")}</p>
                   </div>
                 </div>
@@ -223,18 +227,18 @@ export default function FaceGallery() {
                 className="w-full"
                 onClick={() => {
                   if (!user) {
-                    toast.error("로그인이 필요합니다.");
+                    toast.error(t("fg.login_required"));
                     return;
                   }
                   if (selectedFace.isPremium) {
-                    toast.info("Pro 플랜 이상에서 사용 가능합니다.");
+                    toast.info(t("fg.pro_required"));
                     return;
                   }
-                  toast.success(`${selectedFace.name}이(가) 선택되었습니다. 스튜디오에서 적용하세요.`);
+                  toast.success(t("fg.face_selected_toast", { name: selectedFace.name }));
                   setSelectedFace(null);
                 }}
               >
-                이 얼굴 선택하기 <ChevronRight className="w-4 h-4 ml-1" />
+                {t("fg.select_this_face")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           )}
