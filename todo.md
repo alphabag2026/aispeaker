@@ -908,4 +908,18 @@
 - [x] 모든 페이지(40개) 한국어 하드코딩 → t() 키로 변환 및 42개 번역 파일 작성
 - [x] 컴포넌트(CreditGuardModal, VoicePreviewButton, Navbar, DashboardLayout) 현지화
 - [x] 빌드 및 테스트
-- [ ] 프로덕션 배포
+- [x] 프로덕션 배포 (aispeaker.cc - 52.76.85.132)
+
+## v5.6 - Kling AI + Google Veo 3.1 Avatar 엔진 연동
+- [x] Kling AI API 문서 조사 및 연동 방식 파악
+- [x] KLING_ACCESS_KEY / KLING_SECRET_KEY 환경변수 설정
+- [x] Google Veo 3.1 API 문서 조사 및 연동 방식 파악
+- [x] Kling AI JWT 인증 헬퍼 함수 구현 (server/klingai.ts)
+- [x] Kling AI Avatar 영상 생성 로직 서버 코드 추가
+- [x] Google Veo 3.1 영상 생성 로직 서버 코드 추가 (server/veo.ts)
+- [x] DB 스키마 avatarEngine - varchar(32) 이미 유연하게 지원
+- [x] pipeline.start 라우터에 Kling AI + Veo 엔진 분기 추가
+- [x] 프론트엔드 UI - 아바타 엔진 선택에 Kling AI, Google Veo 추가
+- [x] 다국어 번역 키 추가 (ko/en/zh/ja + 16개 언어)
+- [x] vitest 테스트 작성 및 검증 (10개 테스트 통과)
+- [x] 체크포인트 저장

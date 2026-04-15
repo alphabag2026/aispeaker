@@ -65,7 +65,7 @@ export default function ProductionStudio() {
   const [selectedFaceSwapId, setSelectedFaceSwapId] = useState<string>("none");
 
   // Avatar engine selection
-  const [avatarEngine, setAvatarEngine] = useState<"d-id" | "heygen">("d-id");
+  const [avatarEngine, setAvatarEngine] = useState<"d-id" | "heygen" | "kling" | "veo">("d-id");
   // Seedance 2.0 intro/outro
   const [seedanceIntro, setSeedanceIntro] = useState(false);
   const [seedanceOutro, setSeedanceOutro] = useState(false);
@@ -656,6 +656,8 @@ export default function ProductionStudio() {
                           <SelectContent>
                             <SelectItem value="d-id">D-ID</SelectItem>
                             <SelectItem value="heygen">HeyGen</SelectItem>
+                            <SelectItem value="kling">Kling AI</SelectItem>
+                            <SelectItem value="veo">Google Veo 3.1</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -968,7 +970,7 @@ export default function ProductionStudio() {
                           <Badge variant={isSuccess ? "success" : isFailed ? "destructive" : "secondary"}>
                             {t(`ps.pipelineStatus${status.charAt(0).toUpperCase() + status.slice(1)}`)}
                           </Badge>
-                          {pipeline.avatarEngine && <Badge variant="outline">{pipeline.avatarEngine}</Badge>}
+                          {pipeline.avatarEngine && <Badge variant="outline">{({"d-id":"D-ID","heygen":"HeyGen","kling":"Kling AI","veo":"Google Veo"} as Record<string,string>)[pipeline.avatarEngine] || pipeline.avatarEngine}</Badge>}
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-1 mb-3">{t("ps.originalScript")}: {script.title}</p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
