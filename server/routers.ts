@@ -553,6 +553,19 @@ export const appRouter = router({
               }
             }
           } catch (error) { console.error("[D-ID] API error:", error); }
+          // Download D-ID video and save to S3 (D-ID URLs expire after ~24h)
+          if (videoUrl) {
+            try {
+              const videoResponse = await fetch(videoUrl);
+              if (videoResponse.ok) {
+                const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+                const permanentKey = `avatar-video/${Date.now()}-${nanoid(6)}.mp4`;
+                const { url: permanentUrl } = await storagePut(permanentKey, videoBuffer, "video/mp4");
+                console.log(`[D-ID] Video saved permanently: ${permanentUrl}`);
+                videoUrl = permanentUrl;
+              }
+            } catch (dlError) { console.error("[D-ID] Failed to save video permanently:", dlError); }
+          }
         }
 
         return { audioUrl, videoUrl, avatarImageUrl, avatarStyle, voiceId, text: input.text, usedDid: !!videoUrl };
@@ -2617,6 +2630,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const s = row.script;
         const sections = s?.sections ? JSON.parse(s.sections as string) : [];
         const audioUrls = p.audioUrls ? JSON.parse(p.audioUrls as string) : [];
+        const avatarVideoUrls = p.avatarVideoUrls ? JSON.parse(p.avatarVideoUrls as string) : [];
 
         return {
           pipeline: {
@@ -2625,6 +2639,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             status: p.status,
             totalDurationSec: p.totalDurationSec || 0,
             thumbnailUrl: p.thumbnailUrl,
+            avatarEngine: p.avatarEngine || null,
           },
           script: s ? {
             id: s.id,
@@ -2639,6 +2654,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             durationSec: sec.durationSec || 0,
             slideNotes: sec.slideNotes || "",
             audioUrl: audioUrls[idx] || null,
+            avatarVideoUrl: avatarVideoUrls[idx] || null,
           })),
         };
       }),
