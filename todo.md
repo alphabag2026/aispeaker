@@ -893,7 +893,7 @@
 ## v5.4.5 Bugfix - D-ID 영상 URL 만료 + Gemini 모델 에러 + 아바타 영상 UI
 - [ ] D-ID 영상 URL이 임시 서명 URL이라 24시간 후 만료됨 → 영상을 로컬 서버에 다운로드하여 영구 저장
 - [ ] Gemini 이미지 생성 모델 404 에러 수정 (gemini-2.0-flash-exp → gemini-2.5-flash-preview-04-17 변경)
-- [ ] 아바타 영상이 제작 이력 UI에 표시되지 않는 문제 수정
+- [x] 아바타 영상이 제작 이력 UI에 표시되지 않는 문제 수정 (PreviewPlayer + PipelineDashboard)
 
 ## v5.5 - D-ID + HeyGen + Seedance 2.0 통합
 - [ ] HeyGen API 통합 - 아바타 강의 영상 생성 (D-ID 대안)
@@ -923,3 +923,11 @@
 - [x] 다국어 번역 키 추가 (ko/en/zh/ja + 16개 언어)
 - [x] vitest 테스트 작성 및 검증 (10개 테스트 통과)
 - [x] 체크포인트 저장
+
+## v5.6.1 - Google Veo 활성화 + v5.4.5 버그 수정 + 프로덕션 배포
+- [x] GEMINI_API_KEY 환경변수 설정 (Google Veo 엔진 활성화)
+- [x] D-ID 영상 URL 만료 문제 수정 (임시 서명 URL → S3 영구 저장)
+- [x] Gemini 이미지 생성 모델 404 에러 수정 (gemini-2.0-flash-preview → gemini-2.5-flash-image)
+- [x] 아바타 영상이 제작 이력 UI에 표시되지 않는 문제 수정 (PreviewPlayer + PipelineDashboard)
+- [x] vitest 테스트 및 체크포인트 저장 (11개 테스트 통과)
+- [ ] 프로덕션 배포 (aispeaker.cc - AWS 서버)

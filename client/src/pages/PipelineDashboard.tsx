@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import {
   BarChart3, Clock, CheckCircle2, XCircle, FileText, Film, Download,
-  Loader2, Subtitles, ArrowLeft, TrendingUp, PieChart, Image, Play,
+  Loader2, Subtitles, ArrowLeft, TrendingUp, PieChart, Image, Play, Video,
 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -253,6 +253,9 @@ export default function PipelineDashboard() {
                   const p = item.pipeline;
                   const s = item.script;
                   const audioUrls = p.audioUrls ? JSON.parse(p.audioUrls) : [];
+                  const avatarVideoUrls = p.avatarVideoUrls ? JSON.parse(p.avatarVideoUrls) : [];
+                  const hasAvatarVideos = avatarVideoUrls.some((u: string) => u && u.length > 0);
+                  const engineLabel = p.avatarEngine === 'heygen' ? 'HeyGen' : p.avatarEngine === 'kling' ? 'Kling AI' : p.avatarEngine === 'veo' ? 'Google Veo' : p.avatarEngine === 'd-id' ? 'D-ID' : null;
                   return (
                     <div key={p.id} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/30 transition-colors">
                       <div className="shrink-0">
@@ -271,6 +274,8 @@ export default function PipelineDashboard() {
                           <span>{formatDuration(p.totalDurationSec || 0)}</span>
                           <span>{new Date(p.createdAt).toLocaleDateString("ko-KR")}</span>
                           {audioUrls.length > 0 && <span>{t("pd.audio_count", { count: audioUrls.length })}</span>}
+                          {engineLabel && <Badge variant="secondary" className="text-xs">{engineLabel}</Badge>}
+                          {hasAvatarVideos && <Badge variant="secondary" className="text-xs"><Video className="h-2.5 w-2.5 mr-0.5" />{t("pd.avatar_video") || "Avatar"}</Badge>}
                         </div>
                       </div>
                       <div className="flex gap-2 shrink-0">
