@@ -215,27 +215,7 @@ export default function PreviewPlayer() {
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
                   {currentSec.title}
                 </h2>
-                {/* Avatar Video Player */}
-                {currentSec.avatarVideoUrl && (
-                  <div className="mb-6 flex justify-center">
-                    <video
-                      key={currentSec.avatarVideoUrl}
-                      src={currentSec.avatarVideoUrl}
-                      className="rounded-xl max-w-md w-full shadow-2xl"
-                      autoPlay={isPlaying}
-                      muted={isMuted}
-                      playsInline
-                      onEnded={() => {
-                        if (currentSection < sections.length - 1) {
-                          playSection(currentSection + 1);
-                        } else {
-                          setIsPlaying(false);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-                {currentSec.slideNotes && !currentSec.avatarVideoUrl && (
+                {currentSec.slideNotes && (
                   <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-left">
                     <p className="text-lg text-white/90 leading-relaxed whitespace-pre-wrap">
                       {currentSec.slideNotes}

@@ -15,8 +15,6 @@ import bcrypt from "bcryptjs";
 import { sdk } from "./_core/sdk";
 import axios from "axios";
 import crypto from "crypto";
-import { createKlingAvatarVideo, pollKlingAvatarTask, isKlingConfigured } from "./klingai";
-import { createVeoImageToVideo, pollVeoOperation, downloadVeoVideo, isVeoConfigured } from "./veo";
 
 // Helper: coerce NaN/null/string to undefined for optional number fields
 // Uses z.union to accept number | null | undefined, then transforms to number | undefined
@@ -553,19 +551,6 @@ export const appRouter = router({
               }
             }
           } catch (error) { console.error("[D-ID] API error:", error); }
-          // Download D-ID video and save to S3 (D-ID URLs expire after ~24h)
-          if (videoUrl) {
-            try {
-              const videoResponse = await fetch(videoUrl);
-              if (videoResponse.ok) {
-                const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-                const permanentKey = `avatar-video/${Date.now()}-${nanoid(6)}.mp4`;
-                const { url: permanentUrl } = await storagePut(permanentKey, videoBuffer, "video/mp4");
-                console.log(`[D-ID] Video saved permanently: ${permanentUrl}`);
-                videoUrl = permanentUrl;
-              }
-            } catch (dlError) { console.error("[D-ID] Failed to save video permanently:", dlError); }
-          }
         }
 
         return { audioUrl, videoUrl, avatarImageUrl, avatarStyle, voiceId, text: input.text, usedDid: !!videoUrl };
@@ -1785,7 +1770,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         pipOpacity: z.number().min(0).max(100).optional(),
         pptUploadId: z.number().optional(),
         // Avatar engine selection
-        avatarEngine: z.enum(["d-id", "heygen", "kling", "veo"]).optional(),
+        avatarEngine: z.enum(["d-id", "heygen"]).optional(),
         // Seedance 2.0 intro/outro options
         seedanceIntro: z.boolean().optional(),
         seedanceOutro: z.boolean().optional(),
@@ -1949,13 +1934,10 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           // Helper: ensure absolute URL
           const toAbsoluteUrl = (url: string) => url.startsWith("/") ? `${siteBaseUrl}${url}` : url;
 
-           if (avatarImageUrl && audioUrls.length > 0) {
-            const engineLabels: Record<string, string> = { "heygen": "HeyGen", "d-id": "D-ID", "kling": "Kling AI", "veo": "Google Veo" };
-            const engineLabel = engineLabels[avatarEngine] || "D-ID";
-            const hasApiKey = avatarEngine === "heygen" ? !!heygenApiKey
-              : avatarEngine === "kling" ? isKlingConfigured()
-              : avatarEngine === "veo" ? isVeoConfigured()
-              : !!didApiKey;
+          if (avatarImageUrl && audioUrls.length > 0) {
+            const engineLabel = avatarEngine === "heygen" ? "HeyGen" : "D-ID";
+            const hasApiKey = avatarEngine === "heygen" ? !!heygenApiKey : !!didApiKey;
+
             if (!hasApiKey) {
               console.warn(`[${engineLabel}] API key not configured, skipping avatar video generation`);
             } else {
@@ -2025,7 +2007,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
                       const errText = await heygenResponse.text();
                       console.error(`[HeyGen] Create video failed for section ${i}:`, errText);
                     }
-                  } else if (avatarEngine === "d-id") {
+                  } else {
                     // ===== D-ID API =====
                     console.log(`[D-ID] Section ${i}: audio=${absoluteAudioUrl}, avatar=${absoluteAvatarUrl}`);
 
@@ -2068,55 +2050,9 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
                       const errText = await didResponse.text();
                       console.error(`[D-ID] Create talk failed for section ${i}:`, errText);
                     }
-                  } else if (avatarEngine === "kling") {
-                    // ===== Kling AI Avatar API =====
-                    console.log(`[Kling AI] Section ${i}: audio=${absoluteAudioUrl}, avatar=${absoluteAvatarUrl}`);
-                    try {
-                      const klingResult = await createKlingAvatarVideo({
-                        imageUrl: absoluteAvatarUrl,
-                        audioUrl: absoluteAudioUrl,
-                        prompt: "Looking at camera, natural talking expression, professional presenter",
-                        mode: "std",
-                      });
-                      console.log(`[Kling AI] Task created: ${klingResult.taskId}`);
-                      const klingVideoUrl = await pollKlingAvatarTask(klingResult.taskId);
-                      if (klingVideoUrl) {
-                        videoUrl = klingVideoUrl;
-                        console.log(`[Kling AI] Section ${i} completed: ${videoUrl}`);
-                      } else {
-                        console.error(`[Kling AI] Section ${i} failed to generate video`);
-                      }
-                    } catch (klingError) {
-                      console.error(`[Kling AI] Error for section ${i}:`, klingError);
-                    }
-                  } else if (avatarEngine === "veo") {
-                    // ===== Google Veo 3.1 Image-to-Video =====
-                    console.log(`[Google Veo] Section ${i}: avatar=${absoluteAvatarUrl}`);
-                    try {
-                      const veoResult = await createVeoImageToVideo({
-                        prompt: "A professional presenter talking to camera with natural gestures and expressions, studio lighting, 4K quality",
-                        imageUrl: absoluteAvatarUrl,
-                        aspectRatio: "16:9",
-                        resolution: "1080p",
-                      });
-                      console.log(`[Google Veo] Operation started: ${veoResult.operationName}`);
-                      const veoVideoUri = await pollVeoOperation(veoResult.operationName);
-                      if (veoVideoUri) {
-                        const veoBuffer = await downloadVeoVideo(veoVideoUri);
-                        if (veoBuffer) {
-                          const veoKey = `pipeline/${pipelineId}/veo-section-${i}-${nanoid(6)}.mp4`;
-                          const { url: veoSavedUrl } = await storagePut(veoKey, veoBuffer, "video/mp4");
-                          videoUrl = veoSavedUrl;
-                          console.log(`[Google Veo] Section ${i} completed: ${videoUrl}`);
-                        }
-                      } else {
-                        console.error(`[Google Veo] Section ${i} failed to generate video`);
-                      }
-                    } catch (veoError) {
-                      console.error(`[Google Veo] Error for section ${i}:`, veoError);
-                    }
                   }
-                  // Download video and save locally (D-ID, HeyGen, Kling URLs expire)
+
+                  // Download video and save locally (both D-ID and HeyGen URLs expire)
                   if (videoUrl) {
                     try {
                       const videoResponse = await fetch(videoUrl);
@@ -2630,7 +2566,6 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const s = row.script;
         const sections = s?.sections ? JSON.parse(s.sections as string) : [];
         const audioUrls = p.audioUrls ? JSON.parse(p.audioUrls as string) : [];
-        const avatarVideoUrls = p.avatarVideoUrls ? JSON.parse(p.avatarVideoUrls as string) : [];
 
         return {
           pipeline: {
@@ -2639,7 +2574,6 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             status: p.status,
             totalDurationSec: p.totalDurationSec || 0,
             thumbnailUrl: p.thumbnailUrl,
-            avatarEngine: p.avatarEngine || null,
           },
           script: s ? {
             id: s.id,
@@ -2654,7 +2588,6 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             durationSec: sec.durationSec || 0,
             slideNotes: sec.slideNotes || "",
             audioUrl: audioUrls[idx] || null,
-            avatarVideoUrl: avatarVideoUrls[idx] || null,
           })),
         };
       }),
