@@ -893,7 +893,7 @@
 ## v5.4.5 Bugfix - D-ID 영상 URL 만료 + Gemini 모델 에러 + 아바타 영상 UI
 - [ ] D-ID 영상 URL이 임시 서명 URL이라 24시간 후 만료됨 → 영상을 로컬 서버에 다운로드하여 영구 저장
 - [ ] Gemini 이미지 생성 모델 404 에러 수정 (gemini-2.0-flash-exp → gemini-2.5-flash-preview-04-17 변경)
-- [x] 아바타 영상이 제작 이력 UI에 표시되지 않는 문제 수정 (PreviewPlayer + PipelineDashboard)
+- [ ] 아바타 영상이 제작 이력 UI에 표시되지 않는 문제 수정
 
 ## v5.5 - D-ID + HeyGen + Seedance 2.0 통합
 - [ ] HeyGen API 통합 - 아바타 강의 영상 생성 (D-ID 대안)
@@ -922,12 +922,27 @@
 - [x] 프론트엔드 UI - 아바타 엔진 선택에 Kling AI, Google Veo 추가
 - [x] 다국어 번역 키 추가 (ko/en/zh/ja + 16개 언어)
 - [x] vitest 테스트 작성 및 검증 (10개 테스트 통과)
-- [x] 체크포인트 저장
 
 ## v5.6.1 - Google Veo 활성화 + v5.4.5 버그 수정 + 프로덕션 배포
 - [x] GEMINI_API_KEY 환경변수 설정 (Google Veo 엔진 활성화)
 - [x] D-ID 영상 URL 만료 문제 수정 (임시 서명 URL → S3 영구 저장)
 - [x] Gemini 이미지 생성 모델 404 에러 수정 (gemini-2.0-flash-preview → gemini-2.5-flash-image)
 - [x] 아바타 영상이 제작 이력 UI에 표시되지 않는 문제 수정 (PreviewPlayer + PipelineDashboard)
-- [x] vitest 테스트 및 체크포인트 저장 (11개 테스트 통과)
-- [ ] 프로덕션 배포 (aispeaker.cc - AWS 서버)
+- [x] vitest 테스트 및 검증 (11개 테스트 통과)
+- [x] 프로덕션 배포 (aispeaker.cc - AWS Lightsail 18.136.229.243, Docker 리빌드 완료, HTTP 200 확인)
+
+## v5.7 - XPLAY 1분 간편 강의 3종 제작
+- [x] 예쁜 여성 강사 아바타 이미지 AI 생성
+- [x] XPLAY PPT 슬라이드 5장 제작
+- [x] 1분 한국어 스크립트 생성 + 아바타 영상 제작
+- [x] 1분 중국어 스크립트 생성 + 아바타 영상 제작
+- [x] PPT + 강사 PIP 합성 영상 제작
+- [x] 완성본 3종 전달
+
+## v5.8 - Kling API 고품질 1분 강의 영상 제작
+- [ ] Kling API 사양 조사 (립싱크/Image-to-Video)
+- [ ] Kling API로 1분 한국어 강의 영상 생성
+- [ ] 완성 영상 전달
+
+## v5.9 - AI 목소리 갤러리 중국어 음성 추가
+- [x] 중국어 음성 데이터 추가 (CN 中文 필터 시 결과 표시)
