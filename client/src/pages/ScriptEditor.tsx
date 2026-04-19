@@ -14,11 +14,13 @@ import {
   ArrowLeft, GripVertical, RefreshCw, Edit3, Save, X, Clock, FileText,
   ChevronUp, ChevronDown, Trash2, Plus, Loader2, Wand2, SlidersHorizontal,
   History, RotateCcw, BarChart3, AlertCircle, CheckCircle, TrendingUp,
-  BookOpen, Target, MessageSquare, Sparkles,
+  BookOpen, Target, MessageSquare, Sparkles, Eye, EyeOff, Timer, Copy,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useState, useCallback, useRef, useEffect } from "react";
 
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -40,19 +42,27 @@ export default function ScriptEditor() {
 
   const updateSectionMutation = trpc.script.updateSection.useMutation({
     onSuccess: () => { toast.success(t("se.section_updated")); refetch(); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
   const regenerateSectionMutation = trpc.script.regenerateSection.useMutation({
     onSuccess: () => { toast.success(t("se.section_regenerated")); refetch(); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
   const reorderMutation = trpc.script.reorderSections.useMutation({
     onSuccess: () => { toast.success(t("se.section_reordered")); refetch(); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
   const updateScriptMutation = trpc.script.update.useMutation({
     onSuccess: () => { toast.success(t("se.script_saved")); refetch(); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
+  });
+  const addSectionMutation = trpc.script.addSection.useMutation({
+    onSuccess: () => { toast.success(t("se.section_added")); refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteSectionMutation = trpc.script.deleteSection.useMutation({
+    onSuccess: () => { toast.success(t("se.section_deleted")); refetch(); },
+    onError: (e: any) => toast.error(e.message),
   });
 
   const [sections, setSections] = useState<Section[]>([]);
@@ -66,6 +76,11 @@ export default function ScriptEditor() {
   const [versionPanelOpen, setVersionPanelOpen] = useState(false);
   const [analysisPanelOpen, setAnalysisPanelOpen] = useState(false);
   const [rollbackConfirm, setRollbackConfirm] = useState<number | null>(null);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [deleteConfirmIdx, setDeleteConfirmIdx] = useState<number | null>(null);
+  const [addSectionDialogOpen, setAddSectionDialogOpen] = useState(false);
+  const [addAfterIdx, setAddAfterIdx] = useState<number>(-1);
+  const [newSectionForm, setNewSectionForm] = useState({ title: "", content: "", durationSec: 60 });
 
   // v2.4: Version management
   const { data: versions, refetch: refetchVersions } = trpc.script.versions.useQuery(
@@ -74,17 +89,17 @@ export default function ScriptEditor() {
   );
   const saveVersionMutation = trpc.script.saveVersion.useMutation({
     onSuccess: () => { toast.success(t("se.version_saved")); refetchVersions(); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
   const rollbackMutation = trpc.script.rollback.useMutation({
     onSuccess: () => { toast.success(t("se.restored")); refetch(); refetchVersions(); setRollbackConfirm(null); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
 
   // v2.4: Content analysis
   const analyzeMutation = trpc.script.analyze.useMutation({
     onSuccess: () => { toast.success(t("se.analysis_complete")); setAnalysisPanelOpen(true); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
   const [analysisResult, setAnalysisResult] = useState<any>(null);
 
@@ -157,6 +172,49 @@ export default function ScriptEditor() {
     }
   };
 
+  // Add section
+  const handleAddSection = () => {
+    addSectionMutation.mutate({
+      scriptId,
+      afterIndex: addAfterIdx,
+      title: newSectionForm.title || undefined,
+      content: newSectionForm.content || undefined,
+      durationSec: newSectionForm.durationSec || 60,
+    });
+    setAddSectionDialogOpen(false);
+    setNewSectionForm({ title: "", content: "", durationSec: 60 });
+  };
+
+  // Delete section
+  const handleDeleteSection = (idx: number) => {
+    deleteSectionMutation.mutate({ scriptId, sectionIndex: idx });
+    setDeleteConfirmIdx(null);
+  };
+
+  // Duration slider change (inline, saves on release)
+  const handleDurationSliderChange = (idx: number, value: number[]) => {
+    const newSections = [...sections];
+    newSections[idx] = { ...newSections[idx], durationSec: value[0] };
+    setSections(newSections);
+  };
+  const handleDurationSliderCommit = (idx: number, value: number[]) => {
+    updateSectionMutation.mutate({ scriptId, sectionIndex: idx, durationSec: value[0] });
+  };
+
+  // Copy full script to clipboard
+  const copyFullScript = () => {
+    const fullText = sections.map((s, i) => `[${i + 1}] ${s.title}\n${s.content}`).join("\n\n---\n\n");
+    navigator.clipboard.writeText(fullText);
+    toast.success(t("se.copied_to_clipboard"));
+  };
+
+  // Format time
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m > 0 ? `${m}${t("se.minutes")} ${s}${t("se.seconds")}` : `${s}${t("se.seconds")}`;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Banner */}
@@ -196,6 +254,23 @@ export default function ScriptEditor() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Preview toggle */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={previewMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPreviewMode(!previewMode)}
+                    >
+                      {previewMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="hidden lg:inline ml-1">{previewMode ? t("se.edit_mode") : t("se.preview_mode")}</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{previewMode ? t("se.switch_to_edit") : t("se.switch_to_preview")}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -231,12 +306,11 @@ export default function ScriptEditor() {
                               <div className="flex items-center justify-between">
                                 <div>
                                   <p className="font-semibold text-sm flex items-center gap-1.5">
-                                    {v.version === script.version && <Badge variant="default" className="text-[10px] px-1.5 py-0">{t("se.current_version")}</Badge>}
                                     {v.changeDescription}
                                   </p>
                                   <p className="text-xs text-muted-foreground mt-1">{new Date(v.createdAt).toLocaleString()}</p>
                                 </div>
-                                <Button size="sm" variant="outline" onClick={() => setRollbackConfirm(v.version)} disabled={v.version === script.version || rollbackMutation.isPending}>
+                                <Button size="sm" variant="outline" onClick={() => setRollbackConfirm(v.id)} disabled={rollbackMutation.isPending}>
                                   <RotateCcw className="h-3 w-3 mr-1" />
                                   {t("se.restore")}
                                 </Button>
@@ -257,7 +331,7 @@ export default function ScriptEditor() {
                   <p>{t("se.confirm_restore")}</p>
                   <DialogFooter>
                     <Button variant="ghost" onClick={() => setRollbackConfirm(null)}>{t("se.cancel")}</Button>
-                    <Button variant="destructive" onClick={() => rollbackMutation.mutate({ scriptId, version: rollbackConfirm! })} disabled={rollbackMutation.isPending}>
+                    <Button variant="destructive" onClick={() => rollbackMutation.mutate({ scriptId, versionId: rollbackConfirm! })} disabled={rollbackMutation.isPending}>
                       {rollbackMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                       <span className="ml-1">{t("se.restore")}</span>
                     </Button>
@@ -355,107 +429,313 @@ export default function ScriptEditor() {
 
       {/* Main Content */}
       <main className="container py-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2
-"><SlidersHorizontal className="h-5 w-5" /> {t("se.script_structure")}</h2>
-          <Button size="sm" onClick={() => {}}><Plus className="h-4 w-4 mr-1" /> {t("se.add_section")}</Button>
-        </div>
+        {/* Preview Mode */}
+        {previewMode ? (
+          <div className="max-w-3xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Eye className="h-5 w-5" /> {t("se.full_preview")}
+              </h2>
+              <Button variant="outline" size="sm" onClick={copyFullScript}>
+                <Copy className="h-4 w-4 mr-1" /> {t("se.copy_all")}
+              </Button>
+            </div>
 
-        {sections.length > 0 ? (
-          <div className="space-y-2">
-            {sections.map((section, idx) => (
-              <div
-                key={idx}
-                draggable
-                onDragStart={() => handleDragStart(idx)}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDragEnd={handleDragEnd}
-                onDrop={() => handleDrop(idx)}
-                className={`transition-all duration-300 ${dragIdx === idx ? "opacity-50" : ""} ${dragOverIdx === idx ? "bg-primary/10" : ""}`}
-              >
-                {editingIdx === idx ? (
-                  <Card>
-                    <CardContent className="p-4 space-y-3">
-                      <Input
-                        value={editForm.title}
-                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                        placeholder={t("se.section_title")}
-                        className="font-bold text-base"
-                      />
-                      <Textarea
-                        value={editForm.content}
-                        onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                        rows={6}
-                      />
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          value={editForm.durationSec}
-                          onChange={(e) => setEditForm({ ...editForm, durationSec: Number(e.target.value) })}
-                          className="w-24"
-                        />
-                        <span>{t("se.seconds")}</span>
-                      </div>
-                      <Textarea
-                        value={editForm.slideNotes}
-                        onChange={(e) => setEditForm({ ...editForm, slideNotes: e.target.value })}
-                        placeholder={t("se.slide_notes")}
-                        rows={3}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" onClick={cancelEdit}>{t("se.cancel")}</Button>
-                        <Button onClick={saveEdit} disabled={updateSectionMutation.isPending}>
-                          {updateSectionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                          <span className="ml-1">{t("se.save")}</span>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card className="group relative overflow-hidden">
-                    <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-md p-1 z-10">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(idx)}><Edit3 className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startRegen(idx)}><Wand2 className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(idx, "up")} disabled={idx === 0}><ChevronUp className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(idx, "down")} disabled={idx === sections.length - 1}><ChevronDown className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => {}}><Trash2 className="h-4 w-4" /></Button>
+            {/* Time distribution bar */}
+            <Card className="mb-6">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium flex items-center gap-1"><Timer className="h-4 w-4" /> {t("se.time_distribution")}</span>
+                  <span className="text-sm text-muted-foreground">{t("se.total_length")}: {formatTime(totalDuration)}</span>
+                </div>
+                <div className="flex h-6 rounded-md overflow-hidden gap-0.5">
+                  {sections.map((s, i) => {
+                    const pct = totalDuration > 0 ? (s.durationSec / totalDuration) * 100 : 0;
+                    const colors = ["bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500", "bg-rose-500", "bg-cyan-500", "bg-orange-500", "bg-indigo-500"];
+                    return (
+                      <TooltipProvider key={i}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className={`${colors[i % colors.length]} transition-all cursor-pointer hover:opacity-80`}
+                              style={{ width: `${Math.max(pct, 2)}%` }}
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="font-medium">{s.title}</p>
+                            <p className="text-xs">{formatTime(s.durationSec)} ({Math.round(pct)}%)</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Full script preview */}
+            <div className="space-y-6">
+              {sections.map((section, idx) => (
+                <div key={idx} className="group">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Badge variant="outline" className="text-xs font-mono">{idx + 1}</Badge>
+                    <h3 className="font-semibold text-base">{section.title}</h3>
+                    <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> {formatTime(section.durationSec)}
+                    </span>
+                  </div>
+                  <div className="pl-8 text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                    {section.content}
+                  </div>
+                  {section.slideNotes && (
+                    <div className="pl-8 mt-2 text-xs text-muted-foreground italic border-l-2 border-muted ml-2 pl-3">
+                      {t("se.slide_notes")}: {section.slideNotes}
                     </div>
-                    <CardHeader className="flex-row items-start gap-3 p-4 cursor-grab active:cursor-grabbing bg-card">
-                      <GripVertical className="h-5 w-5 text-muted-foreground mt-1 shrink-0" />
-                      <div>
-                        <CardTitle className="text-base mb-1">{section.title}</CardTitle>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {section.durationSec} {t("se.seconds")}</span>
-                          <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {section.content.split(" ").length} {t("se.words")}</span>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0 text-sm text-muted-foreground leading-relaxed">
-                      <p className="line-clamp-3">{section.content}</p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            ))}
+                  )}
+                  {idx < sections.length - 1 && <Separator className="mt-6" />}
+                </div>
+              ))}
+            </div>
+
+            <Separator className="my-6" />
+            <div className="flex justify-end items-center gap-3">
+              <span className="text-sm text-muted-foreground">{t("se.total_length")}: {formatTime(totalDuration)}</span>
+              <Button size="lg" onClick={() => navigate(`/studio/generate/${scriptId}`)}>
+                <Sparkles className="h-5 w-5 mr-2" />
+                {t("se.generate_video")}
+              </Button>
+            </div>
           </div>
         ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg text-muted-foreground">
-            <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
-            <p className="font-semibold">{t("se.script_empty")}</p>
-            <p className="text-sm mt-1">{t("se.add_first_section_prompt")}</p>
-          </div>
+          /* Edit Mode */
+          <>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <SlidersHorizontal className="h-5 w-5" /> {t("se.script_structure")}
+              </h2>
+              <Button size="sm" onClick={() => { setAddAfterIdx(-1); setAddSectionDialogOpen(true); }}>
+                <Plus className="h-4 w-4 mr-1" /> {t("se.add_section")}
+              </Button>
+            </div>
+
+            {/* Time distribution bar (edit mode) */}
+            {sections.length > 0 && (
+              <Card className="mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium flex items-center gap-1"><Timer className="h-4 w-4" /> {t("se.time_distribution")}</span>
+                    <span className="text-sm text-muted-foreground">{t("se.total_length")}: {formatTime(totalDuration)}</span>
+                  </div>
+                  <div className="flex h-4 rounded-md overflow-hidden gap-0.5">
+                    {sections.map((s, i) => {
+                      const pct = totalDuration > 0 ? (s.durationSec / totalDuration) * 100 : 0;
+                      const colors = ["bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500", "bg-rose-500", "bg-cyan-500", "bg-orange-500", "bg-indigo-500"];
+                      return (
+                        <div
+                          key={i}
+                          className={`${colors[i % colors.length]} transition-all`}
+                          style={{ width: `${Math.max(pct, 2)}%` }}
+                          title={`${s.title}: ${formatTime(s.durationSec)}`}
+                        />
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {sections.length > 0 ? (
+              <div className="space-y-2">
+                {sections.map((section, idx) => (
+                  <div key={idx}>
+                    <div
+                      draggable
+                      onDragStart={() => handleDragStart(idx)}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDragEnd={handleDragEnd}
+                      onDrop={() => handleDrop(idx)}
+                      className={`transition-all duration-300 ${dragIdx === idx ? "opacity-50" : ""} ${dragOverIdx === idx ? "bg-primary/10" : ""}`}
+                    >
+                      {editingIdx === idx ? (
+                        <Card>
+                          <CardContent className="p-4 space-y-3">
+                            <Input
+                              value={editForm.title}
+                              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                              placeholder={t("se.section_title")}
+                              className="font-bold text-base"
+                            />
+                            <Textarea
+                              value={editForm.content}
+                              onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                              rows={6}
+                            />
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <Timer className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium w-20">{formatTime(editForm.durationSec)}</span>
+                                <Slider
+                                  value={[editForm.durationSec]}
+                                  onValueChange={(v) => setEditForm({ ...editForm, durationSec: v[0] })}
+                                  min={10}
+                                  max={600}
+                                  step={5}
+                                  className="flex-1"
+                                />
+                              </div>
+                            </div>
+                            <Textarea
+                              value={editForm.slideNotes}
+                              onChange={(e) => setEditForm({ ...editForm, slideNotes: e.target.value })}
+                              placeholder={t("se.slide_notes")}
+                              rows={3}
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" onClick={cancelEdit}>{t("se.cancel")}</Button>
+                              <Button onClick={saveEdit} disabled={updateSectionMutation.isPending}>
+                                {updateSectionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                <span className="ml-1">{t("se.save")}</span>
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ) : (
+                        <Card className="group relative overflow-hidden">
+                          <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 backdrop-blur-sm rounded-md p-1 z-10">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(idx)}><Edit3 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startRegen(idx)}><Wand2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(idx, "up")} disabled={idx === 0}><ChevronUp className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => moveSection(idx, "down")} disabled={idx === sections.length - 1}><ChevronDown className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setAddAfterIdx(idx); setAddSectionDialogOpen(true); }}><Plus className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteConfirmIdx(idx)}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                          <CardHeader className="flex-row items-start gap-3 p-4 cursor-grab active:cursor-grabbing bg-card">
+                            <GripVertical className="h-5 w-5 text-muted-foreground mt-1 shrink-0" />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="outline" className="text-xs font-mono">{idx + 1}</Badge>
+                                <CardTitle className="text-base">{section.title}</CardTitle>
+                              </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {formatTime(section.durationSec)}</span>
+                                <span className="flex items-center gap-1"><FileText className="h-3 w-3" /> {section.content.length} {t("se.chars")}</span>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4 pt-0">
+                            <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">{section.content}</p>
+                            {/* Inline duration slider */}
+                            <div className="flex items-center gap-3 mt-3 pt-3 border-t">
+                              <Timer className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              <Slider
+                                value={[section.durationSec]}
+                                onValueChange={(v) => handleDurationSliderChange(idx, v)}
+                                onValueCommit={(v) => handleDurationSliderCommit(idx, v)}
+                                min={10}
+                                max={600}
+                                step={5}
+                                className="flex-1"
+                              />
+                              <span className="text-xs text-muted-foreground w-16 text-right">{formatTime(section.durationSec)}</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 border-2 border-dashed rounded-lg text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                <p className="font-semibold">{t("se.script_empty")}</p>
+                <p className="text-sm mt-1">{t("se.add_first_section_prompt")}</p>
+                <Button className="mt-4" onClick={() => { setAddAfterIdx(-1); setAddSectionDialogOpen(true); }}>
+                  <Plus className="h-4 w-4 mr-1" /> {t("se.add_section")}
+                </Button>
+              </div>
+            )}
+
+            <Separator className="my-6" />
+
+            <div className="flex justify-end items-center gap-3">
+              <span className="text-sm text-muted-foreground">{t("se.total_length")}: {formatTime(totalDuration)}</span>
+              <Button size="lg" onClick={() => navigate(`/studio/generate/${scriptId}`)}>
+                <Sparkles className="h-5 w-5 mr-2" />
+                {t("se.generate_video")}
+              </Button>
+            </div>
+          </>
         )}
-
-        <Separator className="my-6" />
-
-        <div className="flex justify-end items-center gap-3">
-          <span className="text-sm text-muted-foreground">{t("se.total_length")}: {Math.floor(totalDuration / 60)}{t("se.minutes")} {totalDuration % 60}{t("se.seconds")}</span>
-          <Button size="lg" onClick={() => navigate(`/studio/generate/${scriptId}`)}>
-            <Sparkles className="h-5 w-5 mr-2" />
-            {t("se.generate_video")}
-          </Button>
-        </div>
       </main>
+
+      {/* Add Section Dialog */}
+      <Dialog open={addSectionDialogOpen} onOpenChange={setAddSectionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Plus className="h-5 w-5" /> {t("se.add_new_section")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">{t("se.section_title")}</label>
+              <Input
+                value={newSectionForm.title}
+                onChange={(e) => setNewSectionForm({ ...newSectionForm, title: e.target.value })}
+                placeholder={t("se.new_section_title_placeholder")}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">{t("se.section_content")}</label>
+              <Textarea
+                value={newSectionForm.content}
+                onChange={(e) => setNewSectionForm({ ...newSectionForm, content: e.target.value })}
+                placeholder={t("se.new_section_content_placeholder")}
+                rows={4}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">{t("se.duration")}: {formatTime(newSectionForm.durationSec)}</label>
+              <Slider
+                value={[newSectionForm.durationSec]}
+                onValueChange={(v) => setNewSectionForm({ ...newSectionForm, durationSec: v[0] })}
+                min={10}
+                max={600}
+                step={5}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setAddSectionDialogOpen(false)}>{t("se.cancel")}</Button>
+            <Button onClick={handleAddSection} disabled={addSectionMutation.isPending}>
+              {addSectionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+              {t("se.add_section")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Section Confirm Dialog */}
+      <Dialog open={deleteConfirmIdx !== null} onOpenChange={(open) => !open && setDeleteConfirmIdx(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("se.confirm_delete_section")}</DialogTitle>
+          </DialogHeader>
+          <p>{t("se.confirm_delete_section_desc")}</p>
+          {deleteConfirmIdx !== null && sections[deleteConfirmIdx] && (
+            <div className="bg-muted/50 rounded p-3 text-sm">
+              <p className="font-medium">{sections[deleteConfirmIdx].title}</p>
+              <p className="text-muted-foreground line-clamp-2 mt-1">{sections[deleteConfirmIdx].content}</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteConfirmIdx(null)}>{t("se.cancel")}</Button>
+            <Button variant="destructive" onClick={() => deleteConfirmIdx !== null && handleDeleteSection(deleteConfirmIdx)} disabled={deleteSectionMutation.isPending}>
+              {deleteSectionMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Trash2 className="h-4 w-4 mr-1" />}
+              {t("se.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Analysis Result Dialog */}
       <Dialog open={analysisPanelOpen && !!analysisResult} onOpenChange={(open) => !open && setAnalysisPanelOpen(false)}>
