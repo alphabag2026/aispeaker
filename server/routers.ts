@@ -2952,6 +2952,16 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           en: "Hello, I am an AI lecture voice. I will make your lectures more engaging and dynamic with this voice.",
           ja: "こんにちは、私はAI講義の音声です。この声であなたの講義をより生き生きとしたものにします。",
           zh: "你好，我是AI讲座语音。我会用这个声音让你的讲座更加生动有趣。",
+          vi: "Xin chào, tôi là giọng nói AI cho bài giảng. Tôi sẽ giúp bài giảng của bạn trở nên sinh động và hấp dẫn hơn.",
+          th: "สวัสดีครับ ผมเป็นเสียง AI สำหรับการบรรยาย เสียงนี้จะทำให้การบรรยายของคุณมีชีวิตชีวาและน่าสนใจยิ่งขึ้น",
+          es: "Hola, soy una voz de IA para conferencias. Haré que sus presentaciones sean más atractivas y dinámicas.",
+          fr: "Bonjour, je suis une voix IA pour les cours. Je rendrai vos présentations plus engageantes et dynamiques.",
+          de: "Hallo, ich bin eine KI-Stimme für Vorlesungen. Ich werde Ihre Präsentationen lebendiger und dynamischer gestalten.",
+          pt: "Olá, sou uma voz de IA para palestras. Vou tornar suas apresentações mais envolventes e dinâmicas.",
+          ru: "Здравствуйте, я голос ИИ для лекций. Я сделаю ваши презентации более увлекательными и динамичными.",
+          ar: "مرحباً، أنا صوت الذكاء الاصطناعي للمحاضرات. سأجعل عروضك التقديمية أكثر جاذبية وحيوية.",
+          hi: "नमस्ते, मैं व्याख्यान के लिए एक AI आवाज़ हूँ। मैं आपकी प्रस्तुतियों को और अधिक आकर्षक और गतिशील बनाऊँगा।",
+          id: "Halo, saya adalah suara AI untuk kuliah. Saya akan membuat presentasi Anda lebih menarik dan dinamis.",
         };
         const demoText = demoTexts[voice.language] || demoTexts.ko;
         try {

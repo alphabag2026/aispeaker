@@ -20,6 +20,16 @@ export default function VoiceGallery() {
     { value: "en", label: `🇺🇸 ${t("vg.english")}` },
     { value: "ja", label: `🇯🇵 ${t("vg.japanese")}` },
     { value: "zh", label: `🇨🇳 ${t("vg.chinese")}` },
+    { value: "vi", label: `🇻🇳 ${t("vg.vietnamese")}` },
+    { value: "th", label: `🇹🇭 ${t("vg.thai")}` },
+    { value: "es", label: `🇪🇸 ${t("vg.spanish")}` },
+    { value: "fr", label: `🇫🇷 ${t("vg.french")}` },
+    { value: "de", label: `🇩🇪 ${t("vg.german")}` },
+    { value: "pt", label: `🇧🇷 ${t("vg.portuguese")}` },
+    { value: "ru", label: `🇷🇺 ${t("vg.russian")}` },
+    { value: "ar", label: `🇸🇦 ${t("vg.arabic")}` },
+    { value: "hi", label: `🇮🇳 ${t("vg.hindi")}` },
+    { value: "id", label: `🇮🇩 ${t("vg.indonesian")}` },
   ];
 
   const TONES = [
@@ -47,6 +57,7 @@ export default function VoiceGallery() {
 
   const LANG_FLAGS: Record<string, string> = {
     ko: "🇰🇷", en: "🇺🇸", ja: "🇯🇵", zh: "🇨🇳", es: "🇪🇸", fr: "🇫🇷",
+    vi: "🇻🇳", th: "🇹🇭", de: "🇩🇪", pt: "🇧🇷", ru: "🇷🇺", ar: "🇸🇦", hi: "🇮🇳", id: "🇮🇩",
   };
 
   const { user } = useAuth();
