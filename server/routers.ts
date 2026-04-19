@@ -1597,6 +1597,62 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { success: true };
       }),
 
+    /** Add a new section to a script */
+    addSection: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        afterIndex: z.number().min(-1).optional(), // -1 or omit = append at end
+        title: z.string().optional(),
+        content: z.string().optional(),
+        durationSec: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const script = await db.getLectureScriptById(input.scriptId);
+        if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const sections = script.sections ? JSON.parse(script.sections) : [];
+        const newSection = {
+          title: input.title || `섹션 ${sections.length + 1}`,
+          content: input.content || "",
+          durationSec: input.durationSec || 60,
+          slideNotes: "",
+        };
+        const insertAt = (input.afterIndex !== undefined && input.afterIndex >= 0) ? input.afterIndex + 1 : sections.length;
+        sections.splice(insertAt, 0, newSection);
+        const fullScript = sections.map((s: any) => `## ${s.title}\n\n${s.content}`).join("\n\n");
+        const totalDuration = sections.reduce((sum: number, s: any) => sum + (s.durationSec || 0), 0);
+        await db.updateLectureScript(input.scriptId, {
+          scriptContent: fullScript,
+          sections: JSON.stringify(sections),
+          sectionCount: sections.length,
+          estimatedDurationSec: totalDuration,
+        });
+        return { success: true, sectionCount: sections.length };
+      }),
+
+    /** Delete a section from a script */
+    deleteSection: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        sectionIndex: z.number().min(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const script = await db.getLectureScriptById(input.scriptId);
+        if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const sections = script.sections ? JSON.parse(script.sections) : [];
+        if (input.sectionIndex >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "잘못된 섹션 인덱스" });
+        if (sections.length <= 1) throw new TRPCError({ code: "BAD_REQUEST", message: "최소 1개 섹션이 필요합니다." });
+        sections.splice(input.sectionIndex, 1);
+        const fullScript = sections.map((s: any) => `## ${s.title}\n\n${s.content}`).join("\n\n");
+        const totalDuration = sections.reduce((sum: number, s: any) => sum + (s.durationSec || 0), 0);
+        await db.updateLectureScript(input.scriptId, {
+          scriptContent: fullScript,
+          sections: JSON.stringify(sections),
+          sectionCount: sections.length,
+          estimatedDurationSec: totalDuration,
+        });
+        return { success: true, sectionCount: sections.length };
+      }),
+
     /** Delete a script */
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))

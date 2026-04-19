@@ -977,3 +977,9 @@
 - [ ] 미생성 18개 음성 샘플을 Forge 내장 TTS 또는 대안 API로 생성
 - [x] PM2 전환 불필요 확인 (Docker unless-stopped + healthcheck으로 이미 동일 기능)
 - [x] 푸터 "© 2026 Manus" → "© 2026 AI Speaker" 변경 + ManusDialog 텍스트 수정
+
+## v6.3 - 프로덕션 배포 + Kling 영상 + 스크립트 편집 강화
+
+- [x] 프로덕션 서버(aispeaker.cc)에 v6.2 빌드 및 배포 - Docker 리빌드 완료, healthy 상태
+- [ ] Kling API 크레딧 부족 - 충전 필요 (1102 Account balance not enough)
+- [x] Studio 스크립트 미리보기/수정 기능 강화 (섹션 추가/삭제, 시간 슬라이더, 미리보기 모드, 시간 분배 바, 전체 복사)
