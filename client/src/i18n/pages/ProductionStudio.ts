@@ -171,7 +171,13 @@ registerTranslations("ko", {
   "ps.closeResults": "결과 닫기",
   "ps.batchSettings": "배치 설정",
   "ps.batchInProgress": "배치 처리 중...",
-  "ps.startBatchJobAction": "${count}개 영상 일괄 제작 시작"
+  "ps.startBatchJobAction": "${count}개 영상 일괄 제작 시작",
+  "ps.useMyScript": "내 스크립트로 강의 생성",
+  "ps.savingDirectScript": "스크립트를 저장하고 있습니다...",
+  "ps.directScriptSuccess": "스크립트 저장 완료! ${sectionCount}개 섹션, 약 ${minutes}분",
+  "ps.directScriptDesc": "직접 작성한 스크립트를 그대로 사용하여 강의를 생성합니다. AI 재생성 없이 입력한 텍스트가 그대로 사용됩니다.",
+  "ps.directScriptMinLength": "스크립트 내용을 10자 이상 입력해주세요.",
+  "ps.orDivider": "또는"
 });
 
 registerTranslations("en", {
@@ -345,7 +351,13 @@ registerTranslations("en", {
   "ps.closeResults": "Close Results",
   "ps.batchSettings": "Batch Settings",
   "ps.batchInProgress": "Batch processing in progress...",
-  "ps.startBatchJobAction": "Start Batch Production for ${count} Videos"
+  "ps.startBatchJobAction": "Start Batch Production for ${count} Videos",
+  "ps.useMyScript": "Use My Script",
+  "ps.savingDirectScript": "Saving your script...",
+  "ps.directScriptSuccess": "Script saved! ${sectionCount} sections, approx. ${minutes} mins",
+  "ps.directScriptDesc": "Use your own written script directly for the lecture. The text you enter will be used as-is without AI regeneration.",
+  "ps.directScriptMinLength": "Please enter at least 10 characters for the script content.",
+  "ps.orDivider": "or"
 });
 
 registerTranslations("zh", {
@@ -519,7 +531,13 @@ registerTranslations("zh", {
   "ps.closeResults": "关闭结果",
   "ps.batchSettings": "批量设置",
   "ps.batchInProgress": "批量处理中...",
-  "ps.startBatchJobAction": "开始批量制作${count}个视频"
+  "ps.startBatchJobAction": "开始批量制作${count}个视频",
+  "ps.useMyScript": "使用我的脚本",
+  "ps.savingDirectScript": "正在保存脚本...",
+  "ps.directScriptSuccess": "脚本保存完成！${sectionCount}个部分，约${minutes}分钟",
+  "ps.directScriptDesc": "直接使用您编写的脚本来创建讲座。输入的文本将原样使用，不会经过AI重新生成。",
+  "ps.directScriptMinLength": "请输入至少10个字符的脚本内容。",
+  "ps.orDivider": "或"
 });
 
 registerTranslations("ja", {
@@ -693,7 +711,13 @@ registerTranslations("ja", {
   "ps.closeResults": "結果を閉じる",
   "ps.batchSettings": "バッチ設定",
   "ps.batchInProgress": "バッチ処理中...",
-  "ps.startBatchJobAction": "${count}件の動画の一括制作を開始"
+  "ps.startBatchJobAction": "${count}件の動画の一括制作を開始",
+  "ps.useMyScript": "自分のスクリプトを使用",
+  "ps.savingDirectScript": "スクリプトを保存しています...",
+  "ps.directScriptSuccess": "スクリプト保存完了！${sectionCount}セクション、約${minutes}分",
+  "ps.directScriptDesc": "自分で書いたスクリプトをそのまま使用して講義を作成します。入力したテキストはAI再生成なしでそのまま使用されます。",
+  "ps.directScriptMinLength": "スクリプトの内容を10文字以上入力してください。",
+  "ps.orDivider": "または"
 });
 
 const otherLanguages = ["vi", "th", "es", "fr", "de", "pt", "ru", "ar", "hi", "id", "ms", "tr", "it", "nl", "pl", "sv"];
@@ -869,6 +893,12 @@ otherLanguages.forEach(lang => {
     "ps.closeResults": "Close Results",
     "ps.batchSettings": "Batch Settings",
     "ps.batchInProgress": "Batch processing in progress...",
-    "ps.startBatchJobAction": "Start Batch Production for ${count} Videos"
+    "ps.startBatchJobAction": "Start Batch Production for ${count} Videos",
+    "ps.useMyScript": "Use My Script",
+    "ps.savingDirectScript": "Saving your script...",
+    "ps.directScriptSuccess": "Script saved! ${sectionCount} sections, approx. ${minutes} mins",
+    "ps.directScriptDesc": "Use your own written script directly for the lecture. The text you enter will be used as-is without AI regeneration.",
+    "ps.directScriptMinLength": "Please enter at least 10 characters for the script content.",
+    "ps.orDivider": "or"
   });
 });
