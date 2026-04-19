@@ -56,7 +56,7 @@ registerTranslations("ko", {
   "home.cta.desc": "무료 플랜으로 AI 강사의 놀라운 가능성을 직접 체험하고, 강의의 새로운 미래를 열어보세요.",
   "home.cta.free": "무료로 시작하기",
   "home.cta.compare": "플랜 비교하기",
-  "home.footer": "© 2026 Manus. 모든 권리 보유."
+  "home.footer": "© 2026 AI Speaker. All rights reserved."
 });
 
 registerTranslations("en", {
@@ -115,7 +115,7 @@ registerTranslations("en", {
   "home.cta.desc": "Experience the amazing possibilities of AI instructors with our free plan and open a new future for your lectures.",
   "home.cta.free": "Start for Free",
   "home.cta.compare": "Compare Plans",
-  "home.footer": "© 2026 Manus. All rights reserved."
+  "home.footer": "© 2026 AI Speaker. All rights reserved."
 });
 
 registerTranslations("zh", {
@@ -174,7 +174,7 @@ registerTranslations("zh", {
   "home.cta.desc": "通过我们的免费计划体验AI讲师的惊人可能性，为您的讲座开启新的未来。",
   "home.cta.free": "免费开始",
   "home.cta.compare": "比较计划",
-  "home.footer": "© 2026 Manus。保留所有权利。"
+  "home.footer": "© 2026 AI Speaker. All rights reserved."
 });
 
 registerTranslations("ja", {
@@ -233,7 +233,7 @@ registerTranslations("ja", {
   "home.cta.desc": "無料プランでAI講師の驚くべき可能性を体験し、講義の新しい未来を切り開きましょう。",
   "home.cta.free": "無料で始める",
   "home.cta.compare": "プランを比較",
-  "home.footer": "© 2026 Manus。全著作権所有。"
+  "home.footer": "© 2026 AI Speaker. All rights reserved."
 });
 
 registerTranslations("vi", {
@@ -292,7 +292,7 @@ registerTranslations("vi", {
   "home.cta.desc": "Trải nghiệm những khả năng tuyệt vời của giảng viên AI với gói miễn phí của chúng tôi và mở ra một tương lai mới cho các bài giảng của bạn.",
   "home.cta.free": "Bắt đầu miễn phí",
   "home.cta.compare": "So sánh các gói",
-  "home.footer": "© 2026 Manus. Mọi quyền được bảo lưu."
+  "home.footer": "© 2026 AI Speaker. Mọi quyền được bảo lưu."
 });
 
 registerTranslations("th", {
@@ -351,7 +351,7 @@ registerTranslations("th", {
   "home.cta.desc": "สัมผัสกับความเป็นไปได้ที่น่าทึ่งของผู้สอน AI ด้วยแผนบริการฟรีของเรา และเปิดอนาคตใหม่สำหรับการบรรยายของคุณ",
   "home.cta.free": "เริ่มฟรี",
   "home.cta.compare": "เปรียบเทียบแผน",
-  "home.footer": "© 2026 Manus สงวนลิขสิทธิ์"
+  "home.footer": "© 2026 AI Speaker สงวนลิขสิทธิ์"
 });
 
 registerTranslations("es", {
@@ -410,7 +410,7 @@ registerTranslations("es", {
   "home.cta.desc": "Experimente las asombrosas posibilidades de los instructores de IA con nuestro plan gratuito y abra un nuevo futuro para sus conferencias.",
   "home.cta.free": "Empezar gratis",
   "home.cta.compare": "Comparar planes",
-  "home.footer": "© 2026 Manus. Todos los derechos reservados."
+  "home.footer": "© 2026 AI Speaker. Todos los derechos reservados."
 });
 
 registerTranslations("fr", {
@@ -469,7 +469,7 @@ registerTranslations("fr", {
   "home.cta.desc": "Découvrez les incroyables possibilités des instructeurs IA avec notre plan gratuit et ouvrez un nouvel avenir pour vos cours.",
   "home.cta.free": "Commencer gratuitement",
   "home.cta.compare": "Comparer les plans",
-  "home.footer": "© 2026 Manus. Tous droits réservés."
+  "home.footer": "© 2026 AI Speaker. Tous droits réservés."
 });
 
 registerTranslations("de", {
@@ -528,7 +528,7 @@ registerTranslations("de", {
   "home.cta.desc": "Erleben Sie die erstaunlichen Möglichkeiten von KI-Lehrern mit unserem kostenlosen Plan und eröffnen Sie eine neue Zukunft für Ihre Vorlesungen.",
   "home.cta.free": "Kostenlos starten",
   "home.cta.compare": "Pläne vergleichen",
-  "home.footer": "© 2026 Manus. Alle Rechte vorbehalten."
+  "home.footer": "© 2026 AI Speaker. Alle Rechte vorbehalten."
 });
 
 registerTranslations("pt", {
@@ -587,7 +587,7 @@ registerTranslations("pt", {
   "home.cta.desc": "Experimente as incríveis possibilidades dos instrutores de IA com nosso plano gratuito e abra um novo futuro para suas palestras.",
   "home.cta.free": "Comece de graça",
   "home.cta.compare": "Comparar planos",
-  "home.footer": "© 2026 Manus. Todos os direitos reservados."
+  "home.footer": "© 2026 AI Speaker. Todos os direitos reservados."
 });
 
 registerTranslations("ru", {
@@ -646,7 +646,7 @@ registerTranslations("ru", {
   "home.cta.desc": "Испытайте удивительные возможности инструкторов по ИИ с нашим бесплатным планом и откройте новое будущее для своих лекций.",
   "home.cta.free": "Начать бесплатно",
   "home.cta.compare": "Сравнить планы",
-  "home.footer": "© 2026 Manus. Все права защищены."
+  "home.footer": "© 2026 AI Speaker. Все права защищены."
 });
 
 registerTranslations("ar", {
@@ -705,7 +705,7 @@ registerTranslations("ar", {
   "home.cta.desc": "جرب الإمكانيات المذهلة لمعلمي الذكاء الاصطناعي من خلال خطتنا المجانية وافتح مستقبلاً جديدًا لمحاضراتك.",
   "home.cta.free": "ابدأ مجانًا",
   "home.cta.compare": "قارن الخطط",
-  "home.footer": "© 2026 مانوس. كل الحقوق محفوظة."
+  "home.footer": "© 2026 AI Speaker. All rights reserved."
 });
 
 registerTranslations("hi", {
@@ -764,7 +764,7 @@ registerTranslations("hi", {
   "home.cta.desc": "हमारी मुफ्त योजना के साथ एआई प्रशिक्षकों की अद्भुत संभावनाओं का अनुभव करें और अपने व्याख्यानों के लिए एक नया भविष्य खोलें।",
   "home.cta.free": "मुफ्त में शुरू करें",
   "home.cta.compare": "योजनाओं की तुलना करें",
-  "home.footer": "© 2026 मानुस। सर्वाधिकार सुरक्षित।"
+  "home.footer": "© 2026 AI Speaker. All rights reserved."
 });
 
 registerTranslations("id", {
@@ -823,7 +823,7 @@ registerTranslations("id", {
   "home.cta.desc": "Rasakan kemungkinan luar biasa dari instruktur AI dengan paket gratis kami dan buka masa depan baru untuk kuliah Anda.",
   "home.cta.free": "Mulai Gratis",
   "home.cta.compare": "Bandingkan Paket",
-  "home.footer": "© 2026 Manus. Hak cipta dilindungi undang-undang."
+  "home.footer": "© 2026 AI Speaker. Hak cipta dilindungi undang-undang."
 });
 
 registerTranslations("ms", {
@@ -882,7 +882,7 @@ registerTranslations("ms", {
   "home.cta.desc": "Alami kemungkinan luar biasa pengajar AI dengan pelan percuma kami dan buka masa depan baharu untuk kuliah anda.",
   "home.cta.free": "Mulakan Secara Percuma",
   "home.cta.compare": "Bandingkan Pelan",
-  "home.footer": "© 2026 Manus. Hak cipta terpelihara."
+  "home.footer": "© 2026 AI Speaker. Hak cipta terpelihara."
 });
 
 registerTranslations("tr", {
@@ -941,7 +941,7 @@ registerTranslations("tr", {
   "home.cta.desc": "Ücretsiz planımızla yapay zeka eğitmenlerinin inanılmaz olanaklarını deneyimleyin ve dersleriniz için yeni bir gelecek açın.",
   "home.cta.free": "Ücretsiz Başlayın",
   "home.cta.compare": "Planları Karşılaştır",
-  "home.footer": "© 2026 Manus. Tüm hakları saklıdır."
+  "home.footer": "© 2026 AI Speaker. Tüm hakları saklıdır."
 });
 
 registerTranslations("it", {
@@ -1000,7 +1000,7 @@ registerTranslations("it", {
   "home.cta.desc": "Sperimenta le straordinarie possibilità degli istruttori di IA con il nostro piano gratuito e apri un nuovo futuro per le tue lezioni.",
   "home.cta.free": "Inizia gratuitamente",
   "home.cta.compare": "Confronta i piani",
-  "home.footer": "© 2026 Manus. Tutti i diritti riservati."
+  "home.footer": "© 2026 AI Speaker. Tutti i diritti riservati."
 });
 
 registerTranslations("nl", {
@@ -1059,7 +1059,7 @@ registerTranslations("nl", {
   "home.cta.desc": "Ervaar de geweldige mogelijkheden van AI-instructeurs met ons gratis plan en open een nieuwe toekomst voor je colleges.",
   "home.cta.free": "Begin gratis",
   "home.cta.compare": "Vergelijk plannen",
-  "home.footer": "© 2026 Manus. Alle rechten voorbehouden."
+  "home.footer": "© 2026 AI Speaker. Alle rechten voorbehouden."
 });
 
 registerTranslations("pl", {
@@ -1118,7 +1118,7 @@ registerTranslations("pl", {
   "home.cta.desc": "Doświadcz niesamowitych możliwości instruktorów AI dzięki naszemu bezpłatnemu planowi i otwórz nową przyszłość dla swoich wykładów.",
   "home.cta.free": "Zacznij za darmo",
   "home.cta.compare": "Porównaj plany",
-  "home.footer": "© 2026 Manus. Wszelkie prawa zastrzeżone."
+  "home.footer": "© 2026 AI Speaker. Wszelkie prawa zastrzeżone."
 });
 
 registerTranslations("sv", {
@@ -1177,5 +1177,5 @@ registerTranslations("sv", {
   "home.cta.desc": "Upplev de fantastiska möjligheterna med AI-instruktörer med vår gratisplan och öppna en ny framtid för dina föreläsningar.",
   "home.cta.free": "Börja gratis",
   "home.cta.compare": "Jämför planer",
-  "home.footer": "© 2026 Manus. Alla rättigheter förbehållna."
+  "home.footer": "© 2026 AI Speaker. Alla rättigheter förbehållna."
 });

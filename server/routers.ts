@@ -1379,6 +1379,87 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         }
       }),
 
+    /** Create script directly from user-written text (no AI generation) */
+    createDirect: instructorProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        content: z.string().min(10),
+        category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "general"]).optional(),
+        difficulty: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+        language: z.string().optional(),
+        targetDurationMin: z.number().min(1).max(120).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Split content into sections by numbered paragraphs or double newlines
+        const rawText = input.content.trim();
+        const durationMin = input.targetDurationMin || 10;
+        
+        // Try to split by numbered patterns: "1." "2." etc or "第一" etc
+        const numberedPattern = /(?:^|\n)\s*(?:\d+[.、)\s]|第[一二三四五六七八九十]+)/;
+        let rawSections: string[];
+        
+        if (numberedPattern.test(rawText)) {
+          // Split by numbered paragraphs
+          rawSections = rawText.split(/\n\s*(?=\d+[.、)\s]|第[一二三四五六七八九十]+)/).filter(s => s.trim().length > 0);
+        } else {
+          // Split by double newlines
+          rawSections = rawText.split(/\n\s*\n/).filter(s => s.trim().length > 0);
+        }
+        
+        // If only 1 section, try splitting by single newlines into chunks
+        if (rawSections.length <= 1) {
+          const lines = rawText.split(/\n/).filter(l => l.trim().length > 0);
+          if (lines.length > 3) {
+            const chunkSize = Math.ceil(lines.length / Math.max(3, Math.ceil(durationMin / 3)));
+            rawSections = [];
+            for (let i = 0; i < lines.length; i += chunkSize) {
+              rawSections.push(lines.slice(i, i + chunkSize).join('\n'));
+            }
+          }
+        }
+        
+        // Build sections array
+        const totalChars = rawSections.reduce((sum, s) => sum + s.length, 0);
+        const sections = rawSections.map((text, idx) => {
+          // Extract title from first line or numbered prefix
+          const firstLine = text.split('\n')[0].trim();
+          const titleMatch = firstLine.match(/^\d+[.、)\s]\s*(.+)/) || firstLine.match(/^第[一二三四五六七八九十]+[.、\s]\s*(.+)/);
+          const title = titleMatch ? titleMatch[1].substring(0, 100) : `섹션 ${idx + 1}`;
+          const content = text.trim();
+          const charRatio = content.length / totalChars;
+          const durationSec = Math.round(durationMin * 60 * charRatio);
+          
+          return {
+            title,
+            content,
+            durationSec,
+            slideNotes: content.substring(0, 200),
+          };
+        });
+        
+        const fullScript = sections.map(s => `## ${s.title}\n\n${s.content}`).join('\n\n');
+        const totalDuration = sections.reduce((sum, s) => sum + s.durationSec, 0);
+        
+        const scriptId = await db.createLectureScript({
+          userId: ctx.user.id,
+          title: input.title,
+          prompt: `[직접 작성] ${input.title}`,
+          category: input.category || "web3",
+          difficulty: input.difficulty || "beginner",
+          language: input.language || "ko",
+          targetDurationMin: input.targetDurationMin || 10,
+          scriptContent: fullScript,
+          sections: JSON.stringify(sections),
+          estimatedDurationSec: totalDuration,
+          sectionCount: sections.length,
+          status: "ready",
+        });
+        
+        if (!scriptId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        
+        return { id: scriptId, status: "ready", sectionCount: sections.length, estimatedDurationSec: totalDuration };
+      }),
+
     /** List user's scripts */
     list: instructorProcedure.query(async ({ ctx }) => db.getLectureScripts(ctx.user.id)),
 

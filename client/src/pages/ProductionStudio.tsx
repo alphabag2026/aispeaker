@@ -186,6 +186,15 @@ export default function ProductionStudio() {
     onError: (err) => toast.error(err.message),
   });
 
+  const createDirectScript = trpc.script.createDirect.useMutation({
+    onSuccess: (data) => {
+      toast.success(t("ps.directScriptSuccess", { sectionCount: data.sectionCount, minutes: Math.round((data.estimatedDurationSec || 0) / 60) }));
+      scriptsQuery.refetch();
+      setActiveTab("scripts");
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   const startPipeline = trpc.pipeline.start.useMutation({
     onSuccess: (data) => {
       toast.success(t("ps.pipelineSuccess"));
@@ -276,6 +285,19 @@ export default function ProductionStudio() {
       } else {
         generateScript.mutate({ title, prompt, category, difficulty, language, durationMin });
       }
+    });
+  };
+
+  const handleCreateDirectScript = () => {
+    if (!title.trim()) { toast.error(t("ps.lectureTitle")); return; }
+    if (!prompt.trim() || prompt.trim().length < 10) { toast.error(t("ps.directScriptMinLength")); return; }
+    createDirectScript.mutate({
+      title,
+      content: prompt,
+      category: category as any,
+      difficulty: difficulty as any,
+      language,
+      targetDurationMin: durationMin,
     });
   };
 
@@ -486,9 +508,18 @@ export default function ProductionStudio() {
                       </CardContent>
                     </Card>
                   )}
-                  <Button onClick={handleGenerateScript} disabled={generateScript.isPending || generateFromTemplate.isPending} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+                  <Button onClick={handleGenerateScript} disabled={generateScript.isPending || generateFromTemplate.isPending || createDirectScript.isPending} className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
                     {(generateScript.isPending || generateFromTemplate.isPending) ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("ps.generatingScript")}</> : <><Sparkles className="w-4 h-4 mr-2" />{templateId ? t("ps.generateFromTemplate") : t("ps.generateAIScript")}</>}
                   </Button>
+                  <div className="flex items-center gap-3 my-2">
+                    <Separator className="flex-1" />
+                    <span className="text-xs text-muted-foreground font-medium">{t("ps.orDivider")}</span>
+                    <Separator className="flex-1" />
+                  </div>
+                  <Button onClick={handleCreateDirectScript} disabled={createDirectScript.isPending || generateScript.isPending} variant="outline" className="w-full border-emerald-500/30 hover:bg-emerald-500/10 hover:border-emerald-500/50">
+                    {createDirectScript.isPending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("ps.savingDirectScript")}</> : <><FileText className="w-4 h-4 mr-2 text-emerald-400" />{t("ps.useMyScript")}</>}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1 text-center">{t("ps.directScriptDesc")}</p>
                 </CardContent>
               </Card>
             </div>
