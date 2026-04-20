@@ -983,3 +983,6 @@
 - [x] 프로덕션 서버(aispeaker.cc)에 v6.2 빌드 및 배포 - Docker 리빌드 완료, healthy 상태
 - [ ] Kling API 크레딧 부족 - 충전 필요 (1102 Account balance not enough)
 - [x] Studio 스크립트 미리보기/수정 기능 강화 (섹션 추가/삭제, 시간 슬라이더, 미리보기 모드, 시간 분배 바, 전체 복사)
+- [x] Kling 웹 UI로 한국어 아바타 강의 영상 생성 완료 (57.9초, 960x960, H.264 30fps)
+- [x] Kling 영상 CDN 업로드 완료
+- [x] 미생성 18개 음성 샘플 Gemini TTS로 전량 생성 완료 (18/18 성공, 총 110개 음성 모두 오디오 보유)
