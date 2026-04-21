@@ -4265,7 +4265,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .mutation(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.projectId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
-        const { convertFileToSlideImages } = await import("./slideConverter");
+        const { convertFileToSlideImages, extractFileText } = await import("./slideConverter");
         const buffer = Buffer.from(input.fileData, "base64");
         const slideImages = await convertFileToSlideImages(buffer, input.fileName, input.mimeType, input.projectId);
         const existing = await db.listProjectSlides(input.projectId);
@@ -4281,7 +4281,14 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           });
           ids.push(id);
         }
-        return { slideIds: ids, count: ids.length, images: slideImages };
+        // Extract text from PPT/PDF for script drafts
+        let extractedTexts: { pageIndex: number; text: string }[] = [];
+        try {
+          extractedTexts = await extractFileText(buffer, input.fileName, input.mimeType);
+        } catch (err) {
+          console.error("Text extraction failed (non-fatal):", err);
+        }
+        return { slideIds: ids, count: ids.length, images: slideImages, extractedTexts };
       }),
 
     // --- Upload BGM ---
@@ -4372,22 +4379,103 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         }).filter(s => s.script);
         if (segments.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No segments with scripts found" });
         // Update project status
-        await db.updateLectureProject(input.projectId, { status: "generating" as any });
+        await db.updateLectureProject(input.projectId, {
+          status: "generating" as any,
+          generationProgress: 0,
+          generationStep: "영상 생성 준비 중...",
+        });
         try {
+          const totalSegments = segments.length;
           const { generateLectureVideo } = await import("./lectureVideoGenerator");
+
+          // Progress callback to update DB during generation
+          const onProgress = async (progress: { phase: string; current: number; total: number; message: string }) => {
+            let pct = 0;
+            if (progress.phase === "avatar") {
+              pct = Math.round((progress.current / progress.total) * 70);
+            } else if (progress.phase === "compose") {
+              pct = 75;
+            } else if (progress.phase === "finalize") {
+              pct = 90;
+            } else if (progress.phase === "complete") {
+              pct = 100;
+            }
+            await db.updateLectureProject(input.projectId, {
+              generationProgress: Math.min(95, pct),
+              generationStep: progress.message,
+            });
+          };
+
           const result = await generateLectureVideo({
             projectId: input.projectId, segments,
             avatarPosition: input.avatarPosition, avatarSize: input.avatarSize,
             avatarShape: input.avatarShape, avatarOpacity: input.avatarOpacity,
             bgmUrl: input.bgmUrl, bgmVolume: input.bgmVolume,
             noiseReduction: input.noiseReduction, resolution: input.resolution,
+          }, onProgress);
+          await db.updateLectureProject(input.projectId, {
+            status: "completed" as any,
+            finalVideoUrl: result.videoUrl,
+            generationProgress: 100,
+            generationStep: "완료",
           });
-          await db.updateLectureProject(input.projectId, { status: "completed" as any, finalVideoUrl: result.videoUrl });
           return { videoUrl: result.videoUrl, totalDuration: result.totalDuration };
         } catch (error: any) {
-          await db.updateLectureProject(input.projectId, { status: "error" as any });
+          await db.updateLectureProject(input.projectId, {
+            status: "failed" as any,
+            generationProgress: 0,
+            generationStep: undefined,
+            errorMessage: error.message,
+          });
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
         }
+      }),
+
+    // --- Apply extracted texts as script drafts ---
+    applyExtractedTextsAsScripts: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideTextPairs: z.array(z.object({
+          slideId: z.number(),
+          text: z.string(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        let created = 0;
+        for (const pair of input.slideTextPairs) {
+          if (!pair.text || pair.text.trim().length === 0) continue;
+          // Check if script already exists for this slide
+          const existing = await db.listSlideScripts(input.projectId);
+          const hasScript = existing.some(s => s.slideId === pair.slideId);
+          if (!hasScript) {
+            await db.setSlideScript({
+              projectId: input.projectId,
+              slideId: pair.slideId,
+              scriptText: pair.text.trim(),
+              estimatedDurationSec: Math.max(10, Math.ceil(pair.text.trim().length / 5)),
+              sortOrder: 0,
+            });
+            created++;
+          }
+        }
+        return { created, total: input.slideTextPairs.length };
+      }),
+
+    // --- Get video generation progress ---
+    getVideoProgress: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return {
+          status: project.status,
+          progress: project.generationProgress ?? 0,
+          step: project.generationStep ?? "",
+          videoUrl: project.finalVideoUrl ?? null,
+          errorMessage: project.errorMessage ?? null,
+        };
       }),
 
     // --- Get full project data (all steps) ---

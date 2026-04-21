@@ -1143,6 +1143,10 @@ export const lectureProjects = mysqlTable("lectureProjects", {
   thumbnailUrl: text("thumbnailUrl"),
   /** Total estimated duration in seconds */
   totalDurationSec: int("totalDurationSec").default(0),
+  /** Generation progress percentage (0-100) */
+  generationProgress: int("generationProgress").default(0),
+  /** Current generation step description */
+  generationStep: varchar("generationStep", { length: 255 }),
   /** Error message if generation failed */
   errorMessage: text("errorMessage"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

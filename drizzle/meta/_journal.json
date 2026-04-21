@@ -148,6 +148,13 @@
       "when": 1776786393513,
       "tag": "0020_quiet_cable",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1776796227315,
+      "tag": "0021_yummy_kulan_gath",
+      "breakpoints": true
     }
   ]
 }

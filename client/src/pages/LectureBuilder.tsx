@@ -772,6 +772,8 @@ function Step3Slides({ projectId, slides, onRefresh }: {
   const [uploading, setUploading] = useState(false);
   const [converting, setConverting] = useState(false);
   const [conversionStatus, setConversionStatus] = useState("");
+  const [extractedTexts, setExtractedTexts] = useState<{ pageIndex: number; text: string }[]>([]);
+  const [applyingScripts, setApplyingScripts] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const deleteSlide = trpc.lectureBuilder.deleteSlide.useMutation({
@@ -782,6 +784,7 @@ function Step3Slides({ projectId, slides, onRefresh }: {
   });
   const uploadImageSlide = trpc.lectureBuilder.uploadImageSlide.useMutation();
   const convertFileMut = trpc.lectureBuilder.convertFile.useMutation();
+  const applyTextsMut = trpc.lectureBuilder.applyExtractedTextsAsScripts.useMutation();
 
   const readFileAsBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -826,7 +829,11 @@ function Step3Slides({ projectId, slides, onRefresh }: {
               fileName: file.name,
               mimeType: file.type || "application/octet-stream",
             });
-            toast.success(`${file.name}: ${result.count}개 슬라이드로 변환 완료`);
+            // Store extracted texts for script draft creation
+            if (result.extractedTexts && result.extractedTexts.length > 0) {
+              setExtractedTexts(result.extractedTexts);
+            }
+            toast.success(`${file.name}: ${result.count}개 슬라이드로 변환 완료${result.extractedTexts?.length ? " (텍스트 추출 완료)" : ""}`);
           } catch (err: any) {
             toast.error(`${file.name} 변환 실패: ${err.message}`);
           } finally {
@@ -914,6 +921,82 @@ function Step3Slides({ projectId, slides, onRefresh }: {
           <p className="text-muted-foreground">PPT (.pptx), PDF, 이미지 (.png, .jpg) 지원</p>
           <p className="text-xs text-muted-foreground mt-2">PPT/PDF 파일은 서버에서 자동으로 슬라이드별 이미지로 변환됩니다</p>
         </div>
+      )}
+
+      {/* Extracted Text → Script Draft Banner */}
+      {extractedTexts.length > 0 && slides.length > 0 && (
+        <Card className="border-green-500/30 bg-green-500/5">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm text-green-400 flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  PPT/PDF 텍스트 추출 완료 ({extractedTexts.filter(t => t.text && !t.text.startsWith("[Page")).length}개 슬라이드)
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  추출된 텍스트를 스크립트 초안으로 자동 적용할 수 있습니다. Step 2에서 편집 가능합니다.
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs gap-1 border-green-500/30 hover:bg-green-500/10"
+                  disabled={applyingScripts}
+                  onClick={async () => {
+                    setApplyingScripts(true);
+                    try {
+                      const pairs = extractedTexts
+                        .filter(t => t.text && !t.text.startsWith("[Page"))
+                        .map((t, idx) => ({
+                          slideId: slides[t.pageIndex]?.id || slides[idx]?.id,
+                          text: t.text,
+                        }))
+                        .filter(p => p.slideId);
+                      const result = await applyTextsMut.mutateAsync({
+                        projectId,
+                        slideTextPairs: pairs,
+                      });
+                      toast.success(`${result.created}개 스크립트 초안이 생성되었습니다`);
+                      setExtractedTexts([]);
+                      onRefresh();
+                    } catch (err: any) {
+                      toast.error(err.message || "스크립트 적용 실패");
+                    } finally {
+                      setApplyingScripts(false);
+                    }
+                  }}
+                >
+                  {applyingScripts ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
+                  스크립트 초안 적용
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground"
+                  onClick={() => setExtractedTexts([])}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="max-h-40">
+              <div className="space-y-1">
+                {extractedTexts.slice(0, 10).map((t, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs">
+                    <Badge variant="outline" className="shrink-0 text-[10px]">{t.pageIndex + 1}</Badge>
+                    <span className="text-muted-foreground line-clamp-2">{t.text || "(텍스트 없음)"}</span>
+                  </div>
+                ))}
+                {extractedTexts.length > 10 && (
+                  <p className="text-[10px] text-muted-foreground">... 외 {extractedTexts.length - 10}개 슬라이드</p>
+                )}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
       )}
 
       {/* Slide Grid */}
@@ -1023,6 +1106,15 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
     };
   };
 
+  const getTouchRelativePos = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const touch = e.touches[0] || e.changedTouches[0];
+    return {
+      x: ((touch.clientX - rect.left) / rect.width) * 100,
+      y: ((touch.clientY - rect.top) / rect.height) * 100,
+    };
+  };
+
   // Draw existing annotations + current path on canvas
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -1117,6 +1209,80 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
   }, [currentAnnotations, currentPath, penColor, penThickness]);
 
   useEffect(() => { renderCanvas(); }, [renderCanvas]);
+
+  // --- Touch handlers for mobile/tablet ---
+  const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!annotationTool || !currentSlide) return;
+    e.preventDefault();
+    const pos = getTouchRelativePos(e);
+    if (annotationTool === "freehand" || annotationTool === "arrow") {
+      setIsDrawing(true);
+      setCurrentPath([pos]);
+    } else {
+      saveDrawingMut.mutate({
+        projectId,
+        slideId: currentSlide.id,
+        type: annotationTool as any,
+        color: penColor,
+        strokeWidth: penThickness,
+        pathData: { x: pos.x, y: pos.y, width: 8, height: 8 },
+      }, {
+        onSuccess: (data) => {
+          setUndoStack(prev => [...prev, data.id]);
+          setRedoStack([]);
+          onRefresh();
+        },
+      });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    e.preventDefault();
+    const pos = getTouchRelativePos(e);
+    setCurrentPath(prev => [...prev, pos]);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !currentSlide) return;
+    e.preventDefault();
+    setIsDrawing(false);
+
+    if (annotationTool === "freehand" && currentPath.length > 2) {
+      saveDrawingMut.mutate({
+        projectId,
+        slideId: currentSlide.id,
+        type: "freehand",
+        color: penColor,
+        strokeWidth: penThickness,
+        pathData: { points: currentPath },
+      }, {
+        onSuccess: (data) => {
+          setUndoStack(prev => [...prev, data.id]);
+          setRedoStack([]);
+          onRefresh();
+        },
+      });
+    } else if (annotationTool === "arrow" && currentPath.length >= 2) {
+      const start = currentPath[0];
+      const end = currentPath[currentPath.length - 1];
+      saveDrawingMut.mutate({
+        projectId,
+        slideId: currentSlide.id,
+        type: "arrow",
+        color: penColor,
+        strokeWidth: penThickness,
+        pathData: { x: start.x, y: start.y, endX: end.x, endY: end.y },
+      }, {
+        onSuccess: (data) => {
+          setUndoStack(prev => [...prev, data.id]);
+          setRedoStack([]);
+          onRefresh();
+        },
+      });
+    }
+    setCurrentPath([]);
+  };
 
   // Mouse handlers for freehand drawing
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -1272,10 +1438,15 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
                 <canvas
                   ref={canvasRef}
                   className={`absolute inset-0 w-full h-full ${annotationTool ? "cursor-crosshair" : "cursor-default"}`}
+                  style={{ touchAction: annotationTool ? "none" : "auto" }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchCancel={handleTouchEnd}
                 />
               </div>
 
@@ -1441,13 +1612,41 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   const [bgmUploading, setBgmUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState(project.finalVideoUrl || "");
+  const [genProgress, setGenProgress] = useState(0);
+  const [genStep, setGenStep] = useState("");
   const bgmInputRef = useRef<HTMLInputElement>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const updateProject = trpc.lectureBuilder.updateProject.useMutation({
     onSuccess: () => { toast.success("설정이 저장되었습니다"); onRefresh(); },
   });
   const uploadBgmMut = trpc.lectureBuilder.uploadBgm.useMutation();
   const generateVideoMut = trpc.lectureBuilder.generateVideo.useMutation();
+  const progressQuery = trpc.lectureBuilder.getVideoProgress.useQuery(
+    { projectId },
+    { enabled: generating, refetchInterval: generating ? 3000 : false }
+  );
+
+  // Poll progress while generating
+  useEffect(() => {
+    if (!generating || !progressQuery.data) return;
+    const d = progressQuery.data;
+    setGenProgress(d.progress);
+    setGenStep(d.step);
+    if (d.status === "completed" && d.videoUrl) {
+      setGenerating(false);
+      setGeneratedVideoUrl(d.videoUrl);
+      setGenProgress(100);
+      setGenStep("완료");
+      toast.success("영상이 성공적으로 생성되었습니다!");
+      onRefresh();
+    } else if (d.status === "failed") {
+      setGenerating(false);
+      setGenProgress(0);
+      setGenStep("");
+      toast.error(d.errorMessage || "영상 생성 실패");
+    }
+  }, [generating, progressQuery.data]);
 
   const assignedSlides = slides.filter((s: any) => scripts.some((sc: any) => sc.slideId === s.id));
   const totalDuration = scripts.reduce((acc: number, s: any) => acc + (s.estimatedDurationSec || 30), 0);
@@ -1522,13 +1721,15 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
     }
   };
 
-  // Generate video
+  // Generate video (fire-and-forget, progress via polling)
   const handleGenerateVideo = async () => {
     if (selectedSlideIds.size === 0) {
       toast.error("영상에 포함할 슬라이드를 선택해주세요");
       return;
     }
     setGenerating(true);
+    setGenProgress(0);
+    setGenStep("영상 생성 준비 중...");
     try {
       const result = await generateVideoMut.mutateAsync({
         projectId,
@@ -1543,6 +1744,8 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
         selectedSlideIds: Array.from(selectedSlideIds),
       });
       setGeneratedVideoUrl(result.videoUrl);
+      setGenProgress(100);
+      setGenStep("완료");
       toast.success("영상이 성공적으로 생성되었습니다!");
       onRefresh();
     } catch (err: any) {
@@ -1769,7 +1972,27 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             )}
           </Button>
           {generating && (
-            <p className="text-xs text-muted-foreground text-center">영상 생성에는 시간이 걸릴 수 있습니다. 이 페이지를 떠나지 마세요.</p>
+            <Card>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">영상 생성 진행률</span>
+                  <span className="font-mono font-bold text-primary">{genProgress}%</span>
+                </div>
+                <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${genProgress}%` }}
+                  />
+                </div>
+                {genStep && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    {genStep}
+                  </p>
+                )}
+                <p className="text-[10px] text-muted-foreground/60 text-center">영상 생성에는 시간이 걸릴 수 있습니다. 이 페이지를 떠나지 마세요.</p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
