@@ -770,31 +770,35 @@ function Step3Slides({ projectId, slides, onRefresh }: {
   onRefresh: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [conversionStatus, setConversionStatus] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const addSlide = trpc.lectureBuilder.addSlide.useMutation({
-    onSuccess: () => onRefresh(),
-  });
   const deleteSlide = trpc.lectureBuilder.deleteSlide.useMutation({
     onSuccess: () => { toast.success("슬라이드가 삭제되었습니다"); onRefresh(); },
   });
   const reorderSlides = trpc.lectureBuilder.reorderSlides.useMutation({
     onSuccess: () => onRefresh(),
   });
+  const uploadImageSlide = trpc.lectureBuilder.uploadImageSlide.useMutation();
+  const convertFileMut = trpc.lectureBuilder.convertFile.useMutation();
 
   const readFileAsBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         const result = reader.result as string;
-        resolve(result.split(",")[1]); // Remove data:...;base64, prefix
+        resolve(result.split(",")[1]);
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
   };
 
-  const uploadImageSlide = trpc.lectureBuilder.uploadImageSlide.useMutation();
+  const isPptOrPdf = (file: File) => {
+    const ext = file.name.toLowerCase();
+    return ext.endsWith(".pptx") || ext.endsWith(".ppt") || ext.endsWith(".pdf");
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -804,19 +808,42 @@ function Step3Slides({ projectId, slides, onRefresh }: {
     try {
       let currentOrder = slides.length;
       for (const file of Array.from(files)) {
-        if (file.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name}: 파일 크기가 10MB를 초과합니다`);
+        if (file.size > 50 * 1024 * 1024) {
+          toast.error(`${file.name}: 파일 크기가 50MB를 초과합니다`);
           continue;
         }
+
         const base64 = await readFileAsBase64(file);
-        const result = await uploadImageSlide.mutateAsync({
-          projectId,
-          fileData: base64,
-          fileName: file.name,
-          mimeType: file.type || "image/png",
-          slideOrder: currentOrder++,
-        });
-        toast.success(`${file.name} 업로드 완료`);
+
+        if (isPptOrPdf(file)) {
+          // PPT/PDF → 서버에서 이미지로 변환
+          setConverting(true);
+          setConversionStatus(`${file.name} 변환 중...`);
+          try {
+            const result = await convertFileMut.mutateAsync({
+              projectId,
+              fileData: base64,
+              fileName: file.name,
+              mimeType: file.type || "application/octet-stream",
+            });
+            toast.success(`${file.name}: ${result.count}개 슬라이드로 변환 완료`);
+          } catch (err: any) {
+            toast.error(`${file.name} 변환 실패: ${err.message}`);
+          } finally {
+            setConverting(false);
+            setConversionStatus("");
+          }
+        } else {
+          // 이미지 파일 직접 업로드
+          await uploadImageSlide.mutateAsync({
+            projectId,
+            fileData: base64,
+            fileName: file.name,
+            mimeType: file.type || "image/png",
+            slideOrder: currentOrder++,
+          });
+          toast.success(`${file.name} 업로드 완료`);
+        }
       }
       onRefresh();
     } catch (err: any) {
@@ -832,28 +859,41 @@ function Step3Slides({ projectId, slides, onRefresh }: {
     const newOrder = [...slides];
     const [moved] = newOrder.splice(fromIdx, 1);
     newOrder.splice(toIdx, 0, moved);
-    reorderSlides.mutate({ projectId, slideIds: newOrder.map(s => s.id) });
+    reorderSlides.mutate({ projectId, slideIds: newOrder.map((s: any) => s.id) });
   };
+
+  const isProcessing = uploading || converting;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">슬라이드 업로드</h2>
-          <p className="text-muted-foreground">PPT, PDF, 또는 이미지 파일을 업로드하세요. 자동으로 개별 슬라이드로 분리됩니다.</p>
+          <p className="text-muted-foreground">PPT, PDF, 또는 이미지 파일을 업로드하세요. PPT/PDF는 자동으로 개별 슬라이드 이미지로 변환됩니다.</p>
         </div>
         <div className="flex gap-2">
-          <input ref={fileInputRef} type="file" multiple accept=".pptx,.pdf,.png,.jpg,.jpeg,.webp" className="hidden"
+          <input ref={fileInputRef} type="file" multiple accept=".pptx,.ppt,.pdf,.png,.jpg,.jpeg,.webp" className="hidden"
             onChange={handleFileUpload} />
-          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
-            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            파일 업로드
+          <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="gap-2">
+            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            {converting ? "변환 중..." : "파일 업로드"}
           </Button>
         </div>
       </div>
 
+      {/* Conversion Status */}
+      {converting && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
+          <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
+          <div>
+            <p className="text-sm font-medium">{conversionStatus}</p>
+            <p className="text-xs text-muted-foreground">PPT/PDF를 슬라이드 이미지로 변환하고 있습니다. 파일 크기에 따라 시간이 걸릴 수 있습니다.</p>
+          </div>
+        </div>
+      )}
+
       {/* Drop Zone */}
-      {slides.length === 0 && (
+      {slides.length === 0 && !converting && (
         <div className="border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer hover:border-primary/50 transition-colors"
           onClick={() => fileInputRef.current?.click()}
           onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add("border-primary"); }}
@@ -872,13 +912,14 @@ function Step3Slides({ projectId, slides, onRefresh }: {
           <Image className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">파일을 드래그하거나 클릭하세요</h3>
           <p className="text-muted-foreground">PPT (.pptx), PDF, 이미지 (.png, .jpg) 지원</p>
+          <p className="text-xs text-muted-foreground mt-2">PPT/PDF 파일은 서버에서 자동으로 슬라이드별 이미지로 변환됩니다</p>
         </div>
       )}
 
       {/* Slide Grid */}
       {slides.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {slides.map((slide, idx) => (
+          {slides.map((slide: any, idx: number) => (
             <div key={slide.id} className="group relative">
               <div className="aspect-video rounded-lg overflow-hidden border bg-muted">
                 <img src={slide.imageUrl} alt={`슬라이드 ${idx + 1}`} className="w-full h-full object-contain" />
@@ -886,14 +927,21 @@ function Step3Slides({ projectId, slides, onRefresh }: {
               <div className="absolute top-1 left-1">
                 <Badge className="text-xs bg-black/60 text-white">{idx + 1}</Badge>
               </div>
+              {slide.originalFileName && (
+                <div className="absolute bottom-1 left-1">
+                  <Badge variant="outline" className="text-[9px] bg-black/40 text-white border-white/20 max-w-[100px] truncate">
+                    {slide.originalFileName}
+                  </Badge>
+                </div>
+              )}
               <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 {idx > 0 && (
                   <button className="w-6 h-6 rounded bg-black/60 text-white flex items-center justify-center text-xs"
-                    onClick={() => moveSlide(idx, idx - 1)}>←</button>
+                    onClick={() => moveSlide(idx, idx - 1)}>&#8592;</button>
                 )}
                 {idx < slides.length - 1 && (
                   <button className="w-6 h-6 rounded bg-black/60 text-white flex items-center justify-center text-xs"
-                    onClick={() => moveSlide(idx, idx + 1)}>→</button>
+                    onClick={() => moveSlide(idx, idx + 1)}>&#8594;</button>
                 )}
                 <button className="w-6 h-6 rounded bg-red-500/80 text-white flex items-center justify-center"
                   onClick={() => deleteSlide.mutate({ id: slide.id })}>
@@ -927,8 +975,12 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
   const [penColor, setPenColor] = useState("#FF0000");
   const [penThickness, setPenThickness] = useState(3);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawPoints, setDrawPoints] = useState<{ x: number; y: number }[]>([]);
+  const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+  // Undo/Redo stacks (store annotation IDs)
+  const [undoStack, setUndoStack] = useState<number[]>([]);
+  const [redoStack, setRedoStack] = useState<number[]>([]);
 
   // Script assignments per slide
   const [slideScriptMap, setSlideScriptMap] = useState<Record<number, { text: string; avatarId?: number }>>({});
@@ -936,7 +988,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
   // Initialize from existing data
   useEffect(() => {
     const map: Record<number, { text: string; avatarId?: number }> = {};
-    scripts.forEach(s => {
+    scripts.forEach((s: any) => {
       if (s.slideId && s.slideId > 0) {
         map[s.slideId] = { text: s.scriptText, avatarId: s.avatarId || undefined };
       }
@@ -944,109 +996,248 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
     setSlideScriptMap(map);
   }, [scripts]);
 
-  // Unassigned scripts (slideId === 0)
-  const unassignedScripts = scripts.filter(s => !s.slideId || s.slideId === 0);
+  const unassignedScripts = scripts.filter((s: any) => !s.slideId || s.slideId === 0);
   const currentSlide = slides[selectedSlideIdx];
   const currentScript = currentSlide ? slideScriptMap[currentSlide.id] : null;
-  const currentAnnotations = currentSlide ? annotations.filter(a => a.slideId === currentSlide.id) : [];
+  const currentAnnotations = currentSlide ? annotations.filter((a: any) => a.slideId === currentSlide.id) : [];
 
   const setScriptMut = trpc.lectureBuilder.setScript.useMutation();
-  const addAnnotationMut = trpc.lectureBuilder.addAnnotation.useMutation();
+  const saveDrawingMut = trpc.lectureBuilder.saveCanvasDrawing.useMutation();
   const deleteAnnotationMut = trpc.lectureBuilder.deleteAnnotation.useMutation();
 
   const assignScript = async (slideId: number, text: string, avatarId?: number) => {
     setSlideScriptMap(prev => ({ ...prev, [slideId]: { text, avatarId } }));
     try {
-      await setScriptMut.mutateAsync({
-        projectId,
-        slideId,
-        scriptText: text,
-        avatarId,
-        sortOrder: 0,
-      });
+      await setScriptMut.mutateAsync({ projectId, slideId, scriptText: text, avatarId, sortOrder: 0 });
     } catch (e: any) {
       toast.error(e.message);
     }
   };
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!annotationTool || !currentSlide) return;
+  // --- Canvas drawing logic ---
+  const getRelativePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    return {
+      x: ((e.clientX - rect.left) / rect.width) * 100,
+      y: ((e.clientY - rect.top) / rect.height) * 100,
+    };
+  };
 
-    if (annotationTool !== "freehand") {
-      addAnnotationMut.mutate({
+  // Draw existing annotations + current path on canvas
+  const renderCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    canvas.width = w;
+    canvas.height = h;
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw saved annotations
+    currentAnnotations.forEach((ann: any) => {
+      const pd = ann.pathData as any;
+      if (!pd) return;
+      const color = ann.penColor || "#FF0000";
+      const thickness = ann.penThickness || 3;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = thickness;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+
+      if (ann.annotationType === "freehand" && pd.points) {
+        ctx.beginPath();
+        pd.points.forEach((pt: any, i: number) => {
+          const px = (pt.x / 100) * w;
+          const py = (pt.y / 100) * h;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.stroke();
+      } else if (ann.annotationType === "circle") {
+        const cx = (pd.x / 100) * w;
+        const cy = (pd.y / 100) * h;
+        const r = ((pd.width || 8) / 100) * Math.min(w, h);
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (ann.annotationType === "arrow") {
+        const sx = (pd.x / 100) * w;
+        const sy = (pd.y / 100) * h;
+        const ex = ((pd.endX ?? pd.x + 8) / 100) * w;
+        const ey = ((pd.endY ?? pd.y - 8) / 100) * h;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+        // Arrowhead
+        const angle = Math.atan2(ey - sy, ex - sx);
+        const headLen = 12;
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex - headLen * Math.cos(angle - Math.PI / 6), ey - headLen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex - headLen * Math.cos(angle + Math.PI / 6), ey - headLen * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
+      } else if (ann.annotationType === "check") {
+        const cx = (pd.x / 100) * w;
+        const cy = (pd.y / 100) * h;
+        ctx.fillStyle = color;
+        ctx.font = `${thickness * 6}px sans-serif`;
+        ctx.fillText("\u2713", cx - thickness * 2, cy + thickness * 2);
+      } else if (ann.annotationType === "underline") {
+        const sx = (pd.x / 100) * w;
+        const sy = (pd.y / 100) * h;
+        const lineW = ((pd.width || 15) / 100) * w;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(sx + lineW, sy);
+        ctx.stroke();
+      }
+    });
+
+    // Draw current path (live drawing)
+    if (currentPath.length > 1) {
+      ctx.strokeStyle = penColor;
+      ctx.lineWidth = penThickness;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      currentPath.forEach((pt, i) => {
+        const px = (pt.x / 100) * w;
+        const py = (pt.y / 100) * h;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+    }
+  }, [currentAnnotations, currentPath, penColor, penThickness]);
+
+  useEffect(() => { renderCanvas(); }, [renderCanvas]);
+
+  // Mouse handlers for freehand drawing
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!annotationTool || !currentSlide) return;
+    const pos = getRelativePos(e);
+    if (annotationTool === "freehand") {
+      setIsDrawing(true);
+      setCurrentPath([pos]);
+    } else if (annotationTool === "arrow") {
+      setIsDrawing(true);
+      setCurrentPath([pos]);
+    } else {
+      // Single-click tools: circle, check, underline
+      saveDrawingMut.mutate({
         projectId,
         slideId: currentSlide.id,
-        annotationType: annotationTool as any,
-        penColor,
-        penThickness,
-        pathData: { x, y, width: 10, height: 10 },
-        showAtSec: 0,
-        durationSec: 5,
+        type: annotationTool as any,
+        color: penColor,
+        strokeWidth: penThickness,
+        pathData: { x: pos.x, y: pos.y, width: 8, height: 8 },
       }, {
-        onSuccess: () => onRefresh(),
+        onSuccess: (data) => {
+          setUndoStack(prev => [...prev, data.id]);
+          setRedoStack([]);
+          onRefresh();
+        },
       });
     }
   };
 
-  // Freehand drawing
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (annotationTool !== "freehand") return;
-    setIsDrawing(true);
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setDrawPoints([{ x, y }]);
-  };
-
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || annotationTool !== "freehand") return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setDrawPoints(prev => [...prev, { x, y }]);
+    if (!isDrawing) return;
+    const pos = getRelativePos(e);
+    setCurrentPath(prev => [...prev, pos]);
   };
 
   const handleMouseUp = () => {
     if (!isDrawing || !currentSlide) return;
     setIsDrawing(false);
-    if (drawPoints.length > 2) {
-      addAnnotationMut.mutate({
+
+    if (annotationTool === "freehand" && currentPath.length > 2) {
+      saveDrawingMut.mutate({
         projectId,
         slideId: currentSlide.id,
-        annotationType: "freehand",
-        penColor,
-        penThickness,
-        pathData: { points: drawPoints },
-        showAtSec: 0,
-        durationSec: 5,
+        type: "freehand",
+        color: penColor,
+        strokeWidth: penThickness,
+        pathData: { points: currentPath },
       }, {
-        onSuccess: () => { onRefresh(); setDrawPoints([]); },
+        onSuccess: (data) => {
+          setUndoStack(prev => [...prev, data.id]);
+          setRedoStack([]);
+          onRefresh();
+        },
+      });
+    } else if (annotationTool === "arrow" && currentPath.length >= 2) {
+      const start = currentPath[0];
+      const end = currentPath[currentPath.length - 1];
+      saveDrawingMut.mutate({
+        projectId,
+        slideId: currentSlide.id,
+        type: "arrow",
+        color: penColor,
+        strokeWidth: penThickness,
+        pathData: { x: start.x, y: start.y, endX: end.x, endY: end.y },
+      }, {
+        onSuccess: (data) => {
+          setUndoStack(prev => [...prev, data.id]);
+          setRedoStack([]);
+          onRefresh();
+        },
       });
     }
-    setDrawPoints([]);
+    setCurrentPath([]);
+  };
+
+  // Undo: delete last annotation
+  const handleUndo = () => {
+    if (undoStack.length === 0 && currentAnnotations.length === 0) return;
+    const lastId = undoStack.length > 0 ? undoStack[undoStack.length - 1] : currentAnnotations[currentAnnotations.length - 1]?.id;
+    if (!lastId) return;
+    deleteAnnotationMut.mutate({ id: lastId }, {
+      onSuccess: () => {
+        setUndoStack(prev => prev.slice(0, -1));
+        setRedoStack(prev => [...prev, lastId]);
+        onRefresh();
+      },
+    });
+  };
+
+  // Clear all annotations on current slide
+  const handleClearAll = () => {
+    if (currentAnnotations.length === 0) return;
+    currentAnnotations.forEach((ann: any) => {
+      deleteAnnotationMut.mutate({ id: ann.id });
+    });
+    setUndoStack([]);
+    setRedoStack([]);
+    setTimeout(() => onRefresh(), 500);
+    toast.success("모든 펜 그리기가 삭제되었습니다");
   };
 
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">매칭 에디터</h2>
-      <p className="text-muted-foreground">각 슬라이드에 스크립트를 배치하고, 펜 애니메이션을 추가하세요</p>
+      <p className="text-muted-foreground">각 슬라이드에 스크립트를 배치하고, 캔버스에 직접 펜으로 그리세요</p>
 
       <div className="grid grid-cols-12 gap-4" style={{ minHeight: "60vh" }}>
         {/* Left: Slide Thumbnails */}
         <div className="col-span-2">
           <ScrollArea className="h-[60vh]">
             <div className="space-y-2 pr-2">
-              {slides.map((slide, idx) => {
+              {slides.map((slide: any, idx: number) => {
                 const hasScript = !!slideScriptMap[slide.id];
+                const annCount = annotations.filter((a: any) => a.slideId === slide.id).length;
                 return (
                   <button key={slide.id}
                     className={`w-full rounded-lg overflow-hidden border-2 transition-all relative ${
                       selectedSlideIdx === idx ? "border-primary ring-2 ring-primary/30" : hasScript ? "border-green-500/50" : "border-muted"
                     }`}
-                    onClick={() => setSelectedSlideIdx(idx)}
+                    onClick={() => { setSelectedSlideIdx(idx); setUndoStack([]); setRedoStack([]); }}
                   >
                     <div className="aspect-video">
                       <img src={slide.imageUrl} alt={`${idx + 1}`} className="w-full h-full object-contain" />
@@ -1059,6 +1250,11 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
                         <Check className="w-3 h-3 text-green-400 bg-green-900/60 rounded-full p-0.5" />
                       </div>
                     )}
+                    {annCount > 0 && (
+                      <div className="absolute bottom-0.5 left-0.5">
+                        <Badge className="text-[9px] px-1 py-0 bg-orange-500/80 text-white">{annCount}</Badge>
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -1066,49 +1262,25 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
           </ScrollArea>
         </div>
 
-        {/* Center: Slide Preview + Annotations */}
+        {/* Center: Slide Preview + Canvas Drawing */}
         <div className="col-span-6">
           {currentSlide ? (
             <div className="space-y-3">
-              <div className="relative bg-black rounded-xl overflow-hidden">
+              <div ref={containerRef} className="relative bg-black rounded-xl overflow-hidden">
                 <img src={currentSlide.imageUrl} alt="현재 슬라이드" className="w-full aspect-video object-contain" />
-                {/* Annotation canvas overlay */}
+                {/* Real HTML5 Canvas overlay for drawing */}
                 <canvas
                   ref={canvasRef}
                   className={`absolute inset-0 w-full h-full ${annotationTool ? "cursor-crosshair" : "cursor-default"}`}
-                  onClick={handleCanvasClick}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
                 />
-                {/* Render annotations */}
-                {currentAnnotations.map(ann => {
-                  const pd = ann.pathData as any;
-                  if (!pd) return null;
-                  return (
-                    <div key={ann.id} className="absolute group/ann" style={{
-                      left: `${pd.x || 0}%`, top: `${pd.y || 0}%`,
-                      transform: "translate(-50%, -50%)",
-                    }}>
-                      {ann.annotationType === "circle" && (
-                        <div className="w-12 h-12 rounded-full border-3" style={{ borderColor: ann.penColor || "#FF0000", borderWidth: ann.penThickness || 3 }} />
-                      )}
-                      {ann.annotationType === "arrow" && (
-                        <ArrowUpRight className="w-8 h-8" style={{ color: ann.penColor || "#FF0000" }} />
-                      )}
-                      {ann.annotationType === "check" && (
-                        <CheckSquare className="w-8 h-8" style={{ color: ann.penColor || "#00FF00" }} />
-                      )}
-                      <button className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full text-white text-[8px] flex items-center justify-center opacity-0 group-hover/ann:opacity-100"
-                        onClick={() => deleteAnnotationMut.mutate({ id: ann.id }, { onSuccess: onRefresh })}>×</button>
-                    </div>
-                  );
-                })}
               </div>
 
               {/* Annotation Toolbar */}
-              <div className="flex items-center gap-2 p-2 bg-card rounded-lg border">
+              <div className="flex items-center gap-2 p-2 bg-card rounded-lg border flex-wrap">
                 <span className="text-xs text-muted-foreground mr-1">펜 도구:</span>
                 {ANNOTATION_TOOLS.map(tool => (
                   <button key={tool.type}
@@ -1133,6 +1305,14 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
                 <div className="w-20">
                   <Slider value={[penThickness]} min={1} max={10} step={1} onValueChange={v => setPenThickness(v[0])} />
                 </div>
+                <Separator orientation="vertical" className="h-6 mx-1" />
+                {/* Undo / Clear */}
+                <Button variant="ghost" size="sm" onClick={handleUndo} disabled={undoStack.length === 0 && currentAnnotations.length === 0} className="text-xs gap-1" title="실행 취소">
+                  ↩ Undo
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleClearAll} disabled={currentAnnotations.length === 0} className="text-xs gap-1 text-red-400" title="모두 지우기">
+                  <Trash2 className="w-3 h-3" /> 전체 삭제
+                </Button>
                 {annotationTool && (
                   <Button variant="ghost" size="sm" onClick={() => setAnnotationTool(null)} className="ml-auto text-xs">
                     <MousePointer className="w-3 h-3 mr-1" /> 선택 모드
@@ -1192,7 +1372,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="default">기본 화자</SelectItem>
-                            {avatars.map(av => (
+                            {avatars.map((av: any) => (
                               <SelectItem key={av.id} value={av.id.toString()}>{av.name}</SelectItem>
                             ))}
                           </SelectContent>
@@ -1216,7 +1396,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
                 <CardContent>
                   <ScrollArea className="max-h-48">
                     <div className="space-y-2">
-                      {unassignedScripts.map((s, i) => (
+                      {unassignedScripts.map((s: any, i: number) => (
                         <button key={s.id}
                           className="w-full text-left p-2 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-colors"
                           onClick={() => {
@@ -1255,29 +1435,122 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
 }) {
   const [previewSlideIdx, setPreviewSlideIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedSlideIds, setSelectedSlideIds] = useState<Set<number>>(() => new Set(slides.map((s: any) => s.id)));
+  const [bgmUrl, setBgmUrl] = useState("");
+  const [bgmVolume, setBgmVolume] = useState(30);
+  const [bgmUploading, setBgmUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState(project.finalVideoUrl || "");
+  const bgmInputRef = useRef<HTMLInputElement>(null);
 
   const updateProject = trpc.lectureBuilder.updateProject.useMutation({
     onSuccess: () => { toast.success("설정이 저장되었습니다"); onRefresh(); },
   });
+  const uploadBgmMut = trpc.lectureBuilder.uploadBgm.useMutation();
+  const generateVideoMut = trpc.lectureBuilder.generateVideo.useMutation();
 
-  const assignedSlides = slides.filter(s => scripts.some(sc => sc.slideId === s.id));
-  const totalDuration = scripts.reduce((acc, s) => acc + (s.estimatedDurationSec || 30), 0);
+  const assignedSlides = slides.filter((s: any) => scripts.some((sc: any) => sc.slideId === s.id));
+  const totalDuration = scripts.reduce((acc: number, s: any) => acc + (s.estimatedDurationSec || 30), 0);
+
+  // Filter slides for preview based on selection
+  const previewSlides = useMemo(() => {
+    return slides.filter((s: any) => selectedSlideIds.has(s.id));
+  }, [slides, selectedSlideIds]);
 
   // Auto-play preview
   useEffect(() => {
     if (!isPlaying) return;
     const timer = setTimeout(() => {
       setPreviewSlideIdx(prev => {
-        if (prev >= slides.length - 1) { setIsPlaying(false); return 0; }
+        if (prev >= previewSlides.length - 1) { setIsPlaying(false); return 0; }
         return prev + 1;
       });
     }, 3000);
     return () => clearTimeout(timer);
-  }, [isPlaying, previewSlideIdx, slides.length]);
+  }, [isPlaying, previewSlideIdx, previewSlides.length]);
 
-  const currentSlide = slides[previewSlideIdx];
-  const currentSlideScript = currentSlide ? scripts.find(s => s.slideId === currentSlide.id) : null;
-  const currentAvatar = currentSlideScript?.avatarId ? avatars.find(a => a.id === currentSlideScript.avatarId) : avatars[0];
+  // Update selection when slides change
+  useEffect(() => {
+    setSelectedSlideIds(new Set(slides.map((s: any) => s.id)));
+  }, [slides]);
+
+  const currentSlide = previewSlides[previewSlideIdx];
+  const currentSlideScript = currentSlide ? scripts.find((s: any) => s.slideId === currentSlide.id) : null;
+  const currentAvatar = currentSlideScript?.avatarId ? avatars.find((a: any) => a.id === currentSlideScript.avatarId) : avatars[0];
+
+  const toggleSlideSelection = (slideId: number) => {
+    setSelectedSlideIds(prev => {
+      const next = new Set(prev);
+      if (next.has(slideId)) next.delete(slideId);
+      else next.add(slideId);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedSlideIds(new Set(slides.map((s: any) => s.id)));
+  const deselectAll = () => setSelectedSlideIds(new Set());
+
+  // BGM upload
+  const handleBgmUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("배경음악 파일은 20MB 이하로 업로드해주세요");
+      return;
+    }
+    setBgmUploading(true);
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const result = await uploadBgmMut.mutateAsync({
+        projectId,
+        fileData: base64,
+        fileName: file.name,
+        mimeType: file.type || "audio/mpeg",
+      });
+      setBgmUrl(result.url);
+      toast.success("배경음악이 업로드되었습니다");
+    } catch (err: any) {
+      toast.error(err.message || "배경음악 업로드 실패");
+    } finally {
+      setBgmUploading(false);
+      if (bgmInputRef.current) bgmInputRef.current.value = "";
+    }
+  };
+
+  // Generate video
+  const handleGenerateVideo = async () => {
+    if (selectedSlideIds.size === 0) {
+      toast.error("영상에 포함할 슬라이드를 선택해주세요");
+      return;
+    }
+    setGenerating(true);
+    try {
+      const result = await generateVideoMut.mutateAsync({
+        projectId,
+        avatarPosition: project.avatarPosition,
+        avatarSize: project.avatarSize === "small" ? 15 : project.avatarSize === "large" ? 35 : 25,
+        avatarShape: project.avatarShape,
+        avatarOpacity: project.avatarOpacity,
+        bgmUrl: bgmUrl || undefined,
+        bgmVolume,
+        noiseReduction: false,
+        resolution: "1080p",
+        selectedSlideIds: Array.from(selectedSlideIds),
+      });
+      setGeneratedVideoUrl(result.videoUrl);
+      toast.success("영상이 성공적으로 생성되었습니다!");
+      onRefresh();
+    } catch (err: any) {
+      toast.error(err.message || "영상 생성 실패");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -1311,14 +1584,9 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                         } overflow-hidden border-2 border-white/30 shadow-lg`}
                           style={{ opacity: (project.avatarOpacity || 100) / 100 }}
                         >
-                          {(() => {
-                            const face = currentAvatar?.sampleFaceId ? (undefined) : null; // simplified
-                            return (
-                              <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                                <Users className="w-8 h-8 text-white/70" />
-                              </div>
-                            );
-                          })()}
+                          <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                            <Users className="w-8 h-8 text-white/70" />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1331,7 +1599,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                   </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    슬라이드가 없습니다
+                    {selectedSlideIds.size === 0 ? "슬라이드를 선택해주세요" : "슬라이드가 없습니다"}
                   </div>
                 )}
               </div>
@@ -1344,16 +1612,63 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                 <Button variant="outline" size="icon" onClick={() => setIsPlaying(!isPlaying)}>
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => setPreviewSlideIdx(Math.min(slides.length - 1, previewSlideIdx + 1))}>
+                <Button variant="outline" size="icon" onClick={() => setPreviewSlideIdx(Math.min(previewSlides.length - 1, previewSlideIdx + 1))}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
                 <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: slides.length > 0 ? `${((previewSlideIdx + 1) / slides.length) * 100}%` : "0%" }} />
+                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: previewSlides.length > 0 ? `${((previewSlideIdx + 1) / previewSlides.length) * 100}%` : "0%" }} />
                 </div>
-                <span className="text-sm text-muted-foreground">{previewSlideIdx + 1}/{slides.length}</span>
+                <span className="text-sm text-muted-foreground">{previewSlides.length > 0 ? previewSlideIdx + 1 : 0}/{previewSlides.length}</span>
               </div>
             </CardContent>
           </Card>
+
+          {/* Slide Selection for Preview */}
+          <Card className="mt-4">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">슬라이드 선택 ({selectedSlideIds.size}/{slides.length})</CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={selectAll}>전체 선택</Button>
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={deselectAll}>전체 해제</Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {slides.map((slide: any, idx: number) => {
+                  const isSelected = selectedSlideIds.has(slide.id);
+                  return (
+                    <button key={slide.id}
+                      className={`relative w-16 h-10 rounded-md overflow-hidden border-2 transition-all ${
+                        isSelected ? "border-primary ring-1 ring-primary/30" : "border-muted opacity-50"
+                      }`}
+                      onClick={() => toggleSlideSelection(slide.id)}
+                    >
+                      <img src={slide.imageUrl} alt={`${idx + 1}`} className="w-full h-full object-contain" />
+                      <div className="absolute top-0 left-0 text-[8px] bg-black/60 text-white px-0.5 rounded-br">{idx + 1}</div>
+                      {isSelected && <Check className="absolute bottom-0 right-0 w-3 h-3 text-green-400" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Generated Video */}
+          {generatedVideoUrl && (
+            <Card className="mt-4">
+              <CardHeader className="pb-2"><CardTitle className="text-sm">생성된 영상</CardTitle></CardHeader>
+              <CardContent>
+                <video src={generatedVideoUrl} controls className="w-full rounded-lg" />
+                <a href={generatedVideoUrl} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" size="sm" className="mt-2 gap-1 w-full">
+                    <Download className="w-3 h-3" /> 영상 다운로드
+                  </Button>
+                </a>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Settings Panel */}
@@ -1366,6 +1681,14 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
               <div className="flex justify-between"><span className="text-muted-foreground">슬라이드</span><span>{slides.length}장</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">배정된 스크립트</span><span>{assignedSlides.length}/{slides.length}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">예상 길이</span><span>~{Math.ceil(totalDuration / 60)}분</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">선택된 슬라이드</span><span>{selectedSlideIds.size}장</span></div>
+              {project.status && project.status !== "draft" && (
+                <div className="flex justify-between"><span className="text-muted-foreground">상태</span>
+                  <Badge variant={project.status === "completed" ? "default" : project.status === "generating" ? "secondary" : "destructive"}>
+                    {project.status === "completed" ? "완료" : project.status === "generating" ? "생성 중" : project.status === "error" ? "오류" : project.status}
+                  </Badge>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1383,7 +1706,6 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                   <SelectItem value="none">없음</SelectItem>
                 </SelectContent>
               </Select>
-
               <div>
                 <Label className="text-xs">크기</Label>
                 <Select value={project.avatarSize} onValueChange={v => updateProject.mutate({ id: projectId, avatarSize: v as any })}>
@@ -1395,7 +1717,6 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <Label className="text-xs">모양</Label>
                 <Select value={project.avatarShape} onValueChange={v => updateProject.mutate({ id: projectId, avatarShape: v as any })}>
@@ -1407,7 +1728,6 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                   </SelectContent>
                 </Select>
               </div>
-
               <div>
                 <Label className="text-xs">투명도: {project.avatarOpacity}%</Label>
                 <Slider value={[project.avatarOpacity]} min={20} max={100} step={5}
@@ -1416,11 +1736,41 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             </CardContent>
           </Card>
 
+          {/* BGM Upload */}
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">배경음악</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <input ref={bgmInputRef} type="file" accept=".mp3,.wav,.ogg,.m4a" className="hidden" onChange={handleBgmUpload} />
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => bgmInputRef.current?.click()} disabled={bgmUploading}>
+                {bgmUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
+                {bgmUrl ? "배경음악 변경" : "배경음악 업로드"}
+              </Button>
+              {bgmUrl && (
+                <>
+                  <audio src={bgmUrl} controls className="w-full h-8" />
+                  <div>
+                    <Label className="text-xs">볼륨: {bgmVolume}%</Label>
+                    <Slider value={[bgmVolume]} min={0} max={100} step={5} onValueChange={v => setBgmVolume(v[0])} />
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-xs text-red-400" onClick={() => setBgmUrl("")}>
+                    <X className="w-3 h-3 mr-1" /> 배경음악 제거
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Generate Button */}
-          <Button className="w-full gap-2" size="lg"
-            onClick={() => toast.success("영상 생성 기능은 곧 출시됩니다! 현재 설정이 저장되었습니다.")}>
-            <Video className="w-5 h-5" /> 최종 영상 생성
+          <Button className="w-full gap-2" size="lg" onClick={handleGenerateVideo} disabled={generating || selectedSlideIds.size === 0}>
+            {generating ? (
+              <><Loader2 className="w-5 h-5 animate-spin" /> 영상 생성 중...</>
+            ) : (
+              <><Video className="w-5 h-5" /> 최종 영상 생성</>
+            )}
           </Button>
+          {generating && (
+            <p className="text-xs text-muted-foreground text-center">영상 생성에는 시간이 걸릴 수 있습니다. 이 페이지를 떠나지 마세요.</p>
+          )}
         </div>
       </div>
     </div>
