@@ -1012,7 +1012,7 @@
 
 ### Step 3: 슬라이드 업로드
 - [x] PPT/PDF/이미지 파일 업로드 (드래그&드롭)
-- [ ] 업로드된 파일 자동 이미지 변환 (PPT→이미지, PDF→이미지)
+- [x] 업로드된 파일 자동 이미지 변환 (PPT→이미지, PDF→이미지)
 - [x] 슬라이드 썸네일 그리드 표시
 - [x] 슬라이드 순서 변경/삭제
 
@@ -1042,3 +1042,43 @@
 - [x] 새 DB 스키마 테스트
 - [x] 프로시저 입력 검증 테스트
 - [x] 권한 검증 테스트
+
+## v7.1 업그레이드 - Step3/4/5 고도화
+
+### Step 3: PPT/PDF 자동 이미지 변환
+- [x] PPT/PDF 파일 서버사이드 변환 (convertFile 프로시저 연동)
+- [x] 변환 진행 상태 UI (로딩 인디케이터 + 상태 메시지)
+- [x] 이미지 파일과 PPT/PDF 파일 자동 분기 처리
+- [x] 50MB 파일 크기 제한 적용
+- [x] 드래그&드롭 + 파일 선택 지원
+
+### Step 4: 캔버스 기반 펜 그리기 도구
+- [x] HTML5 Canvas 실제 드로잉 구현 (기존 DOM 오버레이 → Canvas 2D)
+- [x] 자유 그리기(freehand) - 마우스 드래그로 실시간 선 그리기
+- [x] 화살표(arrow) - 드래그로 시작점→끝점 화살표 그리기
+- [x] 동그라미(circle) - 클릭 위치에 원 그리기
+- [x] 체크(check)/밑줄(underline) - 클릭 위치에 표시
+- [x] 실시간 드로잉 미리보기 (그리는 중 즉시 표시)
+- [x] Undo 기능 (마지막 그리기 취소)
+- [x] 전체 삭제 기능 (현재 슬라이드 모든 펜 그리기 삭제)
+- [x] saveCanvasDrawing 프로시저 연동 (DB 저장)
+- [x] 저장된 어노테이션 Canvas에 렌더링 (freehand/circle/arrow/check/underline)
+- [x] 슬라이드별 어노테이션 개수 표시 (썸네일 배지)
+
+### Step 5: 영상 생성 백엔드 연동
+- [x] 배경음악(BGM) 업로드 기능 (uploadBgm 프로시저 연동)
+- [x] BGM 미리듣기 + 볼륨 조절 슬라이더
+- [x] 슬라이드 선택 기능 (영상에 포함할 슬라이드 체크박스)
+- [x] 전체 선택/해제 버튼
+- [x] 선택된 슬라이드만 미리보기 재생
+- [x] generateVideo 프로시저 연동 (실제 Kling/DID API 호출)
+- [x] 영상 생성 중 로딩 상태 표시
+- [x] 생성된 영상 비디오 플레이어 + 다운로드 버튼
+- [x] 프로젝트 상태 표시 (생성 중/완료/오류)
+
+### 서버 수정
+- [x] routers.ts DB 필드명 불일치 수정 (saveCanvasDrawing, generateVideo)
+- [x] LLM response content 타입 캐스팅 수정
+
+### 테스트
+- [x] v7.1 테스트 12개 통과 (convertFile, saveCanvasDrawing, uploadBgm, generateVideo, deleteAnnotation)

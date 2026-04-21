@@ -4141,7 +4141,8 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             },
           },
         });
-        const content = response.choices?.[0]?.message?.content || "{}";
+        const rawContent = response.choices?.[0]?.message?.content || "{}";
+        const content = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
         const parsed = JSON.parse(content);
         return { sections: parsed.sections || [] };
       }),
@@ -4190,8 +4191,9 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             },
           },
         });
-        const content = response.choices?.[0]?.message?.content || "{}";
-        const parsed = JSON.parse(content);
+        const rawContent2 = response.choices?.[0]?.message?.content || "{}";
+        const content2 = typeof rawContent2 === "string" ? rawContent2 : JSON.stringify(rawContent2);
+        const parsed = JSON.parse(content2);
         return { sections: parsed.sections || [] };
       }),
 
@@ -4250,6 +4252,142 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .mutation(async ({ input }) => {
         await db.deleteSlideAnnotation(input.id);
         return { success: true };
+      }),
+
+    // --- Convert PPT/PDF to slide images ---
+    convertFile: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        fileData: z.string(), // base64
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const { convertFileToSlideImages } = await import("./slideConverter");
+        const buffer = Buffer.from(input.fileData, "base64");
+        const slideImages = await convertFileToSlideImages(buffer, input.fileName, input.mimeType, input.projectId);
+        const existing = await db.listProjectSlides(input.projectId);
+        let maxOrder = existing.length > 0 ? Math.max(...existing.map(s => s.slideOrder)) + 1 : 0;
+        const ids: number[] = [];
+        for (const img of slideImages) {
+          const id = await db.addProjectSlide({
+            projectId: input.projectId,
+            imageUrl: img.imageUrl,
+            fileKey: img.fileKey,
+            slideOrder: maxOrder++,
+            originalFileName: input.fileName,
+          });
+          ids.push(id);
+        }
+        return { slideIds: ids, count: ids.length, images: slideImages };
+      }),
+
+    // --- Upload BGM ---
+    uploadBgm: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        fileData: z.string(), // base64
+        fileName: z.string(),
+        mimeType: z.string().default("audio/mpeg"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const buffer = Buffer.from(input.fileData, "base64");
+        const fileKey = `lecture-builder/${input.projectId}/bgm/${Date.now()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        return { url, fileKey };
+      }),
+
+    // --- Save canvas drawing (pen annotations) ---
+    saveCanvasDrawing: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+        type: z.enum(["circle", "arrow", "check", "freehand", "rectangle", "line"]),
+        color: z.string().default("#ff0000"),
+        strokeWidth: z.number().default(3),
+        pathData: z.any(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const id = await db.addSlideAnnotation({
+          projectId: input.projectId,
+          slideId: input.slideId,
+          annotationType: input.type as any,
+          penColor: input.color,
+          penThickness: input.strokeWidth,
+          pathData: input.pathData as any,
+        });
+        return { id };
+      }),
+
+    // --- Generate lecture video ---
+    generateVideo: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        avatarPosition: z.string().default("bottom-right"),
+        avatarSize: z.number().default(25),
+        avatarShape: z.string().default("circle"),
+        avatarOpacity: z.number().default(100),
+        bgmUrl: z.string().optional(),
+        bgmVolume: z.number().default(30),
+        noiseReduction: z.boolean().default(false),
+        resolution: z.string().default("1080p"),
+        selectedSlideIds: z.array(z.number()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const [avatars, slides, scripts, annotations] = await Promise.all([
+          db.listProjectAvatars(input.projectId),
+          db.listProjectSlides(input.projectId),
+          db.listSlideScripts(input.projectId),
+          db.listSlideAnnotations(input.projectId),
+        ]);
+        let filteredSlides = slides;
+        if (input.selectedSlideIds && input.selectedSlideIds.length > 0) {
+          filteredSlides = slides.filter(s => input.selectedSlideIds!.includes(s.id));
+        }
+        const segments = filteredSlides.map(slide => {
+          const script = scripts.find(s => s.slideId === slide.id);
+          const avatar = avatars.find(a => a.id === (script?.avatarId || avatars[0]?.id));
+          const slideAnnotations = annotations.filter(a => a.slideId === slide.id);
+          return {
+            slideId: slide.id,
+            slideOrder: slide.slideOrder,
+            imageUrl: slide.imageUrl,
+            script: script?.scriptText || "",
+            avatarFaceUrl: avatar?.customFaceUrl || "",
+            avatarVoiceId: avatar?.ttsVoiceId || "ko-KR-SunHiNeural",
+            avatarName: avatar?.name || "Default",
+            annotations: slideAnnotations.map(a => ({
+              type: a.annotationType, color: a.penColor || '#FF0000', strokeWidth: a.penThickness || 3,
+              pathData: a.pathData,
+            })),
+          };
+        }).filter(s => s.script);
+        if (segments.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No segments with scripts found" });
+        // Update project status
+        await db.updateLectureProject(input.projectId, { status: "generating" as any });
+        try {
+          const { generateLectureVideo } = await import("./lectureVideoGenerator");
+          const result = await generateLectureVideo({
+            projectId: input.projectId, segments,
+            avatarPosition: input.avatarPosition, avatarSize: input.avatarSize,
+            avatarShape: input.avatarShape, avatarOpacity: input.avatarOpacity,
+            bgmUrl: input.bgmUrl, bgmVolume: input.bgmVolume,
+            noiseReduction: input.noiseReduction, resolution: input.resolution,
+          });
+          await db.updateLectureProject(input.projectId, { status: "completed" as any, finalVideoUrl: result.videoUrl });
+          return { videoUrl: result.videoUrl, totalDuration: result.totalDuration };
+        } catch (error: any) {
+          await db.updateLectureProject(input.projectId, { status: "error" as any });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        }
       }),
 
     // --- Get full project data (all steps) ---
