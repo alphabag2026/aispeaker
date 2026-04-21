@@ -1899,3 +1899,41 @@ export async function updateVideoGeneration(id: number, data: Partial<InsertVide
   if (!db) throw new Error("DB not available");
   await db.update(videoGenerations).set(data).where(eq(videoGenerations.id, id));
 }
+
+
+// --- Script Improvement History ---
+import { scriptImprovementHistory, type InsertScriptImprovementHistory } from "../drizzle/schema";
+
+export async function addScriptImprovementHistory(data: InsertScriptImprovementHistory) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(scriptImprovementHistory).values(data);
+  return result.insertId;
+}
+
+export async function addBatchScriptImprovementHistory(data: InsertScriptImprovementHistory[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  if (data.length === 0) return;
+  await db.insert(scriptImprovementHistory).values(data);
+}
+
+export async function getScriptImprovementHistory(projectId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(scriptImprovementHistory)
+    .where(and(
+      eq(scriptImprovementHistory.projectId, projectId),
+      eq(scriptImprovementHistory.userId, userId),
+    ))
+    .orderBy(desc(scriptImprovementHistory.createdAt))
+    .limit(100);
+}
+
+export async function getScriptImprovementBatch(batchId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(scriptImprovementHistory)
+    .where(eq(scriptImprovementHistory.batchId, batchId))
+    .orderBy(scriptImprovementHistory.sectionIndex);
+}

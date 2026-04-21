@@ -1277,3 +1277,32 @@ export const videoGenerations = mysqlTable("video_generations", {
 });
 export type VideoGeneration = typeof videoGenerations.$inferSelect;
 export type InsertVideoGeneration = typeof videoGenerations.$inferInsert;
+
+
+/**
+ * Script Improvement History - stores AI improvement before/after for undo
+ */
+export const scriptImprovementHistory = mysqlTable("scriptImprovementHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  projectId: int("projectId").notNull(),
+  /** Section ID that was improved */
+  sectionId: varchar("sectionId", { length: 100 }).notNull(),
+  /** Section index (order) */
+  sectionIndex: int("sectionIndex").default(0),
+  /** Original text before improvement */
+  originalText: text("originalText").notNull(),
+  /** Improved text after AI processing */
+  improvedText: text("improvedText").notNull(),
+  /** Style used for improvement */
+  style: mysqlEnum("style", ["formal", "casual", "educational", "storytelling"]).default("educational").notNull(),
+  /** Whether this improvement was applied */
+  applied: boolean("applied").default(false),
+  /** Whether this was part of a batch improvement */
+  isBatch: boolean("isBatch").default(false),
+  /** Batch group ID to link batch improvements together */
+  batchId: varchar("batchId", { length: 50 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ScriptImprovementHistory = typeof scriptImprovementHistory.$inferSelect;
+export type InsertScriptImprovementHistory = typeof scriptImprovementHistory.$inferInsert;

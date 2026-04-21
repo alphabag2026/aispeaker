@@ -18,7 +18,7 @@ import {
   Users, FileText, Image, Layers, Eye, ChevronLeft, ChevronRight, Plus, Trash2,
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
-  Move, Settings2, Video, Download, X, Eraser, Palette, History
+  Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -610,9 +610,26 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
   };
 
   // --- Batch AI Improvement ---
+  const [selectedSectionIds, setSelectedSectionIds] = useState<Set<string>>(new Set());
   const [batchImproving, setBatchImproving] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchResults, setBatchResults] = useState<{ id: string; original: string; improved: string }[] | null>(null);
+
+  const toggleSectionSelect = (id: string) => {
+    setSelectedSectionIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = () => {
+    const validIds = sections.filter(s => s.text.trim()).map(s => s.id);
+    if (selectedSectionIds.size === validIds.length) {
+      setSelectedSectionIds(new Set());
+    } else {
+      setSelectedSectionIds(new Set(validIds));
+    }
+  };
   const improveAllMut = trpc.lectureBuilder.improveAllScripts.useMutation({
     onSuccess: (data) => {
       setBatchImproving(false);
@@ -628,9 +645,12 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
   });
 
   const handleImproveAll = () => {
-    const validSections = sections.filter(s => s.text.trim().length > 0);
-    if (validSections.length === 0) {
-      toast.error("개선할 스크립트가 없습니다");
+    let targetSections = sections.filter(s => s.text.trim().length > 0);
+    if (selectedSectionIds.size > 0) {
+      targetSections = targetSections.filter(s => selectedSectionIds.has(s.id));
+    }
+    if (targetSections.length === 0) {
+      toast.error("개선할 스크립트가 없습니다. 섹션을 선택해주세요.");
       return;
     }
     setBatchImproving(true);
@@ -639,7 +659,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
       setBatchProgress(prev => Math.min(prev + Math.random() * 15, 90));
     }, 2000);
     improveAllMut.mutate(
-      { sections: validSections.map(s => ({ id: s.id, text: s.text })), style: improveStyle, language },
+      { projectId, sections: targetSections.map(s => ({ id: s.id, text: s.text })), style: improveStyle, language },
       { onSettled: () => clearInterval(progressInterval) }
     );
   };
@@ -798,8 +818,19 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
       {/* Script Sections List */}
       {sections.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg">스크립트 섹션 ({sections.length}개)</h3>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-border accent-primary"
+                  checked={selectedSectionIds.size > 0 && selectedSectionIds.size === sections.filter(s => s.text.trim()).length}
+                  onChange={toggleSelectAll}
+                />
+                전체선택
+              </label>
+              <h3 className="font-semibold text-lg">스크립트 섹션 ({sections.length}개){selectedSectionIds.size > 0 && <span className="text-sm text-primary font-normal ml-1">({selectedSectionIds.size}개 선택)</span>}</h3>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -808,7 +839,9 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
               disabled={batchImproving || sections.filter(s => s.text.trim()).length === 0}
             >
               {batchImproving ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> 전체 개선 중... ({Math.round(batchProgress)}%)</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> 개선 중... ({Math.round(batchProgress)}%)</>
+              ) : selectedSectionIds.size > 0 ? (
+                <><Wand2 className="w-4 h-4" /> 선택 {selectedSectionIds.size}개 AI 개선</>
               ) : (
                 <><Wand2 className="w-4 h-4" /> 전체 AI 스크립트 개선</>
               )}
@@ -820,11 +853,16 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
             </div>
           )}
           {sections.map((sec, idx) => (
-            <Card key={sec.id} className="group">
+            <Card key={sec.id} className={`group transition-colors ${selectedSectionIds.has(sec.id) ? "border-primary/40 bg-primary/5" : ""}`}>
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">
                   <div className="flex flex-col items-center gap-1 pt-1">
-                    <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                      checked={selectedSectionIds.has(sec.id)}
+                      onChange={() => toggleSectionSelect(sec.id)}
+                    />
                     <Badge variant="outline" className="text-xs">{idx + 1}</Badge>
                   </div>
                   <div className="flex-1 space-y-2">
@@ -989,6 +1027,104 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* AI Improvement History */}
+      <Card className="border-dashed border-muted-foreground/30">
+        <CardContent className="pt-4">
+          <ImprovementHistoryPanel projectId={projectId} sections={sections} setSections={setSections} />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// --- Improvement History Sub-component ---
+function ImprovementHistoryPanel({ projectId, sections, setSections }: {
+  projectId: number;
+  sections: any[];
+  setSections: (s: any[]) => void;
+}) {
+  const [showHistory, setShowHistory] = useState(false);
+  const historyQuery = trpc.lectureBuilder.getImprovementHistory.useQuery(
+    { projectId },
+    { enabled: showHistory }
+  );
+  const revertMut = trpc.lectureBuilder.revertImprovement.useMutation({
+    onSuccess: (data) => {
+      const newSections = sections.map(sec => {
+        const reverted = data.sections.find((s: any) => s.sectionId === sec.id);
+        return reverted ? { ...sec, text: reverted.originalText } : sec;
+      });
+      setSections(newSections);
+      toast.success(`${data.sections.length}개 섹션이 이전 버전으로 되돌려졌습니다`);
+      historyQuery.refetch();
+    },
+    onError: (e: any) => toast.error(`되돌리기 실패: ${e.message}`),
+  });
+
+  // Group by batchId
+  const groupedHistory = useMemo(() => {
+    if (!historyQuery.data) return [];
+    const groups = new Map<string, { batchId: string; style: string; count: number; createdAt: Date; sections: typeof historyQuery.data }>(); 
+    for (const item of historyQuery.data) {
+      const key = item.batchId || `single-${item.id}`;
+      if (!groups.has(key)) {
+        groups.set(key, { batchId: key, style: item.style, count: 0, createdAt: item.createdAt, sections: [] });
+      }
+      const g = groups.get(key)!;
+      g.count++;
+      g.sections.push(item);
+    }
+    return Array.from(groups.values());
+  }, [historyQuery.data]);
+
+  const styleLabels: Record<string, string> = { formal: "\uaca9\uc2dd\uc801", casual: "\uce5c\uadfc", educational: "\uad50\uc721\uc801", storytelling: "\uc2a4\ud1a0\ub9ac" };
+
+  return (
+    <div className="space-y-3">
+      <button
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+        onClick={() => setShowHistory(!showHistory)}
+      >
+        <History className="w-4 h-4" />
+        AI \uac1c\uc120 \uc774\ub825 {showHistory ? "\u25b2" : "\u25bc"}
+      </button>
+      {showHistory && (
+        <div className="space-y-2">
+          {historyQuery.isLoading && <p className="text-sm text-muted-foreground">\ub85c\ub529 \uc911...</p>}
+          {groupedHistory.length === 0 && !historyQuery.isLoading && (
+            <p className="text-sm text-muted-foreground">\uc544\uc9c1 AI \uac1c\uc120 \uc774\ub825\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.</p>
+          )}
+          {groupedHistory.map((group) => (
+            <div key={group.batchId} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">{styleLabels[group.style] || group.style}</Badge>
+                  <span className="text-sm font-medium">{group.count}\uac1c \uc139\uc158 \uac1c\uc120</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {new Date(group.createdAt).toLocaleString("ko-KR")}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
+                onClick={() => {
+                  if (group.batchId.startsWith("single-")) {
+                    toast.error("\ub2e8\uc77c \uac1c\uc120\uc740 \ub418\ub3cc\ub9ac\uae30\ub97c \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4");
+                    return;
+                  }
+                  revertMut.mutate({ batchId: group.batchId });
+                }}
+                disabled={revertMut.isPending}
+              >
+                <Undo2 className="w-3.5 h-3.5" /> \ub418\ub3cc\ub9ac\uae30
+              </Button>
+            </div>
+          ))}
         </div>
       )}
     </div>
