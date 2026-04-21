@@ -4378,6 +4378,20 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           };
         }).filter(s => s.script);
         if (segments.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No segments with scripts found" });
+        // Create generation history record
+        const genId = await db.createVideoGeneration({
+          projectId: input.projectId,
+          userId: ctx.user.id,
+          status: "generating",
+          slideCount: segments.length,
+          resolution: input.resolution,
+          config: {
+            avatarPosition: input.avatarPosition, avatarSize: input.avatarSize,
+            avatarShape: input.avatarShape, avatarOpacity: input.avatarOpacity,
+            bgmUrl: input.bgmUrl, bgmVolume: input.bgmVolume,
+            noiseReduction: input.noiseReduction,
+          },
+        });
         // Update project status
         await db.updateLectureProject(input.projectId, {
           status: "generating" as any,
@@ -4419,6 +4433,13 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             generationProgress: 100,
             generationStep: "완료",
           });
+          // Update generation history
+          await db.updateVideoGeneration(genId, {
+            status: "completed",
+            videoUrl: result.videoUrl,
+            totalDuration: result.totalDuration,
+            completedAt: new Date(),
+          });
           return { videoUrl: result.videoUrl, totalDuration: result.totalDuration };
         } catch (error: any) {
           await db.updateLectureProject(input.projectId, {
@@ -4427,8 +4448,38 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             generationStep: undefined,
             errorMessage: error.message,
           });
+          // Update generation history with error
+          await db.updateVideoGeneration(genId, {
+            status: "failed",
+            errorMessage: error.message,
+          });
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
         }
+      }),
+
+    // --- List video generation history ---
+    listVideoHistory: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return db.listVideoGenerations(input.projectId);
+      }),
+
+    // --- List all user video generations ---
+    listAllVideoHistory: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.listUserVideoGenerations(ctx.user.id);
+      }),
+
+    // --- Delete video generation record ---
+    deleteVideoGeneration: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const gen = await db.getVideoGeneration(input.id);
+        if (!gen || gen.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        await db.updateVideoGeneration(input.id, { status: "failed" as any });
+        return { success: true };
       }),
 
     // --- Apply extracted texts as script drafts ---
@@ -4476,6 +4527,48 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           videoUrl: project.finalVideoUrl ?? null,
           errorMessage: project.errorMessage ?? null,
         };
+      }),
+
+    // --- AI Script Improvement (LLM) ---
+    improveScript: protectedProcedure
+      .input(z.object({
+        scriptText: z.string().min(1).max(10000),
+        slideContext: z.string().optional(),
+        style: z.enum(["formal", "casual", "educational", "storytelling"]).default("educational"),
+        language: z.string().default("ko"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const styleGuides: Record<string, string> = {
+          formal: "격식적이고 전문적인 강의 톤으로 작성하세요. 존댓말을 사용하고 학술적 어휘를 적절히 활용하세요.",
+          casual: "친근하고 편안한 톤으로 작성하세요. 청중과 대화하듯이 자연스럽게 설명하세요.",
+          educational: "교육적이고 이해하기 쉬운 톤으로 작성하세요. 핵심 개념을 명확히 설명하고 예시를 들어주세요.",
+          storytelling: "스토리텔링 형식으로 작성하세요. 청중의 흥미를 끌 수 있는 내러티브 구조를 사용하세요.",
+        };
+        const systemPrompt = `당신은 AI 강의 스크립트 전문가입니다. 주어진 텍스트를 강의용 스크립트로 개선해주세요.
+
+스타일: ${styleGuides[input.style] || styleGuides.educational}
+
+규칙:
+1. 원문의 핵심 내용을 유지하면서 강의에 적합한 문체로 변환
+2. 자연스러운 말하기 흐름으로 작성 (TTS로 읽혀질 예정)
+3. 적절한 쉬어가기와 강조 표현 포함
+4. 불필요한 전문 용어는 쉽게 풀어서 설명
+5. 개선된 스크립트만 출력하세요 (설명이나 주석 없이)
+6. 언어: ${input.language === "ko" ? "한국어" : input.language}`;
+
+        let userContent = `다음 텍스트를 강의용 스크립트로 개선해주세요:\n\n${input.scriptText}`;
+        if (input.slideContext) {
+          userContent += `\n\n슬라이드 컨텍스트: ${input.slideContext}`;
+        }
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        });
+        const improved = (response.choices?.[0]?.message?.content as string) || "";
+        return { original: input.scriptText, improved: improved.trim() };
       }),
 
     // --- Get full project data (all steps) ---

@@ -18,7 +18,7 @@ import {
   Users, FileText, Image, Layers, Eye, ChevronLeft, ChevronRight, Plus, Trash2,
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
-  Move, Settings2, Video, Download, X
+  Move, Settings2, Video, Download, X, Eraser, Palette, History
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -64,6 +64,7 @@ const ANNOTATION_TOOLS = [
   { type: "check" as const, icon: CheckSquare, label: "체크" },
   { type: "underline" as const, icon: PenTool, label: "밑줄" },
   { type: "freehand" as const, icon: Pencil, label: "자유 그리기" },
+  { type: "eraser" as const, icon: Eraser, label: "지우개" },
 ];
 
 const PEN_COLORS = ["#FF0000", "#00FF00", "#0066FF", "#FFFF00", "#FF6600", "#FF00FF", "#FFFFFF"];
@@ -568,6 +569,46 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
   const setScriptMut = trpc.lectureBuilder.setScript.useMutation();
   const deleteScriptMut = trpc.lectureBuilder.deleteScript.useMutation();
 
+  // AI Script Improvement
+  const [improvingIdx, setImprovingIdx] = useState<number | null>(null);
+  const [improvedPreview, setImprovedPreview] = useState<{ idx: number; original: string; improved: string } | null>(null);
+  const [improveStyle, setImproveStyle] = useState<"formal" | "casual" | "educational" | "storytelling">("educational");
+  const improveScriptMut = trpc.lectureBuilder.improveScript.useMutation({
+    onSuccess: (data, _vars) => {
+      if (improvingIdx !== null) {
+        setImprovedPreview({ idx: improvingIdx, original: data.original, improved: data.improved });
+      }
+      setImprovingIdx(null);
+    },
+    onError: (e: any) => {
+      toast.error(`AI 개선 실패: ${e.message}`);
+      setImprovingIdx(null);
+    },
+  });
+
+  const handleImproveScript = (idx: number) => {
+    const sec = sections[idx];
+    if (!sec || !sec.text.trim()) {
+      toast.error("개선할 스크립트가 없습니다");
+      return;
+    }
+    setImprovingIdx(idx);
+    improveScriptMut.mutate({
+      scriptText: sec.text,
+      style: improveStyle,
+      language: language,
+    });
+  };
+
+  const applyImprovement = () => {
+    if (!improvedPreview) return;
+    const newSections = [...sections];
+    newSections[improvedPreview.idx] = { ...newSections[improvedPreview.idx], text: improvedPreview.improved };
+    setSections(newSections);
+    setImprovedPreview(null);
+    toast.success("AI 개선 스크립트가 적용되었습니다");
+  };
+
   const saveAllScripts = async () => {
     try {
       // Delete existing scripts first
@@ -727,7 +768,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
                       rows={3}
                       className="resize-none"
                     />
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {avatars.length > 0 && (
                         <Select value={sec.avatarId?.toString() || "default"} onValueChange={v => updateSectionAvatar(idx, v === "default" ? undefined : parseInt(v))}>
                           <SelectTrigger className="w-40 h-8 text-xs">
@@ -741,6 +782,19 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
                           </SelectContent>
                         </Select>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                        onClick={() => handleImproveScript(idx)}
+                        disabled={improvingIdx === idx || !sec.text.trim()}
+                      >
+                        {improvingIdx === idx ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> AI 개선 중...</>
+                        ) : (
+                          <><Wand2 className="w-3 h-3" /> AI 스크립트 개선</>
+                        )}
+                      </Button>
                       <span className="text-xs text-muted-foreground ml-auto">{sec.text.length}자 / ~{Math.ceil(sec.text.length / 5)}초</span>
                     </div>
                   </div>
@@ -757,6 +811,59 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
               <Plus className="w-4 h-4" /> 섹션 추가
             </Button>
           )}
+
+          {/* AI Improvement Style Selector */}
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs text-muted-foreground">AI 개선 스타일:</span>
+            {(["educational", "formal", "casual", "storytelling"] as const).map(s => (
+              <button key={s}
+                className={`px-2 py-0.5 rounded text-xs transition-colors ${
+                  improveStyle === s ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                }`}
+                onClick={() => setImproveStyle(s)}
+              >
+                {s === "educational" ? "교육적" : s === "formal" ? "격식적" : s === "casual" ? "친근" : "스토리"}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI Improvement Preview Dialog */}
+      {improvedPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <Card className="w-full max-w-3xl max-h-[80vh] overflow-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wand2 className="w-5 h-5 text-primary" />
+                AI 스크립트 개선 결과
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">원본</h4>
+                  <div className="p-3 bg-muted/50 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-auto">
+                    {improvedPreview.original}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-primary mb-2">개선된 버전</h4>
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-auto">
+                    {improvedPreview.improved}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setImprovedPreview(null)}>
+                  취소
+                </Button>
+                <Button onClick={applyImprovement} className="gap-1">
+                  <Check className="w-4 h-4" /> 개선된 버전 적용
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
@@ -1213,6 +1320,29 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
   // --- Touch handlers for mobile/tablet ---
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
     if (!annotationTool || !currentSlide) return;
+    // Eraser via touch
+    if (annotationTool === "eraser") {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const canvas = canvasRef.current;
+      if (!canvas || !touch) return;
+      const rect = canvas.getBoundingClientRect();
+      const pos = {
+        x: ((touch.clientX - rect.left) / rect.width) * 100,
+        y: ((touch.clientY - rect.top) / rect.height) * 100,
+      };
+      const target = findNearestAnnotation(pos);
+      if (target) {
+        deleteAnnotationMut.mutate({ id: target.id }, {
+          onSuccess: () => {
+            setUndoStack(prev => prev.filter(id => id !== target.id));
+            onRefresh();
+            toast.success("어노테이션이 삭제되었습니다");
+          },
+        });
+      }
+      return;
+    }
     e.preventDefault();
     const pos = getTouchRelativePos(e);
     if (annotationTool === "freehand" || annotationTool === "arrow") {
@@ -1284,10 +1414,50 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
     setCurrentPath([]);
   };
 
+  // Find nearest annotation to a point (for eraser)
+  const findNearestAnnotation = (pos: { x: number; y: number }, threshold = 5) => {
+    let nearest: any = null;
+    let minDist = threshold;
+    for (const ann of currentAnnotations) {
+      const pd = ann.pathData as any;
+      if (!pd) continue;
+      let dist = Infinity;
+      if (pd.points && Array.isArray(pd.points)) {
+        for (const pt of pd.points) {
+          const d = Math.sqrt((pt.x - pos.x) ** 2 + (pt.y - pos.y) ** 2);
+          if (d < dist) dist = d;
+        }
+      } else if (pd.x !== undefined && pd.y !== undefined) {
+        dist = Math.sqrt((pd.x - pos.x) ** 2 + (pd.y - pos.y) ** 2);
+      }
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = ann;
+      }
+    }
+    return nearest;
+  };
+
   // Mouse handlers for freehand drawing
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!annotationTool || !currentSlide) return;
     const pos = getRelativePos(e);
+
+    // Eraser tool: delete nearest annotation
+    if (annotationTool === "eraser") {
+      const target = findNearestAnnotation(pos);
+      if (target) {
+        deleteAnnotationMut.mutate({ id: target.id }, {
+          onSuccess: () => {
+            setUndoStack(prev => prev.filter(id => id !== target.id));
+            onRefresh();
+            toast.success("어노테이션이 삭제되었습니다");
+          },
+        });
+      }
+      return;
+    }
+
     if (annotationTool === "freehand") {
       setIsDrawing(true);
       setCurrentPath([pos]);
@@ -1471,6 +1641,24 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
                     onClick={() => setPenColor(color)}
                   />
                 ))}
+                <div className="relative">
+                  <button
+                    className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${!PEN_COLORS.includes(penColor) ? "border-foreground scale-125" : "border-muted-foreground/30"}`}
+                    style={{ background: !PEN_COLORS.includes(penColor) ? penColor : "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }}
+                    title="커스텀 색상 선택"
+                    onClick={() => {
+                      const input = document.getElementById("custom-color-picker") as HTMLInputElement;
+                      input?.click();
+                    }}
+                  />
+                  <input
+                    id="custom-color-picker"
+                    type="color"
+                    value={penColor}
+                    onChange={(e) => setPenColor(e.target.value)}
+                    className="absolute opacity-0 w-0 h-0 pointer-events-none"
+                  />
+                </div>
                 <Separator orientation="vertical" className="h-6 mx-1" />
                 <span className="text-xs text-muted-foreground mr-1">두께:</span>
                 <div className="w-20">
