@@ -141,6 +141,13 @@
       "when": 1776139283516,
       "tag": "0019_fair_silver_centurion",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1776786393513,
+      "tag": "0020_quiet_cable",
+      "breakpoints": true
     }
   ]
 }

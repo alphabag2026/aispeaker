@@ -3858,6 +3858,415 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { success: true, totalSlides: currentSlides.length };
       }),
   }),
+
+  // ============ v7.0 Lecture Builder ============
+  lectureBuilder: router({
+    // --- Project CRUD ---
+    createProject: protectedProcedure
+      .input(z.object({ title: z.string().min(1), description: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createLectureProject({ userId: ctx.user.id, title: input.title, description: input.description || null });
+        return { id };
+      }),
+
+    listProjects: protectedProcedure.query(async ({ ctx }) => {
+      return db.listLectureProjects(ctx.user.id);
+    }),
+
+    getProject: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.id);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return project;
+      }),
+
+    updateProject: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        currentStep: z.number().min(1).max(5).optional(),
+        status: z.enum(["draft", "in_progress", "ready", "generating", "completed", "failed"]).optional(),
+        avatarPosition: z.enum(["bottom-right", "bottom-left", "top-right", "top-left", "none"]).optional(),
+        avatarSize: z.enum(["small", "medium", "large"]).optional(),
+        avatarShape: z.enum(["circle", "rounded", "rectangle"]).optional(),
+        avatarOpacity: z.number().min(0).max(100).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.id);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const { id, ...data } = input;
+        await db.updateLectureProject(id, data as any);
+        return { success: true };
+      }),
+
+    deleteProject: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.id);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        await db.deleteLectureProject(input.id);
+        return { success: true };
+      }),
+
+    // --- Avatars ---
+    addAvatar: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        sampleFaceId: z.number().optional(),
+        customFaceUrl: z.string().optional(),
+        name: z.string().min(1),
+        role: z.enum(["instructor", "host", "guest", "narrator"]).default("instructor"),
+        ttsVoiceId: z.string().default("Kore"),
+        sortOrder: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const id = await db.addProjectAvatar(input);
+        return { id };
+      }),
+
+    listAvatars: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return db.listProjectAvatars(input.projectId);
+      }),
+
+    updateAvatar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        role: z.enum(["instructor", "host", "guest", "narrator"]).optional(),
+        ttsVoiceId: z.string().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateProjectAvatar(id, data as any);
+        return { success: true };
+      }),
+
+    deleteAvatar: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProjectAvatar(input.id);
+        return { success: true };
+      }),
+
+    // --- Slides ---
+    addSlide: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        imageUrl: z.string(),
+        fileKey: z.string(),
+        slideOrder: z.number().default(0),
+        originalFileName: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const id = await db.addProjectSlide(input);
+        return { id };
+      }),
+
+    listSlides: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return db.listProjectSlides(input.projectId);
+      }),
+
+    reorderSlides: protectedProcedure
+      .input(z.object({ projectId: z.number(), slideIds: z.array(z.number()) }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        await db.reorderProjectSlides(input.projectId, input.slideIds);
+        return { success: true };
+      }),
+
+    deleteSlide: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProjectSlide(input.id);
+        return { success: true };
+      }),
+
+    // --- Upload single image slide (base64) ---
+    uploadImageSlide: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        fileData: z.string(), // base64
+        fileName: z.string(),
+        mimeType: z.string().default("image/png"),
+        slideOrder: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const buffer = Buffer.from(input.fileData, "base64");
+        const ext = input.fileName.split(".").pop() || "png";
+        const fileKey = `lecture-builder/${input.projectId}/slides/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        const id = await db.addProjectSlide({
+          projectId: input.projectId,
+          imageUrl: url,
+          fileKey,
+          slideOrder: input.slideOrder,
+          originalFileName: input.fileName,
+        });
+        return { id, url, fileKey };
+      }),
+
+    // --- Upload slides from file (PPT/PDF/images) ---
+    uploadSlides: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        fileUrl: z.string(),
+        fileKey: z.string(),
+        fileName: z.string(),
+        slideImages: z.array(z.object({ url: z.string(), key: z.string() })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        // Get current max slide order
+        const existing = await db.listProjectSlides(input.projectId);
+        let maxOrder = existing.length > 0 ? Math.max(...existing.map(s => s.slideOrder)) + 1 : 0;
+        const ids: number[] = [];
+        for (const img of input.slideImages) {
+          const id = await db.addProjectSlide({
+            projectId: input.projectId,
+            imageUrl: img.url,
+            fileKey: img.key,
+            slideOrder: maxOrder++,
+            originalFileName: input.fileName,
+          });
+          ids.push(id);
+        }
+        return { slideIds: ids, count: ids.length };
+      }),
+
+    // --- Slide Scripts ---
+    setScript: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+        avatarId: z.number().optional(),
+        scriptText: z.string(),
+        estimatedDurationSec: z.number().optional(),
+        sortOrder: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const id = await db.setSlideScript(input);
+        return { id };
+      }),
+
+    listScripts: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return db.listSlideScripts(input.projectId);
+      }),
+
+    updateScript: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        scriptText: z.string().optional(),
+        avatarId: z.number().optional(),
+        estimatedDurationSec: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateSlideScript(id, data as any);
+        return { success: true };
+      }),
+
+    deleteScript: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteSlideScript(input.id);
+        return { success: true };
+      }),
+
+    // --- AI Script Generation ---
+    generateScript: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        prompt: z.string().min(1),
+        language: z.string().default("ko"),
+        slideCount: z.number().min(1).max(50).default(10),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const systemPrompt = `You are a professional lecture script writer. Generate a lecture script divided into exactly ${input.slideCount} sections. Each section should be 2-4 sentences. Language: ${input.language}. Return JSON array: [{"section": 1, "text": "..."}]`;
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: input.prompt },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "lecture_scripts",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  sections: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        section: { type: "integer" },
+                        text: { type: "string" },
+                      },
+                      required: ["section", "text"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["sections"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const content = response.choices?.[0]?.message?.content || "{}";
+        const parsed = JSON.parse(content);
+        return { sections: parsed.sections || [] };
+      }),
+
+    // --- Split/Classify existing script ---
+    splitScript: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        fullText: z.string().min(1),
+        slideCount: z.number().min(1).max(50).default(10),
+        language: z.string().default("ko"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const systemPrompt = `You are a script classifier. Split the following text into exactly ${input.slideCount} logical sections for a slide presentation. Each section should cover one topic/point. Return JSON array: [{"section": 1, "text": "..."}]`;
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: input.fullText },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "split_scripts",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  sections: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        section: { type: "integer" },
+                        text: { type: "string" },
+                      },
+                      required: ["section", "text"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["sections"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const content = response.choices?.[0]?.message?.content || "{}";
+        const parsed = JSON.parse(content);
+        return { sections: parsed.sections || [] };
+      }),
+
+    // --- Annotations ---
+    addAnnotation: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+        annotationType: z.enum(["circle", "arrow", "check", "underline", "freehand"]).default("circle"),
+        penColor: z.string().default("#FF0000"),
+        penThickness: z.number().min(1).max(10).default(3),
+        pathData: z.any().optional(),
+        showAtSec: z.number().default(0),
+        durationSec: z.number().default(3),
+        sortOrder: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const id = await db.addSlideAnnotation(input);
+        return { id };
+      }),
+
+    listAnnotations: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return db.listSlideAnnotations(input.projectId);
+      }),
+
+    listAnnotationsBySlide: protectedProcedure
+      .input(z.object({ slideId: z.number() }))
+      .query(async ({ input }) => {
+        return db.listSlideAnnotationsBySlide(input.slideId);
+      }),
+
+    updateAnnotation: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        annotationType: z.enum(["circle", "arrow", "check", "underline", "freehand"]).optional(),
+        penColor: z.string().optional(),
+        penThickness: z.number().optional(),
+        pathData: z.any().optional(),
+        showAtSec: z.number().optional(),
+        durationSec: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateSlideAnnotation(id, data as any);
+        return { success: true };
+      }),
+
+    deleteAnnotation: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteSlideAnnotation(input.id);
+        return { success: true };
+      }),
+
+    // --- Get full project data (all steps) ---
+    getFullProject: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.id);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const [avatars, slides, scripts, annotations] = await Promise.all([
+          db.listProjectAvatars(input.id),
+          db.listProjectSlides(input.id),
+          db.listSlideScripts(input.id),
+          db.listSlideAnnotations(input.id),
+        ]);
+        return { project, avatars, slides, scripts, annotations };
+      }),
+  }),
 });
 
 // SRT time formatter

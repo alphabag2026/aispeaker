@@ -53,6 +53,9 @@ export default function Navbar() {
     { href: "/faces", label: t("nav.ai_faces"), icon: Users },
     { href: "/voices", label: t("nav.ai_voices"), icon: Volume2 },
     { href: "/pricing", label: t("nav.pricing"), icon: CreditCard },
+    ...(user ? [
+      { href: "/lecture-builder", label: "강의 제작", icon: Video },
+    ] : []),
     ...(isInstructor ? [
       { href: "/studio", label: t("nav.studio"), icon: Play },
       { href: "/instructor", label: t("nav.dashboard"), icon: Monitor },
