@@ -609,6 +609,53 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
     toast.success("AI 개선 스크립트가 적용되었습니다");
   };
 
+  // --- Batch AI Improvement ---
+  const [batchImproving, setBatchImproving] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [batchResults, setBatchResults] = useState<{ id: string; original: string; improved: string }[] | null>(null);
+  const improveAllMut = trpc.lectureBuilder.improveAllScripts.useMutation({
+    onSuccess: (data) => {
+      setBatchImproving(false);
+      setBatchProgress(100);
+      setBatchResults(data.results);
+      toast.success(`${data.improved}/${data.total}개 섹션이 개선되었습니다`);
+    },
+    onError: (e: any) => {
+      setBatchImproving(false);
+      setBatchProgress(0);
+      toast.error(`전체 개선 실패: ${e.message}`);
+    },
+  });
+
+  const handleImproveAll = () => {
+    const validSections = sections.filter(s => s.text.trim().length > 0);
+    if (validSections.length === 0) {
+      toast.error("개선할 스크립트가 없습니다");
+      return;
+    }
+    setBatchImproving(true);
+    setBatchProgress(10);
+    const progressInterval = setInterval(() => {
+      setBatchProgress(prev => Math.min(prev + Math.random() * 15, 90));
+    }, 2000);
+    improveAllMut.mutate(
+      { sections: validSections.map(s => ({ id: s.id, text: s.text })), style: improveStyle, language },
+      { onSettled: () => clearInterval(progressInterval) }
+    );
+  };
+
+  const applyAllImprovements = () => {
+    if (!batchResults) return;
+    const newSections = sections.map(sec => {
+      const result = batchResults.find(r => r.id === sec.id);
+      return result && result.improved !== result.original ? { ...sec, text: result.improved } : sec;
+    });
+    setSections(newSections);
+    setBatchResults(null);
+    setBatchProgress(0);
+    toast.success("전체 AI 개선 스크립트가 적용되었습니다");
+  };
+
   const saveAllScripts = async () => {
     try {
       // Delete existing scripts first
@@ -751,7 +798,27 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
       {/* Script Sections List */}
       {sections.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-semibold text-lg">스크립트 섹션 ({sections.length}개)</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-lg">스크립트 섹션 ({sections.length}개)</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
+              onClick={handleImproveAll}
+              disabled={batchImproving || sections.filter(s => s.text.trim()).length === 0}
+            >
+              {batchImproving ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> 전체 개선 중... ({Math.round(batchProgress)}%)</>
+              ) : (
+                <><Wand2 className="w-4 h-4" /> 전체 AI 스크립트 개선</>
+              )}
+            </Button>
+          </div>
+          {batchImproving && (
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-primary to-blue-400 transition-all duration-500" style={{ width: `${batchProgress}%` }} />
+            </div>
+          )}
           {sections.map((sec, idx) => (
             <Card key={sec.id} className="group">
               <CardContent className="pt-4">
@@ -860,6 +927,64 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
                 </Button>
                 <Button onClick={applyImprovement} className="gap-1">
                   <Check className="w-4 h-4" /> 개선된 버전 적용
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch AI Improvement Results Dialog */}
+      {batchResults && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <Card className="w-full max-w-4xl max-h-[85vh] overflow-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wand2 className="w-5 h-5 text-primary" />
+                전체 AI 스크립트 개선 결과
+                <Badge variant="outline" className="ml-2">
+                  {batchResults.filter(r => r.improved !== r.original).length}/{batchResults.length}개 개선됨
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3 max-h-[55vh] overflow-auto pr-1">
+                {batchResults.map((result, idx) => {
+                  const changed = result.improved !== result.original;
+                  return (
+                    <div key={result.id} className={`p-3 rounded-lg border ${changed ? "border-primary/30 bg-primary/5" : "border-muted bg-muted/30"}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-xs">섹션 {idx + 1}</Badge>
+                        {changed ? (
+                          <Badge className="bg-green-500/20 text-green-400 text-xs">개선됨</Badge>
+                        ) : (
+                          <Badge className="bg-muted text-muted-foreground text-xs">변경 없음</Badge>
+                        )}
+                      </div>
+                      {changed ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <span className="text-xs text-muted-foreground mb-1 block">원본</span>
+                            <div className="p-2 bg-muted/50 rounded text-xs whitespace-pre-wrap max-h-32 overflow-auto">{result.original}</div>
+                          </div>
+                          <div>
+                            <span className="text-xs text-primary mb-1 block">개선</span>
+                            <div className="p-2 bg-primary/5 border border-primary/20 rounded text-xs whitespace-pre-wrap max-h-32 overflow-auto">{result.improved}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground line-clamp-2">{result.original}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button variant="outline" onClick={() => { setBatchResults(null); setBatchProgress(0); }}>
+                  취소
+                </Button>
+                <Button onClick={applyAllImprovements} className="gap-1">
+                  <Check className="w-4 h-4" /> 전체 적용 ({batchResults.filter(r => r.improved !== r.original).length}개)
                 </Button>
               </div>
             </CardContent>
