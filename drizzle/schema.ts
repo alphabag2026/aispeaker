@@ -1306,3 +1306,23 @@ export const scriptImprovementHistory = mysqlTable("scriptImprovementHistory", {
 });
 export type ScriptImprovementHistory = typeof scriptImprovementHistory.$inferSelect;
 export type InsertScriptImprovementHistory = typeof scriptImprovementHistory.$inferInsert;
+
+// ============ v7.6: Slide Script Version Snapshots ============
+export const slideScriptVersions = mysqlTable("slideScriptVersions", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  userId: int("userId").notNull(),
+  /** Version number (auto-incremented per project) */
+  versionNumber: int("versionNumber").notNull(),
+  /** JSON snapshot of all sections [{sortOrder, scriptText, avatarId}] */
+  sectionsSnapshot: text("sectionsSnapshot").notNull(),
+  /** Number of sections in this snapshot */
+  sectionCount: int("sectionCount").default(0),
+  /** What changed in this version */
+  changeDescription: varchar("changeDescription", { length: 500 }),
+  /** Change type: manual (explicit save), auto (auto-save) */
+  changeType: mysqlEnum("changeType", ["manual", "auto"]).default("manual").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SlideScriptVersion = typeof slideScriptVersions.$inferSelect;
+export type InsertSlideScriptVersion = typeof slideScriptVersions.$inferInsert;

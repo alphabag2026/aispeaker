@@ -527,6 +527,26 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
   const [language, setLanguage] = useState("ko");
   const [sections, setSections] = useState<ScriptSection[]>([]);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sectionsRef = useRef(sections);
+  sectionsRef.current = sections;
+  const [showVersionPanel, setShowVersionPanel] = useState(false);
+
+  const saveVersionMut = trpc.lectureBuilder.saveScriptVersion.useMutation({
+    onSuccess: (data) => { toast.success(`\uBC84\uC804 ${data.versionNumber} \uC800\uC7A5\uB428`); versionsQuery.refetch(); },
+  });
+  const versionsQuery = trpc.lectureBuilder.listScriptVersions.useQuery(
+    { projectId },
+    { enabled: showVersionPanel }
+  );
+  const restoreVersionMut = trpc.lectureBuilder.restoreScriptVersion.useMutation({
+    onSuccess: (data) => {
+      toast.success(`\uBC84\uC804 ${data.restoredVersion}\uC73C\uB85C \uBCF5\uC6D0\uB428 (${data.sectionCount}\uAC1C \uC139\uC158)`);
+      onRefresh();
+    },
+  });
 
   // Load existing scripts into sections
   useEffect(() => {
@@ -676,7 +696,39 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
     toast.success("전체 AI 개선 스크립트가 적용되었습니다");
   };
 
+  // Auto-save: debounce 30s after any section edit
+  useEffect(() => {
+    if (sections.length === 0 || sections.every(s => !s.text.trim())) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(async () => {
+      try {
+        setAutoSaveStatus("saving");
+        for (const s of scripts) {
+          await deleteScriptMut.mutateAsync({ id: s.id });
+        }
+        const current = sectionsRef.current;
+        for (let i = 0; i < current.length; i++) {
+          if (!current[i].text.trim()) continue;
+          await setScriptMut.mutateAsync({
+            projectId,
+            slideId: 0,
+            scriptText: current[i].text,
+            avatarId: current[i].avatarId,
+            sortOrder: i,
+          });
+        }
+        setAutoSaveStatus("saved");
+        setLastSavedAt(new Date());
+        onRefresh();
+      } catch {
+        setAutoSaveStatus("idle");
+      }
+    }, 30000);
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [sections]);
+
   const saveAllScripts = async () => {
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     try {
       // Delete existing scripts first
       for (const s of scripts) {
@@ -727,10 +779,25 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
           <p className="text-muted-foreground">3가지 방법으로 강의 대본을 준비할 수 있습니다</p>
         </div>
         {sections.length > 0 && (
-          <Button onClick={saveAllScripts} disabled={setScriptMut.isPending} className="gap-2">
-            {setScriptMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-            스크립트 저장 ({sections.length}개)
-          </Button>
+          <div className="flex items-center gap-3">
+            {autoSaveStatus === "saving" && (
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" /> \uc790\ub3d9 \uc800\uc7a5 \uc911...
+              </span>
+            )}
+            {autoSaveStatus === "saved" && lastSavedAt && (
+              <span className="text-xs text-green-500 flex items-center gap-1">
+                <Check className="w-3 h-3" /> \uc790\ub3d9 \uc800\uc7a5\ub428 {lastSavedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+            <Button onClick={async () => { await saveAllScripts(); saveVersionMut.mutate({ projectId, changeDescription: `수동 저장 (${sections.length}개 섹션)`, changeType: "manual" }); }} disabled={setScriptMut.isPending} className="gap-2">
+              {setScriptMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              \uc2a4\ud06c\ub9bd\ud2b8 \uc800\uc7a5 ({sections.length}\uac1c)
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowVersionPanel(!showVersionPanel)} className="gap-1">
+              <History className="w-4 h-4" /> \ubc84\uc804
+            </Button>
+          </div>
         )}
       </div>
 
@@ -1036,6 +1103,64 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
           <ImprovementHistoryPanel projectId={projectId} sections={sections} setSections={setSections} />
         </CardContent>
       </Card>
+
+      {/* Script Version History Panel */}
+      {showVersionPanel && (
+        <Card className="border-blue-500/30 bg-blue-500/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <History className="w-5 h-5 text-blue-500" />
+                \uc2a4\ud06c\ub9bd\ud2b8 \ubc84\uc804 \uc774\ub825
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => setShowVersionPanel(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <CardDescription>\uc218\ub3d9 \uc800\uc7a5 \uc2dc \uc790\ub3d9\uc73c\ub85c \ubc84\uc804\uc774 \uc0dd\uc131\ub429\ub2c8\ub2e4. \uc774\uc804 \ubc84\uc804\uc73c\ub85c \ub3cc\uc544\uac08 \uc218 \uc788\uc2b5\ub2c8\ub2e4.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {versionsQuery.isLoading ? (
+              <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+            ) : !versionsQuery.data?.length ? (
+              <p className="text-center text-muted-foreground py-6">\uc800\uc7a5\ub41c \ubc84\uc804\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \uc2a4\ud06c\ub9bd\ud2b8\ub97c \uc800\uc7a5\ud558\uba74 \uc790\ub3d9\uc73c\ub85c \ubc84\uc804\uc774 \uc0dd\uc131\ub429\ub2c8\ub2e4.</p>
+            ) : (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {versionsQuery.data.map((v: any) => (
+                  <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-bold text-blue-500">v{v.versionNumber}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${v.changeType === "manual" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}>
+                          {v.changeType === "manual" ? "\uc218\ub3d9" : "\uc790\ub3d9"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{v.sectionCount}\uac1c \uc139\uc158</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-0.5">{v.changeDescription}</p>
+                      <p className="text-xs text-muted-foreground/60 mt-0.5">
+                        {new Date(v.createdAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
+                      disabled={restoreVersionMut.isPending}
+                      onClick={() => {
+                        if (confirm(`\uBC84\uC804 ${v.versionNumber}\uC73C\uB85C \uBCF5\uC6D0\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? \uD604\uC7AC \uC2A4\uD06C\uB9BD\uD2B8\uAC00 \uB300\uCCB4\uB429\uB2C8\uB2E4.`)) {
+                          restoreVersionMut.mutate({ projectId, versionId: v.id });
+                        }
+                      }}
+                    >
+                      <Undo2 className="w-3.5 h-3.5" /> \ubcf5\uc6d0
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -1047,6 +1172,7 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
   setSections: (s: any[]) => void;
 }) {
   const [showHistory, setShowHistory] = useState(false);
+  const [detailGroup, setDetailGroup] = useState<{ batchId: string; style: string; count: number; createdAt: Date; sections: any[] } | null>(null);
   const historyQuery = trpc.lectureBuilder.getImprovementHistory.useQuery(
     { projectId },
     { enabled: showHistory }
@@ -1058,13 +1184,13 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
         return reverted ? { ...sec, text: reverted.originalText } : sec;
       });
       setSections(newSections);
-      toast.success(`${data.sections.length}개 섹션이 이전 버전으로 되돌려졌습니다`);
+      toast.success(`${data.sections.length}\uac1c \uc139\uc158\uc774 \uc774\uc804 \ubc84\uc804\uc73c\ub85c \ub418\ub3cc\ub824\uc84c\uc2b5\ub2c8\ub2e4`);
       historyQuery.refetch();
+      setDetailGroup(null);
     },
-    onError: (e: any) => toast.error(`되돌리기 실패: ${e.message}`),
+    onError: (e: any) => toast.error(`\ub418\ub3cc\ub9ac\uae30 \uc2e4\ud328: ${e.message}`),
   });
 
-  // Group by batchId
   const groupedHistory = useMemo(() => {
     if (!historyQuery.data) return [];
     const groups = new Map<string, { batchId: string; style: string; count: number; createdAt: Date; sections: typeof historyQuery.data }>(); 
@@ -1098,7 +1224,11 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
             <p className="text-sm text-muted-foreground">\uc544\uc9c1 AI \uac1c\uc120 \uc774\ub825\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.</p>
           )}
           {groupedHistory.map((group) => (
-            <div key={group.batchId} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50">
+            <div
+              key={group.batchId}
+              className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:bg-muted/80 transition-colors"
+              onClick={() => setDetailGroup(group)}
+            >
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">{styleLabels[group.style] || group.style}</Badge>
@@ -1108,23 +1238,97 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
                   {new Date(group.createdAt).toLocaleString("ko-KR")}
                 </p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
-                onClick={() => {
-                  if (group.batchId.startsWith("single-")) {
-                    toast.error("\ub2e8\uc77c \uac1c\uc120\uc740 \ub418\ub3cc\ub9ac\uae30\ub97c \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4");
-                    return;
-                  }
-                  revertMut.mutate({ batchId: group.batchId });
-                }}
-                disabled={revertMut.isPending}
-              >
-                <Undo2 className="w-3.5 h-3.5" /> \ub418\ub3cc\ub9ac\uae30
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-muted-foreground"
+                  onClick={(e) => { e.stopPropagation(); setDetailGroup(group); }}
+                >
+                  <Eye className="w-3.5 h-3.5" /> \uc0c1\uc138
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (group.batchId.startsWith("single-")) {
+                      toast.error("\ub2e8\uc77c \uac1c\uc120\uc740 \ub418\ub3cc\ub9ac\uae30\ub97c \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4");
+                      return;
+                    }
+                    revertMut.mutate({ batchId: group.batchId });
+                  }}
+                  disabled={revertMut.isPending}
+                >
+                  <Undo2 className="w-3.5 h-3.5" /> \ub418\ub3cc\ub9ac\uae30
+                </Button>
+              </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Detail Comparison Modal */}
+      {detailGroup && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setDetailGroup(null)}>
+          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-3">
+                <History className="w-5 h-5 text-primary" />
+                <div>
+                  <h3 className="font-semibold">AI \uac1c\uc120 \uc0c1\uc138 \ube44\uad50</h3>
+                  <p className="text-xs text-muted-foreground">
+                    <Badge variant="outline" className="text-xs mr-2">{styleLabels[detailGroup.style] || detailGroup.style}</Badge>
+                    {detailGroup.count}\uac1c \uc139\uc158 \u00b7 {new Date(detailGroup.createdAt).toLocaleString("ko-KR")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {!detailGroup.batchId.startsWith("single-") && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
+                    onClick={() => revertMut.mutate({ batchId: detailGroup.batchId })}
+                    disabled={revertMut.isPending}
+                  >
+                    <Undo2 className="w-3.5 h-3.5" /> \ub418\ub3cc\ub9ac\uae30
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => setDetailGroup(null)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="overflow-y-auto max-h-[calc(85vh-80px)] p-4 space-y-4">
+              {detailGroup.sections.map((item: any, idx: number) => {
+                const hasChange = item.originalText !== item.improvedText;
+                return (
+                  <div key={item.id || idx} className="border rounded-lg overflow-hidden">
+                    <div className="bg-muted/30 px-4 py-2 border-b flex items-center gap-2">
+                      <span className="text-sm font-medium">\uc139\uc158 {idx + 1}</span>
+                      {hasChange ? (
+                        <Badge className="bg-green-500/10 text-green-500 text-xs">\uac1c\uc120\ub428</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs text-muted-foreground">\ubcc0\uacbd\uc5c6\uc74c</Badge>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 divide-x">
+                      <div className="p-4">
+                        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">\uc6d0\ubcf8</p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">{item.originalText || "(\ube44\uc5b4\uc788\uc74c)"}</p>
+                      </div>
+                      <div className="p-4">
+                        <p className="text-xs font-medium text-primary mb-2 uppercase tracking-wider">\uac1c\uc120</p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.improvedText || "(\ube44\uc5b4\uc788\uc74c)"}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>

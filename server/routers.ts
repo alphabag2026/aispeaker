@@ -4097,6 +4097,68 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { success: true };
       }),
 
+    // --- Slide Script Version Management ---
+    saveScriptVersion: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        changeDescription: z.string().optional(),
+        changeType: z.enum(["manual", "auto"]).default("manual"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        // Get current scripts
+        const scripts = await db.listSlideScripts(input.projectId);
+        const snapshot = scripts.map((s: any) => ({
+          sortOrder: s.sortOrder,
+          scriptText: s.scriptText,
+          avatarId: s.avatarId,
+        }));
+        const latestVer = await db.getLatestSlideScriptVersionNumber(input.projectId);
+        const versionId = await db.createSlideScriptVersion({
+          projectId: input.projectId,
+          userId: ctx.user.id,
+          versionNumber: latestVer + 1,
+          sectionsSnapshot: JSON.stringify(snapshot),
+          sectionCount: snapshot.length,
+          changeDescription: input.changeDescription || `\uBC84\uC804 ${latestVer + 1}`,
+          changeType: input.changeType,
+        });
+        return { versionId, versionNumber: latestVer + 1 };
+      }),
+
+    listScriptVersions: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return db.getSlideScriptVersions(input.projectId, ctx.user.id);
+      }),
+
+    restoreScriptVersion: protectedProcedure
+      .input(z.object({ projectId: z.number(), versionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const version = await db.getSlideScriptVersionById(input.versionId);
+        if (!version || version.projectId !== input.projectId) throw new TRPCError({ code: "NOT_FOUND" });
+        const snapshot = JSON.parse(version.sectionsSnapshot) as { sortOrder: number; scriptText: string; avatarId?: number }[];
+        // Delete existing scripts
+        const existing = await db.listSlideScripts(input.projectId);
+        for (const s of existing) { await db.deleteSlideScript(s.id); }
+        // Recreate from snapshot
+        for (const sec of snapshot) {
+          await db.setSlideScript({
+            projectId: input.projectId,
+            slideId: 0,
+            scriptText: sec.scriptText,
+            avatarId: sec.avatarId,
+            sortOrder: sec.sortOrder,
+          });
+        }
+        return { success: true, sectionCount: snapshot.length, restoredVersion: version.versionNumber };
+      }),
+
     // --- AI Script Generation ---
     generateScript: protectedProcedure
       .input(z.object({
