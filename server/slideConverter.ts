@@ -82,6 +82,92 @@ export async function convertPptToImages(
   }
 }
 
+/**
+ * Extract text from PDF pages
+ */
+export async function extractPdfText(pdfBuffer: Buffer): Promise<{ pageIndex: number; text: string }[]> {
+  const results: { pageIndex: number; text: string }[] = [];
+  try {
+    const { PDFDocument } = await import("pdf-lib");
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+    const pageCount = pdfDoc.getPageCount();
+
+    // Try pdftotext (poppler-utils) first for better extraction
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "pdf-text-"));
+    const pdfPath = path.join(tmpDir, "input.pdf");
+    fs.writeFileSync(pdfPath, pdfBuffer);
+
+    try {
+      execSync(`which pdftotext`, { stdio: "ignore" });
+      for (let i = 0; i < pageCount; i++) {
+        try {
+          const txtPath = path.join(tmpDir, `page-${i}.txt`);
+          execSync(`pdftotext -f ${i + 1} -l ${i + 1} -layout "${pdfPath}" "${txtPath}"`, { timeout: 15000 });
+          if (fs.existsSync(txtPath)) {
+            const text = fs.readFileSync(txtPath, "utf-8").trim();
+            results.push({ pageIndex: i, text: text || `[Page ${i + 1}]` });
+          } else {
+            results.push({ pageIndex: i, text: `[Page ${i + 1}]` });
+          }
+        } catch {
+          results.push({ pageIndex: i, text: `[Page ${i + 1}]` });
+        }
+      }
+    } catch {
+      // pdftotext not available, return placeholder
+      for (let i = 0; i < pageCount; i++) {
+        results.push({ pageIndex: i, text: `[Page ${i + 1}]` });
+      }
+    }
+
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  } catch (err) {
+    console.error("PDF text extraction failed:", err);
+  }
+  return results;
+}
+
+/**
+ * Extract text from PPT/PPTX files by converting to PDF first, then extracting text
+ */
+export async function extractPptText(
+  pptBuffer: Buffer, originalFileName: string
+): Promise<{ pageIndex: number; text: string }[]> {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "ppt-text-"));
+  const ext = originalFileName.toLowerCase().endsWith(".pptx") ? ".pptx" : ".ppt";
+  const pptPath = path.join(tmpDir, `input${ext}`);
+  fs.writeFileSync(pptPath, pptBuffer);
+
+  try {
+    try { execSync(`which libreoffice`, { stdio: "ignore" }); } catch {
+      return [];
+    }
+    execSync(`libreoffice --headless --convert-to pdf --outdir "${tmpDir}" "${pptPath}"`, { timeout: 120000, stdio: "ignore" });
+    const pdfFile = fs.readdirSync(tmpDir).find(f => f.endsWith(".pdf"));
+    if (!pdfFile) return [];
+    const pdfBuffer = fs.readFileSync(path.join(tmpDir, pdfFile));
+    return await extractPdfText(pdfBuffer);
+  } finally {
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  }
+}
+
+/**
+ * Extract text from uploaded file (PDF or PPT/PPTX)
+ */
+export async function extractFileText(
+  fileBuffer: Buffer, fileName: string, mimeType: string
+): Promise<{ pageIndex: number; text: string }[]> {
+  const lowerName = fileName.toLowerCase();
+  if (mimeType === "application/pdf" || lowerName.endsWith(".pdf")) {
+    return extractPdfText(fileBuffer);
+  }
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint") || lowerName.endsWith(".pptx") || lowerName.endsWith(".ppt")) {
+    return extractPptText(fileBuffer, fileName);
+  }
+  return [];
+}
+
 export async function convertFileToSlideImages(
   fileBuffer: Buffer, fileName: string, mimeType: string, projectId: number
 ): Promise<{ slideOrder: number; imageUrl: string; fileKey: string }[]> {

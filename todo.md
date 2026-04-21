@@ -1082,3 +1082,26 @@
 
 ### 테스트
 - [x] v7.1 테스트 12개 통과 (convertFile, saveCanvasDrawing, uploadBgm, generateVideo, deleteAnnotation)
+
+## v7.2 업그레이드 - 터치 드로잉, 진행률 폴링, PPT 텍스트 추출
+
+### Step 4: 모바일/태블릿 터치 드로잉 지원
+- [x] Canvas에 touchstart/touchmove/touchend 이벤트 추가
+- [x] 터치 좌표를 마우스 좌표와 동일하게 변환
+- [x] 터치 시 스크롤 방지 (touch-action: none)
+- [x] 모바일에서 드로잉 도구 UI 반응형 처리
+
+### Step 5: generateVideo 실시간 진행률 폴링
+- [x] 백엔드: 프로젝트 상태 폴링 프로시저 추가 (getVideoProgress)
+- [x] 프론트엔드: 영상 생성 중 주기적 폴링 (3초 간격)
+- [x] 진행률 프로그레스 바 UI 표시
+- [x] 완료/오류 시 자동 폴링 중지
+
+### Step 3: PPT 텍스트 추출 → 스크립트 초안
+- [x] 백엔드: convertFile에서 텍스트 추출 기능 추가
+- [x] 추출된 텍스트를 슬라이드별 스크립트 초안으로 자동 매핑
+- [x] 프론트엔드: 변환 완료 후 "텍스트 추출 → 스크립트 초안" 버튼 표시
+- [x] 추출된 스크립트를 Step2 스크립트 섹션에 자동 반영
+
+### 테스트
+- [x] v7.2 테스트 작성 및 통과 (14개 테스트 통과)
