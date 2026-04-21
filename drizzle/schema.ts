@@ -1252,3 +1252,28 @@ export const slideAnnotations = mysqlTable("slideAnnotations", {
 
 export type SlideAnnotation = typeof slideAnnotations.$inferSelect;
 export type InsertSlideAnnotation = typeof slideAnnotations.$inferInsert;
+
+// ============ Video Generation History ============
+export const videoGenerations = mysqlTable("video_generations", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  userId: int("userId").notNull(),
+  /** Generation status */
+  status: mysqlEnum("status", ["pending", "generating", "completed", "failed"]).default("pending").notNull(),
+  /** Final video URL */
+  videoUrl: text("videoUrl"),
+  /** Total duration in seconds */
+  totalDuration: int("totalDuration"),
+  /** Configuration snapshot */
+  config: json("config"),
+  /** Error message if failed */
+  errorMessage: text("errorMessage"),
+  /** Number of slides included */
+  slideCount: int("slideCount").default(0),
+  /** Resolution */
+  resolution: varchar("resolution", { length: 10 }).default("1080p"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+export type VideoGeneration = typeof videoGenerations.$inferSelect;
+export type InsertVideoGeneration = typeof videoGenerations.$inferInsert;

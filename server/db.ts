@@ -43,6 +43,7 @@ import {
   pipSettings, InsertPipSetting,
   pptUploads, InsertPptUpload,
   lectureProjects, InsertLectureProject,
+  videoGenerations, InsertVideoGeneration,
   projectAvatars, InsertProjectAvatar,
   projectSlides, InsertProjectSlide,
   slideScripts, InsertSlideScript,
@@ -1859,4 +1860,42 @@ export async function deleteSlideAnnotationsBySlide(slideId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(slideAnnotations).where(eq(slideAnnotations.slideId, slideId));
+}
+
+
+// ============ Video Generation History ============
+export async function createVideoGeneration(data: InsertVideoGeneration) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(videoGenerations).values(data);
+  return result.insertId;
+}
+
+export async function getVideoGeneration(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(videoGenerations).where(eq(videoGenerations.id, id));
+  return rows[0] || null;
+}
+
+export async function listVideoGenerations(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(videoGenerations)
+    .where(eq(videoGenerations.projectId, projectId))
+    .orderBy(desc(videoGenerations.createdAt));
+}
+
+export async function listUserVideoGenerations(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(videoGenerations)
+    .where(eq(videoGenerations.userId, userId))
+    .orderBy(desc(videoGenerations.createdAt));
+}
+
+export async function updateVideoGeneration(id: number, data: Partial<InsertVideoGeneration>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(videoGenerations).set(data).where(eq(videoGenerations.id, id));
 }
