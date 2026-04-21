@@ -4574,6 +4574,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
     // --- Improve ALL scripts at once (batch LLM) ---
     improveAllScripts: protectedProcedure
       .input(z.object({
+        projectId: z.number().optional(),
         sections: z.array(z.object({
           id: z.string(),
           text: z.string(),
@@ -4608,7 +4609,44 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             results.push({ id: sec.id, original: sec.text, improved: sec.text });
           }
         }
-        return { results, total: input.sections.length, improved: results.filter(r => r.improved !== r.original).length };
+        // Save improvement history to DB
+        const changedResults = results.filter(r => r.improved !== r.original);
+        if (changedResults.length > 0 && input.projectId) {
+          const batchId = `batch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          try {
+            await db.addBatchScriptImprovementHistory(
+              changedResults.map((r, idx) => ({
+                userId: ctx.user.id,
+                projectId: input.projectId!,
+                sectionId: r.id,
+                sectionIndex: idx,
+                originalText: r.original,
+                improvedText: r.improved,
+                style: input.style,
+                applied: false,
+                isBatch: true,
+                batchId,
+              }))
+            );
+          } catch (e) { /* non-critical */ }
+        }
+        return { results, total: input.sections.length, improved: changedResults.length };
+      }),
+
+    // --- Script Improvement History ---
+    getImprovementHistory: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getScriptImprovementHistory(input.projectId, ctx.user.id);
+      }),
+
+    revertImprovement: protectedProcedure
+      .input(z.object({ batchId: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        const batch = await db.getScriptImprovementBatch(input.batchId);
+        if (batch.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "이력을 찾을 수 없습니다" });
+        if (batch[0].userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        return { sections: batch.map(b => ({ sectionId: b.sectionId, originalText: b.originalText })) };
       }),
 
     // --- Get full project data (all steps) ---

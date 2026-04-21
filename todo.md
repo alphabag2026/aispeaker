@@ -1132,3 +1132,13 @@
 - [x] 프론트엔드: "전체 AI 스크립트 개선" 버튼 + 진행률 표시
 - [x] 전체 개선 전/후 비교 모달 (일괄 적용/취소)
 - [x] vitest 테스트 작성 및 통과 (6개 테스트 통과)
+
+## v7.5 - 선택적 일괄 개선 + AI 이력 저장 + 배포
+- [x] 프론트엔드: 섹션별 체크박스 추가 (전체선택/해제) + 선택 상태 하이라이트
+- [x] 선택된 섹션만 improveAllScripts에 전달 (미선택 시 전체 개선)
+- [x] DB 스키마: scriptImprovementHistory 테이블 추가
+- [x] 백엔드: 개선 시 이력 자동 저장 (batchId로 그룹핑)
+- [x] 백엔드: getImprovementHistory + revertImprovement 프로시저
+- [x] 프론트엔드: 이력 보기 패널 + batchId별 그룹 표시 + 되돌리기 버튼
+- [x] vitest 테스트 작성 및 통과 (14개 테스트 통과)
+- [ ] aispeaker.cc 배포 안내
