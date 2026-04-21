@@ -169,6 +169,13 @@
       "when": 1776798984813,
       "tag": "0023_amazing_maddog",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1776800163493,
+      "tag": "0024_military_lily_hollister",
+      "breakpoints": true
     }
   ]
 }

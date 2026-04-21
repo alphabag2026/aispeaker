@@ -48,6 +48,7 @@ import {
   projectSlides, InsertProjectSlide,
   slideScripts, InsertSlideScript,
   slideAnnotations, InsertSlideAnnotation,
+  slideScriptVersions, InsertSlideScriptVersion,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1936,4 +1937,43 @@ export async function getScriptImprovementBatch(batchId: string) {
   return db.select().from(scriptImprovementHistory)
     .where(eq(scriptImprovementHistory.batchId, batchId))
     .orderBy(scriptImprovementHistory.sectionIndex);
+}
+
+
+// ============ v7.6: Slide Script Version Snapshots ============
+
+export async function createSlideScriptVersion(data: {
+  projectId: number;
+  userId: number;
+  versionNumber: number;
+  sectionsSnapshot: string;
+  sectionCount: number;
+  changeDescription?: string;
+  changeType: "manual" | "auto";
+}) {
+  const db = await getDb();
+  const result = await db!.insert(slideScriptVersions).values(data);
+  return result[0].insertId;
+}
+
+export async function getSlideScriptVersions(projectId: number, userId: number) {
+  const db = await getDb();
+  return db!.select().from(slideScriptVersions)
+    .where(and(eq(slideScriptVersions.projectId, projectId), eq(slideScriptVersions.userId, userId)))
+    .orderBy(desc(slideScriptVersions.versionNumber))
+    .limit(50);
+}
+
+export async function getSlideScriptVersionById(id: number) {
+  const db = await getDb();
+  const rows = await db!.select().from(slideScriptVersions).where(eq(slideScriptVersions.id, id));
+  return rows[0] || null;
+}
+
+export async function getLatestSlideScriptVersionNumber(projectId: number) {
+  const db = await getDb();
+  const rows = await db!.select({ maxVer: sql<number>`COALESCE(MAX(${slideScriptVersions.versionNumber}), 0)` })
+    .from(slideScriptVersions)
+    .where(eq(slideScriptVersions.projectId, projectId));
+  return rows[0]?.maxVer || 0;
 }

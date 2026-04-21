@@ -1142,3 +1142,12 @@
 - [x] 프론트엔드: 이력 보기 패널 + batchId별 그룹 표시 + 되돌리기 버튼
 - [x] vitest 테스트 작성 및 통과 (14개 테스트 통과)
 - [ ] aispeaker.cc 배포 안내
+
+## v7.6 - 이력 상세 모달 + 자동 저장 + 버전 관리
+- [x] 이력 항목 클릭 시 섹션별 원본/개선 나란히 비교 상세 모달 (2칸 그리드 + 변경 배지)
+- [x] 스크립트 편집 중 30초 debounce 자동 저장 (useEffect + setTimeout)
+- [x] 자동 저장 상태 표시 (저장 중 스피너 / 완료 체크 + 시간)
+- [x] DB 스키마: slideScriptVersions 테이블 추가 (프로젝트 단위 스냅샷)
+- [x] 백엔드: saveScriptVersion/listScriptVersions/restoreScriptVersion 프로시저
+- [x] 프론트엔드: 수동 저장 시 자동 버전 생성 + 버전 이력 패널 + 복원 버튼
+- [x] vitest 테스트 작성 및 통과 (11개 테스트 통과)
