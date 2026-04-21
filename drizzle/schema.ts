@@ -1110,3 +1110,141 @@ export const pptUploads = mysqlTable("pptUploads", {
 });
 export type PptUpload = typeof pptUploads.$inferSelect;
 export type InsertPptUpload = typeof pptUploads.$inferInsert;
+
+
+// ============ v7.0 NEW TABLES - Manual Lecture Builder ============
+
+/**
+ * Lecture Projects - top-level container for the new step-based lecture builder
+ * Each project goes through: avatar selection → script → slides → matching → preview
+ */
+export const lectureProjects = mysqlTable("lectureProjects", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Project title */
+  title: varchar("title", { length: 500 }).notNull(),
+  /** Project description */
+  description: text("description"),
+  /** Current step in the builder flow (1-5) */
+  currentStep: int("currentStep").default(1).notNull(),
+  /** Project status */
+  status: mysqlEnum("status", ["draft", "in_progress", "ready", "generating", "completed", "failed"]).default("draft").notNull(),
+  /** Avatar layout position for final video */
+  avatarPosition: mysqlEnum("avatarPosition", ["bottom-right", "bottom-left", "top-right", "top-left", "none"]).default("bottom-right").notNull(),
+  /** Avatar size */
+  avatarSize: mysqlEnum("avatarSize", ["small", "medium", "large"]).default("medium").notNull(),
+  /** Avatar shape */
+  avatarShape: mysqlEnum("avatarShape", ["circle", "rounded", "rectangle"]).default("circle").notNull(),
+  /** Avatar opacity (0-100) */
+  avatarOpacity: int("avatarOpacity").default(100).notNull(),
+  /** Final generated video URL */
+  finalVideoUrl: text("finalVideoUrl"),
+  /** Thumbnail URL */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** Total estimated duration in seconds */
+  totalDurationSec: int("totalDurationSec").default(0),
+  /** Error message if generation failed */
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LectureProject = typeof lectureProjects.$inferSelect;
+export type InsertLectureProject = typeof lectureProjects.$inferInsert;
+
+/**
+ * Project Avatars - avatars assigned to a lecture project (supports multiple)
+ * Each avatar has a face image, voice, name, and role
+ */
+export const projectAvatars = mysqlTable("projectAvatars", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  /** Reference to sampleFaces table (optional, null if custom upload) */
+  sampleFaceId: int("sampleFaceId"),
+  /** Custom uploaded face image URL */
+  customFaceUrl: text("customFaceUrl"),
+  /** Display name for this avatar */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Role in the lecture */
+  role: mysqlEnum("role", ["instructor", "host", "guest", "narrator"]).default("instructor").notNull(),
+  /** TTS voice ID */
+  ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).default("Kore"),
+  /** Sort order */
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectAvatar = typeof projectAvatars.$inferSelect;
+export type InsertProjectAvatar = typeof projectAvatars.$inferInsert;
+
+/**
+ * Project Slides - individual slide images for a lecture project
+ * Slides come from PPT/PDF upload or direct image upload
+ */
+export const projectSlides = mysqlTable("projectSlides", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  /** Slide image URL (S3) */
+  imageUrl: text("imageUrl").notNull(),
+  /** S3 file key */
+  fileKey: text("fileKey").notNull(),
+  /** Slide order (0-based) */
+  slideOrder: int("slideOrder").default(0).notNull(),
+  /** Original filename */
+  originalFileName: varchar("originalFileName", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ProjectSlide = typeof projectSlides.$inferSelect;
+export type InsertProjectSlide = typeof projectSlides.$inferInsert;
+
+/**
+ * Slide Scripts - script text assigned to each slide
+ * Links a slide to a script segment and an avatar speaker
+ */
+export const slideScripts = mysqlTable("slideScripts", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  slideId: int("slideId").notNull(),
+  /** Which avatar speaks this segment */
+  avatarId: int("avatarId"),
+  /** Script text for this slide */
+  scriptText: text("scriptText").notNull(),
+  /** Estimated duration in seconds */
+  estimatedDurationSec: int("estimatedDurationSec").default(30),
+  /** Sort order within the slide (for multiple scripts per slide) */
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SlideScript = typeof slideScripts.$inferSelect;
+export type InsertSlideScript = typeof slideScripts.$inferInsert;
+
+/**
+ * Slide Annotations - pen/drawing annotations on slides
+ * Stores annotation type, position, and timing for playback
+ */
+export const slideAnnotations = mysqlTable("slideAnnotations", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  slideId: int("slideId").notNull(),
+  /** Annotation type */
+  annotationType: mysqlEnum("annotationType", ["circle", "arrow", "check", "underline", "freehand"]).default("circle").notNull(),
+  /** Pen color (hex) */
+  penColor: varchar("penColor", { length: 7 }).default("#FF0000"),
+  /** Pen thickness (1-10) */
+  penThickness: int("penThickness").default(3),
+  /** Position and path data as JSON: {x, y, width, height} or [{x,y},...] for freehand */
+  pathData: json("pathData"),
+  /** When to show this annotation (seconds from slide start) */
+  showAtSec: int("showAtSec").default(0),
+  /** How long to display (seconds, 0 = permanent) */
+  durationSec: int("durationSec").default(3),
+  /** Sort order for multiple annotations on same slide */
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SlideAnnotation = typeof slideAnnotations.$inferSelect;
+export type InsertSlideAnnotation = typeof slideAnnotations.$inferInsert;

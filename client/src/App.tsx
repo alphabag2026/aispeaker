@@ -45,6 +45,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import LectureBuilder from "./pages/LectureBuilder";
 
 function Router() {
   return (
@@ -91,6 +92,8 @@ function Router() {
       <Route path="/crypto-payment/:id" component={CryptoPayment} />
       <Route path="/payment-troubleshooting" component={PaymentTroubleshooting} />
       <Route path="/onboarding" component={OnboardingTutorial} />
+      <Route path="/lecture-builder" component={LectureBuilder} />
+      <Route path="/lecture-builder/:id" component={LectureBuilder} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

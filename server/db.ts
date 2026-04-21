@@ -42,6 +42,11 @@ import {
   galleryLikes, galleryComments,
   pipSettings, InsertPipSetting,
   pptUploads, InsertPptUpload,
+  lectureProjects, InsertLectureProject,
+  projectAvatars, InsertProjectAvatar,
+  projectSlides, InsertProjectSlide,
+  slideScripts, InsertSlideScript,
+  slideAnnotations, InsertSlideAnnotation,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1681,4 +1686,177 @@ export async function deletePptUpload(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(pptUploads).where(eq(pptUploads.id, id));
+}
+
+
+// ============ v7.0 Lecture Builder Helpers ============
+
+// --- Lecture Projects ---
+export async function createLectureProject(data: InsertLectureProject) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(lectureProjects).values(data);
+  return result.insertId;
+}
+
+export async function getLectureProject(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(lectureProjects).where(eq(lectureProjects.id, id));
+  return rows[0] || null;
+}
+
+export async function listLectureProjects(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(lectureProjects).where(eq(lectureProjects.userId, userId)).orderBy(desc(lectureProjects.updatedAt));
+}
+
+export async function updateLectureProject(id: number, data: Partial<InsertLectureProject>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(lectureProjects).set(data).where(eq(lectureProjects.id, id));
+}
+
+export async function deleteLectureProject(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Delete all related data first
+  await db.delete(slideAnnotations).where(eq(slideAnnotations.projectId, id));
+  await db.delete(slideScripts).where(eq(slideScripts.projectId, id));
+  await db.delete(projectSlides).where(eq(projectSlides.projectId, id));
+  await db.delete(projectAvatars).where(eq(projectAvatars.projectId, id));
+  await db.delete(lectureProjects).where(eq(lectureProjects.id, id));
+}
+
+// --- Project Avatars ---
+export async function addProjectAvatar(data: InsertProjectAvatar) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(projectAvatars).values(data);
+  return result.insertId;
+}
+
+export async function listProjectAvatars(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(projectAvatars).where(eq(projectAvatars.projectId, projectId)).orderBy(projectAvatars.sortOrder);
+}
+
+export async function updateProjectAvatar(id: number, data: Partial<InsertProjectAvatar>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(projectAvatars).set(data).where(eq(projectAvatars.id, id));
+}
+
+export async function deleteProjectAvatar(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(projectAvatars).where(eq(projectAvatars.id, id));
+}
+
+// --- Project Slides ---
+export async function addProjectSlide(data: InsertProjectSlide) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(projectSlides).values(data);
+  return result.insertId;
+}
+
+export async function listProjectSlides(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(projectSlides).where(eq(projectSlides.projectId, projectId)).orderBy(projectSlides.slideOrder);
+}
+
+export async function updateProjectSlide(id: number, data: Partial<InsertProjectSlide>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(projectSlides).set(data).where(eq(projectSlides.id, id));
+}
+
+export async function deleteProjectSlide(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideAnnotations).where(eq(slideAnnotations.slideId, id));
+  await db.delete(slideScripts).where(eq(slideScripts.slideId, id));
+  await db.delete(projectSlides).where(eq(projectSlides.id, id));
+}
+
+export async function reorderProjectSlides(projectId: number, slideIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  for (let i = 0; i < slideIds.length; i++) {
+    await db.update(projectSlides).set({ slideOrder: i }).where(eq(projectSlides.id, slideIds[i]));
+  }
+}
+
+// --- Slide Scripts ---
+export async function setSlideScript(data: InsertSlideScript) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(slideScripts).values(data);
+  return result.insertId;
+}
+
+export async function listSlideScripts(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(slideScripts).where(eq(slideScripts.projectId, projectId)).orderBy(slideScripts.slideId, slideScripts.sortOrder);
+}
+
+export async function updateSlideScript(id: number, data: Partial<InsertSlideScript>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(slideScripts).set(data).where(eq(slideScripts.id, id));
+}
+
+export async function deleteSlideScript(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideScripts).where(eq(slideScripts.id, id));
+}
+
+export async function deleteSlideScriptsBySlide(slideId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideScripts).where(eq(slideScripts.slideId, slideId));
+}
+
+// --- Slide Annotations ---
+export async function addSlideAnnotation(data: InsertSlideAnnotation) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(slideAnnotations).values(data);
+  return result.insertId;
+}
+
+export async function listSlideAnnotations(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(slideAnnotations).where(eq(slideAnnotations.projectId, projectId)).orderBy(slideAnnotations.slideId, slideAnnotations.sortOrder);
+}
+
+export async function listSlideAnnotationsBySlide(slideId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(slideAnnotations).where(eq(slideAnnotations.slideId, slideId)).orderBy(slideAnnotations.sortOrder);
+}
+
+export async function updateSlideAnnotation(id: number, data: Partial<InsertSlideAnnotation>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(slideAnnotations).set(data).where(eq(slideAnnotations.id, id));
+}
+
+export async function deleteSlideAnnotation(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideAnnotations).where(eq(slideAnnotations.id, id));
+}
+
+export async function deleteSlideAnnotationsBySlide(slideId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideAnnotations).where(eq(slideAnnotations.slideId, slideId));
 }
