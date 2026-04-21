@@ -4571,6 +4571,46 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { original: input.scriptText, improved: improved.trim() };
       }),
 
+    // --- Improve ALL scripts at once (batch LLM) ---
+    improveAllScripts: protectedProcedure
+      .input(z.object({
+        sections: z.array(z.object({
+          id: z.string(),
+          text: z.string(),
+        })).min(1).max(50),
+        style: z.enum(["formal", "casual", "educational", "storytelling"]).default("educational"),
+        language: z.string().default("ko"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const styleGuides: Record<string, string> = {
+          formal: "격식적이고 전문적인 강의 톤으로 작성하세요. 존댓말을 사용하고 학술적 어휘를 적절히 활용하세요.",
+          casual: "친근하고 편안한 톤으로 작성하세요. 청중과 대화하듯이 자연스럽게 설명하세요.",
+          educational: "교육적이고 이해하기 쉬운 톤으로 작성하세요. 핵심 개념을 명확히 설명하고 예시를 들어주세요.",
+          storytelling: "스토리텔링 형식으로 작성하세요. 청중의 흥미를 끌 수 있는 내러티브 구조를 사용하세요.",
+        };
+        const results: { id: string; original: string; improved: string }[] = [];
+        for (const sec of input.sections) {
+          if (!sec.text.trim()) {
+            results.push({ id: sec.id, original: sec.text, improved: sec.text });
+            continue;
+          }
+          try {
+            const systemPrompt = `당신은 AI 강의 스크립트 전문가입니다. 주어진 텍스트를 강의용 스크립트로 개선해주세요.\n\n스타일: ${styleGuides[input.style] || styleGuides.educational}\n\n규칙:\n1. 원문의 핵심 내용을 유지하면서 강의에 적합한 문체로 변환\n2. 자연스러운 말하기 흐름으로 작성 (TTS로 읽혀질 예정)\n3. 적절한 쉬어가기와 강조 표현 포함\n4. 불필요한 전문 용어는 쉽게 풀어서 설명\n5. 개선된 스크립트만 출력하세요 (설명이나 주석 없이)\n6. 언어: ${input.language === "ko" ? "한국어" : input.language}`;
+            const response = await invokeLLM({
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: `다음 텍스트를 강의용 스크립트로 개선해주세요:\n\n${sec.text}` },
+              ],
+            });
+            const improved = (response.choices?.[0]?.message?.content as string) || sec.text;
+            results.push({ id: sec.id, original: sec.text, improved: improved.trim() });
+          } catch (err) {
+            results.push({ id: sec.id, original: sec.text, improved: sec.text });
+          }
+        }
+        return { results, total: input.sections.length, improved: results.filter(r => r.improved !== r.original).length };
+      }),
+
     // --- Get full project data (all steps) ---
     getFullProject: protectedProcedure
       .input(z.object({ id: z.number() }))
