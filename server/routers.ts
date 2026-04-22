@@ -4306,11 +4306,52 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         prompt: z.string().min(1),
         language: z.string().default("ko"),
         slideCount: z.number().min(1).max(50).default(10),
+        useFormatContext: z.boolean().default(false),
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.projectId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
-        const systemPrompt = `You are a professional lecture script writer. Generate a lecture script divided into exactly ${input.slideCount} sections. Each section should be 2-4 sentences. Language: ${input.language}. Return JSON array: [{"section": 1, "text": "..."}]`;
+
+        // Build format context from project avatars and scripts
+        let formatContext = '';
+        if (input.useFormatContext) {
+          const avatars = await db.listProjectAvatars(input.projectId);
+          const existingScripts = await db.listSlideScripts(input.projectId);
+
+          if (avatars.length > 0) {
+            const roles = avatars.map((a: any) => `${a.name} (${a.role})`).join(', ');
+            formatContext += `\n\n## Personnel Configuration\nThis lecture has ${avatars.length} speakers: ${roles}.\nWrite the script with dialogue/narration assigned to each speaker. Mark speaker changes with [Speaker: Name] tags.`;
+          }
+
+          if (existingScripts.length > 0) {
+            const sectionNames = existingScripts.map((s: any) => s.scriptText).filter((t: string) => t.startsWith('[')).join(', ');
+            if (sectionNames) {
+              formatContext += `\n\n## Existing Section Structure\nThe lecture already has these section placeholders: ${sectionNames}\nFollow this structure and fill in actual content for each section.`;
+            }
+          }
+        }
+
+        const langMap: Record<string, string> = { ko: 'Korean', en: 'English', zh: 'Chinese', ja: 'Japanese', vi: 'Vietnamese', th: 'Thai' };
+        const langName = langMap[input.language] || input.language;
+
+        const systemPrompt = `You are a professional lecture script writer specializing in creating engaging, well-structured educational content.
+
+## Instructions
+- Generate a lecture script divided into exactly ${input.slideCount} sections
+- Each section should be 3-6 sentences (natural speaking length for 30-60 seconds)
+- Write in ${langName}
+- Make the content educational, engaging, and natural for spoken delivery
+- Include transitions between sections
+- Start with an engaging introduction and end with a clear conclusion
+- If multiple speakers are specified, write dialogue between them naturally${formatContext}
+
+## Output Format
+Return a JSON object with a "sections" array. Each section has:
+- "section": section number (integer)
+- "text": the script text for that section
+- "speaker": (optional) the speaker name if multiple speakers are involved
+- "type": section type - one of "intro", "main", "insert", "qa", "closing"`;
+
         const response = await invokeLLM({
           messages: [
             { role: "system", content: systemPrompt },
@@ -4331,8 +4372,10 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
                       properties: {
                         section: { type: "integer" },
                         text: { type: "string" },
+                        speaker: { type: "string" },
+                        type: { type: "string" },
                       },
-                      required: ["section", "text"],
+                      required: ["section", "text", "speaker", "type"],
                       additionalProperties: false,
                     },
                   },
@@ -4729,6 +4772,94 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           videoUrl: project.finalVideoUrl ?? null,
           errorMessage: project.errorMessage ?? null,
         };
+      }),
+
+    // --- Export lecture video as MP4 ---
+    exportVideo: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        resolution: z.enum(["720p", "1080p", "1440p"]).default("1080p"),
+        includeSubtitles: z.boolean().default(false),
+        bgmUrl: z.string().optional(),
+        bgmVolume: z.number().default(30),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const [avatars, slides, scripts] = await Promise.all([
+          db.listProjectAvatars(input.projectId),
+          db.listProjectSlides(input.projectId),
+          db.listSlideScripts(input.projectId),
+        ]);
+        if (slides.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "슬라이드가 없습니다" });
+        // Build export segments
+        const segments = slides.map(slide => {
+          const script = scripts.find(s => s.slideId === slide.id);
+          const avatar = avatars.find(a => a.id === (script?.avatarId || avatars[0]?.id));
+          return {
+            slideImageUrl: slide.imageUrl,
+            avatarVideoUrl: undefined as string | undefined, // Will be filled from generation history
+            duration: script?.estimatedDurationSec || 30,
+            scriptText: script?.scriptText || "",
+          };
+        });
+        // Check if there are generated avatar videos from history
+        const videoHistory = await db.listVideoGenerations(input.projectId);
+        const latestCompleted = videoHistory.find(v => v.status === "completed" && v.videoUrl);
+        // Update project status
+        await db.updateLectureProject(input.projectId, {
+          status: "generating" as any,
+          generationProgress: 0,
+          generationStep: "MP4 내보내기 준비 중...",
+        });
+        try {
+          const { exportLectureVideo } = await import("./videoExporter");
+          const onProgress = async (progress: { phase: string; progress: number; message: string }) => {
+            await db.updateLectureProject(input.projectId, {
+              generationProgress: Math.min(95, progress.progress),
+              generationStep: progress.message,
+            });
+          };
+          const result = await exportLectureVideo({
+            projectId: input.projectId,
+            segments,
+            bgmUrl: input.bgmUrl || undefined,
+            bgmVolume: input.bgmVolume || 30,
+            resolution: input.resolution as any,
+            avatarPosition: project.avatarPosition || "bottom-right",
+            avatarSize: project.avatarSize === "small" ? 15 : project.avatarSize === "large" ? 35 : 25,
+            avatarShape: project.avatarShape || "circle",
+            avatarOpacity: project.avatarOpacity || 100,
+            includeSubtitles: input.includeSubtitles,
+          }, onProgress);
+          await db.updateLectureProject(input.projectId, {
+            status: "completed" as any,
+            finalVideoUrl: result.videoUrl,
+            generationProgress: 100,
+            generationStep: "MP4 내보내기 완료",
+          });
+          // Create generation history record
+          const genId = await db.createVideoGeneration({
+            projectId: input.projectId,
+            userId: ctx.user.id,
+            status: "completed",
+            slideCount: slides.length,
+            resolution: input.resolution,
+            videoUrl: result.videoUrl,
+            totalDuration: result.duration,
+            config: { type: "mp4_export", resolution: input.resolution, includeSubtitles: input.includeSubtitles },
+            completedAt: new Date(),
+          });
+          return { videoUrl: result.videoUrl, fileSize: result.fileSize, duration: result.duration };
+        } catch (error: any) {
+          await db.updateLectureProject(input.projectId, {
+            status: "failed" as any,
+            generationProgress: 0,
+            generationStep: undefined,
+            errorMessage: error.message,
+          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
+        }
       }),
 
     // --- AI Script Improvement (LLM) ---

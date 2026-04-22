@@ -18,7 +18,7 @@ import {
   Users, FileText, Image, Layers, Eye, ChevronLeft, ChevronRight, Plus, Trash2,
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
-  Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles
+  Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -621,11 +621,24 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
 
   const generateScript = trpc.lectureBuilder.generateScript.useMutation({
     onSuccess: (data) => {
-      const newSections = (data.sections || []).map((s: any, i: number) => ({
-        id: `gen-${Date.now()}-${i}`,
-        section: s.section || i + 1,
-        text: s.text,
-      }));
+      const newSections = (data.sections || []).map((s: any, i: number) => {
+        let text = s.text;
+        // Prepend speaker and type info if available
+        const prefix: string[] = [];
+        if (s.type && s.type !== 'main') {
+          const typeMap: Record<string, string> = { intro: '도입', main: '본문', insert: '삽입', qa: 'Q&A', closing: '마무리' };
+          prefix.push(typeMap[s.type] || s.type);
+        }
+        if (s.speaker) prefix.push(s.speaker);
+        if (prefix.length > 0 && !text.startsWith('[')) {
+          text = `[${prefix.join(' - ')}] ${text}`;
+        }
+        return {
+          id: `gen-${Date.now()}-${i}`,
+          section: s.section || i + 1,
+          text,
+        };
+      });
       setSections(newSections);
       toast.success(`${newSections.length}개 섹션이 생성되었습니다`);
     },
@@ -902,15 +915,40 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
                     <SelectItem value="en">English</SelectItem>
                     <SelectItem value="zh">中文</SelectItem>
                     <SelectItem value="ja">日本語</SelectItem>
+                    <SelectItem value="vi">Tiếng Việt</SelectItem>
+                    <SelectItem value="th">ภาษาไทย</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <Button className="w-full" disabled={!prompt.trim() || generateScript.isPending}
-              onClick={() => generateScript.mutate({ projectId, prompt: prompt.trim(), language, slideCount })}>
-              {generateScript.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-              AI 스크립트 생성
-            </Button>
+            {/* Format context toggle */}
+            {avatars.length > 0 && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <input type="checkbox" id="useFormatCtx" className="w-4 h-4 rounded" defaultChecked />
+                <label htmlFor="useFormatCtx" className="text-sm flex-1">
+                  <span className="font-medium">포맷 기반 생성</span>
+                  <span className="text-muted-foreground ml-1">- 현재 아바타({avatars.length}명)와 기존 섹션 구조를 반영하여 스크립트를 생성합니다</span>
+                </label>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button className="w-full" disabled={!prompt.trim() || generateScript.isPending}
+                onClick={() => generateScript.mutate({ projectId, prompt: prompt.trim(), language, slideCount, useFormatContext: !!(avatars.length > 0 && (document.getElementById('useFormatCtx') as HTMLInputElement)?.checked) })}>
+                {generateScript.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
+                AI 스크립트 생성
+              </Button>
+              {scripts.length > 0 && (
+                <Button variant="outline" className="w-full" disabled={!prompt.trim() || generateScript.isPending}
+                  onClick={() => {
+                    if (confirm('기존 스크립트를 유지하면서 추가 섹션을 생성합니다. 계속하시겠습니까?')) {
+                      generateScript.mutate({ projectId, prompt: `기존 스크립트에 추가할 내용: ${prompt.trim()}`, language, slideCount, useFormatContext: true });
+                    }
+                  }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  추가 섹션 생성
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -2329,11 +2367,18 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   const bgmInputRef = useRef<HTMLInputElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const [exportResolution, setExportResolution] = useState<"720p" | "1080p" | "1440p">("1080p");
+  const [includeSubtitles, setIncludeSubtitles] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportStep, setExportStep] = useState("");
+
   const updateProject = trpc.lectureBuilder.updateProject.useMutation({
     onSuccess: () => { toast.success("설정이 저장되었습니다"); onRefresh(); },
   });
   const uploadBgmMut = trpc.lectureBuilder.uploadBgm.useMutation();
   const generateVideoMut = trpc.lectureBuilder.generateVideo.useMutation();
+  const exportVideoMut = trpc.lectureBuilder.exportVideo.useMutation();
   const progressQuery = trpc.lectureBuilder.getVideoProgress.useQuery(
     { projectId },
     { enabled: generating, refetchInterval: generating ? 3000 : false }
@@ -2570,17 +2615,32 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             </CardContent>
           </Card>
 
-          {/* Generated Video */}
+          {/* Generated Video & Export */}
           {generatedVideoUrl && (
-            <Card className="mt-4">
-              <CardHeader className="pb-2"><CardTitle className="text-sm">생성된 영상</CardTitle></CardHeader>
-              <CardContent>
+            <Card className="mt-4 border-green-500/30">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" /> 생성된 영상
+                  </CardTitle>
+                  <Badge variant="outline" className="text-green-500 border-green-500/30">완료</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
                 <video src={generatedVideoUrl} controls className="w-full rounded-lg" />
-                <a href={generatedVideoUrl} target="_blank" rel="noopener noreferrer">
-                  <Button variant="outline" size="sm" className="mt-2 gap-1 w-full">
-                    <Download className="w-3 h-3" /> 영상 다운로드
+                <div className="grid grid-cols-2 gap-2">
+                  <a href={generatedVideoUrl} target="_blank" rel="noopener noreferrer" download>
+                    <Button variant="outline" size="sm" className="gap-1 w-full">
+                      <Download className="w-3 h-3" /> 영상 다운로드
+                    </Button>
+                  </a>
+                  <Button variant="outline" size="sm" className="gap-1" onClick={() => {
+                    navigator.clipboard.writeText(generatedVideoUrl);
+                    toast.success("영상 URL이 복사되었습니다");
+                  }}>
+                    <Link2 className="w-3 h-3" /> URL 복사
                   </Button>
-                </a>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -2675,8 +2735,75 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             </CardContent>
           </Card>
 
+          {/* MP4 Export Settings */}
+          <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">🎬 MP4 내보내기</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <Label className="text-xs">해상도</Label>
+                <Select value={exportResolution} onValueChange={v => setExportResolution(v as any)}>
+                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="720p">720p (HD)</SelectItem>
+                    <SelectItem value="1080p">1080p (Full HD)</SelectItem>
+                    <SelectItem value="1440p">1440p (2K)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="subtitles" checked={includeSubtitles} onChange={e => setIncludeSubtitles(e.target.checked)} className="rounded" />
+                <Label htmlFor="subtitles" className="text-xs cursor-pointer">자막 포함</Label>
+              </div>
+              <Button
+                className="w-full gap-2"
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  if (slides.length === 0) { toast.error("슬라이드가 없습니다"); return; }
+                  setExporting(true);
+                  setExportProgress(0);
+                  setExportStep("MP4 내보내기 준비 중...");
+                  try {
+                    const result = await exportVideoMut.mutateAsync({
+                      projectId,
+                      resolution: exportResolution,
+                      includeSubtitles,
+                    });
+                    setGeneratedVideoUrl(result.videoUrl);
+                    setExportProgress(100);
+                    setExportStep("완료");
+                    toast.success(`MP4 내보내기 완료! (${(result.fileSize / 1024 / 1024).toFixed(1)}MB)`);
+                    onRefresh();
+                  } catch (err: any) {
+                    toast.error(err.message || "MP4 내보내기 실패");
+                  } finally {
+                    setExporting(false);
+                  }
+                }}
+                disabled={exporting || slides.length === 0}
+              >
+                {exporting ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> MP4 내보내는 중...</>
+                ) : (
+                  <><Download className="w-4 h-4" /> MP4로 내보내기</>
+                )}
+              </Button>
+              {exporting && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{exportStep}</span>
+                    <span className="font-mono text-primary">{exportProgress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500" style={{ width: `${exportProgress}%` }} />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Generate Button */}
-          <Button className="w-full gap-2" size="lg" onClick={handleGenerateVideo} disabled={generating || selectedSlideIds.size === 0}>
+          <Button className="w-full gap-2" size="lg" onClick={handleGenerateVideo} disabled={generating || exporting || selectedSlideIds.size === 0}>
             {generating ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> 영상 생성 중...</>
             ) : (
