@@ -177,8 +177,16 @@ export default function LectureBuilder() {
                     <LectureFormatSelector
                       onApply={(formats, templates) => {
                         setSelectedFormats({ formats, templates });
-                        toast.success(`${templates.length}개 포맷이 선택되었습니다`);
-                        createProject.mutate({ title: newTitle.trim(), description: newDesc.trim() || undefined });
+                        toast.success(`${templates.length}개 포맷이 선택되었습니다. 아바타와 스크립트가 자동 구성됩니다.`);
+                        createProject.mutate({
+                          title: newTitle.trim(),
+                          description: newDesc.trim() || undefined,
+                          formatSelection: {
+                            personnelId: formats.personnel,
+                            styleId: formats.style,
+                            insertIds: formats.inserts,
+                          },
+                        });
                       }}
                     />
                   </div>

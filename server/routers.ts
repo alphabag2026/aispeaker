@@ -3877,9 +3877,135 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       }),
     // --- Project CRUD ---
     createProject: protectedProcedure
-      .input(z.object({ title: z.string().min(1), description: z.string().optional() }))
+      .input(z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        formatSelection: z.object({
+          personnelId: z.number().nullable(),
+          styleId: z.number().nullable(),
+          insertIds: z.array(z.number()),
+        }).optional(),
+      }))
       .mutation(async ({ ctx, input }) => {
         const id = await db.createLectureProject({ userId: ctx.user.id, title: input.title, description: input.description || null });
+
+        // Auto-configure avatars and scripts based on format selection
+        if (input.formatSelection) {
+          const { personnelId, styleId, insertIds } = input.formatSelection;
+
+          // Auto-create avatar slots based on personnel format
+          if (personnelId) {
+            const template = await db.getLectureFormatTemplate(personnelId);
+            if (template?.personnelConfig) {
+              try {
+                const config = typeof template.personnelConfig === 'string'
+                  ? JSON.parse(template.personnelConfig)
+                  : template.personnelConfig;
+                if (Array.isArray(config)) {
+                  let sortOrder = 0;
+                  for (const person of config) {
+                    const count = person.count || 1;
+                    for (let i = 0; i < count; i++) {
+                      const name = count > 1 ? `${person.label} ${i + 1}` : person.label;
+                      const role = person.role || 'instructor';
+                      const voiceMap: Record<string, string> = {
+                        instructor: 'Kore', host: 'Chae', guest: 'Yuna', narrator: 'Miso',
+                      };
+                      await db.addProjectAvatar({
+                        projectId: id,
+                        name,
+                        role: role as any,
+                        ttsVoiceId: voiceMap[role] || 'Kore',
+                        sortOrder: sortOrder++,
+                      });
+                    }
+                  }
+                }
+              } catch (e) { console.error('Failed to parse personnelConfig:', e); }
+            }
+          }
+
+          // Auto-create script sections based on style + insert formats
+          const scriptSections: { text: string; sortOrder: number }[] = [];
+          let order = 0;
+
+          // Check for intro insert
+          for (const insertId of insertIds) {
+            const insertTpl = await db.getLectureFormatTemplate(insertId);
+            if (insertTpl?.insertElements) {
+              try {
+                const elems = typeof insertTpl.insertElements === 'string'
+                  ? JSON.parse(insertTpl.insertElements)
+                  : insertTpl.insertElements;
+                if (elems.type === 'intro_outro' || elems.position === 'start_end') {
+                  scriptSections.push({ text: `[${insertTpl.name} - 오프닝] 여기에 인트로 내용을 작성하세요`, sortOrder: order++ });
+                }
+              } catch (e) {}
+            }
+          }
+
+          // Main content sections based on style
+          if (styleId) {
+            const styleTpl = await db.getLectureFormatTemplate(styleId);
+            const styleName = styleTpl?.name || '강의';
+            scriptSections.push(
+              { text: `[도입] ${styleName} - 강의 주제 소개 및 목표 설명`, sortOrder: order++ },
+              { text: `[본문 1] ${styleName} - 콘텐츠 첫 번째 섹션`, sortOrder: order++ },
+              { text: `[본문 2] ${styleName} - 콘텐츠 두 번째 섹션`, sortOrder: order++ },
+              { text: `[본문 3] ${styleName} - 콘텐츠 세 번째 섹션`, sortOrder: order++ },
+            );
+          } else {
+            scriptSections.push(
+              { text: '[도입] 강의 주제 소개', sortOrder: order++ },
+              { text: '[본문 1] 첫 번째 섹션', sortOrder: order++ },
+              { text: '[본문 2] 두 번째 섹션', sortOrder: order++ },
+            );
+          }
+
+          // Insert elements in the middle
+          for (const insertId of insertIds) {
+            const insertTpl = await db.getLectureFormatTemplate(insertId);
+            if (insertTpl?.insertElements) {
+              try {
+                const elems = typeof insertTpl.insertElements === 'string'
+                  ? JSON.parse(insertTpl.insertElements)
+                  : insertTpl.insertElements;
+                if (elems.type !== 'intro_outro' && elems.position !== 'start_end') {
+                  scriptSections.push({ text: `[${insertTpl.name}] 여기에 ${insertTpl.name} 내용을 작성하세요`, sortOrder: order++ });
+                }
+              } catch (e) {}
+            }
+          }
+
+          // Closing section
+          scriptSections.push({ text: '[마무리] 강의 요약 및 마무리 인사', sortOrder: order++ });
+
+          // Check for outro insert
+          for (const insertId of insertIds) {
+            const insertTpl = await db.getLectureFormatTemplate(insertId);
+            if (insertTpl?.insertElements) {
+              try {
+                const elems = typeof insertTpl.insertElements === 'string'
+                  ? JSON.parse(insertTpl.insertElements)
+                  : insertTpl.insertElements;
+                if (elems.type === 'intro_outro' || elems.position === 'start_end') {
+                  scriptSections.push({ text: `[${insertTpl.name} - 클로징] 여기에 아웃트로 내용을 작성하세요`, sortOrder: order++ });
+                }
+              } catch (e) {}
+            }
+          }
+
+          // Save script sections
+          for (const section of scriptSections) {
+            await db.setSlideScript({
+              projectId: id,
+              slideId: 0,
+              scriptText: section.text,
+              sortOrder: section.sortOrder,
+            });
+          }
+        }
+
         return { id };
       }),
 
