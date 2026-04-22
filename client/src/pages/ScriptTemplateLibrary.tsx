@@ -378,8 +378,8 @@ export default function ScriptTemplateLibrary() {
                   <div className="flex flex-wrap gap-2 mt-2">
                     <Badge variant="outline" className={diffInfo?.color || ""}>{diffInfo?.label || template.difficulty}</Badge>
                     <Badge variant="outline">{catInfo?.label || template.category}</Badge>
-                    <Badge variant="outline" className="text-xs"><Clock className="w-3 h-3 mr-1" />{t("stl.card.duration", { min: template.targetDurationMin })}</Badge>
-                    <Badge variant="outline" className="text-xs"><Layers className="w-3 h-3 mr-1" />{t("stl.card.sections", { count: template.sectionCount })}</Badge>
+                    <Badge variant="outline" className="text-xs"><Clock className="w-3 h-3 mr-1" />{t("stl.card.duration", { min: template.targetDurationMin ?? 0 })}</Badge>
+                    <Badge variant="outline" className="text-xs"><Layers className="w-3 h-3 mr-1" />{t("stl.card.sections", { count: template.sectionCount ?? 0 })}</Badge>
                   </div>
                 </CardHeader>
                 <CardContent>

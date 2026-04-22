@@ -176,6 +176,13 @@
       "when": 1776800163493,
       "tag": "0024_military_lily_hollister",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1776871380304,
+      "tag": "0025_chilly_roulette",
+      "breakpoints": true
     }
   ]
 }

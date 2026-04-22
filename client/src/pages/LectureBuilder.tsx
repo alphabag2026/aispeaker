@@ -18,10 +18,11 @@ import {
   Users, FileText, Image, Layers, Eye, ChevronLeft, ChevronRight, Plus, Trash2,
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
-  Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2
+  Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
+import KlingAvatarCreator from "@/components/KlingAvatarCreator";
 
 // ============ TYPES ============
 interface ScriptSection {
@@ -356,6 +357,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
   const [avatarRole, setAvatarRole] = useState<string>("instructor");
   const [avatarVoice, setAvatarVoice] = useState("Kore");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showKlingDialog, setShowKlingDialog] = useState(false);
 
   const addAvatar = trpc.lectureBuilder.addAvatar.useMutation({
     onSuccess: () => {
@@ -381,10 +383,26 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
           <h2 className="text-2xl font-bold">아바타 선택</h2>
           <p className="text-muted-foreground">강의에 출연할 AI 아바타를 선택하세요. 최대 3명까지 추가할 수 있습니다.</p>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button disabled={avatars.length >= 3} className="gap-2"><Plus className="w-4 h-4" /> 아바타 추가</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Dialog open={showKlingDialog} onOpenChange={setShowKlingDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10">
+                <Sparkles className="w-4 h-4" /> KLING AI 영상 만들기
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> KLING AI 아바타 영상 생성</DialogTitle></DialogHeader>
+              <KlingAvatarCreator
+                onVideoCreated={(videoUrl) => {
+                  toast.success("AI 영상이 생성되었습니다! 아바타에 활용할 수 있습니다.");
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button disabled={avatars.length >= 3} className="gap-2"><Plus className="w-4 h-4" /> 아바타 추가</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader><DialogTitle>아바타 추가</DialogTitle></DialogHeader>
             <div className="space-y-6 pt-4">
@@ -436,14 +454,17 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
 
               <div>
                 <Label>음성 선택</Label>
-                <Select value={avatarVoice} onValueChange={setAvatarVoice}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {voices.map(v => (
-                      <SelectItem key={v.id} value={v.id}>{v.name} ({v.desc})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2">
+                  <Select value={avatarVoice} onValueChange={setAvatarVoice}>
+                    <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {voices.map(v => (
+                        <SelectItem key={v.id} value={v.id}>{v.name} ({v.desc})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <VoicePreviewButton voiceId={avatarVoice} size="default" variant="outline" />
+                </div>
               </div>
 
               <Button className="w-full" disabled={!selectedFaceId || !avatarName.trim() || addAvatar.isPending}
@@ -461,6 +482,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Selected Avatars */}
@@ -499,6 +521,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
                       <Badge className={`${roleInfo?.color || ""} text-xs`}>{roleInfo?.label || av.role}</Badge>
                       <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
                         <Volume2 className="w-3 h-3" /> {av.ttsVoiceId}
+                        <VoicePreviewButton voiceId={av.ttsVoiceId || ""} size="sm" variant="ghost" className="ml-1 h-6 w-6 p-0" />
                       </p>
                     </div>
                   </div>
