@@ -58,6 +58,12 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
   const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Video preview dialog state
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+  const [previewTaskInfo, setPreviewTaskInfo] = useState<any>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
+
   // Avatar registration dialog state
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [registeringTaskId, setRegisteringTaskId] = useState<number | null>(null);
@@ -428,12 +434,29 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
               {taskList.data.map((task: any) => (
                 <div key={task.id} className="rounded-xl border border-border overflow-hidden group">
                   {task.status === "succeed" && task.videoUrl ? (
-                    <video
-                      src={task.videoUrl}
-                      className="w-full aspect-video object-cover bg-black"
-                      controls
-                      preload="metadata"
-                    />
+                    <div className="relative w-full aspect-video bg-black cursor-pointer group/video"
+                      onClick={() => {
+                        setPreviewVideoUrl(task.videoUrl!);
+                        setPreviewTaskInfo(task);
+                        setPreviewDialogOpen(true);
+                      }}>
+                      <video
+                        src={task.videoUrl}
+                        className="w-full h-full object-cover"
+                        preload="metadata"
+                        muted
+                        onMouseEnter={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
+                        onMouseLeave={(e) => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover/video:opacity-100 transition-opacity">
+                        <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                          <Play className="w-8 h-8 text-white fill-white" />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded">
+                        {task.durationSetting}초 | {task.aspectRatio || "16:9"}
+                      </div>
+                    </div>
                   ) : task.sourceImageUrl ? (
                     <div className="relative w-full aspect-video bg-muted">
                       <img src={task.sourceImageUrl} alt="" className="w-full h-full object-cover opacity-50" />
@@ -506,6 +529,84 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
           </CardContent>
         </Card>
       )}
+
+      {/* ============ VIDEO PREVIEW DIALOG ============ */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-border">
+          <DialogHeader className="sr-only">
+            <DialogTitle>영상 미리보기</DialogTitle>
+          </DialogHeader>
+          {previewVideoUrl && (
+            <div className="flex flex-col">
+              <video
+                ref={videoPreviewRef}
+                src={previewVideoUrl}
+                className="w-full max-h-[70vh] object-contain bg-black"
+                controls
+                autoPlay
+                playsInline
+              />
+              <div className="bg-card p-4 space-y-3">
+                {previewTaskInfo && (
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-foreground">
+                        {previewTaskInfo.taskType === "image2video" ? "이미지→영상" : "텍스트→영상"} | {previewTaskInfo.mode === "pro" ? "프로" : "표준"} | {previewTaskInfo.durationSetting}초
+                      </p>
+                      {previewTaskInfo.prompt && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">{previewTaskInfo.prompt}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground/60">
+                        {new Date(previewTaskInfo.createdAt).toLocaleString("ko-KR")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {!previewTaskInfo.sampleFaceId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={() => {
+                            setRegisteringTaskId(previewTaskInfo.id);
+                            setAvatarName("");
+                            setPreviewDialogOpen(false);
+                            setRegisterDialogOpen(true);
+                          }}
+                        >
+                          <UserPlus className="w-4 h-4" /> 아바타 등록
+                        </Button>
+                      )}
+                      {previewTaskInfo.sampleFaceId && (
+                        <Badge className="bg-green-500/10 text-green-400 gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> 아바타 등록됨
+                        </Badge>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="default"
+                        className="gap-1.5"
+                        onClick={() => {
+                          const a = document.createElement("a");
+                          a.href = previewVideoUrl;
+                          a.download = `kling-${previewTaskInfo.id}-${previewTaskInfo.aspectRatio || "16-9"}.mp4`;
+                          a.target = "_blank";
+                          a.rel = "noopener noreferrer";
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          toast.success("다운로드가 시작됩니다");
+                        }}
+                      >
+                        <Download className="w-4 h-4" /> 다운로드
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ============ AVATAR REGISTRATION DIALOG ============ */}
       <Dialog open={registerDialogOpen} onOpenChange={setRegisterDialogOpen}>

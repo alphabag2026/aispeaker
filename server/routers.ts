@@ -4889,6 +4889,59 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       ]);
       return { faces, voices };
     }),
+    // --- Format Template Management ---
+    listFormatTemplates: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return db.listAllLectureFormatTemplates();
+    }),
+    createFormatTemplate: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        category: z.enum(["personnel", "style", "insert"]),
+        icon: z.string().optional(),
+        colorTheme: z.string().default("blue"),
+        personnelConfig: z.any().optional(),
+        styleConfig: z.any().optional(),
+        insertElements: z.any().optional(),
+        defaultScriptTemplate: z.string().optional(),
+        previewImageUrl: z.string().optional(),
+        sortOrder: z.number().default(0),
+        isActive: z.boolean().default(true),
+        isSystem: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.createLectureFormatTemplate(input as any);
+      }),
+    updateFormatTemplate: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        category: z.enum(["personnel", "style", "insert"]).optional(),
+        icon: z.string().optional(),
+        colorTheme: z.string().optional(),
+        personnelConfig: z.any().optional(),
+        styleConfig: z.any().optional(),
+        insertElements: z.any().optional(),
+        defaultScriptTemplate: z.string().optional(),
+        previewImageUrl: z.string().optional(),
+        sortOrder: z.number().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const { id, ...data } = input;
+        return db.updateLectureFormatTemplate(id, data as any);
+      }),
+    deleteFormatTemplate: protectedProcedure
+      .input(z.object({ id: z.number(), hard: z.boolean().default(false) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (input.hard) return db.hardDeleteLectureFormatTemplate(input.id);
+        return db.deleteLectureFormatTemplate(input.id);
+      }),
   }),
 
   // ========== KLING AI Video Generation ==========

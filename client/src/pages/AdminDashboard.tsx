@@ -500,6 +500,20 @@ export default function AdminDashboard() {
 
               <Card className="border-border/50">
                 <CardHeader>
+                  <CardTitle className="text-base">강의 포맷 템플릿 관리</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">강의 포맷 템플릿을 추가, 수정, 삭제할 수 있습니다.</p>
+                  <a href="/admin/format-templates">
+                    <Button variant="outline" className="gap-2">
+                      <Settings className="w-4 h-4" /> 포맷 템플릿 관리 페이지
+                    </Button>
+                  </a>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/50">
+                <CardHeader>
                   <CardTitle className="text-base">{t("ad.systemInformation")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">

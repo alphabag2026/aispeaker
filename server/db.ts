@@ -2053,3 +2053,39 @@ export async function getLectureFormatTemplate(id: number) {
   const rows = await db.select().from(lectureFormatTemplates).where(eq(lectureFormatTemplates.id, id)).limit(1);
   return rows[0];
 }
+
+// ============ Admin Format Template CRUD ============
+export async function listAllLectureFormatTemplates() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(lectureFormatTemplates).orderBy(lectureFormatTemplates.category, lectureFormatTemplates.sortOrder);
+}
+
+export async function createLectureFormatTemplate(data: InsertLectureFormatTemplate) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(lectureFormatTemplates).values(data);
+  return { id: Number(result[0].insertId) };
+}
+
+export async function updateLectureFormatTemplate(id: number, data: Partial<InsertLectureFormatTemplate>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(lectureFormatTemplates).set(data).where(eq(lectureFormatTemplates.id, id));
+  return { id };
+}
+
+export async function deleteLectureFormatTemplate(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Soft delete - just set isActive to false
+  await db.update(lectureFormatTemplates).set({ isActive: false }).where(eq(lectureFormatTemplates.id, id));
+  return { id };
+}
+
+export async function hardDeleteLectureFormatTemplate(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(lectureFormatTemplates).where(eq(lectureFormatTemplates.id, id));
+  return { id };
+}
