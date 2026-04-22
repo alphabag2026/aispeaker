@@ -1977,3 +1977,10 @@ export async function getLatestSlideScriptVersionNumber(projectId: number) {
     .where(eq(slideScriptVersions.projectId, projectId));
   return rows[0]?.maxVer || 0;
 }
+
+// ========== Admin Functions ==========
+export async function listAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).orderBy(desc(users.createdAt));
+}

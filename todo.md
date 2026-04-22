@@ -1151,3 +1151,8 @@
 - [x] 백엔드: saveScriptVersion/listScriptVersions/restoreScriptVersion 프로시저
 - [x] 프론트엔드: 수동 저장 시 자동 버전 생성 + 버전 이력 패널 + 복원 버튼
 - [x] vitest 테스트 작성 및 통과 (11개 테스트 통과)
+
+## 네비게이션 메뉴 축소 및 버그 수정
+
+- [x] 네비게이션 메뉴 축소: 홈 제거(로고 클릭으로 대체), 주요 메뉴(강의 제작, DID-AI얼굴/AI목소리)만 표시, 나머지 햄버거 메뉴
+- [x] PDF 변환 오류 수정: 프로덕션 서버에 poppler-utils, pdf-lib, sharp 설치
