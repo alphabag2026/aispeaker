@@ -10,30 +10,60 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   Upload, Video, Wand2, Loader2, Play, Pause, RefreshCw,
   Image as ImageIcon, Sparkles, Clock, CheckCircle2, XCircle,
-  Download, Trash2, Eye
+  Download, Trash2, Eye, UserPlus, Palette, RatioIcon, Crop
 } from "lucide-react";
+
+// ============ VIDEO STYLE PRESETS ============
+const VIDEO_STYLES = [
+  { id: "natural", label: "자연스러운", desc: "자연스러운 움직임과 표정", prompt: "natural movement, gentle gestures, looking at camera, professional lighting", color: "bg-blue-500/10 border-blue-500/30 text-blue-400" },
+  { id: "professional", label: "프로페셔널", desc: "전문적인 강사 스타일", prompt: "professional instructor speaking confidently, formal posture, studio lighting, clean background", color: "bg-purple-500/10 border-purple-500/30 text-purple-400" },
+  { id: "casual", label: "캐주얼", desc: "편안하고 친근한 스타일", prompt: "casual friendly speaker, relaxed posture, warm smile, comfortable setting", color: "bg-green-500/10 border-green-500/30 text-green-400" },
+  { id: "energetic", label: "에너지틱", desc: "활기차고 역동적인 스타일", prompt: "energetic presenter, dynamic hand gestures, enthusiastic expression, vibrant atmosphere", color: "bg-orange-500/10 border-orange-500/30 text-orange-400" },
+  { id: "academic", label: "학술적", desc: "학술 강의 스타일", prompt: "academic lecturer, thoughtful expression, measured gestures, scholarly environment, bookshelf background", color: "bg-cyan-500/10 border-cyan-500/30 text-cyan-400" },
+  { id: "storyteller", label: "스토리텔러", desc: "이야기를 들려주는 스타일", prompt: "engaging storyteller, expressive face, dramatic pauses, warm cinematic lighting", color: "bg-rose-500/10 border-rose-500/30 text-rose-400" },
+  { id: "custom", label: "커스텀", desc: "직접 프롬프트 작성", prompt: "", color: "bg-muted border-border text-foreground" },
+];
+
+// ============ ASPECT RATIO OPTIONS ============
+const ASPECT_RATIOS = [
+  { value: "16:9", label: "16:9", desc: "가로 (유튜브)", icon: "▬", preview: "w-16 h-9" },
+  { value: "9:16", label: "9:16", desc: "세로 (릴스/숏츠)", icon: "▮", preview: "w-9 h-16" },
+  { value: "1:1", label: "1:1", desc: "정사각 (인스타)", icon: "■", preview: "w-12 h-12" },
+  { value: "4:3", label: "4:3", desc: "클래식", icon: "▭", preview: "w-14 h-10" },
+  { value: "3:4", label: "3:4", desc: "세로 클래식", icon: "▯", preview: "w-10 h-14" },
+  { value: "2:3", label: "2:3", desc: "포트레이트", icon: "▯", preview: "w-10 h-15" },
+];
 
 interface KlingAvatarCreatorProps {
   onVideoCreated?: (videoUrl: string, sourceImageUrl: string) => void;
+  onAvatarRegistered?: () => void;
   className?: string;
 }
 
-export default function KlingAvatarCreator({ onVideoCreated, className = "" }: KlingAvatarCreatorProps) {
+export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered, className = "" }: KlingAvatarCreatorProps) {
   const [tab, setTab] = useState<string>("image2video");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [prompt, setPrompt] = useState("");
+  const [selectedStyle, setSelectedStyle] = useState("natural");
   const [duration, setDuration] = useState<"5" | "10">("5");
   const [mode, setMode] = useState<"std" | "pro">("std");
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<number | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Avatar registration dialog state
+  const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
+  const [registeringTaskId, setRegisteringTaskId] = useState<number | null>(null);
+  const [avatarName, setAvatarName] = useState("");
+  const [avatarCategory, setAvatarCategory] = useState("professional");
+  const [avatarGender, setAvatarGender] = useState("neutral");
 
   const klingConfigured = trpc.kling.isConfigured.useQuery();
   const uploadImage = trpc.kling.uploadImage.useMutation();
@@ -47,6 +77,23 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
   const deleteTask = trpc.kling.delete.useMutation({
     onSuccess: () => { taskList.refetch(); toast.success("삭제되었습니다"); },
   });
+  const registerAsAvatar = trpc.kling.registerAsAvatar.useMutation({
+    onSuccess: (data) => {
+      toast.success(`"${data.name}" 아바타가 등록되었습니다!`);
+      setRegisterDialogOpen(false);
+      setAvatarName("");
+      taskList.refetch();
+      onAvatarRegistered?.();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Build final prompt from style + custom text
+  const buildFinalPrompt = useCallback(() => {
+    const style = VIDEO_STYLES.find(s => s.id === selectedStyle);
+    if (!style || selectedStyle === "custom") return prompt;
+    return prompt ? `${style.prompt}, ${prompt}` : style.prompt;
+  }, [selectedStyle, prompt]);
 
   // Stop polling when task is done
   useEffect(() => {
@@ -87,12 +134,11 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
     if (!imageFile) { toast.error("이미지를 선택해주세요"); return; }
     setIsSubmitting(true);
     try {
-      // 1. Upload image to S3
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve) => {
         reader.onload = (e) => {
           const result = e.target?.result as string;
-          resolve(result.split(",")[1]); // Remove data:image/...;base64, prefix
+          resolve(result.split(",")[1]);
         };
         reader.readAsDataURL(imageFile);
       });
@@ -101,10 +147,10 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
         fileName: imageFile.name,
         mimeType: imageFile.type,
       });
-      // 2. Create KLING task
+      const finalPrompt = buildFinalPrompt();
       const result = await createI2V.mutateAsync({
         imageUrl,
-        prompt: prompt || undefined,
+        prompt: finalPrompt || undefined,
         duration,
         mode,
         aspectRatio,
@@ -120,11 +166,12 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
   };
 
   const handleSubmitText2Video = async () => {
-    if (!prompt.trim()) { toast.error("프롬프트를 입력해주세요"); return; }
+    const finalPrompt = buildFinalPrompt();
+    if (!finalPrompt.trim()) { toast.error("프롬프트를 입력해주세요"); return; }
     setIsSubmitting(true);
     try {
       const result = await createT2V.mutateAsync({
-        prompt: prompt.trim(),
+        prompt: finalPrompt.trim(),
         duration,
         mode,
         aspectRatio,
@@ -202,7 +249,7 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
             이미지 또는 텍스트 프롬프트로 AI 아바타 영상을 생성합니다
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-5">
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="image2video" className="gap-2">
@@ -214,7 +261,6 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
             </TabsList>
 
             <TabsContent value="image2video" className="space-y-4 pt-4">
-              {/* Image Upload */}
               <div>
                 <Label className="text-sm font-medium mb-2 block">소스 이미지</Label>
                 <input
@@ -247,38 +293,89 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
                   </button>
                 )}
               </div>
-
-              {/* Prompt */}
-              <div>
-                <Label className="text-sm font-medium mb-2 block">프롬프트 (선택)</Label>
-                <Textarea
-                  placeholder="예: A professional instructor speaking naturally with gentle hand gestures, looking at the camera"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  rows={3}
-                />
-                <p className="text-xs text-muted-foreground mt-1">영상 생성 방향을 안내하는 텍스트입니다. 비워두면 자동으로 자연스러운 움직임이 적용됩니다.</p>
-              </div>
             </TabsContent>
 
             <TabsContent value="text2video" className="space-y-4 pt-4">
-              <div>
-                <Label className="text-sm font-medium mb-2 block">프롬프트</Label>
-                <Textarea
-                  placeholder="예: A professional Korean female instructor in her 30s, wearing a navy blazer, speaking to camera with confident gestures, in a modern studio with soft lighting"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  rows={4}
-                />
-                <p className="text-xs text-muted-foreground mt-1">AI가 텍스트 설명을 기반으로 영상을 생성합니다. 구체적으로 작성할수록 좋은 결과를 얻을 수 있습니다.</p>
-              </div>
+              <p className="text-sm text-muted-foreground">
+                아래에서 영상 스타일을 선택하고, 추가 설명을 입력하세요.
+              </p>
             </TabsContent>
           </Tabs>
 
-          <Separator className="my-4" />
+          <Separator />
 
-          {/* Settings */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* ============ VIDEO STYLE SELECTION ============ */}
+          <div>
+            <Label className="text-sm font-medium mb-3 flex items-center gap-2">
+              <Palette className="w-4 h-4" /> 영상 스타일
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {VIDEO_STYLES.map((style) => (
+                <button
+                  key={style.id}
+                  className={`p-3 rounded-lg border text-left transition-all ${
+                    selectedStyle === style.id
+                      ? `${style.color} ring-2 ring-primary/50`
+                      : "border-border hover:border-muted-foreground/50 bg-card"
+                  }`}
+                  onClick={() => setSelectedStyle(style.id)}
+                >
+                  <span className="text-sm font-medium block">{style.label}</span>
+                  <span className="text-xs text-muted-foreground block mt-0.5">{style.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom prompt or additional instructions */}
+          <div>
+            <Label className="text-sm font-medium mb-2 block">
+              {selectedStyle === "custom" ? "프롬프트" : "추가 설명 (선택)"}
+            </Label>
+            <Textarea
+              placeholder={selectedStyle === "custom"
+                ? "예: A professional Korean female instructor in her 30s, wearing a navy blazer, speaking to camera with confident gestures"
+                : "예: 안경을 쓴 30대 남성, 파란색 셔츠"
+              }
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={selectedStyle === "custom" ? 4 : 2}
+            />
+            {selectedStyle !== "custom" && (
+              <p className="text-xs text-muted-foreground mt-1">
+                선택한 스타일에 추가로 원하는 설명을 입력하세요. 비워두면 기본 스타일이 적용됩니다.
+              </p>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* ============ ASPECT RATIO VISUAL SELECTION ============ */}
+          <div>
+            <Label className="text-sm font-medium mb-3 flex items-center gap-2">
+              <Crop className="w-4 h-4" /> 화면 비율
+            </Label>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {ASPECT_RATIOS.map((ratio) => (
+                <button
+                  key={ratio.value}
+                  className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-all ${
+                    aspectRatio === ratio.value
+                      ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                      : "border-border hover:border-muted-foreground/50 bg-card"
+                  }`}
+                  onClick={() => setAspectRatio(ratio.value)}
+                >
+                  <div className={`${ratio.preview} bg-primary/20 rounded-sm border border-primary/30 max-h-10`} style={{ minWidth: "12px", minHeight: "12px" }} />
+                  <span className="text-xs font-medium">{ratio.label}</span>
+                  <span className="text-[10px] text-muted-foreground">{ratio.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Settings Row */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-sm mb-1 block">영상 길이</Label>
               <Select value={duration} onValueChange={(v) => setDuration(v as "5" | "10")}>
@@ -299,22 +396,11 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="text-sm mb-1 block">비율</Label>
-              <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="16:9">16:9 (가로)</SelectItem>
-                  <SelectItem value="9:16">9:16 (세로)</SelectItem>
-                  <SelectItem value="1:1">1:1 (정사각)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           <Button
-            className="w-full mt-4 gap-2"
-            disabled={isSubmitting || !!activeTaskId || (tab === "image2video" && !imageFile) || (tab === "text2video" && !prompt.trim())}
+            className="w-full gap-2"
+            disabled={isSubmitting || !!activeTaskId || (tab === "image2video" && !imageFile) || (tab === "text2video" && selectedStyle === "custom" && !prompt.trim())}
             onClick={tab === "image2video" ? handleSubmitImage2Video : handleSubmitText2Video}
           >
             {isSubmitting ? (
@@ -328,13 +414,14 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
         </CardContent>
       </Card>
 
-      {/* Previous Generations */}
+      {/* ============ PREVIOUS GENERATIONS WITH AVATAR REGISTER ============ */}
       {taskList.data && taskList.data.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Video className="w-5 h-5" /> 생성 기록
             </CardTitle>
+            <CardDescription>완료된 영상을 강의 아바타로 바로 등록할 수 있습니다</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -359,33 +446,55 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
                       {getStatusBadge(task.status)}
                     </div>
                   )}
-                  <div className="p-3 flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground truncate">
-                        {task.taskType === "image2video" ? "이미지→영상" : "텍스트→영상"} | {task.mode} | {task.durationSetting}초
-                      </p>
-                      {task.prompt && (
-                        <p className="text-xs text-muted-foreground/70 truncate mt-0.5">{task.prompt}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground/50 mt-0.5">
-                        {new Date(task.createdAt).toLocaleString("ko-KR")}
-                      </p>
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="min-w-0">
+                        <p className="text-xs text-muted-foreground truncate">
+                          {task.taskType === "image2video" ? "이미지→영상" : "텍스트→영상"} | {task.mode} | {task.durationSetting}초 | {task.aspectRatio || "16:9"}
+                        </p>
+                        {task.prompt && (
+                          <p className="text-xs text-muted-foreground/70 truncate mt-0.5">{task.prompt}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground/50 mt-0.5">
+                          {new Date(task.createdAt).toLocaleString("ko-KR")}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-2">
+                      {/* Register as Avatar Button */}
+                      {task.status === "succeed" && task.videoUrl && !task.sampleFaceId && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 gap-1.5 text-xs h-8 border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={() => {
+                            setRegisteringTaskId(task.id);
+                            setAvatarName("");
+                            setRegisterDialogOpen(true);
+                          }}
+                        >
+                          <UserPlus className="w-3.5 h-3.5" /> 아바타로 등록
+                        </Button>
+                      )}
+                      {task.status === "succeed" && task.sampleFaceId && (
+                        <Badge className="bg-green-500/10 text-green-400 text-xs gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> 아바타 등록됨
+                        </Badge>
+                      )}
                       {task.status === "succeed" && task.videoUrl && onVideoCreated && (
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0"
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 shrink-0"
                           onClick={() => onVideoCreated(task.videoUrl!, task.sourceImageUrl || "")}>
-                          <CheckCircle2 className="w-4 h-4 text-green-500" />
+                          <Eye className="w-4 h-4" />
                         </Button>
                       )}
                       {task.status === "succeed" && task.videoUrl && (
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 shrink-0" asChild>
                           <a href={task.videoUrl} download target="_blank" rel="noopener noreferrer">
                             <Download className="w-4 h-4" />
                           </a>
                         </Button>
                       )}
-                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0 shrink-0 text-destructive hover:text-destructive"
                         onClick={() => deleteTask.mutate({ id: task.id })}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -397,6 +506,77 @@ export default function KlingAvatarCreator({ onVideoCreated, className = "" }: K
           </CardContent>
         </Card>
       )}
+
+      {/* ============ AVATAR REGISTRATION DIALOG ============ */}
+      <Dialog open={registerDialogOpen} onOpenChange={setRegisterDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-primary" />
+              AI 아바타로 등록
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-muted-foreground">
+              생성된 영상을 강의에 사용할 수 있는 아바타로 등록합니다.
+              등록 후 아바타 선택 목록에서 바로 사용할 수 있습니다.
+            </p>
+            <div>
+              <Label className="text-sm mb-1 block">아바타 이름 *</Label>
+              <Input
+                placeholder="예: 김교수 (전문 강사)"
+                value={avatarName}
+                onChange={(e) => setAvatarName(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-sm mb-1 block">카테고리</Label>
+                <Select value={avatarCategory} onValueChange={setAvatarCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="professional">전문적</SelectItem>
+                    <SelectItem value="casual">캐주얼</SelectItem>
+                    <SelectItem value="academic">학술적</SelectItem>
+                    <SelectItem value="creative">크리에이티브</SelectItem>
+                    <SelectItem value="corporate">기업</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">성별</Label>
+                <Select value={avatarGender} onValueChange={setAvatarGender}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">남성</SelectItem>
+                    <SelectItem value="female">여성</SelectItem>
+                    <SelectItem value="neutral">기타</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button
+              className="w-full gap-2"
+              disabled={!avatarName.trim() || registerAsAvatar.isPending}
+              onClick={() => {
+                if (!registeringTaskId) return;
+                registerAsAvatar.mutate({
+                  klingTaskId: registeringTaskId,
+                  name: avatarName.trim(),
+                  category: avatarCategory,
+                  gender: avatarGender,
+                });
+              }}
+            >
+              {registerAsAvatar.isPending ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> 등록 중...</>
+              ) : (
+                <><UserPlus className="w-4 h-4" /> 아바타 등록</>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

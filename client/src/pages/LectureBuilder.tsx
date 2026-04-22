@@ -23,6 +23,7 @@ import {
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import KlingAvatarCreator from "@/components/KlingAvatarCreator";
+import LectureFormatSelector from "@/components/LectureFormatSelector";
 
 // ============ TYPES ============
 interface ScriptSection {
@@ -84,6 +85,8 @@ export default function LectureBuilder() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [createStep, setCreateStep] = useState<"info" | "format">("info");
+  const [selectedFormats, setSelectedFormats] = useState<any>(null);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -134,27 +137,52 @@ export default function LectureBuilder() {
               <h1 className="text-3xl font-bold text-foreground">강의 제작 스튜디오</h1>
               <p className="text-muted-foreground mt-1">AI 아바타로 전문적인 강의 영상을 만들어보세요</p>
             </div>
-            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <Dialog open={showCreateDialog} onOpenChange={(open) => { setShowCreateDialog(open); if (!open) { setCreateStep("info"); setNewTitle(""); setNewDesc(""); setSelectedFormats(null); } }}>
               <DialogTrigger asChild>
                 <Button size="lg" className="gap-2"><Plus className="w-5 h-5" /> 새 프로젝트</Button>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>새 강의 프로젝트</DialogTitle></DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div>
-                    <Label>프로젝트 제목</Label>
-                    <Input placeholder="예: XPLAY 수익 구조 분석 강의" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+              <DialogContent className={createStep === "format" ? "sm:max-w-4xl max-h-[85vh] overflow-y-auto" : ""}>
+                <DialogHeader>
+                  <DialogTitle>
+                    {createStep === "info" ? "새 강의 프로젝트" : "강의 포맷 선택"}
+                  </DialogTitle>
+                </DialogHeader>
+                {createStep === "info" ? (
+                  <div className="space-y-4 pt-4">
+                    <div>
+                      <Label>프로젝트 제목</Label>
+                      <Input placeholder="예: XPLAY 수익 구조 분석 강의" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label>설명 (선택)</Label>
+                      <Textarea placeholder="강의 주제 및 목표를 간단히 설명하세요" value={newDesc} onChange={e => setNewDesc(e.target.value)} />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="flex-1 gap-2" disabled={!newTitle.trim()}
+                        onClick={() => setCreateStep("format")}>
+                        <Sparkles className="w-4 h-4" /> 포맷 선택하고 생성
+                      </Button>
+                      <Button className="flex-1" disabled={!newTitle.trim() || createProject.isPending}
+                        onClick={() => createProject.mutate({ title: newTitle.trim(), description: newDesc.trim() || undefined })}>
+                        {createProject.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                        바로 생성
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <Label>설명 (선택)</Label>
-                    <Textarea placeholder="강의 주제 및 목표를 간단히 설명하세요" value={newDesc} onChange={e => setNewDesc(e.target.value)} />
+                ) : (
+                  <div className="pt-2">
+                    <Button variant="ghost" size="sm" className="mb-4 gap-1" onClick={() => setCreateStep("info")}>
+                      <ChevronLeft className="w-4 h-4" /> 뒤로
+                    </Button>
+                    <LectureFormatSelector
+                      onApply={(formats, templates) => {
+                        setSelectedFormats({ formats, templates });
+                        toast.success(`${templates.length}개 포맷이 선택되었습니다`);
+                        createProject.mutate({ title: newTitle.trim(), description: newDesc.trim() || undefined });
+                      }}
+                    />
                   </div>
-                  <Button className="w-full" disabled={!newTitle.trim() || createProject.isPending}
-                    onClick={() => createProject.mutate({ title: newTitle.trim(), description: newDesc.trim() || undefined })}>
-                    {createProject.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                    프로젝트 생성
-                  </Button>
-                </div>
+                )}
               </DialogContent>
             </Dialog>
           </div>

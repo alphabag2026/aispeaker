@@ -1370,3 +1370,41 @@ export const klingTasks = mysqlTable("klingTasks", {
 });
 export type KlingTask = typeof klingTasks.$inferSelect;
 export type InsertKlingTask = typeof klingTasks.$inferInsert;
+
+// ============ Lecture Format Templates ============
+/**
+ * Pre-defined lecture format templates for one-click setup
+ * Covers personnel composition, lecture style, and insertable elements
+ */
+export const lectureFormatTemplates = mysqlTable("lectureFormatTemplates", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Template name */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Template description */
+  description: text("description"),
+  /** Category: personnel, style, insert */
+  category: mysqlEnum("category", ["personnel", "style", "insert"]).notNull(),
+  /** Icon name (lucide icon) */
+  icon: varchar("icon", { length: 64 }),
+  /** Color theme for the card */
+  colorTheme: varchar("colorTheme", { length: 64 }).default("blue"),
+  /** Personnel config: JSON array of roles [{role, label, count, required}] */
+  personnelConfig: json("personnelConfig"),
+  /** Style config: JSON {layoutType, hasSlides, hasWhiteboard, hasPIP, avatarPosition, avatarSize} */
+  styleConfig: json("styleConfig"),
+  /** Insert elements: JSON array [{type, label, defaultDuration, position}] */
+  insertElements: json("insertElements"),
+  /** Default script template text */
+  defaultScriptTemplate: text("defaultScriptTemplate"),
+  /** Preview image URL */
+  previewImageUrl: text("previewImageUrl"),
+  /** Sort order */
+  sortOrder: int("sortOrder").default(0),
+  /** Active/inactive */
+  isActive: boolean("isActive").default(true),
+  /** Is system template (non-deletable) */
+  isSystem: boolean("isSystem").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type LectureFormatTemplate = typeof lectureFormatTemplates.$inferSelect;
+export type InsertLectureFormatTemplate = typeof lectureFormatTemplates.$inferInsert;
