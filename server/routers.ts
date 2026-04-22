@@ -4726,6 +4726,30 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { project, avatars, slides, scripts, annotations };
       }),
   }),
+
+  // ============ Admin Dashboard ============
+  admin: router({
+    listUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return db.listAllUsers();
+    }),
+    listSubscriptions: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return db.listAllSubscriptions();
+    }),
+    listPlans: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return db.listSubscriptionPlans();
+    }),
+    listPresets: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const [faces, voices] = await Promise.all([
+        db.listSampleFaces(),
+        db.listSampleVoices(),
+      ]);
+      return { faces, voices };
+    }),
+  }),
 });
 
 // SRT time formatter
