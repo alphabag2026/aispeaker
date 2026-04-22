@@ -71,6 +71,10 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
   const [avatarCategory, setAvatarCategory] = useState("professional");
   const [avatarGender, setAvatarGender] = useState("neutral");
 
+  // Track all pending task IDs for auto-polling
+  const [pendingTaskIds, setPendingTaskIds] = useState<Set<number>>(new Set());
+  const prevPendingRef = useRef<Set<number>>(new Set());
+
   const klingConfigured = trpc.kling.isConfigured.useQuery();
   const uploadImage = trpc.kling.uploadImage.useMutation();
   const createI2V = trpc.kling.createImageToVideo.useMutation();
@@ -79,7 +83,12 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
     { id: activeTaskId! },
     { enabled: !!activeTaskId, refetchInterval: activeTaskId ? 5000 : false }
   );
-  const taskList = trpc.kling.list.useQuery({ purpose: "avatar_preview" });
+  // Auto-poll task list when there are pending tasks
+  const hasPendingTasks = pendingTaskIds.size > 0 || !!activeTaskId;
+  const taskList = trpc.kling.list.useQuery(
+    { purpose: "avatar_preview" },
+    { refetchInterval: hasPendingTasks ? 8000 : false }
+  );
   const deleteTask = trpc.kling.delete.useMutation({
     onSuccess: () => { taskList.refetch(); toast.success("삭제되었습니다"); },
   });
@@ -101,7 +110,7 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
     return prompt ? `${style.prompt}, ${prompt}` : style.prompt;
   }, [selectedStyle, prompt]);
 
-  // Stop polling when task is done
+  // Stop polling when active task is done
   useEffect(() => {
     if (taskStatus.data) {
       const status = taskStatus.data.status;
@@ -118,6 +127,36 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
       }
     }
   }, [taskStatus.data?.status]);
+
+  // Auto-detect pending tasks from task list and notify on completion
+  useEffect(() => {
+    if (!taskList.data) return;
+    const currentPending = new Set<number>();
+    taskList.data.forEach((task: any) => {
+      if (task.status === "submitted" || task.status === "processing") {
+        currentPending.add(task.id);
+      }
+    });
+    // Check if any previously pending task has completed
+    prevPendingRef.current.forEach((prevId) => {
+      if (!currentPending.has(prevId) && prevId !== activeTaskId) {
+        const completedTask = taskList.data.find((t: any) => t.id === prevId);
+        if (completedTask?.status === "succeed") {
+          toast.success(`영상 생성 완료! (ID: ${prevId})`, {
+            description: "생성 기록에서 확인하세요",
+            duration: 6000,
+          });
+        } else if (completedTask?.status === "failed") {
+          toast.error(`영상 생성 실패 (ID: ${prevId})`, {
+            description: completedTask.statusMsg || "알 수 없는 오류",
+            duration: 6000,
+          });
+        }
+      }
+    });
+    prevPendingRef.current = currentPending;
+    setPendingTaskIds(currentPending);
+  }, [taskList.data]);
 
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -460,13 +499,29 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
                   ) : task.sourceImageUrl ? (
                     <div className="relative w-full aspect-video bg-muted">
                       <img src={task.sourceImageUrl} alt="" className="w-full h-full object-cover opacity-50" />
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                         {getStatusBadge(task.status)}
+                        {(task.status === "submitted" || task.status === "processing") && (
+                          <div className="w-32">
+                            <Progress value={task.status === "submitted" ? 20 : 60} className="h-1.5" />
+                            <p className="text-[10px] text-muted-foreground text-center mt-1">
+                              {task.status === "submitted" ? "대기열에서 처리 대기 중..." : "AI가 영상을 생성 중..."}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (
-                    <div className="w-full aspect-video bg-muted flex items-center justify-center">
+                    <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center gap-2">
                       {getStatusBadge(task.status)}
+                      {(task.status === "submitted" || task.status === "processing") && (
+                        <div className="w-32">
+                          <Progress value={task.status === "submitted" ? 20 : 60} className="h-1.5" />
+                          <p className="text-[10px] text-muted-foreground text-center mt-1">
+                            {task.status === "submitted" ? "대기열에서 처리 대기 중..." : "AI가 영상을 생성 중..."}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="p-3">

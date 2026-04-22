@@ -76,6 +76,218 @@ interface LectureFormatSelectorProps {
   className?: string;
 }
 
+// ============ LAYOUT PREVIEW COMPONENT ============
+function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
+  personnelTemplate: any | null;
+  styleTemplate: any | null;
+  insertTemplates: any[];
+}) {
+  // Parse personnel config
+  const personnel = useMemo(() => {
+    if (!personnelTemplate?.personnelConfig) return [{ role: "instructor", label: "강사", count: 1 }];
+    try {
+      const config = typeof personnelTemplate.personnelConfig === "string"
+        ? JSON.parse(personnelTemplate.personnelConfig)
+        : personnelTemplate.personnelConfig;
+      return Array.isArray(config) ? config : [{ role: "instructor", label: "강사", count: 1 }];
+    } catch { return [{ role: "instructor", label: "강사", count: 1 }]; }
+  }, [personnelTemplate]);
+
+  // Parse style config
+  const styleConfig = useMemo(() => {
+    if (!styleTemplate?.styleConfig) return { hasSlides: false, hasWhiteboard: false, hasPIP: false, layoutType: "fullscreen" };
+    try {
+      return typeof styleTemplate.styleConfig === "string"
+        ? JSON.parse(styleTemplate.styleConfig)
+        : styleTemplate.styleConfig;
+    } catch { return { hasSlides: false, hasWhiteboard: false, hasPIP: false, layoutType: "fullscreen" }; }
+  }, [styleTemplate]);
+
+  // Parse insert elements
+  const inserts = useMemo(() => {
+    return insertTemplates.map((t: any) => {
+      try {
+        const elements = typeof t.insertElements === "string" ? JSON.parse(t.insertElements) : t.insertElements;
+        return { name: t.name, icon: t.icon, elements: Array.isArray(elements) ? elements : [] };
+      } catch { return { name: t.name, icon: t.icon, elements: [] }; }
+    });
+  }, [insertTemplates]);
+
+  const totalPersonnel = personnel.reduce((sum: number, p: any) => sum + (p.count || 1), 0);
+
+  // Role colors for avatar placeholders
+  const ROLE_COLORS: Record<string, string> = {
+    instructor: "bg-blue-500/30 border-blue-500/50 text-blue-300",
+    mc: "bg-purple-500/30 border-purple-500/50 text-purple-300",
+    translator: "bg-green-500/30 border-green-500/50 text-green-300",
+    guest: "bg-orange-500/30 border-orange-500/50 text-orange-300",
+    panelist: "bg-cyan-500/30 border-cyan-500/50 text-cyan-300",
+    questioner: "bg-yellow-500/30 border-yellow-500/50 text-yellow-300",
+    default: "bg-muted border-muted-foreground/30 text-muted-foreground",
+  };
+
+  const renderPersonAvatar = (person: any, index: number) => {
+    const colorClass = ROLE_COLORS[person.role] || ROLE_COLORS.default;
+    return (
+      <div key={`${person.role}-${index}`} className={`flex flex-col items-center gap-1`}>
+        <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${colorClass}`}>
+          <User className="w-5 h-5" />
+        </div>
+        <span className="text-[10px] font-medium text-center leading-tight">{person.label}</span>
+      </div>
+    );
+  };
+
+  // Determine main layout based on style
+  const renderMainArea = () => {
+    const { hasSlides, hasWhiteboard, hasPIP, layoutType } = styleConfig;
+
+    if (layoutType === "split" || (hasSlides && hasPIP)) {
+      // Split view: slides + speaker PIP
+      return (
+        <div className="flex gap-2 h-full">
+          <div className="flex-1 rounded-lg border-2 border-dashed border-green-500/30 bg-green-500/5 flex flex-col items-center justify-center gap-1">
+            <Presentation className="w-6 h-6 text-green-400/60" />
+            <span className="text-[10px] text-green-400/60">PPT 슬라이드</span>
+          </div>
+          <div className="w-24 rounded-lg border-2 border-dashed border-blue-500/30 bg-blue-500/5 flex flex-col items-center justify-center gap-1">
+            <User className="w-5 h-5 text-blue-400/60" />
+            <span className="text-[10px] text-blue-400/60">강사 PIP</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (hasSlides && !hasPIP) {
+      // Full slides with speaker below
+      return (
+        <div className="flex flex-col gap-2 h-full">
+          <div className="flex-1 rounded-lg border-2 border-dashed border-green-500/30 bg-green-500/5 flex flex-col items-center justify-center gap-1">
+            <Presentation className="w-8 h-8 text-green-400/60" />
+            <span className="text-xs text-green-400/60">PPT 슬라이드</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (hasWhiteboard) {
+      return (
+        <div className="flex gap-2 h-full">
+          <div className="flex-1 rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 flex flex-col items-center justify-center gap-1">
+            <PenTool className="w-6 h-6 text-amber-400/60" />
+            <span className="text-[10px] text-amber-400/60">화이트보드</span>
+          </div>
+          {totalPersonnel > 0 && (
+            <div className="w-24 rounded-lg border-2 border-dashed border-blue-500/30 bg-blue-500/5 flex flex-col items-center justify-center gap-1">
+              <User className="w-5 h-5 text-blue-400/60" />
+              <span className="text-[10px] text-blue-400/60">강사</span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (layoutType === "screenShare") {
+      return (
+        <div className="flex gap-2 h-full">
+          <div className="flex-1 rounded-lg border-2 border-dashed border-violet-500/30 bg-violet-500/5 flex flex-col items-center justify-center gap-1">
+            <ScreenShare className="w-6 h-6 text-violet-400/60" />
+            <span className="text-[10px] text-violet-400/60">화면 공유</span>
+          </div>
+          <div className="w-24 rounded-lg border-2 border-dashed border-blue-500/30 bg-blue-500/5 flex flex-col items-center justify-center gap-1">
+            <User className="w-5 h-5 text-blue-400/60" />
+            <span className="text-[10px] text-blue-400/60">강사 PIP</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Default: fullscreen speaker(s)
+    return (
+      <div className="h-full rounded-lg border-2 border-dashed border-blue-500/30 bg-blue-500/5 flex flex-col items-center justify-center gap-2">
+        <div className="flex gap-3">
+          {personnel.map((p: any, i: number) => (
+            Array.from({ length: p.count || 1 }).map((_, j) => (
+              <div key={`${i}-${j}`} className={`w-10 h-10 rounded-full border-2 flex items-center justify-center ${ROLE_COLORS[p.role] || ROLE_COLORS.default}`}>
+                <User className="w-4 h-4" />
+              </div>
+            ))
+          ))}
+        </div>
+        <span className="text-xs text-blue-400/60">전면 강사 뷰</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Main Screen Preview */}
+      <div className="relative aspect-video bg-muted/50 rounded-xl border border-border overflow-hidden p-3">
+        {/* Top Bar */}
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+            <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+          </div>
+          <span className="text-[10px] text-muted-foreground">
+            {styleTemplate?.name || "기본 레이아웃"}
+          </span>
+          <div className="w-16" />
+        </div>
+
+        {/* Main Content Area */}
+        <div className="h-[calc(100%-2rem)]">
+          {renderMainArea()}
+        </div>
+      </div>
+
+      {/* Personnel Row */}
+      {personnelTemplate && (
+        <div className="flex items-center gap-4 justify-center py-2">
+          {personnel.flatMap((p: any, i: number) =>
+            Array.from({ length: p.count || 1 }).map((_, j) =>
+              renderPersonAvatar(p, i * 10 + j)
+            )
+          )}
+        </div>
+      )}
+
+      {/* Timeline Preview */}
+      {inserts.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">타임라인 미리보기</p>
+          <div className="flex items-center gap-1 overflow-x-auto pb-1">
+            <div className="shrink-0 px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20">
+              <span className="text-[10px] text-blue-400">도입</span>
+            </div>
+            <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+            <div className="shrink-0 px-2 py-1 rounded bg-green-500/10 border border-green-500/20">
+              <span className="text-[10px] text-green-400">본문 강의</span>
+            </div>
+            {inserts.map((ins, i) => {
+              const InsIcon = ICON_MAP[ins.icon] || Layers;
+              return (
+                <span key={i} className="contents">
+                  <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+                  <div className="shrink-0 px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-1">
+                    <InsIcon className="w-3 h-3 text-yellow-400" />
+                    <span className="text-[10px] text-yellow-400">{ins.name}</span>
+                  </div>
+                </span>
+              );
+            })}
+            <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+            <div className="shrink-0 px-2 py-1 rounded bg-purple-500/10 border border-purple-500/20">
+              <span className="text-[10px] text-purple-400">마무리</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LectureFormatSelector({ onApply, className = "" }: LectureFormatSelectorProps) {
   const [selected, setSelected] = useState<SelectedFormats>({
     personnel: null,
@@ -250,10 +462,30 @@ export default function LectureFormatSelector({ onApply, className = "" }: Lectu
         </div>
       </div>
 
-      {/* ============ SUMMARY & APPLY ============ */}
+      {/* ============ LAYOUT PREVIEW + SUMMARY & APPLY ============ */}
       {selectedCount > 0 && (
         <>
           <Separator />
+
+          {/* Visual Layout Preview */}
+          <Card className="border-muted-foreground/20 bg-card overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Monitor className="w-4 h-4 text-primary" />
+                강의 화면 미리보기
+              </CardTitle>
+              <CardDescription className="text-xs">선택한 포맷으로 구성된 강의 화면 레이아웃입니다</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <LayoutPreview
+                personnelTemplate={selected.personnel ? templates.find((t: any) => t.id === selected.personnel) : null}
+                styleTemplate={selected.style ? templates.find((t: any) => t.id === selected.style) : null}
+                insertTemplates={selected.inserts.map(id => templates.find((t: any) => t.id === id)).filter(Boolean)}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Summary */}
           <Card className="border-primary/30 bg-primary/5">
             <CardContent className="pt-6">
               <h4 className="font-semibold mb-3 flex items-center gap-2">
