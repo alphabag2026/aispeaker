@@ -244,6 +244,8 @@ export default function LectureBuilder() {
   const slides = fullProjectQuery.data?.slides || [];
   const scripts = fullProjectQuery.data?.scripts || [];
   const annotations = fullProjectQuery.data?.annotations || [];
+  const avatarOverrides = fullProjectQuery.data?.avatarOverrides || [];
+  const insertContent = fullProjectQuery.data?.insertContent || [];
   const faces = facesQuery.data || [];
   const voices = voicesQuery.data || [];
 
@@ -329,6 +331,8 @@ export default function LectureBuilder() {
                 scripts={scripts}
                 avatars={avatars}
                 annotations={annotations}
+                avatarOverrides={avatarOverrides}
+                insertContent={insertContent}
                 onRefresh={() => fullProjectQuery.refetch()}
               />
             )}
@@ -340,6 +344,8 @@ export default function LectureBuilder() {
                 scripts={scripts}
                 avatars={avatars}
                 annotations={annotations}
+                avatarOverrides={avatarOverrides}
+                insertContent={insertContent}
                 onRefresh={() => fullProjectQuery.refetch()}
               />
             )}
@@ -660,6 +666,34 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
 
   const setScriptMut = trpc.lectureBuilder.setScript.useMutation();
   const deleteScriptMut = trpc.lectureBuilder.deleteScript.useMutation();
+
+  // AI Script Proofread (교정)
+  const [proofreadingIdx, setProofreadingIdx] = useState<number | null>(null);
+  const [proofreadFilter, setProofreadFilter] = useState<"smooth" | "news" | "presentation" | "conversational" | "dramatic" | "concise">("smooth");
+  const [proofreadPreview, setProofreadPreview] = useState<{ idx: number; original: string; proofread: string; filter: string } | null>(null);
+  const proofreadMut = trpc.lectureBuilder.proofreadScript.useMutation({
+    onSuccess: (data) => {
+      if (proofreadingIdx !== null) {
+        setProofreadPreview({ idx: proofreadingIdx, original: data.original, proofread: data.proofread, filter: data.filter });
+      }
+      setProofreadingIdx(null);
+    },
+    onError: (e: any) => { toast.error(`AI 교정 실패: ${e.message}`); setProofreadingIdx(null); },
+  });
+  const handleProofread = (idx: number) => {
+    const sec = sections[idx];
+    if (!sec?.text.trim()) { toast.error("교정할 텍스트가 없습니다"); return; }
+    setProofreadingIdx(idx);
+    proofreadMut.mutate({ scriptText: sec.text, filter: proofreadFilter, language });
+  };
+  const applyProofread = () => {
+    if (!proofreadPreview) return;
+    const newSections = [...sections];
+    newSections[proofreadPreview.idx] = { ...newSections[proofreadPreview.idx], text: proofreadPreview.proofread };
+    setSections(newSections);
+    setProofreadPreview(null);
+    toast.success("AI 교정이 적용되었습니다");
+  };
 
   // AI Script Improvement
   const [improvingIdx, setImprovingIdx] = useState<number | null>(null);
@@ -1054,6 +1088,19 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="h-7 text-xs gap-1 text-cyan-500 border-cyan-500/30 hover:bg-cyan-500/10"
+                        onClick={() => handleProofread(idx)}
+                        disabled={proofreadingIdx === idx || !sec.text.trim()}
+                      >
+                        {proofreadingIdx === idx ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> 교정 중...</>
+                        ) : (
+                          <><Sparkles className="w-3 h-3" /> AI 교정</>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="h-7 text-xs gap-1 text-primary border-primary/30 hover:bg-primary/10"
                         onClick={() => handleImproveScript(idx)}
                         disabled={improvingIdx === idx || !sec.text.trim()}
@@ -1061,7 +1108,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
                         {improvingIdx === idx ? (
                           <><Loader2 className="w-3 h-3 animate-spin" /> AI 개선 중...</>
                         ) : (
-                          <><Wand2 className="w-3 h-3" /> AI 스크립트 개선</>
+                          <><Wand2 className="w-3 h-3" /> AI 개선</>
                         )}
                       </Button>
                       <span className="text-xs text-muted-foreground ml-auto">{sec.text.length}자 / ~{Math.ceil(sec.text.length / 5)}초</span>
@@ -1081,6 +1128,20 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
             </Button>
           )}
 
+          {/* AI Proofread Filter Selector */}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className="text-xs text-muted-foreground">AI 교정 필터:</span>
+            {(["smooth", "news", "presentation", "conversational", "dramatic", "concise"] as const).map(f => (
+              <button key={f}
+                className={`px-2 py-0.5 rounded text-xs transition-colors ${
+                  proofreadFilter === f ? "bg-cyan-500 text-white" : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                }`}
+                onClick={() => setProofreadFilter(f)}
+              >
+                {f === "smooth" ? "부드럽게" : f === "news" ? "뉴스체" : f === "presentation" ? "발표체" : f === "conversational" ? "대화체" : f === "dramatic" ? "극적" : "간결"}
+              </button>
+            ))}
+          </div>
           {/* AI Improvement Style Selector */}
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-muted-foreground">AI 개선 스타일:</span>
@@ -1095,6 +1156,47 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* AI Proofread Preview Dialog */}
+      {proofreadPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <Card className="w-full max-w-3xl max-h-[80vh] overflow-auto">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-cyan-500" />
+                AI 교정 결과
+                <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
+                  {proofreadPreview.filter === "smooth" ? "부드럽게" : proofreadPreview.filter === "news" ? "뉴스체" : proofreadPreview.filter === "presentation" ? "발표체" : proofreadPreview.filter === "conversational" ? "대화체" : proofreadPreview.filter === "dramatic" ? "극적" : "간결"}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">원본</h4>
+                  <div className="p-3 bg-muted/50 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-auto">
+                    {proofreadPreview.original}
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-cyan-500 mb-2">교정된 버전</h4>
+                  <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-auto">
+                    {proofreadPreview.proofread}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setProofreadPreview(null)}>
+                  취소
+                </Button>
+                <Button onClick={applyProofread} className="gap-1 bg-cyan-600 hover:bg-cyan-700">
+                  <Check className="w-4 h-4" /> 교정 적용
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -1714,12 +1816,14 @@ function Step3Slides({ projectId, slides, onRefresh }: {
 }
 
 // ============ STEP 4: MATCHING EDITOR ============
-function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRefresh }: {
+function Step4Matching({ projectId, slides, scripts, avatars, annotations, avatarOverrides, insertContent, onRefresh }: {
   projectId: number;
   slides: any[];
   scripts: any[];
   avatars: any[];
   annotations: any[];
+  avatarOverrides: any[];
+  insertContent: any[];
   onRefresh: () => void;
 }) {
   const [selectedSlideIdx, setSelectedSlideIdx] = useState(0);
@@ -1756,6 +1860,69 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
   const setScriptMut = trpc.lectureBuilder.setScript.useMutation();
   const saveDrawingMut = trpc.lectureBuilder.saveCanvasDrawing.useMutation();
   const deleteAnnotationMut = trpc.lectureBuilder.deleteAnnotation.useMutation();
+
+  // Avatar overlay per-slide
+  const [showAvatarPanel, setShowAvatarPanel] = useState(false);
+  const [avatarSize, setAvatarSize] = useState(25); // percentage
+  const [avatarPosX, setAvatarPosX] = useState(75); // percentage from left
+  const [avatarPosY, setAvatarPosY] = useState(75); // percentage from top
+  const [avatarShape, setAvatarShape] = useState<"circle" | "rounded" | "rectangle">("circle");
+  const [avatarOpacity, setAvatarOpacity] = useState(100);
+  const saveAvatarOverrideMut = trpc.lectureBuilder.upsertAvatarOverride.useMutation({
+    onSuccess: () => { toast.success("아바타 설정 저장됨"); onRefresh(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Load avatar override for current slide
+  useEffect(() => {
+    if (!currentSlide) return;
+    const override = avatarOverrides.find((o: any) => o.slideId === currentSlide.id);
+    if (override) {
+      setAvatarSize(override.avatarSizePercent || 25);
+      setAvatarPosX(override.offsetX || 75);
+      setAvatarPosY(override.offsetY || 75);
+      setAvatarShape(override.avatarShape || "circle");
+      setAvatarOpacity(override.avatarOpacity ?? 100);
+    } else {
+      setAvatarSize(25); setAvatarPosX(75); setAvatarPosY(75); setAvatarShape("circle"); setAvatarOpacity(100);
+    }
+  }, [currentSlide?.id, avatarOverrides]);
+
+  const saveAvatarOverride = () => {
+    if (!currentSlide) return;
+    saveAvatarOverrideMut.mutate({
+      projectId,
+      slideId: currentSlide.id,
+      avatarSizePercent: avatarSize,
+      offsetX: avatarPosX,
+      offsetY: avatarPosY,
+      avatarShape: avatarShape,
+      avatarOpacity: avatarOpacity,
+    });
+  };
+
+  // Insert content between slides
+  const [showInsertPanel, setShowInsertPanel] = useState(false);
+  const [insertType, setInsertType] = useState<"whiteboard" | "video" | "image" | "design">("whiteboard");
+  const [insertAfterSlideId, setInsertAfterSlideId] = useState<number | null>(null);
+  const saveInsertMut = trpc.lectureBuilder.createInsertContent.useMutation({
+    onSuccess: () => { toast.success("삽입 콘텐츠 저장됨"); onRefresh(); setShowInsertPanel(false); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteInsertMut = trpc.lectureBuilder.deleteInsertContent.useMutation({
+    onSuccess: () => { toast.success("삽입 콘텐츠 삭제됨"); onRefresh(); },
+  });
+
+  // Whiteboard AI generation
+  const [wbPrompt, setWbPrompt] = useState("");
+  const [wbGenerating, setWbGenerating] = useState(false);
+  const generateWhiteboardMut = trpc.lectureBuilder.generateWhiteboardContent.useMutation({
+    onSuccess: (data) => {
+      setWbGenerating(false);
+      toast.success("AI 화이트보드 콘텐츠 생성 완료");
+    },
+    onError: (e: any) => { setWbGenerating(false); toast.error(e.message); },
+  });
 
   const assignScript = async (slideId: number, text: string, avatarId?: number) => {
     setSlideScriptMap(prev => ({ ...prev, [slideId]: { text, avatarId } }));
@@ -2166,6 +2333,27 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
             <div className="space-y-3">
               <div ref={containerRef} className="relative bg-black rounded-xl overflow-hidden">
                 <img src={currentSlide.imageUrl} alt="현재 슬라이드" className="w-full aspect-video object-contain" />
+                {/* Avatar overlay preview */}
+                {showAvatarPanel && avatars.length > 0 && (
+                  <div
+                    className={`absolute pointer-events-none border-2 border-cyan-400/60 ${
+                      avatarShape === "circle" ? "rounded-full" : avatarShape === "rounded" ? "rounded-xl" : ""
+                    }`}
+                    style={{
+                      width: `${avatarSize}%`,
+                      height: `${avatarSize * 0.75}%`,
+                      left: `${avatarPosX - avatarSize / 2}%`,
+                      top: `${avatarPosY - (avatarSize * 0.75) / 2}%`,
+                      opacity: avatarOpacity / 100,
+                      background: "rgba(0,180,255,0.15)",
+                      backdropFilter: "blur(1px)",
+                    }}
+                  >
+                    <div className="flex items-center justify-center h-full text-cyan-300 text-xs font-medium">
+                      <Users className="w-4 h-4 mr-1" /> 아바타
+                    </div>
+                  </div>
+                )}
                 {/* Real HTML5 Canvas overlay for drawing */}
                 <canvas
                   ref={canvasRef}
@@ -2240,6 +2428,253 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
                   </Button>
                 )}
               </div>
+
+              {/* Extra tools: Avatar overlay + Insert content */}
+              <div className="flex items-center gap-2 mt-2">
+                <Button
+                  variant={showAvatarPanel ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => { setShowAvatarPanel(!showAvatarPanel); setShowInsertPanel(false); }}
+                >
+                  <Users className="w-3.5 h-3.5" /> 아바타 크기/위치
+                </Button>
+                <Button
+                  variant={showInsertPanel ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => { setShowInsertPanel(!showInsertPanel); setShowAvatarPanel(false); setInsertAfterSlideId(currentSlide?.id || null); }}
+                >
+                  <Plus className="w-3.5 h-3.5" /> 중간 삽입
+                </Button>
+                {/* Show insert indicators */}
+                {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length > 0 && (
+                  <Badge className="bg-purple-500/20 text-purple-400 text-xs">
+                    삽입 {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length}개
+                  </Badge>
+                )}
+              </div>
+
+              {/* Avatar Overlay Panel */}
+              {showAvatarPanel && (
+                <Card className="mt-2 border-cyan-500/30 bg-cyan-500/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Users className="w-4 h-4 text-cyan-500" /> 슬라이드 {selectedSlideIdx + 1} 아바타 설정
+                    </CardTitle>
+                    <CardDescription className="text-xs">이 슬라이드에서 아바타의 크기와 위치를 조정하세요</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-xs">크기 ({avatarSize}%)</Label>
+                      <Slider value={[avatarSize]} min={10} max={60} step={1} onValueChange={v => setAvatarSize(v[0])} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">수평 위치 ({avatarPosX}%)</Label>
+                        <Slider value={[avatarPosX]} min={10} max={90} step={1} onValueChange={v => setAvatarPosX(v[0])} />
+                      </div>
+                      <div>
+                        <Label className="text-xs">수직 위치 ({avatarPosY}%)</Label>
+                        <Slider value={[avatarPosY]} min={10} max={90} step={1} onValueChange={v => setAvatarPosY(v[0])} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-xs">모양</Label>
+                        <Select value={avatarShape} onValueChange={(v: any) => setAvatarShape(v)}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="circle">원형</SelectItem>
+                            <SelectItem value="rounded">둥근 사각형</SelectItem>
+                            <SelectItem value="rectangle">사각형</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">투명도 ({avatarOpacity}%)</Label>
+                        <Slider value={[avatarOpacity]} min={20} max={100} step={5} onValueChange={v => setAvatarOpacity(v[0])} />
+                      </div>
+                    </div>
+                    <Button size="sm" className="w-full gap-1" onClick={saveAvatarOverride} disabled={saveAvatarOverrideMut.isPending}>
+                      {saveAvatarOverrideMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                      이 슬라이드 아바타 설정 저장
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Insert Content Panel */}
+              {showInsertPanel && (
+                <Card className="mt-2 border-purple-500/30 bg-purple-500/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Plus className="w-4 h-4 text-purple-500" /> 슬라이드 {selectedSlideIdx + 1} 뒤에 콘텐츠 삽입
+                    </CardTitle>
+                    <CardDescription className="text-xs">화이트보드, 영상, 이미지, 디자인 요소를 삽입하세요</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="flex gap-2">
+                      {(["whiteboard", "video", "image", "design"] as const).map(t => (
+                        <button key={t}
+                          className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+                            insertType === t ? "bg-purple-500 text-white" : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                          }`}
+                          onClick={() => setInsertType(t)}
+                        >
+                          {t === "whiteboard" ? "📝 화이트보드" : t === "video" ? "🎬 영상" : t === "image" ? "🖼️ 이미지" : "🎨 디자인"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {insertType === "whiteboard" && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">AI 화이트보드 프롬프트</Label>
+                        <Textarea
+                          value={wbPrompt}
+                          onChange={e => setWbPrompt(e.target.value)}
+                          placeholder="예: '블록체인 구조를 그림으로 설명해주세요' 또는 '수익 구조 다이어그램'"
+                          rows={2}
+                          className="text-xs"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="flex-1 gap-1 bg-purple-600 hover:bg-purple-700"
+                            onClick={() => {
+                              if (!wbPrompt.trim() || !currentSlide) return;
+                              setWbGenerating(true);
+                              generateWhiteboardMut.mutate({
+                                prompt: wbPrompt,
+                                contentType: "text",
+                              });
+                            }}
+                            disabled={wbGenerating || !wbPrompt.trim()}
+                          >
+                            {wbGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                            AI 화이트보드 생성
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1"
+                            onClick={() => {
+                              if (!currentSlide) return;
+                              saveInsertMut.mutate({
+                                projectId,
+                                afterSlideId: currentSlide.id,
+                                contentType: "whiteboard",
+                                title: "빈 화이트보드",
+                                drawingData: { elements: [], background: "#ffffff" },
+                              });
+                            }}
+                          >
+                            <Pencil className="w-3 h-3" /> 빈 화이트보드
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {insertType === "video" && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">영상 URL 또는 업로드</Label>
+                        <Input
+                          placeholder="YouTube URL 또는 영상 URL 입력..."
+                          className="text-xs h-8"
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && currentSlide) {
+                              const url = (e.target as HTMLInputElement).value;
+                              if (url.trim()) {
+                                saveInsertMut.mutate({
+                                  projectId,
+                                  afterSlideId: currentSlide.id,
+                                  contentType: "video",
+                                  title: "삽입 영상",
+                                  contentUrl: url,
+                                });
+                              }
+                            }
+                          }}
+                        />
+                        <p className="text-[10px] text-muted-foreground">Enter를 눌러 저장</p>
+                      </div>
+                    )}
+
+                    {insertType === "image" && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">이미지 URL</Label>
+                        <Input
+                          placeholder="이미지 URL 입력..."
+                          className="text-xs h-8"
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && currentSlide) {
+                              const url = (e.target as HTMLInputElement).value;
+                              if (url.trim()) {
+                                saveInsertMut.mutate({
+                                  projectId,
+                                  afterSlideId: currentSlide.id,
+                                  contentType: "image",
+                                  title: "삽입 이미지",
+                                  contentUrl: url,
+                                });
+                              }
+                            }
+                          }}
+                        />
+                        <p className="text-[10px] text-muted-foreground">Enter를 눌러 저장</p>
+                      </div>
+                    )}
+
+                    {insertType === "design" && (
+                      <div className="space-y-2">
+                        <Label className="text-xs">AI 디자인 프롬프트</Label>
+                        <Textarea
+                          value={wbPrompt}
+                          onChange={e => setWbPrompt(e.target.value)}
+                          placeholder="예: '수익률 비교 차트' 또는 '파트너 로고 모음'"
+                          rows={2}
+                          className="text-xs"
+                        />
+                        <Button
+                          size="sm"
+                          className="w-full gap-1 bg-purple-600 hover:bg-purple-700"
+                          onClick={() => {
+                            if (!wbPrompt.trim() || !currentSlide) return;
+                            setWbGenerating(true);
+                            generateWhiteboardMut.mutate({
+                              prompt: wbPrompt,
+                              contentType: "diagram",
+                            });
+                          }}
+                          disabled={wbGenerating || !wbPrompt.trim()}
+                        >
+                          {wbGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                          AI 디자인 생성
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Existing insert content for this slide */}
+                    {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length > 0 && (
+                      <div className="space-y-1 pt-2 border-t">
+                        <span className="text-xs text-muted-foreground">이 슬라이드 뒤 삽입 콘텐츠:</span>
+                        {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).map((ic: any) => (
+                          <div key={ic.id} className="flex items-center justify-between p-1.5 rounded bg-muted/50 text-xs">
+                            <span className="flex items-center gap-1">
+                              {ic.contentType === "whiteboard" ? "📝" : ic.contentType === "video" ? "🎬" : ic.contentType === "image" ? "🖼️" : "🎨"}
+                              {ic.title || ic.contentType}
+                            </span>
+                            <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-destructive"
+                              onClick={() => deleteInsertMut.mutate({ id: ic.id })}>
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -2345,13 +2780,15 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, onRef
 }
 
 // ============ STEP 5: PREVIEW & SETTINGS ============
-function Step5Preview({ projectId, project, slides, scripts, avatars, annotations, onRefresh }: {
+function Step5Preview({ projectId, project, slides, scripts, avatars, annotations, avatarOverrides, insertContent, onRefresh }: {
   projectId: number;
   project: any;
   slides: any[];
   scripts: any[];
   avatars: any[];
   annotations: any[];
+  avatarOverrides: any[];
+  insertContent: any[];
   onRefresh: () => void;
 }) {
   const [previewSlideIdx, setPreviewSlideIdx] = useState(0);

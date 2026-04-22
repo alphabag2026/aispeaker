@@ -4982,19 +4982,193 @@ Return a JSON object with a "sections" array. Each section has:
         return { sections: batch.map(b => ({ sectionId: b.sectionId, originalText: b.originalText })) };
       }),
 
+    // --- AI Script Proofread (교정) - soften/polish existing text ---
+    proofreadScript: protectedProcedure
+      .input(z.object({
+        scriptText: z.string().min(1).max(10000),
+        filter: z.enum(["smooth", "news", "presentation", "conversational", "dramatic", "concise"]).default("smooth"),
+        language: z.string().default("ko"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const filterGuides: Record<string, string> = {
+          smooth: "부드럽고 자연스러운 말투로 교정하세요. 딱딱한 표현을 부드럽게 바꾸고, 읽기 편한 흐름으로 만드세요.",
+          news: "뉴스 앵커처럼 명확하고 객관적인 톤으로 교정하세요. 간결하고 정확한 문장을 사용하세요.",
+          presentation: "프레젠테이션 발표자처럼 자신감 있고 설득력 있는 톤으로 교정하세요. 청중을 끌어들이는 표현을 사용하세요.",
+          conversational: "친구와 대화하듯 편안하고 친근한 톤으로 교정하세요. 구어체를 적절히 사용하세요.",
+          dramatic: "드라마틱하고 감정이 실린 톤으로 교정하세요. 강조와 감탄, 긴장감을 적절히 넣으세요.",
+          concise: "핵심만 간결하게 정리하세요. 불필요한 수식어와 반복을 제거하고 짧고 임팩트 있게 만드세요.",
+        };
+        const systemPrompt = `당신은 전문 스크립트 교정 전문가입니다. 주어진 텍스트를 교정해주세요.
+
+교정 스타일: ${filterGuides[input.filter]}
+
+규칙:
+1. 원문의 의미와 핵심 내용을 절대 변경하지 마세요
+2. 문법 오류, 어색한 표현, 오타를 수정하세요
+3. TTS로 자연스럽게 읽힐 수 있도록 작성하세요
+4. 교정된 텍스트만 출력하세요 (설명 없이)
+5. 언어: ${input.language === "ko" ? "한국어" : input.language}`;
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `다음 텍스트를 교정해주세요:\n\n${input.scriptText}` },
+          ],
+        });
+        const proofread = (response.choices?.[0]?.message?.content as string) || "";
+        return { original: input.scriptText, proofread: proofread.trim(), filter: input.filter };
+      }),
+
+    // --- AI Whiteboard Content Generation ---
+    generateWhiteboardContent: protectedProcedure
+      .input(z.object({
+        prompt: z.string().min(1).max(2000),
+        contentType: z.enum(["text", "diagram", "bullet_points", "equation", "timeline"]).default("text"),
+        language: z.string().default("ko"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const typeGuides: Record<string, string> = {
+          text: "화이트보드에 적을 핵심 텍스트를 생성하세요. 큰 글씨로 보기 좋게 줄바꿈하여 작성하세요.",
+          diagram: "간단한 다이어그램을 텍스트 아트로 표현하세요. 화살표(→, ↓, ↑)와 박스를 사용하세요.",
+          bullet_points: "핵심 포인트를 불릿 형태로 정리하세요. 각 항목은 한 줄로 간결하게 작성하세요.",
+          equation: "수식이나 공식을 보기 좋게 작성하세요. 기호와 숫자를 명확하게 표현하세요.",
+          timeline: "타임라인 형태로 정리하세요. 날짜/시점과 이벤트를 순서대로 나열하세요.",
+        };
+        const systemPrompt = `당신은 화이트보드 콘텐츠 전문가입니다. 강의 화이트보드에 적을 내용을 생성해주세요.
+
+콘텐츠 유형: ${typeGuides[input.contentType]}
+
+규칙:
+1. 화이트보드에 적기 적합한 간결하고 시각적인 형태로 작성
+2. 핵심 키워드와 구조를 강조
+3. 너무 길지 않게 (최대 10줄)
+4. 언어: ${input.language === "ko" ? "한국어" : input.language}
+5. 콘텐츠만 출력하세요 (설명 없이)`;
+
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: input.prompt },
+          ],
+        });
+        const content = (response.choices?.[0]?.message?.content as string) || "";
+        return { content: content.trim(), contentType: input.contentType };
+      }),
+
+    // --- Slide Avatar Overrides CRUD ---
+    getAvatarOverrides: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getSlideAvatarOverrides(input.projectId);
+      }),
+
+    upsertAvatarOverride: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+        avatarPosition: z.enum(["bottom-right", "bottom-left", "top-right", "top-left", "center-right", "center-left", "none"]).default("bottom-right"),
+        avatarSizePercent: z.number().min(5).max(80).default(25),
+        offsetX: z.number().default(0),
+        offsetY: z.number().default(0),
+        avatarShape: z.enum(["circle", "rounded", "rectangle"]).default("circle"),
+        avatarOpacity: z.number().min(0).max(100).default(100),
+        isHidden: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const id = await db.upsertSlideAvatarOverride(input);
+        return { id };
+      }),
+
+    deleteAvatarOverride: protectedProcedure
+      .input(z.object({ projectId: z.number(), slideId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        await db.deleteSlideAvatarOverride(input.projectId, input.slideId);
+        return { success: true };
+      }),
+
+    // --- Slide Insert Content CRUD ---
+    listInsertContent: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.listSlideInsertContent(input.projectId);
+      }),
+
+    createInsertContent: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        afterSlideId: z.number().default(0),
+        contentType: z.enum(["whiteboard", "video", "image", "design"]),
+        title: z.string().optional(),
+        contentUrl: z.string().optional(),
+        fileKey: z.string().optional(),
+        drawingData: z.any().optional(),
+        backgroundColor: z.string().default("#ffffff"),
+        durationSec: z.number().default(5),
+        scriptText: z.string().optional(),
+        avatarId: z.number().optional(),
+        sortOrder: z.number().default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const id = await db.createSlideInsertContent(input);
+        return { id };
+      }),
+
+    updateInsertContent: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().optional(),
+        contentUrl: z.string().optional(),
+        fileKey: z.string().optional(),
+        drawingData: z.any().optional(),
+        backgroundColor: z.string().optional(),
+        durationSec: z.number().optional(),
+        scriptText: z.string().optional(),
+        avatarId: z.number().optional(),
+        afterSlideId: z.number().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const existing = await db.getSlideInsertContentById(input.id);
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+        const project = await db.getLectureProject(existing.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const { id, ...data } = input;
+        await db.updateSlideInsertContent(id, data);
+        return { success: true };
+      }),
+
+    deleteInsertContent: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const existing = await db.getSlideInsertContentById(input.id);
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+        const project = await db.getLectureProject(existing.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        await db.deleteSlideInsertContent(input.id);
+        return { success: true };
+      }),
+
     // --- Get full project data (all steps) ---
     getFullProject: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.id);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
-        const [avatars, slides, scripts, annotations] = await Promise.all([
+        const [avatars, slides, scripts, annotations, avatarOverrides, insertContent] = await Promise.all([
           db.listProjectAvatars(input.id),
           db.listProjectSlides(input.id),
           db.listSlideScripts(input.id),
           db.listSlideAnnotations(input.id),
+          db.getSlideAvatarOverrides(input.id),
+          db.listSlideInsertContent(input.id),
         ]);
-        return { project, avatars, slides, scripts, annotations };
+        return { project, avatars, slides, scripts, annotations, avatarOverrides, insertContent };
       }),
   }),
 
