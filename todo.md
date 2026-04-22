@@ -1172,3 +1172,9 @@
 - [x] 중간 삽입 요소: 질문자 삽입, 휴식 화면, 데모 영상, 요약 슬라이드, 퀴즈/투표, 인트로/아웃트로
 - [x] 원클릭 포맷 선택 UI (카드형 선택 → 자동 세팅) - LectureFormatSelector 컴포넌트
 - [x] LectureBuilder에서 포맷 선택 시 프로젝트 생성 다이얼로그 통합
+
+## v5.5 업데이트
+- [x] 프로덕션 서버 배포 (AWS Lightsail - aispeaker.cc) - dist 교체, jsonwebtoken 설치, DB 마이그레이션, 시드 데이터 삽입 완료
+- [x] 포맷 선택 시 아바타 슬롯 자동 생성 (인원 구성에 맞게) - personnelConfig 기반 역할별 아바타 자동 생성
+- [x] 포맷 선택 시 스크립트 섹션 프리셋 (포맷에 맞게) - 도입/본문/삽입요소/마무리 자동 구성
+- [x] KLING API 키 실제 테스트 및 동작 검증 - JWT 인증 성공, Image-to-Video 및 Text-to-Video 작업 생성 성공, 상태 조회 성공
