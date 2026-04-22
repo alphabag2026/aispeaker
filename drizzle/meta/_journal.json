@@ -183,6 +183,13 @@
       "when": 1776871380304,
       "tag": "0025_chilly_roulette",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1776872374484,
+      "tag": "0026_funny_frightful_four",
+      "breakpoints": true
     }
   ]
 }

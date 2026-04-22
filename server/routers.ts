@@ -3862,6 +3862,19 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
 
   // ============ v7.0 Lecture Builder ============
   lectureBuilder: router({
+    // --- Format Templates ---
+    listFormatTemplates: publicProcedure
+      .input(z.object({ category: z.enum(["personnel", "style", "insert"]).optional() }).optional())
+      .query(async ({ input }) => {
+        return db.listLectureFormatTemplates(input?.category);
+      }),
+    getFormatTemplate: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const template = await db.getLectureFormatTemplate(input.id);
+        if (!template) throw new TRPCError({ code: "NOT_FOUND" });
+        return template;
+      }),
     // --- Project CRUD ---
     createProject: protectedProcedure
       .input(z.object({ title: z.string().min(1), description: z.string().optional() }))
@@ -4825,6 +4838,42 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         if (!task || task.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
         await db.deleteKlingTask(input.id);
         return { success: true };
+      }),
+    /** Register a completed KLING video as a sample face (avatar) */
+    registerAsAvatar: protectedProcedure
+      .input(z.object({
+        klingTaskId: z.number(),
+        name: z.string().min(1).max(100),
+        category: z.string().default("professional"),
+        gender: z.string().default("neutral"),
+        ethnicity: z.string().optional(),
+        ageRange: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const task = await db.getKlingTask(input.klingTaskId);
+        if (!task || task.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        if (task.status !== "succeed" || !task.videoUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "영상 생성이 완료된 작업만 아바타로 등록할 수 있습니다." });
+        // Use source image as face image, or video thumbnail
+        const imageUrl = task.sourceImageUrl || task.videoUrl;
+        const newFace = await db.createSampleFace({
+          name: input.name,
+          category: input.category,
+          gender: input.gender,
+          ethnicity: input.ethnicity || null,
+          ageRange: input.ageRange || null,
+          imageUrl: imageUrl,
+          thumbnailUrl: imageUrl,
+          description: input.description || `KLING AI로 생성된 아바타 (${task.taskType})`,
+          tags: JSON.stringify(["kling-ai", "generated"]),
+          languages: JSON.stringify(["ko", "en"]),
+          isPremium: false,
+          sortOrder: 999,
+          isActive: true,
+        });
+        // Update kling task to link to the new face
+        await db.updateKlingTask(task.id, { sampleFaceId: newFace.id });
+        return { faceId: newFace.id, name: input.name };
       }),
   }),
 });

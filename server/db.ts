@@ -49,6 +49,7 @@ import {
   slideScripts, InsertSlideScript,
   slideAnnotations, InsertSlideAnnotation,
   slideScriptVersions, InsertSlideScriptVersion,
+  lectureFormatTemplates, InsertLectureFormatTemplate,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2030,4 +2031,25 @@ export async function deleteKlingTask(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(klingTasks).where(eq(klingTasks.id, id));
+}
+
+// ============ Lecture Format Templates ============
+export async function listLectureFormatTemplates(category?: "personnel" | "style" | "insert") {
+  const db = await getDb();
+  if (!db) return [];
+  if (category) {
+    return db.select().from(lectureFormatTemplates)
+      .where(and(eq(lectureFormatTemplates.isActive, true), eq(lectureFormatTemplates.category, category as any)))
+      .orderBy(lectureFormatTemplates.sortOrder);
+  }
+  return db.select().from(lectureFormatTemplates)
+    .where(eq(lectureFormatTemplates.isActive, true))
+    .orderBy(lectureFormatTemplates.sortOrder);
+}
+
+export async function getLectureFormatTemplate(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(lectureFormatTemplates).where(eq(lectureFormatTemplates.id, id)).limit(1);
+  return rows[0];
 }
