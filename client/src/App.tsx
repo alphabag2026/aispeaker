@@ -47,6 +47,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import LectureBuilder from "./pages/LectureBuilder";
 import VideoHistory from "./pages/VideoHistory";
+import AdminFormatTemplates from "./pages/AdminFormatTemplates";
 
 function Router() {
   return (
@@ -88,6 +89,7 @@ function Router() {
       <Route path="/my-subscription" component={MySubscription} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/revenue" component={AdminRevenue} />
+      <Route path="/admin/format-templates" component={AdminFormatTemplates} />
       <Route path="/payment/success" component={PaymentSuccess} />
       <Route path="/payments" component={PaymentHistory} />
       <Route path="/crypto-payment/:id" component={CryptoPayment} />
