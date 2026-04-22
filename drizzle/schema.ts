@@ -1408,3 +1408,68 @@ export const lectureFormatTemplates = mysqlTable("lectureFormatTemplates", {
 });
 export type LectureFormatTemplate = typeof lectureFormatTemplates.$inferSelect;
 export type InsertLectureFormatTemplate = typeof lectureFormatTemplates.$inferInsert;
+
+// ============ v6.0: Slide Avatar Overrides ============
+/**
+ * Per-slide avatar overlay settings (position, size, shape)
+ * Overrides the project-level avatar settings for individual slides
+ */
+export const slideAvatarOverrides = mysqlTable("slideAvatarOverrides", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  slideId: int("slideId").notNull(),
+  /** Avatar position override */
+  avatarPosition: mysqlEnum("avatarPosition", ["bottom-right", "bottom-left", "top-right", "top-left", "center-right", "center-left", "none"]).default("bottom-right").notNull(),
+  /** Avatar size as percentage of slide width (10-80) */
+  avatarSizePercent: int("avatarSizePercent").default(25).notNull(),
+  /** Custom X offset from position anchor (pixels, 0-based) */
+  offsetX: int("offsetX").default(0),
+  /** Custom Y offset from position anchor (pixels, 0-based) */
+  offsetY: int("offsetY").default(0),
+  /** Avatar shape override */
+  avatarShape: mysqlEnum("avatarShape", ["circle", "rounded", "rectangle"]).default("circle").notNull(),
+  /** Avatar opacity override (0-100) */
+  avatarOpacity: int("avatarOpacity").default(100).notNull(),
+  /** Whether avatar is hidden for this slide */
+  isHidden: boolean("isHidden").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SlideAvatarOverride = typeof slideAvatarOverrides.$inferSelect;
+export type InsertSlideAvatarOverride = typeof slideAvatarOverrides.$inferInsert;
+
+// ============ v6.0: Slide Insert Content ============
+/**
+ * Insert content between slides (whiteboard, video, image, design element)
+ * These appear as interstitial content during the lecture
+ */
+export const slideInsertContent = mysqlTable("slideInsertContent", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  /** Insert after this slide ID (0 = before first slide) */
+  afterSlideId: int("afterSlideId").default(0).notNull(),
+  /** Content type */
+  contentType: mysqlEnum("contentType", ["whiteboard", "video", "image", "design"]).notNull(),
+  /** Title/label for this insert */
+  title: varchar("title", { length: 255 }),
+  /** Content URL (video URL, image URL, or whiteboard data URL) */
+  contentUrl: text("contentUrl"),
+  /** S3 file key */
+  fileKey: text("fileKey"),
+  /** For whiteboard: JSON drawing data */
+  drawingData: json("drawingData"),
+  /** Background color for whiteboard/design */
+  backgroundColor: varchar("backgroundColor", { length: 20 }).default("#ffffff"),
+  /** Duration in seconds (for video/whiteboard display time) */
+  durationSec: int("durationSec").default(5),
+  /** Script text to narrate during this insert */
+  scriptText: text("scriptText"),
+  /** Avatar ID for narration */
+  avatarId: int("avatarId"),
+  /** Sort order among inserts after the same slide */
+  sortOrder: int("sortOrder").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SlideInsertContent = typeof slideInsertContent.$inferSelect;
+export type InsertSlideInsertContent = typeof slideInsertContent.$inferInsert;

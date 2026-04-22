@@ -2089,3 +2089,78 @@ export async function hardDeleteLectureFormatTemplate(id: number) {
   await db.delete(lectureFormatTemplates).where(eq(lectureFormatTemplates.id, id));
   return { id };
 }
+
+// ============ v6.0: Slide Avatar Overrides ============
+import { slideAvatarOverrides, type InsertSlideAvatarOverride, slideInsertContent, type InsertSlideInsertContent } from "../drizzle/schema";
+
+export async function getSlideAvatarOverrides(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(slideAvatarOverrides)
+    .where(eq(slideAvatarOverrides.projectId, projectId))
+    .orderBy(slideAvatarOverrides.slideId);
+}
+
+export async function getSlideAvatarOverride(projectId: number, slideId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(slideAvatarOverrides)
+    .where(and(eq(slideAvatarOverrides.projectId, projectId), eq(slideAvatarOverrides.slideId, slideId)));
+  return rows[0] || null;
+}
+
+export async function upsertSlideAvatarOverride(data: InsertSlideAvatarOverride) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Check if exists
+  const existing = await db.select().from(slideAvatarOverrides)
+    .where(and(eq(slideAvatarOverrides.projectId, data.projectId), eq(slideAvatarOverrides.slideId, data.slideId)));
+  if (existing.length > 0) {
+    await db.update(slideAvatarOverrides).set(data).where(eq(slideAvatarOverrides.id, existing[0].id));
+    return existing[0].id;
+  }
+  const [result] = await db.insert(slideAvatarOverrides).values(data);
+  return result.insertId;
+}
+
+export async function deleteSlideAvatarOverride(projectId: number, slideId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideAvatarOverrides)
+    .where(and(eq(slideAvatarOverrides.projectId, projectId), eq(slideAvatarOverrides.slideId, slideId)));
+}
+
+// ============ v6.0: Slide Insert Content ============
+export async function listSlideInsertContent(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(slideInsertContent)
+    .where(eq(slideInsertContent.projectId, projectId))
+    .orderBy(slideInsertContent.afterSlideId, slideInsertContent.sortOrder);
+}
+
+export async function getSlideInsertContentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(slideInsertContent).where(eq(slideInsertContent.id, id));
+  return rows[0] || null;
+}
+
+export async function createSlideInsertContent(data: InsertSlideInsertContent) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(slideInsertContent).values(data);
+  return result.insertId;
+}
+
+export async function updateSlideInsertContent(id: number, data: Partial<InsertSlideInsertContent>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(slideInsertContent).set(data).where(eq(slideInsertContent.id, id));
+}
+
+export async function deleteSlideInsertContent(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideInsertContent).where(eq(slideInsertContent.id, id));
+}
