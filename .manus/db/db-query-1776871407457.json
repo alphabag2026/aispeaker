@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `klingTasks` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`taskType` enum('image2video','text2video') NOT NULL,\n\t`klingTaskId` varchar(255) NOT NULL,\n\t`status` varchar(64) NOT NULL DEFAULT 'submitted',\n\t`statusMsg` text,\n\t`sourceImageUrl` text,\n\t`prompt` text,\n\t`videoUrl` text,\n\t`videoDuration` int,\n\t`model` varchar(64) DEFAULT 'kling-v1-6',\n\t`mode` varchar(10) DEFAULT 'std',\n\t`durationSetting` varchar(5) DEFAULT '5',\n\t`aspectRatio` varchar(10) DEFAULT '16:9',\n\t`purpose` varchar(64) DEFAULT 'avatar_preview',\n\t`projectAvatarId` int,\n\t`sampleFaceId` int,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `klingTasks_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZhmXq2fuwbq2e6E.3b045a7fef56 --database JNDtxB2WrDuBzbhLtHkGn8 --execute CREATE TABLE IF NOT EXISTS `klingTasks` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`userId` int NOT NULL,\n\t`taskType` enum('image2video','text2video') NOT NULL,\n\t`klingTaskId` varchar(255) NOT NULL,\n\t`status` varchar(64) NOT NULL DEFAULT 'submitted',\n\t`statusMsg` text,\n\t`sourceImageUrl` text,\n\t`prompt` text,\n\t`videoUrl` text,\n\t`videoDuration` int,\n\t`model` varchar(64) DEFAULT 'kling-v1-6',\n\t`mode` varchar(10) DEFAULT 'std',\n\t`durationSetting` varchar(5) DEFAULT '5',\n\t`aspectRatio` varchar(10) DEFAULT '16:9',\n\t`purpose` varchar(64) DEFAULT 'avatar_preview',\n\t`projectAvatarId` int,\n\t`sampleFaceId` int,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\tCONSTRAINT `klingTasks_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1788
+}

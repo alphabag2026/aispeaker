@@ -1326,3 +1326,47 @@ export const slideScriptVersions = mysqlTable("slideScriptVersions", {
 });
 export type SlideScriptVersion = typeof slideScriptVersions.$inferSelect;
 export type InsertSlideScriptVersion = typeof slideScriptVersions.$inferInsert;
+
+// ============ KLING AI Video Generation Tasks ============
+/**
+ * Tracks KLING API video generation tasks (image-to-video, text-to-video)
+ * Used for creating custom AI instructor avatars
+ */
+export const klingTasks = mysqlTable("klingTasks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Task type: image2video, text2video */
+  taskType: mysqlEnum("taskType", ["image2video", "text2video"]).notNull(),
+  /** KLING API task ID */
+  klingTaskId: varchar("klingTaskId", { length: 255 }).notNull(),
+  /** Task status from KLING: submitted, processing, succeed, failed */
+  status: varchar("status", { length: 64 }).default("submitted").notNull(),
+  /** Status message */
+  statusMsg: text("statusMsg"),
+  /** Source image URL (for image2video) */
+  sourceImageUrl: text("sourceImageUrl"),
+  /** Prompt used */
+  prompt: text("prompt"),
+  /** Generated video URL */
+  videoUrl: text("videoUrl"),
+  /** Video duration in seconds */
+  videoDuration: int("videoDuration"),
+  /** Model used */
+  model: varchar("model", { length: 64 }).default("kling-v1-6"),
+  /** Mode: std or pro */
+  mode: varchar("mode", { length: 10 }).default("std"),
+  /** Duration setting: 5 or 10 */
+  durationSetting: varchar("durationSetting", { length: 5 }).default("5"),
+  /** Aspect ratio */
+  aspectRatio: varchar("aspectRatio", { length: 10 }).default("16:9"),
+  /** Purpose: avatar_preview, lecture_video, custom */
+  purpose: varchar("purpose", { length: 64 }).default("avatar_preview"),
+  /** Related project avatar ID (if creating for a project) */
+  projectAvatarId: int("projectAvatarId"),
+  /** Related sample face ID */
+  sampleFaceId: int("sampleFaceId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type KlingTask = typeof klingTasks.$inferSelect;
+export type InsertKlingTask = typeof klingTasks.$inferInsert;

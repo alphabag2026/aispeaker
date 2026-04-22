@@ -1984,3 +1984,50 @@ export async function listAllUsers() {
   if (!db) return [];
   return db.select().from(users).orderBy(desc(users.createdAt));
 }
+
+// ============ KLING Tasks ============
+import { klingTasks, type InsertKlingTask } from "../drizzle/schema";
+
+export async function createKlingTask(data: InsertKlingTask) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(klingTasks).values(data);
+  return result.insertId;
+}
+
+export async function getKlingTask(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(klingTasks).where(eq(klingTasks.id, id));
+  return rows[0] || null;
+}
+
+export async function getKlingTaskByKlingId(klingTaskId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(klingTasks).where(eq(klingTasks.klingTaskId, klingTaskId));
+  return rows[0] || null;
+}
+
+export async function updateKlingTask(id: number, data: Partial<InsertKlingTask>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(klingTasks).set(data).where(eq(klingTasks.id, id));
+}
+
+export async function listKlingTasks(userId: number, purpose?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(klingTasks.userId, userId)];
+  if (purpose) conditions.push(eq(klingTasks.purpose, purpose));
+  return db.select().from(klingTasks)
+    .where(and(...conditions))
+    .orderBy(desc(klingTasks.createdAt))
+    .limit(50);
+}
+
+export async function deleteKlingTask(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(klingTasks).where(eq(klingTasks.id, id));
+}

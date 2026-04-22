@@ -15,6 +15,7 @@ import bcrypt from "bcryptjs";
 import { sdk } from "./_core/sdk";
 import axios from "axios";
 import crypto from "crypto";
+import { createImageToVideo as createImageToVideoApi, getImageToVideoStatus as getImageToVideoStatusApi, createTextToVideo as createTextToVideoApi, getTextToVideoStatus as getTextToVideoStatusApi, isKlingConfigured } from "./kling";
 
 // Helper: coerce NaN/null/string to undefined for optional number fields
 // Uses z.union to accept number | null | undefined, then transforms to number | undefined
@@ -4749,6 +4750,82 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       ]);
       return { faces, voices };
     }),
+  }),
+
+  // ========== KLING AI Video Generation ==========
+  kling: router({
+    isConfigured: publicProcedure.query(() => {
+      return { configured: isKlingConfigured() };
+    }),
+    uploadImage: protectedProcedure
+      .input(z.object({ imageData: z.string(), fileName: z.string(), mimeType: z.string().default("image/png") }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.imageData, "base64");
+        const fileKey = `kling-faces/${ctx.user.id}/${nanoid()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        return { url };
+      }),
+    createImageToVideo: protectedProcedure
+      .input(z.object({
+        imageUrl: z.string().url(),
+        prompt: z.string().optional(),
+        duration: z.enum(["5", "10"]).default("5"),
+        mode: z.enum(["std", "pro"]).default("std"),
+        model: z.string().default("kling-v1-6"),
+        aspectRatio: z.string().default("16:9"),
+        purpose: z.string().default("avatar_preview"),
+        projectAvatarId: z.number().optional(),
+        sampleFaceId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!isKlingConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "KLING API가 설정되지 않았습니다." });
+        const result = await createImageToVideoApi({ imageUrl: input.imageUrl, prompt: input.prompt, duration: input.duration, mode: input.mode, model: input.model, aspectRatio: input.aspectRatio });
+        const taskDbId = await db.createKlingTask({ userId: ctx.user.id, taskType: "image2video", klingTaskId: result.taskId, status: result.taskStatus || "submitted", sourceImageUrl: input.imageUrl, prompt: input.prompt || null, model: input.model, mode: input.mode, durationSetting: input.duration, aspectRatio: input.aspectRatio, purpose: input.purpose, projectAvatarId: input.projectAvatarId || null, sampleFaceId: input.sampleFaceId || null });
+        return { id: taskDbId, klingTaskId: result.taskId, status: result.taskStatus };
+      }),
+    createTextToVideo: protectedProcedure
+      .input(z.object({
+        prompt: z.string().min(1),
+        duration: z.enum(["5", "10"]).default("5"),
+        mode: z.enum(["std", "pro"]).default("std"),
+        model: z.string().default("kling-v1-6"),
+        aspectRatio: z.string().default("16:9"),
+        purpose: z.string().default("avatar_preview"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!isKlingConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "KLING API가 설정되지 않았습니다." });
+        const result = await createTextToVideoApi({ prompt: input.prompt, duration: input.duration, mode: input.mode, model: input.model, aspectRatio: input.aspectRatio });
+        const taskDbId = await db.createKlingTask({ userId: ctx.user.id, taskType: "text2video", klingTaskId: result.taskId, status: result.taskStatus || "submitted", prompt: input.prompt, model: input.model, mode: input.mode, durationSetting: input.duration, aspectRatio: input.aspectRatio, purpose: input.purpose });
+        return { id: taskDbId, klingTaskId: result.taskId, status: result.taskStatus };
+      }),
+    checkStatus: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const task = await db.getKlingTask(input.id);
+        if (!task || task.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        if (task.status === "succeed" || task.status === "failed") return task;
+        try {
+          const apiStatus = task.taskType === "image2video" ? await getImageToVideoStatusApi(task.klingTaskId) : await getTextToVideoStatusApi(task.klingTaskId);
+          await db.updateKlingTask(task.id, { status: apiStatus.taskStatus, statusMsg: apiStatus.taskStatusMsg || null, videoUrl: apiStatus.videoUrl || null, videoDuration: apiStatus.videoDuration || null });
+          return { ...task, status: apiStatus.taskStatus, statusMsg: apiStatus.taskStatusMsg, videoUrl: apiStatus.videoUrl, videoDuration: apiStatus.videoDuration };
+        } catch (err: any) {
+          console.error("[KLING] Status check error:", err.message);
+          return task;
+        }
+      }),
+    list: protectedProcedure
+      .input(z.object({ purpose: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.listKlingTasks(ctx.user.id, input?.purpose);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const task = await db.getKlingTask(input.id);
+        if (!task || task.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        await db.deleteKlingTask(input.id);
+        return { success: true };
+      }),
   }),
 });
 

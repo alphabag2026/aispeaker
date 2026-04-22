@@ -1,0 +1,22 @@
+CREATE TABLE `klingTasks` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`taskType` enum('image2video','text2video') NOT NULL,
+	`klingTaskId` varchar(255) NOT NULL,
+	`status` varchar(64) NOT NULL DEFAULT 'submitted',
+	`statusMsg` text,
+	`sourceImageUrl` text,
+	`prompt` text,
+	`videoUrl` text,
+	`videoDuration` int,
+	`model` varchar(64) DEFAULT 'kling-v1-6',
+	`mode` varchar(10) DEFAULT 'std',
+	`durationSetting` varchar(5) DEFAULT '5',
+	`aspectRatio` varchar(10) DEFAULT '16:9',
+	`purpose` varchar(64) DEFAULT 'avatar_preview',
+	`projectAvatarId` int,
+	`sampleFaceId` int,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `klingTasks_id` PRIMARY KEY(`id`)
+);
