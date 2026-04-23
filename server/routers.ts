@@ -5154,21 +5154,202 @@ Return a JSON object with a "sections" array. Each section has:
         return { success: true };
       }),
 
+    // --- Slide Transitions ---
+    upsertSlideTransition: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+        transitionType: z.enum(["none", "fade", "slide_left", "slide_right", "slide_up", "zoom_in", "zoom_out", "wipe_left", "wipe_right", "dissolve"]),
+        durationMs: z.number().min(100).max(3000).default(500),
+        easing: z.enum(["linear", "ease_in", "ease_out", "ease_in_out"]).default("ease_in_out"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const id = await db.upsertSlideTransition(input);
+        return { id };
+      }),
+
+    setAllTransitions: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        transitionType: z.enum(["none", "fade", "slide_left", "slide_right", "slide_up", "zoom_in", "zoom_out", "wipe_left", "wipe_right", "dissolve"]),
+        durationMs: z.number().min(100).max(3000).default(500),
+        easing: z.enum(["linear", "ease_in", "ease_out", "ease_in_out"]).default("ease_in_out"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const count = await db.setProjectTransitions(input.projectId, input.transitionType, input.durationMs, input.easing);
+        return { count };
+      }),
+
+    // --- AI Image Generation for Whiteboard ---
+    generateWhiteboardImage: protectedProcedure
+      .input(z.object({
+        prompt: z.string().min(1).max(1000),
+        style: z.enum(["illustration", "diagram", "infographic", "sketch", "realistic", "cartoon", "minimalist"]).default("illustration"),
+        language: z.string().default("ko"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const stylePrompts: Record<string, string> = {
+          illustration: "clean digital illustration style, professional, educational",
+          diagram: "technical diagram, flowchart style, clear labels, white background",
+          infographic: "infographic style, data visualization, modern flat design",
+          sketch: "hand-drawn sketch style, pencil drawing, whiteboard aesthetic",
+          realistic: "photorealistic, high quality, detailed",
+          cartoon: "cartoon style, colorful, fun, educational",
+          minimalist: "minimalist design, simple shapes, clean lines, white space",
+        };
+        const fullPrompt = `${input.prompt}. Style: ${stylePrompts[input.style] || stylePrompts.illustration}. For educational/lecture use.`;
+        try {
+          const { url } = await generateImage({ prompt: fullPrompt });
+          return { imageUrl: url };
+        } catch (err: any) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Image generation failed: ${err.message}` });
+        }
+      }),
+
+    // --- Whiteboard Animation to MP4 ---
+    renderWhiteboardMp4: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        insertContentId: z.number(),
+        whiteboardData: z.object({
+          strokes: z.array(z.object({
+            id: z.string(),
+            points: z.array(z.object({ x: z.number(), y: z.number(), t: z.number() })),
+            color: z.string(),
+            width: z.number(),
+            tool: z.string(),
+          })),
+          backgroundColor: z.string().default("#FFFFFF"),
+          width: z.number().default(1280),
+          height: z.number().default(720),
+          durationMs: z.number().optional(),
+        }),
+        resolution: z.enum(["720p", "1080p"]).default("1080p"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        
+        // Generate whiteboard animation frames using Canvas API on server
+        // We'll create a series of PNG frames then compile to MP4
+        const { createCanvas } = await import("canvas");
+        const fs = await import("fs");
+        const path = await import("path");
+        const os = await import("os");
+        const { default: ffmpegLib } = await import("fluent-ffmpeg");
+        
+        const tmpDir = path.join(os.tmpdir(), `wb-render-${nanoid(8)}`);
+        fs.mkdirSync(tmpDir, { recursive: true });
+        
+        const { strokes, backgroundColor, width, height } = input.whiteboardData;
+        const resMap: Record<string, { w: number; h: number }> = {
+          "720p": { w: 1280, h: 720 },
+          "1080p": { w: 1920, h: 1080 },
+        };
+        const res = resMap[input.resolution] || resMap["1080p"];
+        const scaleX = res.w / width;
+        const scaleY = res.h / height;
+        
+        // Calculate total duration from stroke timestamps
+        let maxT = 0;
+        for (const stroke of strokes) {
+          for (const pt of stroke.points) {
+            if (pt.t > maxT) maxT = pt.t;
+          }
+        }
+        const totalDurationMs = input.whiteboardData.durationMs || Math.max(maxT, 3000);
+        const fps = 15;
+        const totalFrames = Math.ceil((totalDurationMs / 1000) * fps);
+        
+        // Generate frames
+        const canvas = createCanvas(res.w, res.h);
+        const ctx2d = canvas.getContext("2d");
+        
+        for (let frame = 0; frame < totalFrames; frame++) {
+          const currentTimeMs = (frame / fps) * 1000;
+          
+          // Clear with background
+          ctx2d.fillStyle = backgroundColor;
+          ctx2d.fillRect(0, 0, res.w, res.h);
+          
+          // Draw strokes up to current time
+          for (const stroke of strokes) {
+            const visiblePoints = stroke.points.filter(p => p.t <= currentTimeMs);
+            if (visiblePoints.length < 2) continue;
+            
+            ctx2d.beginPath();
+            ctx2d.strokeStyle = stroke.tool === "eraser" ? backgroundColor : stroke.color;
+            ctx2d.lineWidth = stroke.width * Math.max(scaleX, scaleY);
+            ctx2d.lineCap = "round";
+            ctx2d.lineJoin = "round";
+            ctx2d.moveTo(visiblePoints[0].x * scaleX, visiblePoints[0].y * scaleY);
+            for (let i = 1; i < visiblePoints.length; i++) {
+              ctx2d.lineTo(visiblePoints[i].x * scaleX, visiblePoints[i].y * scaleY);
+            }
+            ctx2d.stroke();
+          }
+          
+          // Save frame
+          const framePath = path.join(tmpDir, `frame-${String(frame).padStart(5, "0")}.png`);
+          const buffer = canvas.toBuffer("image/png");
+          fs.writeFileSync(framePath, buffer);
+        }
+        
+        // Compile frames to MP4 using ffmpeg
+        const outputPath = path.join(tmpDir, "whiteboard.mp4");
+        await new Promise<void>((resolve, reject) => {
+          ffmpegLib()
+            .input(path.join(tmpDir, "frame-%05d.png"))
+            .inputOptions(["-framerate", String(fps)])
+            .outputOptions([
+              "-c:v", "libx264",
+              "-pix_fmt", "yuv420p",
+              "-preset", "fast",
+              "-movflags", "+faststart",
+            ])
+            .output(outputPath)
+            .on("end", () => resolve())
+            .on("error", (err: any) => reject(new Error(`Whiteboard MP4 render failed: ${err.message}`)))
+            .run();
+        });
+        
+        // Upload to S3
+        const videoBuffer = fs.readFileSync(outputPath);
+        const s3Key = `lecture-builder/${input.projectId}/whiteboard/wb-${Date.now()}-${nanoid(6)}.mp4`;
+        const { url } = await storagePut(s3Key, videoBuffer, "video/mp4");
+        
+        // Update insert content with video URL
+        await db.updateSlideInsertContent(input.insertContentId, {
+          contentUrl: url,
+          contentType: "whiteboard" as any,
+        });
+        
+        // Cleanup
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) {}
+        
+        return { videoUrl: url, duration: totalDurationMs / 1000, frames: totalFrames };
+      }),
+
     // --- Get full project data (all steps) ---
     getFullProject: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.id);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
-        const [avatars, slides, scripts, annotations, avatarOverrides, insertContent] = await Promise.all([
+        const [avatars, slides, scripts, annotations, avatarOverrides, insertContent, transitions] = await Promise.all([
           db.listProjectAvatars(input.id),
           db.listProjectSlides(input.id),
           db.listSlideScripts(input.id),
           db.listSlideAnnotations(input.id),
           db.getSlideAvatarOverrides(input.id),
           db.listSlideInsertContent(input.id),
+          db.getSlideTransitions(input.id),
         ]);
-        return { project, avatars, slides, scripts, annotations, avatarOverrides, insertContent };
+        return { project, avatars, slides, scripts, annotations, avatarOverrides, insertContent, transitions };
       }),
   }),
 

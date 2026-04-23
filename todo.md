@@ -1209,7 +1209,7 @@
 - [x] AI 교정 버튼 UI - 각 슬라이드 스크립트에 원클릭 교정 버튼 (Step2)
 - [x] AI 스타일 필터 UI - 토글 버튼으로 스타일 선택 후 변환
 - [x] 교정 전/후 비교 미리보기 다이얼로그
-- [ ] 프로덕션 배포
+- [x] 프로덕션 배포 (aispeaker.cc) - HTTP 200 정상
 
 ## v6.0 아바타 오버레이 & 중간 콘텐츠 삽입
 - [x] 슬라이드별 아바타 크기/위치 조정 DB 스키마 (slideAvatarOverrides 테이블)
@@ -1223,7 +1223,7 @@
 - [x] AI 화이트보드 프롬프트 생성 (generateWhiteboardContent)
 - [x] Step4 매칭에디터에 아바타 설정/삽입 콘텐츠 패널 추가
 - [x] 미리보기에 아바타 오버레이 반영
-- [ ] 프로덕션 배포
+- [x] 프로덕션 배포 (aispeaker.cc) - HTTP 200 정상
 
 ## v6.0 고급 화이트보드 & 화면 편집
 - [x] 화이트보드 캔버스 에디터 - 펜/지우개/색상/두께 도구 (WhiteboardEditor 컴포넌트)
@@ -1233,3 +1233,15 @@
 - [x] 화이트보드 이미지 삽입 - URL로 이미지 배치/리사이즈
 - [x] 중간 삽입 콘텐츠 관리 UI - 슬라이드 사이에 화이트보드/영상/이미지 추가
 - [x] 화이트보드 데이터 저장/로드 백엔드 (createInsertContent/updateInsertContent)
+
+## v6.1 화이트보드 MP4 & 슬라이드 전환 효과 & AI 이미지 생성
+- [x] 화이트보드 펜 애니메이션 MP4 내보내기 - 서버 ffmpeg 기반 캔버스 프레임 렌더링
+- [x] 화이트보드 MP4 내보내기 UI - 진행바, 다운로드, 강의 영상 자동 삽입
+- [x] 슬라이드 전환 효과 DB 스키마 - slideTransitions 테이블
+- [x] 슬라이드 전환 효과 백엔드 - upsertSlideTransition/setAllTransitions 라우터
+- [x] 슬라이드 전환 효과 UI - 10종 타입 + 지속시간/이징 설정 + 전체적용
+- [x] 슬라이드 전환 효과 MP4 반영 - videoExporter에 전환 효과 적용 로직 통합
+- [x] AI 이미지 생성 백엔드 - generateWhiteboardImage (7종 스타일)
+- [x] AI 이미지 생성 UI - 프롬프트 + 스타일 선택 + 화이트보드 자동 삽입
+- [ ] 프로덕션 배포 v6.1
+- [x] v6.1 테스트 14개 통과

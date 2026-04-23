@@ -50,6 +50,7 @@ import {
   slideAnnotations, InsertSlideAnnotation,
   slideScriptVersions, InsertSlideScriptVersion,
   lectureFormatTemplates, InsertLectureFormatTemplate,
+  slideTransitions, InsertSlideTransition,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2163,4 +2164,49 @@ export async function deleteSlideInsertContent(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(slideInsertContent).where(eq(slideInsertContent.id, id));
+}
+
+
+// ============ Slide Transitions ============
+export async function getSlideTransitions(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(slideTransitions).where(eq(slideTransitions.projectId, projectId));
+}
+
+export async function upsertSlideTransition(data: InsertSlideTransition) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Check if exists
+  const existing = await db.select().from(slideTransitions)
+    .where(and(eq(slideTransitions.projectId, data.projectId), eq(slideTransitions.slideId, data.slideId!)));
+  if (existing.length > 0) {
+    await db.update(slideTransitions).set(data).where(eq(slideTransitions.id, existing[0].id));
+    return existing[0].id;
+  }
+  const [result] = await db.insert(slideTransitions).values(data);
+  return result.insertId;
+}
+
+export async function setProjectTransitions(projectId: number, transitionType: string, durationMs: number, easing: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Get all slides for this project
+  const slides = await db.select().from(projectSlides).where(eq(projectSlides.projectId, projectId));
+  for (const slide of slides) {
+    await upsertSlideTransition({
+      projectId,
+      slideId: slide.id,
+      transitionType: transitionType as any,
+      durationMs,
+      easing: easing as any,
+    });
+  }
+  return slides.length;
+}
+
+export async function deleteSlideTransition(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideTransitions).where(eq(slideTransitions.id, id));
 }

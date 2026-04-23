@@ -246,6 +246,7 @@ export default function LectureBuilder() {
   const annotations = fullProjectQuery.data?.annotations || [];
   const avatarOverrides = fullProjectQuery.data?.avatarOverrides || [];
   const insertContent = fullProjectQuery.data?.insertContent || [];
+  const transitions = fullProjectQuery.data?.transitions || [];
   const faces = facesQuery.data || [];
   const voices = voicesQuery.data || [];
 
@@ -333,6 +334,7 @@ export default function LectureBuilder() {
                 annotations={annotations}
                 avatarOverrides={avatarOverrides}
                 insertContent={insertContent}
+                transitions={transitions}
                 onRefresh={() => fullProjectQuery.refetch()}
               />
             )}
@@ -1816,7 +1818,7 @@ function Step3Slides({ projectId, slides, onRefresh }: {
 }
 
 // ============ STEP 4: MATCHING EDITOR ============
-function Step4Matching({ projectId, slides, scripts, avatars, annotations, avatarOverrides, insertContent, onRefresh }: {
+function Step4Matching({ projectId, slides, scripts, avatars, annotations, avatarOverrides, insertContent, transitions, onRefresh }: {
   projectId: number;
   slides: any[];
   scripts: any[];
@@ -1824,6 +1826,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   annotations: any[];
   avatarOverrides: any[];
   insertContent: any[];
+  transitions: any[];
   onRefresh: () => void;
 }) {
   const [selectedSlideIdx, setSelectedSlideIdx] = useState(0);
@@ -1912,6 +1915,34 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const deleteInsertMut = trpc.lectureBuilder.deleteInsertContent.useMutation({
     onSuccess: () => { toast.success("삽입 콘텐츠 삭제됨"); onRefresh(); },
   });
+
+  // Slide transitions
+  const [showTransitionPanel, setShowTransitionPanel] = useState(false);
+  const [transitionType, setTransitionType] = useState<string>("none");
+  const [transitionDuration, setTransitionDuration] = useState(500);
+  const [transitionEasing, setTransitionEasing] = useState<string>("ease_in_out");
+
+  const upsertTransitionMut = trpc.lectureBuilder.upsertSlideTransition.useMutation({
+    onSuccess: () => { toast.success("전환 효과 저장됨"); onRefresh(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const setAllTransitionsMut = trpc.lectureBuilder.setAllTransitions.useMutation({
+    onSuccess: (data) => { toast.success(`전체 ${data.count}개 슬라이드에 전환 효과 적용`); onRefresh(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Load transition for current slide
+  useEffect(() => {
+    if (!currentSlide) return;
+    const tr = transitions.find((t: any) => t.slideId === currentSlide.id);
+    if (tr) {
+      setTransitionType(tr.transitionType || "none");
+      setTransitionDuration(tr.durationMs || 500);
+      setTransitionEasing(tr.easing || "ease_in_out");
+    } else {
+      setTransitionType("none"); setTransitionDuration(500); setTransitionEasing("ease_in_out");
+    }
+  }, [currentSlide?.id, transitions]);
 
   // Whiteboard AI generation
   const [wbPrompt, setWbPrompt] = useState("");
@@ -2443,14 +2474,27 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                   variant={showInsertPanel ? "default" : "outline"}
                   size="sm"
                   className="text-xs gap-1"
-                  onClick={() => { setShowInsertPanel(!showInsertPanel); setShowAvatarPanel(false); setInsertAfterSlideId(currentSlide?.id || null); }}
+                  onClick={() => { setShowInsertPanel(!showInsertPanel); setShowAvatarPanel(false); setShowTransitionPanel(false); setInsertAfterSlideId(currentSlide?.id || null); }}
                 >
                   <Plus className="w-3.5 h-3.5" /> 중간 삽입
+                </Button>
+                <Button
+                  variant={showTransitionPanel ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs gap-1"
+                  onClick={() => { setShowTransitionPanel(!showTransitionPanel); setShowAvatarPanel(false); setShowInsertPanel(false); }}
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> 전환 효과
                 </Button>
                 {/* Show insert indicators */}
                 {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length > 0 && (
                   <Badge className="bg-purple-500/20 text-purple-400 text-xs">
                     삽입 {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length}개
+                  </Badge>
+                )}
+                {transitionType !== "none" && (
+                  <Badge className="bg-amber-500/20 text-amber-400 text-xs">
+                    {transitionType.replace("_", " ")}
                   </Badge>
                 )}
               </div>
@@ -2670,6 +2714,95 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                             </Button>
                           </div>
                         ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Transition Effect Panel */}
+              {showTransitionPanel && (
+                <Card className="mt-2 border-amber-500/30 bg-amber-500/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-amber-500" /> 슬라이드 {selectedSlideIdx + 1} 전환 효과
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-xs">전환 타입</Label>
+                      <Select value={transitionType} onValueChange={setTransitionType}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">없음</SelectItem>
+                          <SelectItem value="fade">페이드</SelectItem>
+                          <SelectItem value="slide_left">슬라이드 좌</SelectItem>
+                          <SelectItem value="slide_right">슬라이드 우</SelectItem>
+                          <SelectItem value="slide_up">슬라이드 위</SelectItem>
+                          <SelectItem value="zoom_in">줌 인</SelectItem>
+                          <SelectItem value="zoom_out">줌 아웃</SelectItem>
+                          <SelectItem value="wipe_left">와이프 좌</SelectItem>
+                          <SelectItem value="wipe_right">와이프 우</SelectItem>
+                          <SelectItem value="dissolve">디졸브</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">지속 시간: {transitionDuration}ms</Label>
+                      <Slider
+                        value={[transitionDuration]}
+                        onValueChange={([v]) => setTransitionDuration(v)}
+                        min={100} max={3000} step={100}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">이징</Label>
+                      <Select value={transitionEasing} onValueChange={setTransitionEasing}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="linear">선형</SelectItem>
+                          <SelectItem value="ease_in">가속</SelectItem>
+                          <SelectItem value="ease_out">감속</SelectItem>
+                          <SelectItem value="ease_in_out">가감속</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" className="h-7 text-xs gap-1 flex-1"
+                        disabled={upsertTransitionMut.isPending}
+                        onClick={() => {
+                          if (!currentSlide) return;
+                          upsertTransitionMut.mutate({
+                            projectId,
+                            slideId: currentSlide.id,
+                            transitionType: transitionType as any,
+                            durationMs: transitionDuration,
+                            easing: transitionEasing as any,
+                          });
+                        }}>
+                        {upsertTransitionMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                        이 슬라이드 저장
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs gap-1 flex-1"
+                        disabled={setAllTransitionsMut.isPending}
+                        onClick={() => {
+                          setAllTransitionsMut.mutate({
+                            projectId,
+                            transitionType: transitionType as any,
+                            durationMs: transitionDuration,
+                            easing: transitionEasing as any,
+                          });
+                        }}>
+                        {setAllTransitionsMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                        전체 적용
+                      </Button>
+                    </div>
+                    {/* Transition preview hint */}
+                    {transitionType !== "none" && (
+                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                        프리뷰: 슬라이드 전환 시 <span className="font-semibold text-amber-400">{transitionType.replace("_", " ")}</span> 효과가 {transitionDuration}ms 동안 적용됩니다.
+                        MP4 내보내기 시 실제 영상에 반영됩니다.
                       </div>
                     )}
                   </CardContent>

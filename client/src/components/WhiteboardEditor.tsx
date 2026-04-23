@@ -73,16 +73,19 @@ export interface WhiteboardData {
 interface WhiteboardEditorProps {
   initialData?: WhiteboardData;
   onSave?: (data: WhiteboardData) => void;
+  onExportMp4?: (videoUrl: string) => void;
   width?: number;
   height?: number;
   language?: string;
+  projectId?: number;
+  insertContentId?: number;
 }
 
 const COLORS = ["#000000", "#FF0000", "#0066FF", "#00AA00", "#FF6600", "#9933CC", "#FFFFFF"];
 const FONT_SIZES = [16, 20, 24, 32, 40, 48, 64];
 const BG_COLORS = ["#ffffff", "#1a1a2e", "#0f3460", "#16213e", "#f5f5dc", "#2d2d2d", "#f0f8ff"];
 
-export default function WhiteboardEditor({ initialData, onSave, width = 960, height = 540, language = "ko" }: WhiteboardEditorProps) {
+export default function WhiteboardEditor({ initialData, onSave, onExportMp4, width = 960, height = 540, language = "ko", projectId, insertContentId }: WhiteboardEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -131,6 +134,82 @@ export default function WhiteboardEditor({ initialData, onSave, width = 960, hei
   const [selectedElement, setSelectedElement] = useState<{ type: string; id: string } | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const isDragging = useRef(false);
+
+  // AI Image generation
+  const [aiImagePrompt, setAiImagePrompt] = useState("");
+  const [aiImageStyle, setAiImageStyle] = useState<"illustration" | "diagram" | "infographic" | "sketch" | "realistic" | "cartoon" | "minimalist">("illustration");
+  const [isExportingMp4, setIsExportingMp4] = useState(false);
+
+  const generateAiImage = trpc.lectureBuilder.generateWhiteboardImage.useMutation({
+    onSuccess: (data) => {
+      // Add generated image to whiteboard
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const maxW = width * 0.6;
+        const scale = Math.min(maxW / img.width, 1);
+        setImages(prev => [...prev, {
+          id: `img-${Date.now()}`,
+          x: (width - img.width * scale) / 2,
+          y: (height - img.height * scale) / 2,
+          width: img.width * scale,
+          height: img.height * scale,
+          src: data.imageUrl || "",
+          naturalWidth: img.width,
+          naturalHeight: img.height,
+        }]);
+        toast.success("AI 이미지가 화이트보드에 추가되었습니다");
+      };
+      img.onerror = () => {
+        // Even if image fails to load in browser, still add it
+        setImages(prev => [...prev, {
+          id: `img-${Date.now()}`,
+          x: 40, y: 40,
+          width: width * 0.5, height: height * 0.5,
+          src: data.imageUrl || "",
+          naturalWidth: 512, naturalHeight: 512,
+        }]);
+        toast.success("AI 이미지가 추가되었습니다 (프리뷰 로딩 실패)");
+      };
+      img.src = data.imageUrl || "";
+    },
+    onError: (e) => toast.error(`이미지 생성 실패: ${e.message}`),
+  });
+
+  const renderWhiteboardMp4 = trpc.lectureBuilder.renderWhiteboardMp4.useMutation({
+    onSuccess: (data) => {
+      setIsExportingMp4(false);
+      toast.success(`화이트보드 MP4 생성 완료! (${data.duration.toFixed(1)}초, ${data.frames}프레임)`);
+      onExportMp4?.(data.videoUrl);
+    },
+    onError: (e) => {
+      setIsExportingMp4(false);
+      toast.error(`MP4 생성 실패: ${e.message}`);
+    },
+  });
+
+  const handleExportMp4 = () => {
+    if (!projectId || !insertContentId) {
+      toast.error("프로젝트 정보가 필요합니다");
+      return;
+    }
+    if (recordedStrokes.current.length === 0) {
+      toast.error("녹화된 애니메이션이 없습니다. 먼저 펜 애니메이션을 녹화하세요.");
+      return;
+    }
+    setIsExportingMp4(true);
+    renderWhiteboardMp4.mutate({
+      projectId,
+      insertContentId,
+      whiteboardData: {
+        strokes: recordedStrokes.current,
+        backgroundColor: bgColor,
+        width,
+        height,
+      },
+      resolution: "1080p",
+    });
+  };
 
   const generateWb = trpc.lectureBuilder.generateWhiteboardContent.useMutation({
     onSuccess: (data) => {
@@ -630,6 +709,16 @@ export default function WhiteboardEditor({ initialData, onSave, width = 960, hei
         {recordedStrokes.current.length > 0 && (
           <Badge variant="outline" className="text-xs">{recordedStrokes.current.length}개 스트로크</Badge>
         )}
+        {recordedStrokes.current.length > 0 && projectId && insertContentId && (
+          <div className="ml-auto">
+            <Button variant="default" size="sm" className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700"
+              disabled={isExportingMp4}
+              onClick={handleExportMp4}>
+              {isExportingMp4 ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+              MP4 내보내기
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* AI Generation */}
@@ -661,6 +750,40 @@ export default function WhiteboardEditor({ initialData, onSave, width = 960, hei
           onClick={() => generateWb.mutate({ prompt: aiPrompt.trim(), contentType: aiContentType, language })}>
           {generateWb.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
           생성
+        </Button>
+      </div>
+
+      {/* AI Image Generation */}
+      <div className="flex items-center gap-2 p-2 bg-green-500/5 rounded-lg border border-green-500/20">
+        <ImageIcon className="w-4 h-4 text-green-600 shrink-0" />
+        <Select value={aiImageStyle} onValueChange={v => setAiImageStyle(v as any)}>
+          <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="illustration">일러스트</SelectItem>
+            <SelectItem value="diagram">다이어그램</SelectItem>
+            <SelectItem value="infographic">인포그래픽</SelectItem>
+            <SelectItem value="sketch">스케치</SelectItem>
+            <SelectItem value="realistic">사실적</SelectItem>
+            <SelectItem value="cartoon">카툰</SelectItem>
+            <SelectItem value="minimalist">미니말</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input
+          value={aiImagePrompt}
+          onChange={e => setAiImagePrompt(e.target.value)}
+          placeholder="AI로 배경/일러스트 생성..."
+          className="h-7 text-xs flex-1"
+          onKeyDown={e => {
+            if (e.key === "Enter" && aiImagePrompt.trim()) {
+              generateAiImage.mutate({ prompt: aiImagePrompt.trim(), style: aiImageStyle, language });
+            }
+          }}
+        />
+        <Button variant="default" size="sm" className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700"
+          disabled={!aiImagePrompt.trim() || generateAiImage.isPending}
+          onClick={() => generateAiImage.mutate({ prompt: aiImagePrompt.trim(), style: aiImageStyle, language })}>
+          {generateAiImage.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
+          이미지 생성
         </Button>
       </div>
 

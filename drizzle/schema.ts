@@ -1473,3 +1473,24 @@ export const slideInsertContent = mysqlTable("slideInsertContent", {
 });
 export type SlideInsertContent = typeof slideInsertContent.$inferSelect;
 export type InsertSlideInsertContent = typeof slideInsertContent.$inferInsert;
+
+// ============ v6.1: Slide Transitions ============
+/**
+ * Transition effects between slides for video export
+ */
+export const slideTransitions = mysqlTable("slideTransitions", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  /** The slide ID this transition applies AFTER (transition from this slide to the next) */
+  slideId: int("slideId").notNull(),
+  /** Transition type */
+  transitionType: mysqlEnum("transitionType", ["none", "fade", "slide_left", "slide_right", "slide_up", "zoom_in", "zoom_out", "wipe_left", "wipe_right", "dissolve"]).default("none").notNull(),
+  /** Duration of transition in milliseconds */
+  durationMs: int("durationMs").default(500).notNull(),
+  /** Easing function */
+  easing: mysqlEnum("easing", ["linear", "ease_in", "ease_out", "ease_in_out"]).default("ease_in_out").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SlideTransition = typeof slideTransitions.$inferSelect;
+export type InsertSlideTransition = typeof slideTransitions.$inferInsert;
