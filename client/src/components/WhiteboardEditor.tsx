@@ -11,10 +11,13 @@ import {
   Pen, Eraser, Type, Image as ImageIcon, Undo2, Redo2, Trash2, Play, Square,
   Wand2, Download, Loader2, MousePointer, Circle, RectangleHorizontal, Minus,
   Palette, Save, RotateCcw, LayoutTemplate, Table2, GitBranch, Brain, Calculator,
-  FileText, BarChart3, ChevronDown, ChevronUp
+  FileText, BarChart3, ChevronDown, ChevronUp,
+  Users, Link2, Wifi, WifiOff, Copy
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useWhiteboardCollab } from "@/hooks/useWhiteboardCollab";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 // --- Types ---
 type Tool = "select" | "pen" | "eraser" | "text" | "image" | "shape";
@@ -253,6 +256,76 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
 
   // Template library
   const [showTemplates, setShowTemplates] = useState(false);
+
+  // Collaboration
+  const { user } = useAuth();
+  const [collabMode, setCollabMode] = useState(false);
+  const [sessionCode, setSessionCode] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const createSessionMut = trpc.wbCollab.createSession.useMutation();
+
+  const collab = useWhiteboardCollab({
+    onRemoteDraw: (stroke) => {
+      setStrokes(prev => [...prev, stroke as any]);
+    },
+    onRemoteAddText: (textEl) => {
+      setTexts(prev => [...prev, textEl as any]);
+    },
+    onRemoteAddShape: (shapeEl) => {
+      setShapes(prev => [...prev, shapeEl as any]);
+    },
+    onRemoteErase: (elementId) => {
+      setStrokes(prev => prev.filter(s => s.id !== elementId));
+      setTexts(prev => prev.filter(t => t.id !== elementId));
+      setShapes(prev => prev.filter(s => s.id !== elementId));
+      setImages(prev => prev.filter(i => i.id !== elementId));
+    },
+    onRemoteUndo: () => { undo(); },
+    onRemoteClearAll: () => {
+      setStrokes([]); setTexts([]); setImages([]); setShapes([]);
+    },
+    onSyncState: (data) => {
+      if (data) {
+        setStrokes(data.strokes || []);
+        setTexts(data.texts || []);
+        setImages(data.images || []);
+        setShapes(data.shapes || []);
+        if (data.backgroundColor) setBgColor(data.backgroundColor);
+      }
+    },
+  });
+
+  const handleCreateSession = async () => {
+    if (!projectId || !user) return;
+    try {
+      const result = await createSessionMut.mutateAsync({
+        projectId,
+        insertContentId: insertContentId,
+        title: `화이트보드 협업`,
+      });
+      setSessionCode(result.sessionCode);
+      setCollabMode(true);
+      collab.connect(result.sessionCode, user.id, user.name || `User ${user.id}`);
+      toast.success("협업 세션이 생성되었습니다");
+    } catch (err: any) {
+      toast.error(err.message || "세션 생성 실패");
+    }
+  };
+
+  const handleJoinSession = () => {
+    if (!joinCode.trim() || !user) return;
+    setSessionCode(joinCode.trim());
+    setCollabMode(true);
+    collab.connect(joinCode.trim(), user.id, user.name || `User ${user.id}`);
+    toast.success("세션에 참여합니다...");
+  };
+
+  const handleLeaveSession = () => {
+    collab.disconnect();
+    setCollabMode(false);
+    setSessionCode("");
+    toast.info("협업 세션에서 나갔습니다");
+  };
 
   // AI Image generation
   const [aiImagePrompt, setAiImagePrompt] = useState("");
@@ -823,6 +896,76 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
           </Button>
         </div>
       </div>
+
+      {/* Collaboration Bar */}
+      {projectId && (
+        <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+          <Users className="w-4 h-4 text-blue-600 shrink-0" />
+          <span className="text-xs font-medium text-blue-700 dark:text-blue-300">실시간 협업:</span>
+          {!collabMode ? (
+            <>
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 border-blue-300 text-blue-700 hover:bg-blue-100"
+                onClick={handleCreateSession}
+                disabled={createSessionMut.isPending}>
+                {createSessionMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
+                세션 생성
+              </Button>
+              <span className="text-xs text-muted-foreground">또는</span>
+              <Input
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value)}
+                placeholder="세션 코드 입력..."
+                className="h-7 text-xs w-32"
+                onKeyDown={e => { if (e.key === "Enter") handleJoinSession(); }}
+              />
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleJoinSession}
+                disabled={!joinCode.trim()}>
+                참여
+              </Button>
+            </>
+          ) : (
+            <>
+              {collab.isConnected ? (
+                <Badge className="bg-green-500 text-white text-xs gap-1"><Wifi className="w-3 h-3" /> 연결됨</Badge>
+              ) : (
+                <Badge variant="destructive" className="text-xs gap-1"><WifiOff className="w-3 h-3" /> 연결 중...</Badge>
+              )}
+              <Badge variant="outline" className="text-xs">
+                {collab.participants.length}명 참여 중
+              </Badge>
+              {/* Participant avatars */}
+              <div className="flex -space-x-1">
+                {collab.participants.slice(0, 5).map(p => (
+                  <div key={p.id} className="w-6 h-6 rounded-full border-2 border-background flex items-center justify-center text-[9px] font-bold text-white"
+                    style={{ backgroundColor: p.color }}
+                    title={p.name}>
+                    {(p.name || "?").charAt(0).toUpperCase()}
+                  </div>
+                ))}
+                {collab.participants.length > 5 && (
+                  <div className="w-6 h-6 rounded-full border-2 border-background bg-muted flex items-center justify-center text-[9px]">
+                    +{collab.participants.length - 5}
+                  </div>
+                )}
+              </div>
+              {/* Session code */}
+              <div className="flex items-center gap-1 ml-auto">
+                <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{sessionCode}</code>
+                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
+                  navigator.clipboard.writeText(sessionCode);
+                  toast.success("세션 코드가 복사되었습니다");
+                }}>
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+              <Button variant="outline" size="sm" className="h-7 text-xs text-red-600 border-red-300 hover:bg-red-50"
+                onClick={handleLeaveSession}>
+                나가기
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Recording toolbar */}
       <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-dashed">

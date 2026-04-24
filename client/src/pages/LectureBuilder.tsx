@@ -19,7 +19,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy
+  Copy, Save
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -2970,6 +2970,74 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   const [exportProgress, setExportProgress] = useState(0);
   const [exportStep, setExportStep] = useState("");
 
+  // AI Layout Recommendation
+  const layoutsQuery = trpc.slideLayout.list.useQuery({ projectId });
+  const recommendLayoutMut = trpc.slideLayout.recommend.useMutation({
+    onSuccess: (data) => {
+      layoutsQuery.refetch();
+      toast.success(`${data.count}개 슬라이드에 대한 레이아웃이 추천되었습니다`);
+    },
+    onError: (err) => toast.error(err.message || "AI 레이아웃 추천 실패"),
+  });
+  const applyLayoutMut = trpc.slideLayout.applyLayout.useMutation({
+    onSuccess: () => { layoutsQuery.refetch(); toast.success("레이아웃이 적용되었습니다"); },
+  });
+  const clearLayoutsMut = trpc.slideLayout.clear.useMutation({
+    onSuccess: () => { layoutsQuery.refetch(); toast.info("레이아웃 추천이 초기화되었습니다"); },
+  });
+
+  // Watermark Settings
+  const watermarkQuery = trpc.watermark.get.useQuery({ projectId });
+  const saveWatermarkMut = trpc.watermark.upsert.useMutation({
+    onSuccess: () => { watermarkQuery.refetch(); toast.success("워터마크가 저장되었습니다"); },
+    onError: (err) => toast.error(err.message || "워터마크 저장 실패"),
+  });
+  const uploadLogoMut = trpc.watermark.uploadLogo.useMutation();
+
+  const [wmEnabled, setWmEnabled] = useState(false);
+  const [wmType, setWmType] = useState<"text" | "logo" | "both">("text");
+  const [wmText, setWmText] = useState("");
+  const [wmLogoUrl, setWmLogoUrl] = useState("");
+  const [wmLogoFileKey, setWmLogoFileKey] = useState("");
+  const [wmPosition, setWmPosition] = useState<"top-left" | "top-center" | "top-right" | "bottom-left" | "bottom-center" | "bottom-right">("bottom-right");
+  const [wmOpacity, setWmOpacity] = useState(70);
+  const [wmFontSize, setWmFontSize] = useState(24);
+  const [wmFontColor, setWmFontColor] = useState("#FFFFFF");
+  const [wmSizePercent, setWmSizePercent] = useState(15);
+
+  // Load existing watermark
+  useEffect(() => {
+    if (watermarkQuery.data) {
+      const wm = watermarkQuery.data;
+      setWmEnabled(wm.isEnabled ?? false);
+      setWmType((wm.watermarkType as any) || "text");
+      setWmText(wm.textContent || "");
+      setWmLogoUrl(wm.logoUrl || "");
+      setWmLogoFileKey(wm.logoFileKey || "");
+      setWmPosition((wm.position as any) || "bottom-right");
+      setWmOpacity(wm.opacity ?? 70);
+      setWmFontSize(wm.fontSize ?? 24);
+      setWmFontColor(wm.fontColor || "#FFFFFF");
+      setWmSizePercent(wm.sizePercent ?? 15);
+    }
+  }, [watermarkQuery.data]);
+
+  const handleSaveWatermark = () => {
+    saveWatermarkMut.mutate({
+      projectId,
+      watermarkType: wmType,
+      logoUrl: wmLogoUrl || undefined,
+      logoFileKey: wmLogoFileKey || undefined,
+      textContent: wmText || undefined,
+      fontSize: wmFontSize,
+      fontColor: wmFontColor,
+      position: wmPosition,
+      opacity: wmOpacity,
+      sizePercent: wmSizePercent,
+      isEnabled: wmEnabled,
+    });
+  };
+
   const updateProject = trpc.lectureBuilder.updateProject.useMutation({
     onSuccess: () => { toast.success("설정이 저장되었습니다"); onRefresh(); },
   });
@@ -3228,6 +3296,54 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             </CardContent>
           </Card>
 
+          {/* AI Slide Layout Recommendation */}
+          <Card className="mt-4 border-purple-500/20">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-500" /> AI 레이아웃 추천
+                </CardTitle>
+                <Button variant="outline" size="sm" className="text-xs gap-1 border-purple-300 text-purple-700 hover:bg-purple-50"
+                  onClick={() => recommendLayoutMut.mutate({ projectId })}
+                  disabled={recommendLayoutMut.isPending || slides.length === 0}>
+                  {recommendLayoutMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                  분석 시작
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {layoutsQuery.data && layoutsQuery.data.length > 0 ? (
+                <div className="space-y-1.5">
+                  {layoutsQuery.data.map((layout: any) => {
+                    const slideIdx = slides.findIndex((s: any) => s.id === layout.slideId);
+                    return (
+                      <div key={layout.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 text-xs">
+                        <Badge variant="outline" className="text-[10px] shrink-0">슬{slideIdx + 1}</Badge>
+                        <Badge className="bg-purple-100 text-purple-700 text-[10px]">{layout.layoutType}</Badge>
+                        <span className="text-muted-foreground truncate flex-1">{layout.aiReasoning}</span>
+                        {!layout.isApplied && (
+                          <Button variant="ghost" size="sm" className="h-5 text-[10px] text-purple-600"
+                            onClick={() => applyLayoutMut.mutate({ layoutId: layout.id })}>
+                            적용
+                          </Button>
+                        )}
+                        {layout.isApplied && <Check className="w-3 h-3 text-green-500 shrink-0" />}
+                      </div>
+                    );
+                  })}
+                  <Button variant="ghost" size="sm" className="text-xs text-red-400 w-full"
+                    onClick={() => clearLayoutsMut.mutate({ projectId })}>
+                    추천 초기화
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground text-center py-2">
+                  AI가 스크립트를 분석하여 각 슬라이드에 최적의 레이아웃을 추천합니다.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Slide Selection for Preview */}
           <Card className="mt-4">
             <CardHeader className="pb-2">
@@ -3445,6 +3561,145 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                 </div>
               )}
             </CardContent>
+          </Card>
+
+          {/* Watermark Settings */}
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">🎨 워터마크 / 브랜딩</CardTitle>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="wm-enabled" checked={wmEnabled}
+                    onChange={e => setWmEnabled(e.target.checked)} className="rounded" />
+                  <Label htmlFor="wm-enabled" className="text-xs cursor-pointer">활성화</Label>
+                </div>
+              </div>
+            </CardHeader>
+            {wmEnabled && (
+              <CardContent className="space-y-3">
+                <div>
+                  <Label className="text-xs">워터마크 타입</Label>
+                  <Select value={wmType} onValueChange={v => setWmType(v as any)}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">텍스트</SelectItem>
+                      <SelectItem value="logo">로고 이미지</SelectItem>
+                      <SelectItem value="both">텍스트 + 로고</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(wmType === "text" || wmType === "both") && (
+                  <div>
+                    <Label className="text-xs">텍스트</Label>
+                    <Input value={wmText} onChange={e => setWmText(e.target.value)}
+                      placeholder="예: © My Lecture" className="h-8 text-xs" />
+                  </div>
+                )}
+                {(wmType === "logo" || wmType === "both") && (
+                  <div>
+                    <Label className="text-xs">로고 이미지</Label>
+                    <div className="flex gap-2">
+                      <Input type="file" accept="image/*" className="h-8 text-xs flex-1"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onload = async () => {
+                            const base64 = (reader.result as string).split(",")[1];
+                            try {
+                              const result = await uploadLogoMut.mutateAsync({
+                                projectId,
+                                fileName: file.name,
+                                fileBase64: base64,
+                                mimeType: file.type,
+                              });
+                              setWmLogoUrl(result.url);
+                              setWmLogoFileKey(result.fileKey);
+                              toast.success("로고가 업로드되었습니다");
+                            } catch (err: any) {
+                              toast.error(err.message || "로고 업로드 실패");
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                      {wmLogoUrl && <img src={wmLogoUrl} alt="logo" className="w-8 h-8 rounded border object-contain" />}
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">위치</Label>
+                    <Select value={wmPosition} onValueChange={v => setWmPosition(v as any)}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="top-left">좌상단</SelectItem>
+                        <SelectItem value="top-center">상단 중앙</SelectItem>
+                        <SelectItem value="top-right">우상단</SelectItem>
+                        <SelectItem value="bottom-left">좌하단</SelectItem>
+                        <SelectItem value="bottom-center">하단 중앙</SelectItem>
+                        <SelectItem value="bottom-right">우하단</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">투명도: {wmOpacity}%</Label>
+                    <Slider value={[wmOpacity]} min={10} max={100} step={5}
+                      onValueChange={v => setWmOpacity(v[0])} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <Label className="text-xs">글자 크기: {wmFontSize}px</Label>
+                    <Slider value={[wmFontSize]} min={12} max={48} step={2}
+                      onValueChange={v => setWmFontSize(v[0])} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">사이즈: {wmSizePercent}%</Label>
+                    <Slider value={[wmSizePercent]} min={5} max={40} step={1}
+                      onValueChange={v => setWmSizePercent(v[0])} />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">글자 색상</Label>
+                  <div className="flex gap-1">
+                    {["#FFFFFF", "#000000", "#FF0000", "#0066FF", "#00AA00", "#FFAA00"].map(c => (
+                      <button key={c}
+                        className={`w-6 h-6 rounded-full border-2 ${wmFontColor === c ? "border-primary scale-110" : "border-transparent"}`}
+                        style={{ backgroundColor: c, boxShadow: c === "#FFFFFF" ? "inset 0 0 0 1px #ccc" : undefined }}
+                        onClick={() => setWmFontColor(c)}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <Button variant="default" size="sm" className="w-full gap-1"
+                  onClick={handleSaveWatermark}
+                  disabled={saveWatermarkMut.isPending}>
+                  {saveWatermarkMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                  워터마크 저장
+                </Button>
+                {/* Preview */}
+                <div className="relative w-full aspect-video bg-muted rounded-lg border overflow-hidden">
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+                    워터마크 미리보기
+                  </div>
+                  <div className={`absolute flex items-center gap-1 ${
+                    wmPosition.includes("top") ? "top-2" : "bottom-2"
+                  } ${
+                    wmPosition.includes("left") ? "left-2" : wmPosition.includes("center") ? "left-1/2 -translate-x-1/2" : "right-2"
+                  }`} style={{ opacity: wmOpacity / 100 }}>
+                    {wmLogoUrl && (wmType === "logo" || wmType === "both") && (
+                      <img src={wmLogoUrl} alt="wm" className="rounded" style={{ height: `${wmSizePercent * 1.5}px` }} />
+                    )}
+                    {(wmType === "text" || wmType === "both") && wmText && (
+                      <span style={{ fontSize: `${Math.max(8, wmFontSize * 0.5)}px`, color: wmFontColor }} className="font-bold drop-shadow-md">
+                        {wmText}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            )}
           </Card>
 
           {/* Generate Button */}

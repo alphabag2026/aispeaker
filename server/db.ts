@@ -51,6 +51,10 @@ import {
   slideScriptVersions, InsertSlideScriptVersion,
   lectureFormatTemplates, InsertLectureFormatTemplate,
   slideTransitions, InsertSlideTransition,
+  whiteboardSessions, InsertWhiteboardSession,
+  whiteboardParticipants,
+  slideLayouts, InsertSlideLayout,
+  projectWatermarks, InsertProjectWatermark,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2349,4 +2353,132 @@ export async function cloneLectureProject(sourceProjectId: number, userId: numbe
   }
   
   return { newProjectId, avatarCount: sourceAvatars.length, slideCount: sourceSlides.length, scriptCount: sourceScripts.length };
+}
+
+
+// ============ v6.3: Whiteboard Collaboration Sessions ============
+
+export async function createWhiteboardSession(data: InsertWhiteboardSession) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(whiteboardSessions).values(data).$returningId();
+  return result;
+}
+
+export async function getWhiteboardSession(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(whiteboardSessions).where(eq(whiteboardSessions.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function getWhiteboardSessionByCode(code: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(whiteboardSessions).where(eq(whiteboardSessions.sessionCode, code)).limit(1);
+  return rows[0] || null;
+}
+
+export async function listWhiteboardSessions(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(whiteboardSessions)
+    .where(eq(whiteboardSessions.projectId, projectId))
+    .orderBy(desc(whiteboardSessions.createdAt));
+}
+
+export async function updateWhiteboardSession(id: number, data: Partial<InsertWhiteboardSession> & { endedAt?: Date }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(whiteboardSessions).set(data).where(eq(whiteboardSessions.id, id));
+}
+
+export async function addWhiteboardParticipant(data: { sessionId: number; userId: number; displayName?: string; cursorColor: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(whiteboardParticipants).values(data).$returningId();
+  return result;
+}
+
+export async function getSessionParticipants(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(whiteboardParticipants)
+    .where(and(eq(whiteboardParticipants.sessionId, sessionId), eq(whiteboardParticipants.isOnline, true)));
+}
+
+export async function updateParticipantStatus(id: number, isOnline: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  const data: any = { isOnline };
+  if (!isOnline) data.leftAt = new Date();
+  await db.update(whiteboardParticipants).set(data).where(eq(whiteboardParticipants.id, id));
+}
+
+// ============ v6.3: Slide Layouts ============
+
+export async function upsertSlideLayout(data: InsertSlideLayout) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Check existing
+  const existing = await db.select().from(slideLayouts)
+    .where(and(eq(slideLayouts.projectId, data.projectId), eq(slideLayouts.slideId, data.slideId)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db.update(slideLayouts).set(data).where(eq(slideLayouts.id, existing[0].id));
+    return existing[0].id;
+  }
+  const [result] = await db.insert(slideLayouts).values(data).$returningId();
+  return result.id;
+}
+
+export async function getSlideLayouts(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(slideLayouts)
+    .where(eq(slideLayouts.projectId, projectId))
+    .orderBy(slideLayouts.slideId);
+}
+
+export async function applySlideLayout(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(slideLayouts).set({ isApplied: true }).where(eq(slideLayouts.id, id));
+}
+
+export async function deleteSlideLayouts(projectId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(slideLayouts).where(eq(slideLayouts.projectId, projectId));
+}
+
+// ============ v6.3: Project Watermarks ============
+
+export async function upsertProjectWatermark(data: InsertProjectWatermark) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(projectWatermarks)
+    .where(and(eq(projectWatermarks.projectId, data.projectId), eq(projectWatermarks.userId, data.userId)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db.update(projectWatermarks).set(data).where(eq(projectWatermarks.id, existing[0].id));
+    return existing[0].id;
+  }
+  const [result] = await db.insert(projectWatermarks).values(data).$returningId();
+  return result.id;
+}
+
+export async function getProjectWatermark(projectId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(projectWatermarks)
+    .where(eq(projectWatermarks.projectId, projectId))
+    .limit(1);
+  return rows[0] || null;
+}
+
+export async function deleteProjectWatermark(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(projectWatermarks).where(eq(projectWatermarks.id, id));
 }
