@@ -2210,3 +2210,143 @@ export async function deleteSlideTransition(id: number) {
   if (!db) throw new Error("DB not available");
   await db.delete(slideTransitions).where(eq(slideTransitions.id, id));
 }
+
+// --- Clone Lecture Project ---
+export async function cloneLectureProject(sourceProjectId: number, userId: number, newTitle: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  // 1. Get source project
+  const source = await getLectureProject(sourceProjectId);
+  if (!source) throw new Error("Source project not found");
+  
+  // 2. Create new project (copy settings, reset status)
+  const newProjectId = await createLectureProject({
+    userId,
+    title: newTitle,
+    description: source.description ? `[복제] ${source.description}` : "[복제됨]",
+    currentStep: source.currentStep,
+    status: "draft",
+    avatarPosition: source.avatarPosition,
+    avatarSize: source.avatarSize,
+    avatarShape: source.avatarShape,
+    avatarOpacity: source.avatarOpacity,
+  });
+  
+  // 3. Clone avatars (map old ID -> new ID)
+  const avatarIdMap = new Map<number, number>();
+  const sourceAvatars = await listProjectAvatars(sourceProjectId);
+  for (const avatar of sourceAvatars) {
+    const newAvatarId = await addProjectAvatar({
+      projectId: newProjectId,
+      sampleFaceId: avatar.sampleFaceId,
+      customFaceUrl: avatar.customFaceUrl,
+      name: avatar.name,
+      role: avatar.role,
+      ttsVoiceId: avatar.ttsVoiceId,
+      sortOrder: avatar.sortOrder,
+    });
+    avatarIdMap.set(avatar.id, newAvatarId);
+  }
+  
+  // 4. Clone slides (map old ID -> new ID)
+  const slideIdMap = new Map<number, number>();
+  const sourceSlides = await listProjectSlides(sourceProjectId);
+  for (const slide of sourceSlides) {
+    const newSlideId = await addProjectSlide({
+      projectId: newProjectId,
+      imageUrl: slide.imageUrl,
+      fileKey: slide.fileKey,
+      slideOrder: slide.slideOrder,
+      originalFileName: slide.originalFileName,
+    });
+    slideIdMap.set(slide.id, newSlideId);
+  }
+  
+  // 5. Clone scripts (remap slideId and avatarId)
+  const sourceScripts = await listSlideScripts(sourceProjectId);
+  for (const script of sourceScripts) {
+    const newSlideId = slideIdMap.get(script.slideId);
+    if (!newSlideId) continue;
+    await setSlideScript({
+      projectId: newProjectId,
+      slideId: newSlideId,
+      avatarId: script.avatarId ? (avatarIdMap.get(script.avatarId) || script.avatarId) : null,
+      scriptText: script.scriptText,
+      estimatedDurationSec: script.estimatedDurationSec,
+      sortOrder: script.sortOrder,
+    });
+  }
+  
+  // 6. Clone annotations (remap slideId)
+  const sourceAnnotations = await listSlideAnnotations(sourceProjectId);
+  for (const ann of sourceAnnotations) {
+    const newSlideId = slideIdMap.get(ann.slideId);
+    if (!newSlideId) continue;
+    await addSlideAnnotation({
+      projectId: newProjectId,
+      slideId: newSlideId,
+      annotationType: ann.annotationType,
+      penColor: ann.penColor,
+      penThickness: ann.penThickness,
+      pathData: ann.pathData,
+      showAtSec: ann.showAtSec,
+      durationSec: ann.durationSec,
+      sortOrder: ann.sortOrder,
+    });
+  }
+  
+  // 7. Clone avatar overrides (remap slideId)
+  const sourceOverrides = await getSlideAvatarOverrides(sourceProjectId);
+  for (const ov of sourceOverrides) {
+    const newSlideId = slideIdMap.get(ov.slideId);
+    if (!newSlideId) continue;
+    await upsertSlideAvatarOverride({
+      projectId: newProjectId,
+      slideId: newSlideId,
+      avatarPosition: ov.avatarPosition,
+      avatarSizePercent: ov.avatarSizePercent,
+      offsetX: ov.offsetX,
+      offsetY: ov.offsetY,
+      avatarShape: ov.avatarShape,
+      avatarOpacity: ov.avatarOpacity,
+      isHidden: ov.isHidden,
+    });
+  }
+  
+  // 8. Clone insert content (remap afterSlideId and avatarId)
+  const sourceInserts = await listSlideInsertContent(sourceProjectId);
+  for (const ins of sourceInserts) {
+    const newAfterSlideId = ins.afterSlideId ? (slideIdMap.get(ins.afterSlideId) || 0) : 0;
+    await createSlideInsertContent({
+      projectId: newProjectId,
+      afterSlideId: newAfterSlideId,
+      contentType: ins.contentType,
+      title: ins.title,
+      contentUrl: ins.contentUrl,
+      fileKey: ins.fileKey,
+      drawingData: ins.drawingData,
+      backgroundColor: ins.backgroundColor,
+      durationSec: ins.durationSec,
+      scriptText: ins.scriptText,
+      avatarId: ins.avatarId ? (avatarIdMap.get(ins.avatarId) || ins.avatarId) : null,
+      sortOrder: ins.sortOrder,
+    });
+  }
+  
+  // 9. Clone transitions (remap slideId)
+  const sourceTransitions = await getSlideTransitions(sourceProjectId);
+  for (const tr of sourceTransitions) {
+    const newSlideId = slideIdMap.get(tr.slideId);
+    if (!newSlideId) continue;
+    await upsertSlideTransition({
+      projectId: newProjectId,
+      slideId: newSlideId,
+      transitionType: tr.transitionType as any,
+      durationMs: tr.durationMs,
+      easing: tr.easing as any,
+    });
+  }
+  
+  return { newProjectId, avatarCount: sourceAvatars.length, slideCount: sourceSlides.length, scriptCount: sourceScripts.length };
+}

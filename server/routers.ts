@@ -5334,6 +5334,19 @@ Return a JSON object with a "sections" array. Each section has:
         return { videoUrl: url, duration: totalDurationMs / 1000, frames: totalFrames };
       }),
 
+    // --- Clone project ---
+    cloneProject: protectedProcedure
+      .input(z.object({
+        sourceProjectId: z.number(),
+        newTitle: z.string().min(1).max(500),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const source = await db.getLectureProject(input.sourceProjectId);
+        if (!source || source.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const result = await db.cloneLectureProject(input.sourceProjectId, ctx.user.id, input.newTitle);
+        return result;
+      }),
+
     // --- Get full project data (all steps) ---
     getFullProject: protectedProcedure
       .input(z.object({ id: z.number() }))

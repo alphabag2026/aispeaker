@@ -10,7 +10,8 @@ import { Slider } from "@/components/ui/slider";
 import {
   Pen, Eraser, Type, Image as ImageIcon, Undo2, Redo2, Trash2, Play, Square,
   Wand2, Download, Loader2, MousePointer, Circle, RectangleHorizontal, Minus,
-  Palette, Save, RotateCcw
+  Palette, Save, RotateCcw, LayoutTemplate, Table2, GitBranch, Brain, Calculator,
+  FileText, BarChart3, ChevronDown, ChevronUp
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -85,6 +86,121 @@ const COLORS = ["#000000", "#FF0000", "#0066FF", "#00AA00", "#FF6600", "#9933CC"
 const FONT_SIZES = [16, 20, 24, 32, 40, 48, 64];
 const BG_COLORS = ["#ffffff", "#1a1a2e", "#0f3460", "#16213e", "#f5f5dc", "#2d2d2d", "#f0f8ff"];
 
+// --- Whiteboard Templates ---
+interface WbTemplate {
+  id: string;
+  name: string;
+  desc: string;
+  icon: any;
+  bgColor: string;
+  texts: TextElement[];
+  shapes: ShapeElement[];
+}
+
+const WHITEBOARD_TEMPLATES: WbTemplate[] = [
+  {
+    id: "blank", name: "빈 화이트보드", desc: "깨끗한 백지", icon: FileText,
+    bgColor: "#ffffff", texts: [], shapes: [],
+  },
+  {
+    id: "blackboard", name: "칠판", desc: "어두운 배경의 교실 칠판", icon: Calculator,
+    bgColor: "#1a1a2e", texts: [
+      { id: "t1", x: 40, y: 30, text: "제목을 입력하세요", fontSize: 48, color: "#FFFFFF", fontFamily: "sans-serif" },
+    ], shapes: [
+      { id: "s1", type: "line", x: 40, y: 90, width: 880, height: 0, color: "#FFFFFF", strokeWidth: 2, fill: false },
+    ],
+  },
+  {
+    id: "comparison", name: "비교표", desc: "좌우 2칸 비교 레이아웃", icon: Table2,
+    bgColor: "#ffffff", texts: [
+      { id: "t1", x: 160, y: 30, text: "A 항목", fontSize: 36, color: "#0066FF", fontFamily: "sans-serif" },
+      { id: "t2", x: 600, y: 30, text: "B 항목", fontSize: 36, color: "#FF0000", fontFamily: "sans-serif" },
+      { id: "t3", x: 60, y: 110, text: "• 특징 1", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t4", x: 60, y: 160, text: "• 특징 2", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t5", x: 60, y: 210, text: "• 특징 3", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t6", x: 510, y: 110, text: "• 특징 1", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t7", x: 510, y: 160, text: "• 특징 2", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t8", x: 510, y: 210, text: "• 특징 3", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+    ], shapes: [
+      { id: "s1", type: "line", x: 480, y: 20, width: 0, height: 500, color: "#CCCCCC", strokeWidth: 2, fill: false },
+      { id: "s2", type: "line", x: 40, y: 90, width: 880, height: 0, color: "#CCCCCC", strokeWidth: 1, fill: false },
+    ],
+  },
+  {
+    id: "timeline", name: "타임라인", desc: "시간순 흐름 레이아웃", icon: GitBranch,
+    bgColor: "#f0f8ff", texts: [
+      { id: "t1", x: 100, y: 240, text: "Step 1", fontSize: 20, color: "#0066FF", fontFamily: "sans-serif" },
+      { id: "t2", x: 300, y: 240, text: "Step 2", fontSize: 20, color: "#0066FF", fontFamily: "sans-serif" },
+      { id: "t3", x: 500, y: 240, text: "Step 3", fontSize: 20, color: "#0066FF", fontFamily: "sans-serif" },
+      { id: "t4", x: 700, y: 240, text: "Step 4", fontSize: 20, color: "#0066FF", fontFamily: "sans-serif" },
+      { id: "t5", x: 100, y: 280, text: "설명", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t6", x: 300, y: 280, text: "설명", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t7", x: 500, y: 280, text: "설명", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t8", x: 700, y: 280, text: "설명", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
+    ], shapes: [
+      { id: "s1", type: "line", x: 80, y: 220, width: 800, height: 0, color: "#0066FF", strokeWidth: 3, fill: false },
+      { id: "s2", type: "circle", x: 115, y: 210, width: 20, height: 20, color: "#0066FF", strokeWidth: 2, fill: true },
+      { id: "s3", type: "circle", x: 315, y: 210, width: 20, height: 20, color: "#0066FF", strokeWidth: 2, fill: true },
+      { id: "s4", type: "circle", x: 515, y: 210, width: 20, height: 20, color: "#0066FF", strokeWidth: 2, fill: true },
+      { id: "s5", type: "circle", x: 715, y: 210, width: 20, height: 20, color: "#0066FF", strokeWidth: 2, fill: true },
+    ],
+  },
+  {
+    id: "mindmap", name: "마인드맵", desc: "중앙 주제 + 가지 구조", icon: Brain,
+    bgColor: "#ffffff", texts: [
+      { id: "t1", x: 400, y: 240, text: "주제", fontSize: 36, color: "#0066FF", fontFamily: "sans-serif" },
+      { id: "t2", x: 140, y: 100, text: "항목 1", fontSize: 24, color: "#FF6600", fontFamily: "sans-serif" },
+      { id: "t3", x: 660, y: 100, text: "항목 2", fontSize: 24, color: "#00AA00", fontFamily: "sans-serif" },
+      { id: "t4", x: 140, y: 380, text: "항목 3", fontSize: 24, color: "#9933CC", fontFamily: "sans-serif" },
+      { id: "t5", x: 660, y: 380, text: "항목 4", fontSize: 24, color: "#FF0000", fontFamily: "sans-serif" },
+    ], shapes: [
+      { id: "s1", type: "circle", x: 370, y: 220, width: 140, height: 70, color: "#0066FF", strokeWidth: 3, fill: false },
+      { id: "s2", type: "rect", x: 100, y: 85, width: 140, height: 50, color: "#FF6600", strokeWidth: 2, fill: false },
+      { id: "s3", type: "rect", x: 620, y: 85, width: 140, height: 50, color: "#00AA00", strokeWidth: 2, fill: false },
+      { id: "s4", type: "rect", x: 100, y: 365, width: 140, height: 50, color: "#9933CC", strokeWidth: 2, fill: false },
+      { id: "s5", type: "rect", x: 620, y: 365, width: 140, height: 50, color: "#FF0000", strokeWidth: 2, fill: false },
+    ],
+  },
+  {
+    id: "bullet", name: "핵심 포인트", desc: "번호 매긴 포인트 목록", icon: FileText,
+    bgColor: "#ffffff", texts: [
+      { id: "t1", x: 60, y: 30, text: "제목", fontSize: 40, color: "#1a1a2e", fontFamily: "sans-serif" },
+      { id: "t2", x: 80, y: 120, text: "1. 첫 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t3", x: 80, y: 180, text: "2. 두 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t4", x: 80, y: 240, text: "3. 세 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t5", x: 80, y: 300, text: "4. 네 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t6", x: 80, y: 360, text: "5. 다섯 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+    ], shapes: [
+      { id: "s1", type: "line", x: 60, y: 85, width: 840, height: 0, color: "#0066FF", strokeWidth: 3, fill: false },
+    ],
+  },
+  {
+    id: "chart_area", name: "차트 영역", desc: "차트/그래프 영역 표시", icon: BarChart3,
+    bgColor: "#ffffff", texts: [
+      { id: "t1", x: 60, y: 20, text: "데이터 분석", fontSize: 36, color: "#1a1a2e", fontFamily: "sans-serif" },
+      { id: "t2", x: 580, y: 100, text: "핵심 인사이트", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t3", x: 580, y: 150, text: "• 포인트 1", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t4", x: 580, y: 190, text: "• 포인트 2", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t5", x: 580, y: 230, text: "• 포인트 3", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
+    ], shapes: [
+      { id: "s1", type: "rect", x: 60, y: 80, width: 480, height: 400, color: "#E0E0E0", strokeWidth: 2, fill: false },
+      { id: "s2", type: "line", x: 60, y: 70, width: 880, height: 0, color: "#CCCCCC", strokeWidth: 1, fill: false },
+    ],
+  },
+  {
+    id: "dark_modern", name: "다크 모던", desc: "어두운 배경의 모던 레이아웃", icon: LayoutTemplate,
+    bgColor: "#16213e", texts: [
+      { id: "t1", x: 60, y: 40, text: "프레젠테이션 제목", fontSize: 44, color: "#FFFFFF", fontFamily: "sans-serif" },
+      { id: "t2", x: 60, y: 120, text: "부제목 또는 설명", fontSize: 24, color: "#88AACC", fontFamily: "sans-serif" },
+      { id: "t3", x: 60, y: 200, text: "▸ 핵심 내용 1", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
+      { id: "t4", x: 60, y: 260, text: "▸ 핵심 내용 2", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
+      { id: "t5", x: 60, y: 320, text: "▸ 핵심 내용 3", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
+    ], shapes: [
+      { id: "s1", type: "line", x: 60, y: 105, width: 400, height: 0, color: "#00DDFF", strokeWidth: 2, fill: false },
+    ],
+  },
+];
+
 export default function WhiteboardEditor({ initialData, onSave, onExportMp4, width = 960, height = 540, language = "ko", projectId, insertContentId }: WhiteboardEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -134,6 +250,9 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
   const [selectedElement, setSelectedElement] = useState<{ type: string; id: string } | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const isDragging = useRef(false);
+
+  // Template library
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // AI Image generation
   const [aiImagePrompt, setAiImagePrompt] = useState("");
@@ -557,6 +676,22 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
     setSelectedElement(null);
   };
 
+  // --- Apply template ---
+  const applyTemplate = (tmpl: WbTemplate) => {
+    if (strokes.length > 0 || texts.length > 0 || shapes.length > 0 || images.length > 0) {
+      if (!confirm("현재 화이트보드 내용이 사라집니다. 템플릿을 적용하시겠습니까?")) return;
+    }
+    const ts = Date.now();
+    setStrokes([]);
+    setImages([]);
+    setTexts(tmpl.texts.map((t, i) => ({ ...t, id: `tmpl-t-${ts}-${i}` })));
+    setShapes(tmpl.shapes.map((s, i) => ({ ...s, id: `tmpl-s-${ts}-${i}` })));
+    setBgColor(tmpl.bgColor);
+    setSelectedElement(null);
+    setShowTemplates(false);
+    toast.success(`"${tmpl.name}" 템플릿이 적용되었습니다`);
+  };
+
   // --- Save ---
   const handleSave = () => {
     const data: WhiteboardData = {
@@ -717,6 +852,30 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
               {isExportingMp4 ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
               MP4 내보내기
             </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Template Library */}
+      <div className="space-y-2">
+        <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1 justify-between"
+          onClick={() => setShowTemplates(!showTemplates)}>
+          <span className="flex items-center gap-1"><LayoutTemplate className="w-3.5 h-3.5" /> 템플릿 라이브러리</span>
+          {showTemplates ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </Button>
+        {showTemplates && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-2 bg-muted/30 rounded-lg border">
+            {WHITEBOARD_TEMPLATES.map(tmpl => (
+              <button key={tmpl.id}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-lg border bg-background hover:border-primary/50 hover:bg-primary/5 transition-colors text-center group"
+                onClick={() => applyTemplate(tmpl)}>
+                <div className="w-full aspect-video rounded border bg-muted/50 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                  <tmpl.icon className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-medium">{tmpl.name}</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">{tmpl.desc}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>
