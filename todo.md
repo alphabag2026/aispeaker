@@ -1253,4 +1253,35 @@
 - [x] 강의 프로젝트 복제 백엔드 - cloneLectureProject (슬라이드/스크립트/아바타/주석/오버라이드/삽입콘텐츠/전환효과 전체 딥카피)
 - [x] 강의 프로젝트 복제 UI - 프로젝트 카드 호버 시 복제 버튼 (Copy 아이콘)
 - [x] v6.2 테스트 15개 통과
-- [ ] 프로덕션 배포 v6.2
+- [x] 프로덕션 배포 v6.2 (aispeaker.cc - IP 52.76.85.132, 싱가포르 리전) - HTTP 200 정상, DB 마이그레이션 적용 완료
+
+## v6.3 화이트보드 협업 & AI 슬라이드 레이아웃 & 워터마크/브랜딩
+### 화이트보드 실시간 협업 (WebSocket)
+- [x] WebSocket 서버 설정 (ws 패키지, /ws/whiteboard 경로)
+- [x] 화이트보드 세션 관리 DB 스키마 (whiteboardSessions 테이블)
+- [x] 협업 세션 생성/참여/종료 백엔드 라우터 (collab.createSession/joinSession/endSession)
+- [x] 실시간 드로잉 동기화 (스트로크/텍스트/도형 브로드캐스트)
+- [x] 참여자 커서 위치 실시간 표시 (10색 순환 배정)
+- [x] 참여자 목록 및 색상 구분 (useWhiteboardCollab 훅)
+- [x] WhiteboardEditor에 협업 모드 UI 통합 (협업 시작/종료/참여 버튼, 참여자 표시)
+- [x] 세션 초대 링크 생성 및 공유 (클립보드 복사)
+
+### AI 자동 슬라이드 레이아웃 추천
+- [x] 스크립트 분석 → 레이아웃 추천 백엔드 라우터 (LLM invokeLLM + JSON Schema)
+- [x] 레이아웃 타입 13종 정의 (title_only/title_subtitle/title_body/title_bullets/comparison/image_left/image_right/image_full/quote/chart/diagram/timeline/blank)
+- [x] 슬라이드별 최적 레이아웃 자동 매칭 (slideLayouts DB 테이블)
+- [x] 레이아웃 추천 결과 UI (Step5 미리보기에서 원클릭 적용)
+- [x] 전체 프로젝트 일괄 레이아웃 추천 (분석 시작 버튼)
+
+### 강의 영상 워터마크/브랜딩
+- [x] 워터마크 설정 DB 스키마 (projectWatermarks 테이블)
+- [x] 워터마크 CRUD 백엔드 라우터 (watermark.get/upsert/uploadLogo)
+- [x] 로고 이미지 워터마크 (위치/크기/투명도 설정)
+- [x] 텍스트 워터마크 (폰트/색상/위치 설정)
+- [x] 워터마크 설정 UI (Step5 설정 패널에 통합)
+- [ ] MP4 내보내기 시 워터마크 자동 합성 (ffmpeg) - 향후 구현 예정
+- [x] 워터마크 실시간 미리보기 (Step5 설정 패널 내 미니 프리뷰)
+
+### 테스트 및 배포
+- [x] v6.3 vitest 테스트 33개 통과
+- [ ] 프로덕션 배포 v6.3

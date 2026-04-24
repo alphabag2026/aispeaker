@@ -5554,6 +5554,254 @@ Return a JSON object with a "sections" array. Each section has:
         return { faceId: newFace.id, name: input.name };
       }),
   }),
+
+  // ============ v6.3: Whiteboard Collaboration ============
+  wbCollab: router({
+    createSession: instructorProcedure
+      .input(z.object({
+        projectId: z.number(),
+        insertContentId: z.number().optional(),
+        title: z.string().optional(),
+        maxParticipants: z.number().min(2).max(50).default(10),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { nanoid } = await import("nanoid");
+        const sessionCode = nanoid(12);
+        const result = await db.createWhiteboardSession({
+          projectId: input.projectId,
+          insertContentId: input.insertContentId || null,
+          hostUserId: ctx.user.id,
+          sessionCode,
+          title: input.title || `협업 세션 #${Date.now().toString(36)}`,
+          maxParticipants: input.maxParticipants,
+        });
+        return { sessionId: result.id, sessionCode };
+      }),
+
+    joinSession: protectedProcedure
+      .input(z.object({ sessionCode: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const session = await db.getWhiteboardSessionByCode(input.sessionCode);
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (session.status === "ended") throw new TRPCError({ code: "BAD_REQUEST", message: "종료된 세션입니다." });
+        const participants = await db.getSessionParticipants(session.id);
+        return { session, participants };
+      }),
+
+    endSession: instructorProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const session = await db.getWhiteboardSession(input.sessionId);
+        if (!session) throw new TRPCError({ code: "NOT_FOUND" });
+        if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        await db.updateWhiteboardSession(input.sessionId, {
+          status: "ended",
+          endedAt: new Date(),
+          currentParticipants: 0,
+        });
+        return { success: true };
+      }),
+
+    listSessions: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.listWhiteboardSessions(input.projectId);
+      }),
+  }),
+
+  // ============ v6.3: AI Slide Layout ============
+  slideLayout: router({
+    recommend: instructorProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        // Get all slides and scripts for this project
+        const slides = await db.listProjectSlides(input.projectId);
+        const scripts = await db.listSlideScripts(input.projectId);
+        if (!slides.length) throw new TRPCError({ code: "BAD_REQUEST", message: "슬라이드가 없습니다." });
+
+        // Build prompt for LLM
+        const slideInfo = slides.map((s: any, i: number) => {
+          const script = scripts.find((sc: any) => sc.slideId === s.id);
+          return `슬라이드 ${i + 1} (ID: ${s.id}): 스크립트="${script?.scriptText || '(없음)'}"`;
+        }).join("\n");
+
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `당신은 프레젠테이션 디자인 전문가입니다. 각 슬라이드의 스크립트를 분석하여 최적의 레이아웃을 추천해주세요.
+
+사용 가능한 레이아웃 타입:
+- title_only: 제목만 크게 표시 (오프닝/클로징)
+- title_subtitle: 제목 + 부제목 (섹션 시작)
+- title_body: 제목 + 본문 텍스트 (일반 설명)
+- title_bullets: 제목 + 글머리 기호 목록 (핵심 포인트)
+- comparison: 좌우 비교 (A vs B 비교)
+- image_left: 왼쪽 이미지 + 오른쪽 텍스트
+- image_right: 오른쪽 이미지 + 왼쪽 텍스트
+- image_full: 전체 이미지 배경 + 오버레이 텍스트
+- quote: 인용문 스타일
+- chart: 차트/데이터 시각화
+- diagram: 다이어그램/플로우차트
+- timeline: 타임라인/연대기
+- blank: 빈 슬라이드
+
+각 슬라이드에 대해 JSON 배열로 응답해주세요.`
+            },
+            {
+              role: "user",
+              content: `다음 슬라이드들의 최적 레이아웃을 추천해주세요:\n\n${slideInfo}`
+            }
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "slide_layouts",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  layouts: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        slideId: { type: "number" },
+                        layoutType: { type: "string" },
+                        reasoning: { type: "string" },
+                        config: {
+                          type: "object",
+                          properties: {
+                            titleSize: { type: "string" },
+                            bodySize: { type: "string" },
+                            alignment: { type: "string" },
+                            emphasis: { type: "string" },
+                          },
+                          required: ["titleSize", "bodySize", "alignment", "emphasis"],
+                          additionalProperties: false,
+                        },
+                      },
+                      required: ["slideId", "layoutType", "reasoning", "config"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["layouts"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        const content = response.choices?.[0]?.message?.content as string;
+        if (!content) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI 응답 없음" });
+
+        const parsed = JSON.parse(content);
+        const validTypes = ["title_only", "title_subtitle", "title_body", "title_bullets", "comparison", "image_left", "image_right", "image_full", "quote", "chart", "diagram", "timeline", "blank"];
+
+        // Save layouts to DB
+        const results = [];
+        for (const layout of parsed.layouts) {
+          const layoutType = validTypes.includes(layout.layoutType) ? layout.layoutType : "title_body";
+          const id = await db.upsertSlideLayout({
+            projectId: input.projectId,
+            slideId: layout.slideId,
+            layoutType: layoutType as any,
+            layoutConfig: layout.config,
+            aiReasoning: layout.reasoning,
+          });
+          results.push({ slideId: layout.slideId, layoutType, reasoning: layout.reasoning, id });
+        }
+
+        return { layouts: results, count: results.length };
+      }),
+
+    list: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getSlideLayouts(input.projectId);
+      }),
+
+    applyLayout: instructorProcedure
+      .input(z.object({ layoutId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.applySlideLayout(input.layoutId);
+        return { success: true };
+      }),
+
+    clear: instructorProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteSlideLayouts(input.projectId);
+        return { success: true };
+      }),
+  }),
+
+  // ============ v6.3: Project Watermark ============
+  watermark: router({
+    get: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getProjectWatermark(input.projectId);
+      }),
+
+    upsert: instructorProcedure
+      .input(z.object({
+        projectId: z.number(),
+        watermarkType: z.enum(["logo", "text", "both"]).default("text"),
+        logoUrl: z.string().optional(),
+        logoFileKey: z.string().optional(),
+        textContent: z.string().max(255).optional(),
+        fontSize: z.number().min(8).max(72).default(24),
+        fontColor: z.string().default("#FFFFFF"),
+        position: z.enum(["top-left", "top-center", "top-right", "bottom-left", "bottom-center", "bottom-right"]).default("bottom-right"),
+        opacity: z.number().min(0).max(100).default(70),
+        sizePercent: z.number().min(5).max(50).default(15),
+        marginPx: z.number().min(0).max(100).default(20),
+        isEnabled: z.boolean().default(true),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.upsertProjectWatermark({
+          projectId: input.projectId,
+          userId: ctx.user.id,
+          watermarkType: input.watermarkType,
+          logoUrl: input.logoUrl || null,
+          logoFileKey: input.logoFileKey || null,
+          textContent: input.textContent || null,
+          fontSize: input.fontSize,
+          fontColor: input.fontColor,
+          position: input.position,
+          opacity: input.opacity,
+          sizePercent: input.sizePercent,
+          marginPx: input.marginPx,
+          isEnabled: input.isEnabled,
+        });
+        return { id, success: true };
+      }),
+
+    uploadLogo: instructorProcedure
+      .input(z.object({
+        projectId: z.number(),
+        fileName: z.string(),
+        fileBase64: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.fileBase64, "base64");
+        const fileKey = `watermarks/${ctx.user.id}/${input.projectId}/${Date.now()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        return { url, fileKey };
+      }),
+
+    delete: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteProjectWatermark(input.id);
+        return { success: true };
+      }),
+  }),
 });
 
 // SRT time formatter

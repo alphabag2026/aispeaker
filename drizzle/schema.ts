@@ -1494,3 +1494,114 @@ export const slideTransitions = mysqlTable("slideTransitions", {
 });
 export type SlideTransition = typeof slideTransitions.$inferSelect;
 export type InsertSlideTransition = typeof slideTransitions.$inferInsert;
+
+
+// ============ v6.3: Whiteboard Collaboration Sessions ============
+/**
+ * Real-time whiteboard collaboration sessions
+ */
+export const whiteboardSessions = mysqlTable("whiteboardSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Project ID this session belongs to */
+  projectId: int("projectId").notNull(),
+  /** Insert content ID (whiteboard) this session is for */
+  insertContentId: int("insertContentId"),
+  /** Session creator */
+  hostUserId: int("hostUserId").notNull(),
+  /** Unique session code for joining */
+  sessionCode: varchar("sessionCode", { length: 32 }).notNull().unique(),
+  /** Session status */
+  status: mysqlEnum("status", ["waiting", "active", "ended"]).default("waiting").notNull(),
+  /** Max participants allowed */
+  maxParticipants: int("maxParticipants").default(10).notNull(),
+  /** Current participant count */
+  currentParticipants: int("currentParticipants").default(0).notNull(),
+  /** Session title */
+  title: varchar("title", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  endedAt: timestamp("endedAt"),
+});
+export type WhiteboardSession = typeof whiteboardSessions.$inferSelect;
+export type InsertWhiteboardSession = typeof whiteboardSessions.$inferInsert;
+
+// ============ v6.3: Whiteboard Session Participants ============
+export const whiteboardParticipants = mysqlTable("whiteboardParticipants", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull(),
+  userId: int("userId").notNull(),
+  /** Display name in session */
+  displayName: varchar("displayName", { length: 100 }),
+  /** Assigned color for this participant */
+  cursorColor: varchar("cursorColor", { length: 20 }).default("#FF0000"),
+  /** Is currently connected */
+  isOnline: boolean("isOnline").default(true),
+  joinedAt: timestamp("joinedAt").defaultNow().notNull(),
+  leftAt: timestamp("leftAt"),
+});
+export type WhiteboardParticipant = typeof whiteboardParticipants.$inferSelect;
+
+// ============ v6.3: Slide Layouts ============
+/**
+ * AI-recommended slide layouts for each slide
+ */
+export const slideLayouts = mysqlTable("slideLayouts", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  slideId: int("slideId").notNull(),
+  /** Layout type */
+  layoutType: mysqlEnum("layoutType", [
+    "title_only", "title_subtitle", "title_body", "title_bullets",
+    "comparison", "image_left", "image_right", "image_full",
+    "quote", "chart", "diagram", "timeline", "blank"
+  ]).default("title_body").notNull(),
+  /** AI-generated layout config JSON (positions, sizes, styles) */
+  layoutConfig: json("layoutConfig"),
+  /** AI reasoning for this layout choice */
+  aiReasoning: text("aiReasoning"),
+  /** Whether user has accepted/applied this layout */
+  isApplied: boolean("isApplied").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SlideLayout = typeof slideLayouts.$inferSelect;
+export type InsertSlideLayout = typeof slideLayouts.$inferInsert;
+
+// ============ v6.3: Project Watermarks ============
+/**
+ * Watermark/branding settings for video export
+ */
+export const projectWatermarks = mysqlTable("projectWatermarks", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  userId: int("userId").notNull(),
+  /** Watermark type */
+  watermarkType: mysqlEnum("watermarkType", ["logo", "text", "both"]).default("text").notNull(),
+  /** Logo image URL */
+  logoUrl: text("logoUrl"),
+  /** Logo S3 file key */
+  logoFileKey: text("logoFileKey"),
+  /** Text content for text watermark */
+  textContent: varchar("textContent", { length: 255 }),
+  /** Font size for text watermark */
+  fontSize: int("fontSize").default(24),
+  /** Font color (hex) */
+  fontColor: varchar("fontColor", { length: 20 }).default("#FFFFFF"),
+  /** Position on screen */
+  position: mysqlEnum("position", [
+    "top-left", "top-center", "top-right",
+    "bottom-left", "bottom-center", "bottom-right"
+  ]).default("bottom-right").notNull(),
+  /** Opacity (0-100) */
+  opacity: int("opacity").default(70).notNull(),
+  /** Size percentage relative to video width (5-50) */
+  sizePercent: int("sizePercent").default(15).notNull(),
+  /** Margin from edge in pixels */
+  marginPx: int("marginPx").default(20).notNull(),
+  /** Is this watermark enabled */
+  isEnabled: boolean("isEnabled").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProjectWatermark = typeof projectWatermarks.$inferSelect;
+export type InsertProjectWatermark = typeof projectWatermarks.$inferInsert;
