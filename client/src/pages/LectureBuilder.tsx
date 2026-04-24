@@ -18,7 +18,8 @@ import {
   Users, FileText, Image, Layers, Eye, ChevronLeft, ChevronRight, Plus, Trash2,
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
-  Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2
+  Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
+  Copy
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -123,6 +124,22 @@ export default function LectureBuilder() {
   // Mutation to persist step changes
   const updateProject = trpc.lectureBuilder.updateProject.useMutation();
 
+  // Clone project mutation
+  const cloneProjectMut = trpc.lectureBuilder.cloneProject.useMutation({
+    onSuccess: (data) => {
+      toast.success("프로젝트가 복제되었습니다");
+      projectsQuery.refetch();
+      setLocation(`/lecture-builder/${data.newProjectId}`);
+    },
+    onError: () => toast.error("복제에 실패했습니다"),
+  });
+
+  const handleCloneProject = (id: number, title: string) => {
+    if (confirm(`"${title}" 프로젝트를 복제하시겠습니까?`)) {
+      cloneProjectMut.mutate({ sourceProjectId: id, newTitle: `${title} (복사본)` });
+    }
+  };
+
   if (authLoading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   if (!user) return null;
 
@@ -209,14 +226,20 @@ export default function LectureBuilder() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {projectsQuery.data.map(p => (
-                <Card key={p.id} className="cursor-pointer hover:border-primary/50 transition-colors"
+                <Card key={p.id} className="group cursor-pointer hover:border-primary/50 transition-colors relative"
                   onClick={() => setLocation(`/lecture-builder/${p.id}`)}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg truncate">{p.title}</CardTitle>
-                      <Badge variant={p.status === "completed" ? "default" : p.status === "draft" ? "secondary" : "outline"}>
-                        {p.status === "draft" ? "초안" : p.status === "in_progress" ? "진행중" : p.status === "ready" ? "준비완료" : p.status === "completed" ? "완성" : p.status}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => { e.stopPropagation(); handleCloneProject(p.id, p.title); }}>
+                          <Copy className="w-3.5 h-3.5" />
+                        </Button>
+                        <Badge variant={p.status === "completed" ? "default" : p.status === "draft" ? "secondary" : "outline"}>
+                          {p.status === "draft" ? "초안" : p.status === "in_progress" ? "진행중" : p.status === "ready" ? "준비완료" : p.status === "completed" ? "완성" : p.status}
+                        </Badge>
+                      </div>
                     </div>
                     {p.description && <CardDescription className="line-clamp-2">{p.description}</CardDescription>}
                   </CardHeader>
@@ -348,6 +371,7 @@ export default function LectureBuilder() {
                 annotations={annotations}
                 avatarOverrides={avatarOverrides}
                 insertContent={insertContent}
+                transitions={transitions}
                 onRefresh={() => fullProjectQuery.refetch()}
               />
             )}
@@ -2913,7 +2937,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
 }
 
 // ============ STEP 5: PREVIEW & SETTINGS ============
-function Step5Preview({ projectId, project, slides, scripts, avatars, annotations, avatarOverrides, insertContent, onRefresh }: {
+function Step5Preview({ projectId, project, slides, scripts, avatars, annotations, avatarOverrides, insertContent, transitions, onRefresh }: {
   projectId: number;
   project: any;
   slides: any[];
@@ -2922,9 +2946,12 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   annotations: any[];
   avatarOverrides: any[];
   insertContent: any[];
+  transitions: any[];
   onRefresh: () => void;
 }) {
   const [previewSlideIdx, setPreviewSlideIdx] = useState(0);
+  const [prevSlideIdx, setPrevSlideIdx] = useState<number | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedSlideIds, setSelectedSlideIds] = useState<Set<number>>(() => new Set(slides.map((s: any) => s.id)));
   const [bgmUrl, setBgmUrl] = useState("");
@@ -2983,17 +3010,39 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
     return slides.filter((s: any) => selectedSlideIds.has(s.id));
   }, [slides, selectedSlideIds]);
 
-  // Auto-play preview
+  // Get transition for current slide
+  const getTransition = (slideId: number) => {
+    return transitions.find((t: any) => t.slideId === slideId) || { type: 'none', durationMs: 500, easing: 'ease' };
+  };
+
+  // Handle slide change with transition
+  const changeSlide = useCallback((newIdx: number) => {
+    if (newIdx === previewSlideIdx || isTransitioning) return;
+    const targetSlide = previewSlides[newIdx];
+    if (!targetSlide) return;
+    const trans = getTransition(targetSlide.id);
+    if (trans.type !== 'none') {
+      setPrevSlideIdx(previewSlideIdx);
+      setIsTransitioning(true);
+      setPreviewSlideIdx(newIdx);
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setPrevSlideIdx(null);
+      }, trans.durationMs || 500);
+    } else {
+      setPreviewSlideIdx(newIdx);
+    }
+  }, [previewSlideIdx, previewSlides, transitions, isTransitioning]);
+
+  // Auto-play preview with transition
   useEffect(() => {
     if (!isPlaying) return;
     const timer = setTimeout(() => {
-      setPreviewSlideIdx(prev => {
-        if (prev >= previewSlides.length - 1) { setIsPlaying(false); return 0; }
-        return prev + 1;
-      });
+      if (previewSlideIdx >= previewSlides.length - 1) { setIsPlaying(false); return; }
+      changeSlide(previewSlideIdx + 1);
     }, 3000);
     return () => clearTimeout(timer);
-  }, [isPlaying, previewSlideIdx, previewSlides.length]);
+  }, [isPlaying, previewSlideIdx, previewSlides.length, changeSlide]);
 
   // Update selection when slides change
   useEffect(() => {
@@ -3092,9 +3141,35 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
           <Card>
             <CardContent className="pt-6">
               <div className="relative bg-black rounded-xl overflow-hidden aspect-video">
+                {/* Previous slide (for transition) */}
+                {isTransitioning && prevSlideIdx !== null && previewSlides[prevSlideIdx] && (
+                  <img src={previewSlides[prevSlideIdx].imageUrl} alt="이전" className="absolute inset-0 w-full h-full object-contain z-0" />
+                )}
                 {currentSlide ? (
                   <>
-                    <img src={currentSlide.imageUrl} alt="미리보기" className="w-full h-full object-contain" />
+                    <img
+                      src={currentSlide.imageUrl}
+                      alt="미리보기"
+                      className="w-full h-full object-contain"
+                      style={isTransitioning ? (() => {
+                        const trans = getTransition(currentSlide.id);
+                        const dur = `${(trans.durationMs || 500)}ms`;
+                        const ease = trans.easing || 'ease';
+                        const base: React.CSSProperties = { position: 'relative', zIndex: 1, transition: `all ${dur} ${ease}` };
+                        switch (trans.type) {
+                          case 'fade': return { ...base, animation: `fadeIn ${dur} ${ease} forwards` };
+                          case 'slide-left': return { ...base, animation: `slideFromRight ${dur} ${ease} forwards` };
+                          case 'slide-right': return { ...base, animation: `slideFromLeft ${dur} ${ease} forwards` };
+                          case 'slide-up': return { ...base, animation: `slideFromBottom ${dur} ${ease} forwards` };
+                          case 'slide-down': return { ...base, animation: `slideFromTop ${dur} ${ease} forwards` };
+                          case 'zoom-in': return { ...base, animation: `zoomIn ${dur} ${ease} forwards` };
+                          case 'zoom-out': return { ...base, animation: `zoomOut ${dur} ${ease} forwards` };
+                          case 'wipe': return { ...base, animation: `wipeRight ${dur} ${ease} forwards` };
+                          case 'dissolve': return { ...base, animation: `dissolve ${dur} ${ease} forwards` };
+                          default: return base;
+                        }
+                      })() : undefined}
+                    />
                     {/* Avatar PIP overlay */}
                     {project.avatarPosition !== "none" && currentAvatar && (
                       <div className={`absolute ${
@@ -3136,13 +3211,13 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
 
               {/* Playback Controls */}
               <div className="flex items-center gap-3 mt-4">
-                <Button variant="outline" size="icon" onClick={() => setPreviewSlideIdx(Math.max(0, previewSlideIdx - 1))}>
+                <Button variant="outline" size="icon" onClick={() => changeSlide(Math.max(0, previewSlideIdx - 1))} disabled={isTransitioning}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => setIsPlaying(!isPlaying)}>
+                <Button variant="outline" size="icon" onClick={() => setIsPlaying(!isPlaying)} disabled={isTransitioning}>
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                 </Button>
-                <Button variant="outline" size="icon" onClick={() => setPreviewSlideIdx(Math.min(previewSlides.length - 1, previewSlideIdx + 1))}>
+                <Button variant="outline" size="icon" onClick={() => changeSlide(Math.min(previewSlides.length - 1, previewSlideIdx + 1))} disabled={isTransitioning}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
                 <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
