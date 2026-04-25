@@ -5802,6 +5802,225 @@ Return a JSON object with a "sections" array. Each section has:
         return { success: true };
       }),
   }),
+
+  // ============ v7.0: Akool API Integration ============
+  akool: router({
+    // Get available I2V effects
+    getEffects: protectedProcedure
+      .query(async () => {
+        const akool = await import("./akool");
+        const result = await akool.getI2VEffects();
+        return result.data || [];
+      }),
+
+    // Get Akool avatar list
+    getAvatars: protectedProcedure
+      .input(z.object({ page: z.number().default(1), size: z.number().default(50) }))
+      .query(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.getAvatarList(input.page, input.size);
+        return result.data || [];
+      }),
+
+    // Image to Video
+    imageToVideo: protectedProcedure
+      .input(z.object({
+        imageUrl: z.string().url(),
+        prompt: z.string().min(1).max(2000),
+        negativePrompt: z.string().optional(),
+        resolution: z.enum(["720p", "1080p", "4k"]).default("1080p"),
+        videoLength: z.union([z.literal(5), z.literal(10)]).default(5),
+        effectCode: z.string().optional(),
+        isPremiumModel: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.createImageToVideo({
+          image_url: input.imageUrl,
+          prompt: input.prompt,
+          negative_prompt: input.negativePrompt,
+          resolution: input.resolution,
+          video_length: input.videoLength,
+          effect_code: input.effectCode,
+          is_premium_model: input.isPremiumModel,
+        });
+        return { id: result.data?._id || result.data?.id, status: "pending" };
+      }),
+
+    // Get I2V result
+    getI2VResult: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .query(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.getImageToVideoResult(input.id);
+        const data = result.data || {};
+        return {
+          status: data.status as number, // 1=pending, 2=processing, 3=completed, 4=failed
+          videoUrl: data.video_url || data.url || null,
+          thumbnailUrl: data.thumbnail_url || null,
+          progress: data.progress || 0,
+        };
+      }),
+
+    // Face Swap Pro (single face, highest quality)
+    faceSwapPro: protectedProcedure
+      .input(z.object({
+        sourceImageUrl: z.string().url(),
+        targetImageUrl: z.string().url(),
+        faceEnhance: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.faceSwapPro({
+          sourceImage: [{ path: input.sourceImageUrl }],
+          targetImage: [{ path: input.targetImageUrl }],
+          face_enhance: input.faceEnhance,
+        });
+        return { id: result.data?._id || result.data?.id, status: "pending" };
+      }),
+
+    // Face Swap Plus (multi-face, image+video)
+    faceSwapPlus: protectedProcedure
+      .input(z.object({
+        sourceUrl: z.string().url(),
+        targetUrl: z.string().url(),
+        faceEnhance: z.boolean().default(false),
+        singleFaceMode: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.faceSwapPlus({
+          source_url: input.sourceUrl,
+          target_url: input.targetUrl,
+          face_enhance: input.faceEnhance,
+          single_face_mode: input.singleFaceMode,
+        });
+        return { id: result.data?._id || result.data?.id, status: "pending" };
+      }),
+
+    // Get Face Swap result
+    getFaceSwapResult: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .query(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.getFaceSwapResult(input.id);
+        const data = result.data || {};
+        return {
+          status: data.faceswap_status as number,
+          resultUrl: data.url || null,
+        };
+      }),
+
+    // Create Talking Avatar video
+    createTalkingAvatar: protectedProcedure
+      .input(z.object({
+        avatarId: z.string().optional(),
+        avatarUrl: z.string().url().optional(),
+        avatarFrom: z.number().default(2),
+        audioUrl: z.string().url().optional(),
+        inputText: z.string().optional(),
+        voiceId: z.string().optional(),
+        backgroundUrl: z.string().url().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const akool = await import("./akool");
+        const elements: any[] = [];
+
+        // Background image
+        if (input.backgroundUrl) {
+          elements.push({
+            type: "image",
+            url: input.backgroundUrl,
+            width: 3840,
+            height: 2160,
+            scale_x: 1,
+            scale_y: 1,
+            offset_x: 0,
+            offset_y: 0,
+          });
+        }
+
+        // Avatar element
+        elements.push({
+          type: "avatar",
+          url: input.avatarUrl,
+          avatar_id: input.avatarId,
+          width: 1080,
+          height: 1080,
+          scale_x: 1,
+          scale_y: 1,
+          offset_x: input.backgroundUrl ? 1380 : 1380,
+          offset_y: input.backgroundUrl ? 540 : 540,
+        });
+
+        // Audio element
+        elements.push({
+          type: "audio",
+          url: input.audioUrl,
+          input_text: input.inputText,
+          voice_id: input.voiceId,
+        });
+
+        const result = await akool.createTalkingAvatar({
+          avatar_from: input.avatarFrom,
+          elements,
+        });
+        return { id: result.data?._id || result.data?.video_id, status: "pending" };
+      }),
+
+    // Get Talking Avatar result
+    getTalkingAvatarResult: protectedProcedure
+      .input(z.object({ videoId: z.string() }))
+      .query(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.getTalkingAvatarResult(input.videoId);
+        const data = result.data || {};
+        return {
+          status: data.video_status as number,
+          videoUrl: data.url || null,
+        };
+      }),
+
+    // Video Translation
+    translateVideo: protectedProcedure
+      .input(z.object({
+        videoUrl: z.string().url(),
+        targetLanguage: z.string().min(2),
+      }))
+      .mutation(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.createVideoTranslation({
+          video_url: input.videoUrl,
+          target_language: input.targetLanguage,
+        });
+        return { id: result.data?._id || result.data?.id, status: "pending" };
+      }),
+
+    // Get Video Translation result
+    getTranslationResult: protectedProcedure
+      .input(z.object({ id: z.string() }))
+      .query(async ({ input }) => {
+        const akool = await import("./akool");
+        const result = await akool.getVideoTranslationResult(input.id);
+        const data = result.data || {};
+        return {
+          status: data.status as number,
+          videoUrl: data.url || null,
+        };
+      }),
+
+    // Get user credits info
+    getCredits: protectedProcedure
+      .query(async () => {
+        const akool = await import("./akool");
+        try {
+          const result = await akool.getUserCredits();
+          return result.data || null;
+        } catch {
+          return null;
+        }
+      }),
+  }),
 });
 
 // SRT time formatter

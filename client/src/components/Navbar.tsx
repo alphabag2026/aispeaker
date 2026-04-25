@@ -28,6 +28,7 @@ import {
   Shield,
   Layers,
   MoreHorizontal,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -45,6 +46,7 @@ export default function Navbar() {
   // Primary nav links (always visible in desktop)
   const primaryLinks = [
     ...(user ? [{ href: "/lecture-builder", label: "강의 제작", icon: Video }] : []),
+    ...(user ? [{ href: "/ai-studio", label: "AI Studio", icon: Sparkles }] : []),
     { href: "/faces", label: "AI 얼굴", icon: Users },
     { href: "/voices", label: "AI 목소리", icon: Volume2 },
   ];

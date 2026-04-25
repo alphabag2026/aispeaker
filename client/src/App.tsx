@@ -48,6 +48,7 @@ import ResetPassword from "./pages/ResetPassword";
 import LectureBuilder from "./pages/LectureBuilder";
 import VideoHistory from "./pages/VideoHistory";
 import AdminFormatTemplates from "./pages/AdminFormatTemplates";
+import AkoolStudio from "./pages/AkoolStudio";
 
 function Router() {
   return (
@@ -98,6 +99,7 @@ function Router() {
       <Route path="/lecture-builder" component={LectureBuilder} />
       <Route path="/lecture-builder/:id" component={LectureBuilder} />
       <Route path="/video-history" component={VideoHistory} />
+      <Route path="/ai-studio" component={AkoolStudio} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

@@ -1284,4 +1284,41 @@
 
 ### 테스트 및 배포
 - [x] v6.3 vitest 테스트 33개 통과
-- [ ] 프로덕션 배포 v6.3
+- [x] 프로덕션 배포 v6.3 (aispeaker.cc - HTTP 200, DB 마이그레이션 4테이블 적용 완료)
+
+## v7.0 Akool API 연동 & 디자인 리뉴얼 & 기능 확장
+
+### Akool API 연동
+- [x] Akool API 키 설정 (webdev_request_secrets) - AKOOL_API_KEY 검증 완료
+- [x] Akool API 백엔드 래퍼 모듈 (server/akool.ts) - I2V, FaceSwap, Avatar, Translation
+- [x] 이미지→비디오 (I2V) API 연동
+- [x] 텍스트→비디오 (T2V) API 연동 (I2V 라우터 통합)
+- [x] 얼굴 교환 (Face Swap) API 연동 - Pro/Plus 두 모드
+- [x] 비디오 번역 (Video Translation) API 연동 - 15+ 언어
+- [x] 음성 복제 (Voice Clone) API 연동 (Talking Avatar 통합)
+- [x] 스트리밍 아바타 API 연동 (Talking Avatar 통합)
+- [x] 효과 프리셋 (Effects) 연동 - getEffects 라우터
+
+### Akool 스타일 디자인 리뉴얼
+- [x] 다크 테마 기반 홈페이지 리디자인 (Akool 스타일 - 딥 블랙 + 네온 그라데이션)
+- [x] 히어로 섹션 - 애니메이션 카르셀 + 통계 카운터
+- [x] 그라데이션 + 글래스모피즘 카드 디자인
+- [x] AI 제품 쇼케이스 그리드 (6종 제품 카드)
+- [x] 고객 로고 섹션 (Fortune 500 스타일)
+- [x] CTA 섹션 - 그라데이션 배경 + 시작하기 버튼
+- [ ] 모델 선택 캐러셀 (멀티모델 브랜드 로고 슬라이더) - 향후
+- [ ] 효과 갤러리 (프리셋 비디오 그리드) - 향후
+- [ ] 가격 플랜 비교 테이블 - 향후
+
+### 새 기능 페이지
+- [x] AI Studio 페이지 (/ai-studio) - 4탭 통합 (I2V, FaceSwap, Avatar, Translation)
+- [x] Image to Video 탭 - 이미지 URL, 프롬프트, 해상도/길이, 효과 프리셋
+- [x] Face Swap 탭 - Pro/Plus 모드, 소스/타겟 이미지, 페이스 인한스
+- [x] Talking Avatar 탭 - 아바타 선택, 스크립트, 음성, 배경
+- [x] Video Translation 탭 - 비디오 URL, 15+ 언어 선택
+- [x] 실시간 폴링 상태 표시 (pending/processing/completed/failed)
+- [x] Navbar에 AI Studio 링크 추가
+
+### 테스트 및 배포
+- [x] v7.0 vitest 29개 테스트 통과
+- [ ] 프로덕션 배포 v7.0 (aispeaker.cc)
