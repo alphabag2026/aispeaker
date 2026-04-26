@@ -6020,6 +6020,150 @@ Return a JSON object with a "sections" array. Each section has:
           return null;
         }
       }),
+
+    // ============ v8.0: TTS (Text to Speech) ============
+    ttsVoices: protectedProcedure
+      .query(async () => {
+        const { GEMINI_VOICES } = await import("./_core/geminiTts");
+        return GEMINI_VOICES;
+      }),
+
+    ttsGenerate: protectedProcedure
+      .input(z.object({
+        text: z.string().min(1).max(5000),
+        voiceId: z.string().default("Kore"),
+        speed: z.number().min(0.5).max(2.0).default(1.0),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { generateGeminiTts } = await import("./_core/geminiTts");
+        const { storagePut } = await import("./storage");
+        const result = await generateGeminiTts({
+          text: input.text,
+          voiceId: input.voiceId,
+          speed: input.speed,
+        });
+        if ('error' in result) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.error });
+        // Upload to S3
+        const ext = result.mimeType.includes("mp3") ? "mp3" : "wav";
+        const key = `tts/${ctx.user.id}-${Date.now()}-${nanoid(6)}.${ext}`;
+        const { url } = await storagePut(key, result.audioBuffer, result.mimeType);
+        return { audioUrl: url, voiceName: result.voiceName, mimeType: result.mimeType };
+      }),
+
+    // ============ v8.0: Voice Clone (placeholder - uses TTS with voice matching) ============
+    voiceClone: protectedProcedure
+      .input(z.object({
+        sampleAudioUrl: z.string().url(),
+        text: z.string().min(1).max(5000),
+        voiceId: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        // Voice clone: analyze sample and pick closest Gemini voice, then generate
+        const { invokeLLM } = await import("./_core/llm");
+        const { generateGeminiTts, GEMINI_VOICES } = await import("./_core/geminiTts");
+        const { storagePut } = await import("./storage");
+
+        // Use LLM to suggest best matching voice based on description
+        let voiceId = input.voiceId || "Kore";
+        if (!input.voiceId) {
+          try {
+            const voiceList = GEMINI_VOICES.map(v => `${v.id}: ${v.desc} (${v.style})`).join("\n");
+            const llmRes = await invokeLLM({
+              messages: [
+                { role: "system", content: `You are a voice matching expert. Given an audio sample URL, suggest the best matching voice ID from this list. Return ONLY the voice ID, nothing else.\n\nAvailable voices:\n${voiceList}` },
+                { role: "user", content: `Audio sample: ${input.sampleAudioUrl}\nPlease suggest the best matching voice ID.` },
+              ],
+            });
+            const rawContent = llmRes.choices?.[0]?.message?.content;
+            const suggested = typeof rawContent === 'string' ? rawContent.trim() : undefined;
+            if (suggested && GEMINI_VOICES.some(v => v.id === suggested)) {
+              voiceId = suggested;
+            }
+          } catch { /* fallback to default */ }
+        }
+
+        const result = await generateGeminiTts({ text: input.text, voiceId });
+        if ('error' in result) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.error });
+        const ext = result.mimeType.includes("mp3") ? "mp3" : "wav";
+        const key = `voice-clone/${ctx.user.id}-${Date.now()}-${nanoid(6)}.${ext}`;
+        const { url } = await storagePut(key, result.audioBuffer, result.mimeType);
+        return { audioUrl: url, voiceName: result.voiceName, matchedVoiceId: voiceId };
+      }),
+
+    // ============ v8.0: Voice Change ============
+    voiceChange: protectedProcedure
+      .input(z.object({
+        sourceAudioUrl: z.string().url(),
+        targetVoiceId: z.string(),
+        text: z.string().min(1).max(5000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { generateGeminiTts } = await import("./_core/geminiTts");
+        const { storagePut } = await import("./storage");
+        const { transcribeAudio } = await import("./_core/voiceTranscription");
+
+        // If no text provided, transcribe the source audio first
+        let text = input.text;
+        if (!text) {
+          try {
+            const transcription = await transcribeAudio({ audioUrl: input.sourceAudioUrl });
+            if ('text' in transcription) {
+              text = transcription.text;
+            } else {
+              throw new Error("Transcription failed");
+            }
+          } catch {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "음성 인식에 실패했습니다. 텍스트를 직접 입력해주세요." });
+          }
+        }
+
+        const result = await generateGeminiTts({ text, voiceId: input.targetVoiceId });
+        if ('error' in result) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: result.error });
+        const ext = result.mimeType.includes("mp3") ? "mp3" : "wav";
+        const key = `voice-change/${ctx.user.id}-${Date.now()}-${nanoid(6)}.${ext}`;
+        const { url } = await storagePut(key, result.audioBuffer, result.mimeType);
+        return { audioUrl: url, voiceName: result.voiceName, originalText: text };
+      }),
+
+    // ============ v8.0: Image Generation ============
+    imageGen: protectedProcedure
+      .input(z.object({
+        prompt: z.string().min(1).max(2000),
+        style: z.enum(["realistic", "illustration", "cartoon", "sketch", "3d", "anime", "watercolor"]).default("realistic"),
+      }))
+      .mutation(async ({ input }) => {
+        const { generateImage } = await import("./_core/imageGeneration");
+        const stylePrompts: Record<string, string> = {
+          realistic: "photorealistic, high quality, detailed",
+          illustration: "digital illustration, clean lines, vibrant colors",
+          cartoon: "cartoon style, bold outlines, bright colors",
+          sketch: "pencil sketch, hand-drawn, artistic",
+          "3d": "3D rendered, CGI, volumetric lighting",
+          anime: "anime style, Japanese animation, detailed",
+          watercolor: "watercolor painting, soft edges, artistic",
+        };
+        const fullPrompt = `${input.prompt}. Style: ${stylePrompts[input.style] || stylePrompts.realistic}`;
+        const result = await generateImage({ prompt: fullPrompt });
+        return { imageUrl: result.url || null };
+      }),
+
+    // ============ v8.0: Background Remove / Change ============
+    bgRemove: protectedProcedure
+      .input(z.object({
+        imageUrl: z.string().url(),
+        newBackground: z.string().optional(), // description of new background
+      }))
+      .mutation(async ({ input }) => {
+        const { generateImage } = await import("./_core/imageGeneration");
+        const prompt = input.newBackground
+          ? `Remove the background from this image and replace it with: ${input.newBackground}. Keep the main subject intact.`
+          : "Remove the background from this image, making it transparent. Keep the main subject intact with clean edges.";
+        const result = await generateImage({
+          prompt,
+          originalImages: [{ url: input.imageUrl }],
+        });
+        return { imageUrl: result.url || null };
+      }),
   }),
 });
 

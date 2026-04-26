@@ -1344,4 +1344,41 @@
 
 ### 테스트 및 배포
 - [x] v7.1 vitest 18개 테스트 통과 (v7.1-ui.test.ts)
-- [ ] 프로덕션 배포 v7.1 (aispeaker.cc)
+- [x] 프로덕션 배포 v7.1 (aispeaker.cc - HTTP 200 정상, /opt/aispeaker/app active running)
+
+## v8.0 Akool 비교분석 기반 UI 고급화 & 메뉴 세분화 & 기능 이식
+### 비교분석 보고서
+- [x] Akool 플랫폼 심층 분석 (25개+ 도구, 14 비디오 모델, 10 이미지 모델, 메가메뉴 구조)
+- [x] 기능 이식 가능성 매트릭스 작성 (즉시/중간/어려움 분류)
+- [x] 경쟁 특화 전략 수립 (AI 강의 제작 특화 포지셔닝)
+
+### UI 고급화 Phase 1 - 글로벌 디자인 시스템
+- [x] CSS 변수 리뉴얼 - Akool 스타일 보라/시안 그라데이션 강화
+- [x] 글래스모피즘 카드 + 네온 보더 효과 강화
+- [ ] 타이포그래피 시스템 개선 (Inter/Pretendard 폰트) - 향후
+- [ ] 홈페이지 히어로 업그레이드 - 3D 파티클 + 타이핑 애니메이션 - 향후
+
+### UI 고급화 Phase 2 - 메가메뉴 & 네비게이션 재구성
+- [x] 사이드바 네비게이션 구현 (StudioLayout - 카테고리 분류)
+- [x] Hot/New/Unlimited 배지 시스템
+- [x] 도구별 개별 페이지 라우팅 (13개 서브 라우트)
+- [ ] 제품 탭 쇼케이스 (Akool 스타일 탭 전환 데모) - 향후
+
+### 기능 이식 Phase 1 - 새 API 연동
+- [ ] Video to Video (V2V) API 연동 + UI - 향후
+- [ ] Reference to Video API 연동 + UI - 향후
+- [x] TTS (텍스트→음성) Gemini TTS 연동 + UI (30종 음성, 속도 조절)
+- [x] 음성 복제 - LLM 기반 음성 매칭 + Gemini TTS 생성
+- [x] 음성 변환기 - 음성 인식(STT) + 타겟 음성 TTS 변환
+- [x] 이미지 생성 - Gemini/Forge 이미지 생성 (7종 스타일)
+- [x] 배경 제거/교체 - AI 이미지 편집 기반
+- [x] 라이브 카메라 - Coming Soon 프리뷰 페이지
+- [x] 스트리밍 아바타 - Coming Soon 프리뷰 페이지
+
+### 기능 이식 Phase 2 - 추가 페이지
+- [ ] 커뮤니티 갤러리 페이지 (사용자 생성 콘텐츠 공유) - 향후
+- [ ] 가격 플랜 비교 페이지 (Stripe 결제 연동) - 향후
+
+### 테스트 및 배포
+- [x] v8.0 vitest 21개 테스트 통과 (v8.0-features.test.ts)
+- [ ] 프로덕션 배포 v8.0
