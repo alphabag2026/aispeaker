@@ -1321,4 +1321,27 @@
 
 ### 테스트 및 배포
 - [x] v7.0 vitest 29개 테스트 통과
-- [ ] 프로덕션 배포 v7.0 (aispeaker.cc)
+- [x] 프로덕션 배포 v7.0 (aispeaker.cc - HTTP 200 정상, WebSocket 초기화 확인)
+
+## v7.1 멀티모델 캐러셀 & 효과 프리셋 갤러리
+
+### 멀티모델 선택 캐러셀
+- [x] 모델 브랜드 데이터 정의 (Akool/Kling 3.0/Wan 2.7/Seedance 2.0/Sora/Veo/MiniMax/FLUX/DALL-E 3 등 10종)
+- [x] 모델별 스펙 비교 데이터 (해상도/길이/속도/가격/특징/강점)
+- [x] 자동 슬라이딩 로고 캐러셀 컴포넌트 (embla-carousel-autoplay 무한 루프)
+- [x] 모델 선택 시 상세 비교 카드 확장 (그라데이션 카드 + 특징/강점 태그)
+- [x] 모델별 비교 테이블 (사양/가격/특징 비교 - showComparison 플래그)
+- [x] 홈페이지에 멀티모델 캐러셀 섹션 추가
+- [x] AI Studio에 AI Models 탭 추가 (모델 비교 통합)
+
+### 효과 프리셋 비디오 갤러리
+- [x] 효과 프리셋 데이터 12종 정의 (Kiss Screen/Catwalk/360 Orbit/Zoom In/Pan/Tilt/Dolly/Parallax/Glitch/Cinematic/Slow Motion/Time Lapse)
+- [x] 비디오 미리보기 그리드 컴포넌트 (CSS 애니메이션 프리뷰 + 호버 효과)
+- [x] 효과 카테고리 필터 (All/Motion/Camera/Style/Special)
+- [x] 효과 상세 모달 (설명/파라미터/태그/난이도/인기도)
+- [x] 홈페이지에 효과 갤러리 섹션 추가
+- [x] AI Studio에 Effects 탭 추가 (효과 갤러리 통합)
+
+### 테스트 및 배포
+- [x] v7.1 vitest 18개 테스트 통과 (v7.1-ui.test.ts)
+- [ ] 프로덕션 배포 v7.1 (aispeaker.cc)
