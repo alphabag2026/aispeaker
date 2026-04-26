@@ -1,6 +1,8 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import Navbar from "@/components/Navbar";
+import ModelCarousel from "@/components/ModelCarousel";
+import EffectsGallery from "@/components/EffectsGallery";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
@@ -453,6 +455,52 @@ export default function Home() {
               </Link>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ═══════════ Multi-Model Carousel ═══════════ */}
+      <section className="py-20 md:py-28 relative">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.15_0.08_260_/_0.4),_transparent_60%)]" />
+        <div className="container relative z-10">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-4">
+              <Sparkles className="h-3.5 w-3.5" />
+              Multi-Model AI
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-violet-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                10+ AI Models
+              </span>
+              , Your Choice
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Akool, Kling, Wan, Seedance, Sora, Veo 등 세계 최고의 AI 모델을 하나의 플랫폼에서 비교하고 선택하세요.
+            </p>
+          </div>
+          <ModelCarousel showComparison={true} />
+        </div>
+      </section>
+
+      {/* ═══════════ Effects Gallery ═══════════ */}
+      <section className="py-20 md:py-28 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-card/20 to-background" />
+        <div className="container relative z-10">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-4">
+              <Zap className="h-3.5 w-3.5" />
+              Effect Presets
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              <span className="bg-gradient-to-r from-pink-400 via-violet-400 to-blue-400 bg-clip-text text-transparent">
+                12+ Effects
+              </span>
+              , One Click
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Kiss Screen, Catwalk, 360° Orbit 등 다양한 효과 프리셋을 원클릭으로 적용하세요. 전문가 수준의 영상을 누구나 만들 수 있습니다.
+            </p>
+          </div>
+          <EffectsGallery />
         </div>
       </section>
 

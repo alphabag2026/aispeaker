@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import Navbar from "@/components/Navbar";
+import ModelCarousel from "@/components/ModelCarousel";
+import EffectsGallery from "@/components/EffectsGallery";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -802,12 +804,38 @@ export default function AkoolStudio() {
             <TabsTrigger value="translate" className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-600 data-[state=active]:to-orange-600 data-[state=active]:text-white">
               <Languages className="h-4 w-4" /> Video Translation
             </TabsTrigger>
+            <TabsTrigger value="models" className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-600 data-[state=active]:to-violet-600 data-[state=active]:text-white">
+              <Sparkles className="h-4 w-4" /> AI Models
+            </TabsTrigger>
+            <TabsTrigger value="effects" className="gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+              <Zap className="h-4 w-4" /> Effects
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="i2v"><ImageToVideoTab /></TabsContent>
           <TabsContent value="faceswap"><FaceSwapTab /></TabsContent>
           <TabsContent value="avatar"><TalkingAvatarTab /></TabsContent>
           <TabsContent value="translate"><VideoTranslationTab /></TabsContent>
+          <TabsContent value="models">
+            <Card className="border-border/50 bg-card/30 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-violet-400 to-cyan-400 bg-clip-text text-transparent">
+                  AI Model Comparison
+                </h2>
+                <ModelCarousel showComparison={true} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="effects">
+            <Card className="border-border/50 bg-card/30 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-pink-400 to-violet-400 bg-clip-text text-transparent">
+                  Effect Presets Gallery
+                </h2>
+                <EffectsGallery compact={true} />
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </section>
     </div>
