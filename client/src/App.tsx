@@ -15,7 +15,6 @@ import InstructorTemplates from "./pages/InstructorTemplates";
 import InstructorFaceSwap from "./pages/InstructorFaceSwap";
 import InstructorVoiceMod from "./pages/InstructorVoiceMod";
 import InstructorPlatforms from "./pages/InstructorPlatforms";
-// MyEnrollments, StudentDashboard, Certificates removed per user request
 import VodList from "./pages/VodList";
 import VodPlayer from "./pages/VodPlayer";
 import ProductionStudio from "./pages/ProductionStudio";
@@ -48,7 +47,21 @@ import ResetPassword from "./pages/ResetPassword";
 import LectureBuilder from "./pages/LectureBuilder";
 import VideoHistory from "./pages/VideoHistory";
 import AdminFormatTemplates from "./pages/AdminFormatTemplates";
-import AkoolStudio from "./pages/AkoolStudio";
+import AkoolStudio, {
+  AkoolImageToVideo,
+  AkoolFaceSwap,
+  AkoolTalkingAvatar,
+  AkoolVideoTranslate,
+  AkoolTTS,
+  AkoolVoiceClone,
+  AkoolVoiceChange,
+  AkoolImageGen,
+  AkoolBgRemove,
+  AkoolLiveCamera,
+  AkoolStreamingAvatar,
+  AkoolModels,
+  AkoolEffects,
+} from "./pages/AkoolStudio";
 
 function Router() {
   return (
@@ -62,7 +75,6 @@ function Router() {
       <Route path="/features/:id" component={FeatureDetail} />
       <Route path="/lectures" component={LectureList} />
       <Route path="/lecture/:id" component={LectureRoom} />
-      {/* /my-lectures, /my-dashboard, /certificates routes removed per user request */}
       <Route path="/vod" component={VodList} />
       <Route path="/vod/:id" component={VodPlayer} />
       <Route path="/instructor" component={InstructorDashboard} />
@@ -99,7 +111,28 @@ function Router() {
       <Route path="/lecture-builder" component={LectureBuilder} />
       <Route path="/lecture-builder/:id" component={LectureBuilder} />
       <Route path="/video-history" component={VideoHistory} />
+
+      {/* AI Studio - 메인 */}
       <Route path="/ai-studio" component={AkoolStudio} />
+      {/* AI Studio - 동영상 */}
+      <Route path="/ai-studio/image-to-video" component={AkoolImageToVideo} />
+      <Route path="/ai-studio/face-swap" component={AkoolFaceSwap} />
+      <Route path="/ai-studio/talking-avatar" component={AkoolTalkingAvatar} />
+      <Route path="/ai-studio/video-translate" component={AkoolVideoTranslate} />
+      {/* AI Studio - 이미지 */}
+      <Route path="/ai-studio/image-gen" component={AkoolImageGen} />
+      <Route path="/ai-studio/bg-remove" component={AkoolBgRemove} />
+      {/* AI Studio - 오디오 */}
+      <Route path="/ai-studio/tts" component={AkoolTTS} />
+      <Route path="/ai-studio/voice-clone" component={AkoolVoiceClone} />
+      <Route path="/ai-studio/voice-change" component={AkoolVoiceChange} />
+      {/* AI Studio - 실시간 */}
+      <Route path="/ai-studio/live-camera" component={AkoolLiveCamera} />
+      <Route path="/ai-studio/streaming-avatar" component={AkoolStreamingAvatar} />
+      {/* AI Studio - 라이브러리 */}
+      <Route path="/ai-studio/models" component={AkoolModels} />
+      <Route path="/ai-studio/effects" component={AkoolEffects} />
+
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
