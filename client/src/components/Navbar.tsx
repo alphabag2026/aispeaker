@@ -279,7 +279,7 @@ export default function Navbar() {
             </Button>
           </Link>
 
-          {/* Features */}
+          {/* Features - { href: "/features", label: "기능", icon: Layers } */}
           <Link href="/features">
             <Button
               variant="ghost"

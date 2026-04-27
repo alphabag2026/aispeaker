@@ -403,7 +403,7 @@ export default function LectureBuilder() {
               다음 <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button className="gap-2" onClick={() => toast.success("영상 생성 기능은 곧 출시됩니다!")}>
+            <Button className="gap-2" id="nav-generate-video-btn" onClick={() => { const el = document.getElementById('step5-generate-video-btn'); if (el) el.click(); else toast.info('미리보기 화면에서 영상 생성 버튼을 사용해주세요'); }}>
               <Video className="w-4 h-4" /> 영상 생성
             </Button>
           )}
@@ -4088,7 +4088,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
           </Card>
 
           {/* Generate Button */}
-          <Button className="w-full gap-2" size="lg" onClick={handleGenerateVideo} disabled={generating || exporting || selectedSlideIds.size === 0}>
+          <Button id="step5-generate-video-btn" className="w-full gap-2" size="lg" onClick={handleGenerateVideo} disabled={generating || exporting || selectedSlideIds.size === 0}>
             {generating ? (
               <><Loader2 className="w-5 h-5 animate-spin" /> 영상 생성 중...</>
             ) : (

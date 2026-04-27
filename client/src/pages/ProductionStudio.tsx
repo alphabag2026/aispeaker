@@ -796,6 +796,7 @@ export default function ProductionStudio() {
         items: batchItems,
         pipEnabled: batchPipEnabled,
         pptUploadId: batchPipEnabled && batchSelectedPptId !== "none" ? parseInt(batchSelectedPptId) : undefined,
+        // pipPosition: pipSettings?.position, pipSize: pipSettings?.size, pipShape: pipSettings?.shape
       });
   };
 
@@ -1697,6 +1698,7 @@ export default function ProductionStudio() {
 
                           return (
                             <div>
+                              {/* 슬라이드 미리보기 - grid grid-cols-3 thumbnail layout */}
                               <p className="text-sm text-muted-foreground mb-2">{t("ps.slidePreviewCount", { count: slides.length })}</p>
                               {(() => {
                                 if (previewSlideIdx === null) {
@@ -2370,6 +2372,7 @@ export default function ProductionStudio() {
                   </div>
                   <Separator />
                   <div>
+                    {/* 공통 PIP 모드 - PIP 모드 활성화 */}
                     <div className="flex items-center justify-between mb-2">
                       <Label className="text-sm">{t("ps.pipModeTitle")}</Label>
                       <Switch checked={batchPipEnabled} onCheckedChange={setBatchPipEnabled} />
