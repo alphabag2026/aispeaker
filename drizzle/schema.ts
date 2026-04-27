@@ -1737,3 +1737,53 @@ export const subtitleStyles = mysqlTable("subtitleStyles", {
 });
 export type SubtitleStyle = typeof subtitleStyles.$inferSelect;
 export type InsertSubtitleStyle = typeof subtitleStyles.$inferInsert;
+
+
+// ============ Shared Subtitle Style Presets (v8.8) ============
+export const sharedSubtitlePresets = mysqlTable("sharedSubtitlePresets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  userName: varchar("userName", { length: 100 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: varchar("description", { length: 500 }),
+  fontSize: int("fontSize").default(16).notNull(),
+  fontColor: varchar("fontColor", { length: 20 }).default("#FFFFFF").notNull(),
+  bgColor: varchar("bgColor", { length: 30 }).default("rgba(0,0,0,0.7)").notNull(),
+  position: mysqlEnum("position", ["top", "bottom"]).default("bottom").notNull(),
+  fontFamily: varchar("fontFamily", { length: 50 }).default("sans-serif").notNull(),
+  bold: boolean("bold").default(false).notNull(),
+  italic: boolean("italic").default(false).notNull(),
+  outline: boolean("outline").default(true).notNull(),
+  likes: int("likes").default(0).notNull(),
+  downloads: int("downloads").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SharedSubtitlePreset = typeof sharedSubtitlePresets.$inferSelect;
+export type InsertSharedSubtitlePreset = typeof sharedSubtitlePresets.$inferInsert;
+
+// ============ Shared Subtitle Preset Likes (v8.8) ============
+export const sharedSubtitlePresetLikes = mysqlTable("sharedSubtitlePresetLikes", {
+  id: int("id").autoincrement().primaryKey(),
+  presetId: int("presetId").notNull(),
+  userId: int("userId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ============ Preset Tags (v8.8) ============
+export const presetTags = mysqlTable("presetTags", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 50 }).notNull().unique(),
+  category: mysqlEnum("category", ["avatar", "subtitle", "general"]).default("general").notNull(),
+  usageCount: int("usageCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PresetTag = typeof presetTags.$inferSelect;
+export type InsertPresetTag = typeof presetTags.$inferInsert;
+
+// ============ Preset-Tag Map (many-to-many) (v8.8) ============
+export const presetTagMap = mysqlTable("presetTagMap", {
+  id: int("id").autoincrement().primaryKey(),
+  presetType: mysqlEnum("presetType", ["avatar", "subtitle"]).notNull(),
+  presetId: int("presetId").notNull(),
+  tagId: int("tagId").notNull(),
+});

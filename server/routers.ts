@@ -4929,12 +4929,40 @@ Return a JSON object with a "sections" array. Each section has:
         projectId: z.number(),
         resolution: z.enum(["720p", "1080p", "1440p"]).default("1080p"),
         includeSubtitles: z.boolean().default(false),
+        subtitleStyleId: z.number().optional(),
+        subtitleStyle: z.object({
+          fontSize: z.number().optional(),
+          fontColor: z.string().optional(),
+          bgColor: z.string().optional(),
+          position: z.enum(["top", "bottom"]).optional(),
+          fontFamily: z.string().optional(),
+          bold: z.boolean().optional(),
+          italic: z.boolean().optional(),
+          outline: z.boolean().optional(),
+        }).optional(),
         bgmUrl: z.string().optional(),
         bgmVolume: z.number().default(30),
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.projectId);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        // Load subtitle style from DB if subtitleStyleId provided
+        let resolvedSubtitleStyle = input.subtitleStyle;
+        if (!resolvedSubtitleStyle && input.includeSubtitles) {
+          const savedStyle = await db.getSubtitleStyle(ctx.user.id);
+          if (savedStyle) {
+            resolvedSubtitleStyle = {
+              fontSize: savedStyle.fontSize,
+              fontColor: savedStyle.fontColor,
+              bgColor: savedStyle.bgColor,
+              position: savedStyle.position === "custom" ? "bottom" : savedStyle.position,
+              fontFamily: savedStyle.fontFamily,
+              bold: savedStyle.bold,
+              italic: savedStyle.italic,
+              outline: savedStyle.outline,
+            };
+          }
+        }
         const [avatars, slides, scripts] = await Promise.all([
           db.listProjectAvatars(input.projectId),
           db.listProjectSlides(input.projectId),
@@ -4980,6 +5008,7 @@ Return a JSON object with a "sections" array. Each section has:
             avatarShape: project.avatarShape || "circle",
             avatarOpacity: project.avatarOpacity || 100,
             includeSubtitles: input.includeSubtitles,
+            subtitleStyle: resolvedSubtitleStyle || undefined,
           }, onProgress);
           await db.updateLectureProject(input.projectId, {
             status: "completed" as any,
@@ -6606,6 +6635,124 @@ Return a JSON object with a "sections" array. Each section has:
       .mutation(async ({ ctx, input }) => {
         await db.upsertSubtitleStyle(ctx.user.id, input);
         return { success: true };
+      }),
+  }),
+
+  // ── Shared Subtitle Presets (v8.8) ──
+  sharedSubtitlePreset: router({
+    list: publicProcedure
+      .input(z.object({
+        sortBy: z.enum(["latest", "popular"]).optional(),
+        tagId: z.number().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const presets = await db.listSharedSubtitlePresets(input?.sortBy || "latest", input?.tagId);
+        // Attach tags to each preset
+        const presetsWithTags = await Promise.all(presets.map(async (p) => {
+          const tags = await db.getPresetTags("subtitle", p.id);
+          return { ...p, tags };
+        }));
+        return presetsWithTags;
+      }),
+    share: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().max(500).optional(),
+        fontSize: z.number().min(8).max(48).optional(),
+        fontColor: z.string().max(20).optional(),
+        bgColor: z.string().max(30).optional(),
+        position: z.enum(["top", "bottom"]).optional(),
+        fontFamily: z.string().max(50).optional(),
+        bold: z.boolean().optional(),
+        italic: z.boolean().optional(),
+        outline: z.boolean().optional(),
+        tagIds: z.array(z.number()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { tagIds, ...presetData } = input;
+        const id = await db.createSharedSubtitlePreset({
+          userId: ctx.user.id,
+          userName: ctx.user.name || "Anonymous",
+          name: presetData.name,
+          description: presetData.description,
+          fontSize: presetData.fontSize ?? 16,
+          fontColor: presetData.fontColor ?? "#FFFFFF",
+          bgColor: presetData.bgColor ?? "rgba(0,0,0,0.7)",
+          position: presetData.position ?? "bottom",
+          fontFamily: presetData.fontFamily ?? "sans-serif",
+          bold: presetData.bold ?? false,
+          italic: presetData.italic ?? false,
+          outline: presetData.outline ?? true,
+        });
+        if (tagIds && tagIds.length > 0) {
+          await db.addTagsToPreset("subtitle", id, tagIds);
+        }
+        return { id };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteSharedSubtitlePreset(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    like: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const liked = await db.toggleSharedSubtitlePresetLike(input.id, ctx.user.id);
+        return { liked };
+      }),
+    download: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.incrementSharedSubtitlePresetDownloads(input.id);
+        return { success: true };
+      }),
+    myLikes: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserLikedSubtitlePresets(ctx.user.id);
+    }),
+  }),
+
+  // ── Preset Tags (v8.8) ──
+  presetTag: router({
+    list: publicProcedure
+      .input(z.object({ category: z.enum(["avatar", "subtitle", "general"]).optional() }).optional())
+      .query(async ({ input }) => {
+        return db.listPresetTags(input?.category);
+      }),
+    popular: publicProcedure
+      .input(z.object({
+        category: z.enum(["avatar", "subtitle", "general"]).optional(),
+        limit: z.number().min(1).max(50).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getPopularTags(input?.category, input?.limit || 20);
+      }),
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(50),
+        category: z.enum(["avatar", "subtitle", "general"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await db.getOrCreateTag(input.name, input.category || "general");
+        return { id };
+      }),
+    addToPreset: protectedProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+        tagIds: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        await db.addTagsToPreset(input.presetType, input.presetId, input.tagIds);
+        return { success: true };
+      }),
+    getForPreset: publicProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getPresetTags(input.presetType, input.presetId);
       }),
   }),
 });

@@ -247,6 +247,14 @@ registerTranslations("ko", {
   "ps.sharePreset": "프리셋 공유",
   "ps.deletePreset": "프리셋 삭제",
   "ps.importPreset": "프리셋 가져오기",
+  "ps.allTags": "전체",
+  "ps.sortPopular": "인기순",
+  "ps.sortLatest": "최신순",
+  "ps.communitySubtitlePresets": "커뮤니티 자막 프리셋",
+  "ps.subtitlePresetGallery": "자막 프리셋 갤러리",
+  "ps.presetApplied": "프리셋이 적용되었습니다.",
+  "ps.loading": "로딩 중...",
+  "ps.generateThumbnail": "썸네일 생성",
 });
 
 registerTranslations("en", {
@@ -496,6 +504,14 @@ registerTranslations("en", {
   "ps.sharePreset": "Share Preset",
   "ps.deletePreset": "Delete Preset",
   "ps.importPreset": "Import Preset",
+  "ps.allTags": "All",
+  "ps.sortPopular": "Popular",
+  "ps.sortLatest": "Latest",
+  "ps.communitySubtitlePresets": "Community Subtitle Presets",
+  "ps.subtitlePresetGallery": "Subtitle Preset Gallery",
+  "ps.presetApplied": "Preset applied.",
+  "ps.loading": "Loading...",
+  "ps.generateThumbnail": "Generate Thumbnail",
 });
 
 registerTranslations("zh", {
@@ -745,6 +761,14 @@ registerTranslations("zh", {
   "ps.sharePreset": "分享预设",
   "ps.deletePreset": "删除预设",
   "ps.importPreset": "导入预设",
+  "ps.allTags": "全部",
+  "ps.sortPopular": "热门",
+  "ps.sortLatest": "最新",
+  "ps.communitySubtitlePresets": "社区字幕预设",
+  "ps.subtitlePresetGallery": "字幕预设库",
+  "ps.presetApplied": "预设已应用。",
+  "ps.loading": "加载中...",
+  "ps.generateThumbnail": "生成缩略图",
 });
 
 registerTranslations("ja", {
@@ -994,6 +1018,14 @@ registerTranslations("ja", {
   "ps.sharePreset": "プリセット共有",
   "ps.deletePreset": "プリセット削除",
   "ps.importPreset": "プリセットインポート",
+  "ps.allTags": "すべて",
+  "ps.sortPopular": "人気順",
+  "ps.sortLatest": "新着順",
+  "ps.communitySubtitlePresets": "コミュニティ字幕プリセット",
+  "ps.subtitlePresetGallery": "字幕プリセットギャラリー",
+  "ps.presetApplied": "プリセットが適用されました。",
+  "ps.loading": "読み込み中...",
+  "ps.generateThumbnail": "サムネイル生成",
 });
 
 const otherLanguages = ["vi", "th", "es", "fr", "de", "pt", "ru", "ar", "hi", "id", "ms", "tr", "it", "nl", "pl", "sv"];
@@ -1245,5 +1277,13 @@ otherLanguages.forEach(lang => {
     "ps.sharePreset": "Share Preset",
     "ps.deletePreset": "Delete Preset",
     "ps.importPreset": "Import Preset",
+    "ps.allTags": "All",
+    "ps.sortPopular": "Popular",
+    "ps.sortLatest": "Latest",
+    "ps.communitySubtitlePresets": "Community Subtitle Presets",
+    "ps.subtitlePresetGallery": "Subtitle Preset Gallery",
+    "ps.presetApplied": "Preset applied.",
+    "ps.loading": "Loading...",
+    "ps.generateThumbnail": "Generate Thumbnail",
   });
 });
