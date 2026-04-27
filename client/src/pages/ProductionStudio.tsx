@@ -20,7 +20,7 @@ import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, User2, Settings2, Edit3, History,
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera,
-  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye, Palette
+  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye, Palette, Settings, Heart, Tag
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -581,6 +581,37 @@ export default function ProductionStudio() {
   const avatarTagsQuery = trpc.presetTag.popular.useQuery({ category: "avatar", limit: 15 });
   const subtitleTagsQuery = trpc.presetTag.popular.useQuery({ category: "subtitle", limit: 15 });
   const allTagsQuery = trpc.presetTag.popular.useQuery({ limit: 30 });
+
+  // v8.9: My presets management
+  const [showMyPresets, setShowMyPresets] = useState(false);
+  const [myPresetsTab, setMyPresetsTab] = useState<"avatar" | "subtitle">("avatar");
+  const [editingPresetId, setEditingPresetId] = useState<number | null>(null);
+  const [editPresetName, setEditPresetName] = useState("");
+  const [editPresetDesc, setEditPresetDesc] = useState("");
+  const myAvatarPresetsQuery = trpc.myPresets.avatarList.useQuery(undefined, { enabled: showMyPresets });
+  const mySubtitlePresetsQuery = trpc.myPresets.subtitleList.useQuery(undefined, { enabled: showMyPresets });
+  const updateMyAvatarMut = trpc.myPresets.updateAvatar.useMutation({
+    onSuccess: () => { myAvatarPresetsQuery.refetch(); sharedPresetsQuery.refetch(); setEditingPresetId(null); toast.success(t("ps.presetSaved")); },
+  });
+  const updateMySubtitleMut = trpc.myPresets.updateSubtitle.useMutation({
+    onSuccess: () => { mySubtitlePresetsQuery.refetch(); sharedSubtitlePresetsQuery.refetch(); setEditingPresetId(null); toast.success(t("ps.presetSaved")); },
+  });
+  const deleteMyAvatarMut = trpc.myPresets.deleteAvatar.useMutation({
+    onSuccess: () => { myAvatarPresetsQuery.refetch(); sharedPresetsQuery.refetch(); toast.success(t("ps.presetDeleted")); },
+  });
+  const deleteMySubtitleMut = trpc.myPresets.deleteSubtitle.useMutation({
+    onSuccess: () => { mySubtitlePresetsQuery.refetch(); sharedSubtitlePresetsQuery.refetch(); toast.success(t("ps.presetDeleted")); },
+  });
+
+  // v8.9: Tag input for sharing
+  const [shareTagInput, setShareTagInput] = useState("");
+  const [shareSelectedTags, setShareSelectedTags] = useState<{id: number; name: string}[]>([]);
+  const [shareNewTagNames, setShareNewTagNames] = useState<string[]>([]);
+  const tagSearchQuery = trpc.presetTag.search.useQuery({ query: shareTagInput, category: "general" }, { enabled: shareTagInput.length >= 1 });
+  const createTagMut = trpc.presetTag.create.useMutation();
+
+  // v8.9: Subtitle slide overlay preview
+  const [showSubtitleOverlay, setShowSubtitleOverlay] = useState(true);
 
   // Hydrate subtitle style from DB
   useEffect(() => {
@@ -1644,6 +1675,31 @@ export default function ProductionStudio() {
                                           onMouseDown={onResizeStart}
                                         />
                                       </div>
+                                      {/* v8.9: Subtitle overlay on slide */}
+                                      {showSubtitleOverlay && (
+                                        <div
+                                          className="absolute left-0 right-0 flex justify-center pointer-events-none z-20"
+                                          style={{
+                                            [subtitlePosition === 'top' ? 'top' : 'bottom']: '4%',
+                                          }}
+                                        >
+                                          <span style={{
+                                            fontSize: `${Math.min(subtitleFontSize, 20)}px`,
+                                            fontFamily: subtitleFontFamily,
+                                            color: subtitleFontColor,
+                                            backgroundColor: subtitleBgColor,
+                                            fontWeight: subtitleBold ? 'bold' : 'normal',
+                                            fontStyle: subtitleItalic ? 'italic' : 'normal',
+                                            textShadow: subtitleOutline ? '1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8)' : 'none',
+                                            padding: '2px 8px',
+                                            borderRadius: '2px',
+                                            maxWidth: '90%',
+                                            textAlign: 'center' as const,
+                                          }}>
+                                            {t("ps.subtitlePreviewText")}
+                                          </span>
+                                        </div>
+                                      )}
                                       {/* Slide navigation */}
                                       <div className="absolute top-1/2 -translate-y-1/2 left-2 z-10">
                                         <button
@@ -1669,6 +1725,16 @@ export default function ProductionStudio() {
                                       <span>{t("ps.pipShapeLabel")} {t(`ps.pipShape${pipSh.charAt(0).toUpperCase() + pipSh.slice(1)}`)}</span>
                                       <span>·</span>
                                       <span>{t("ps.pipOpacityLabel")} {pipOp}%</span>
+                                    </div>
+                                    {/* v8.9: Subtitle overlay toggle + My presets button */}
+                                    <div className="mt-1 flex items-center justify-between">
+                                      <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                                        <input type="checkbox" checked={showSubtitleOverlay} onChange={(e) => setShowSubtitleOverlay(e.target.checked)} className="w-3 h-3" />
+                                        <FileText className="w-3 h-3" />{t("ps.subtitleOverlayToggle")}
+                                      </label>
+                                      <Button size="sm" variant="ghost" className="text-xs h-6 text-emerald-400" onClick={() => setShowMyPresets(!showMyPresets)}>
+                                        <Settings className="w-3 h-3 mr-1" />{t("ps.myPresetsManage")}
+                                      </Button>
                                     </div>
                                     {/* Preset buttons */}
                                     <div className="mt-2 flex items-center gap-2 flex-wrap">
@@ -2277,6 +2343,142 @@ export default function ProductionStudio() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* v8.9: My Presets Management Panel */}
+      {showMyPresets && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowMyPresets(false)}>
+          <div className="bg-card border border-border rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="text-lg font-semibold">{t("ps.myPresetsManage")}</h3>
+              <button onClick={() => setShowMyPresets(false)} className="text-muted-foreground hover:text-foreground"><XCircle className="w-5 h-5" /></button>
+            </div>
+            {/* Tab selector */}
+            <div className="flex border-b border-border">
+              <button
+                className={`flex-1 py-2 text-sm font-medium ${myPresetsTab === 'avatar' ? 'text-violet-400 border-b-2 border-violet-400' : 'text-muted-foreground'}`}
+                onClick={() => setMyPresetsTab('avatar')}
+              >
+                <User2 className="w-4 h-4 inline mr-1" />{t("ps.avatarPresets")} ({myAvatarPresetsQuery.data?.length || 0})
+              </button>
+              <button
+                className={`flex-1 py-2 text-sm font-medium ${myPresetsTab === 'subtitle' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-muted-foreground'}`}
+                onClick={() => setMyPresetsTab('subtitle')}
+              >
+                <FileText className="w-4 h-4 inline mr-1" />{t("ps.subtitlePresets")} ({mySubtitlePresetsQuery.data?.length || 0})
+              </button>
+            </div>
+            <ScrollArea className="p-4" style={{ maxHeight: 'calc(80vh - 120px)' }}>
+              {myPresetsTab === 'avatar' ? (
+                <div className="space-y-3">
+                  {(!myAvatarPresetsQuery.data || myAvatarPresetsQuery.data.length === 0) && (
+                    <p className="text-sm text-muted-foreground text-center py-8">{t("ps.noSharedPresetsYet")}</p>
+                  )}
+                  {myAvatarPresetsQuery.data?.map((p: any) => (
+                    <div key={p.id} className="border border-border rounded-lg p-3">
+                      {editingPresetId === p.id ? (
+                        <div className="space-y-2">
+                          <Input value={editPresetName} onChange={(e) => setEditPresetName(e.target.value)} placeholder={t("ps.presetNamePrompt")} className="h-8 text-sm" />
+                          <Input value={editPresetDesc} onChange={(e) => setEditPresetDesc(e.target.value)} placeholder={t("ps.descriptionPlaceholder")} className="h-8 text-sm" />
+                          <div className="flex gap-2">
+                            <Button size="sm" className="h-7 text-xs" onClick={() => updateMyAvatarMut.mutate({ id: p.id, name: editPresetName, description: editPresetDesc })} disabled={updateMyAvatarMut.isPending}>
+                              {t("ps.saveSubtitleStyle")}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingPresetId(null)}>{t("ps.cancel")}</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{p.name}</p>
+                            {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              <span><Heart className="w-3 h-3 inline" /> {p.likes}</span>
+                              <span><Download className="w-3 h-3 inline" /> {p.downloads}</span>
+                              <span>{p.position} / {p.size} / {p.shape}</span>
+                            </div>
+                            {p.tags?.length > 0 && (
+                              <div className="flex gap-1 mt-1 flex-wrap">
+                                {p.tags.map((tag: any) => <Badge key={tag.id} variant="outline" className="text-[10px] h-4">{tag.name}</Badge>)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditingPresetId(p.id); setEditPresetName(p.name); setEditPresetDesc(p.description || ''); }}>
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-300" onClick={() => { if (confirm(t("ps.confirmDelete"))) deleteMyAvatarMut.mutate({ id: p.id }); }}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {(!mySubtitlePresetsQuery.data || mySubtitlePresetsQuery.data.length === 0) && (
+                    <p className="text-sm text-muted-foreground text-center py-8">{t("ps.noSharedPresetsYet")}</p>
+                  )}
+                  {mySubtitlePresetsQuery.data?.map((p: any) => (
+                    <div key={p.id} className="border border-border rounded-lg p-3">
+                      {editingPresetId === p.id ? (
+                        <div className="space-y-2">
+                          <Input value={editPresetName} onChange={(e) => setEditPresetName(e.target.value)} placeholder={t("ps.presetNamePrompt")} className="h-8 text-sm" />
+                          <Input value={editPresetDesc} onChange={(e) => setEditPresetDesc(e.target.value)} placeholder={t("ps.descriptionPlaceholder")} className="h-8 text-sm" />
+                          <div className="flex gap-2">
+                            <Button size="sm" className="h-7 text-xs" onClick={() => updateMySubtitleMut.mutate({ id: p.id, name: editPresetName, description: editPresetDesc })} disabled={updateMySubtitleMut.isPending}>
+                              {t("ps.saveSubtitleStyle")}
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingPresetId(null)}>{t("ps.cancel")}</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">{p.name}</p>
+                            {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-xs text-muted-foreground"><Heart className="w-3 h-3 inline" /> {p.likes}</span>
+                              <span className="text-xs text-muted-foreground"><Download className="w-3 h-3 inline" /> {p.downloads}</span>
+                              {/* Mini preview */}
+                              <span style={{
+                                fontSize: '11px',
+                                fontFamily: p.fontFamily || 'sans-serif',
+                                color: p.fontColor || '#fff',
+                                backgroundColor: p.bgColor || 'rgba(0,0,0,0.7)',
+                                fontWeight: p.bold ? 'bold' : 'normal',
+                                fontStyle: p.italic ? 'italic' : 'normal',
+                                padding: '1px 4px',
+                                borderRadius: '2px',
+                              }}>
+                                Aa
+                              </span>
+                            </div>
+                            {p.tags?.length > 0 && (
+                              <div className="flex gap-1 mt-1 flex-wrap">
+                                {p.tags.map((tag: any) => <Badge key={tag.id} variant="outline" className="text-[10px] h-4">{tag.name}</Badge>)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditingPresetId(p.id); setEditPresetName(p.name); setEditPresetDesc(p.description || ''); }}>
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400 hover:text-red-300" onClick={() => { if (confirm(t("ps.confirmDelete"))) deleteMySubtitleMut.mutate({ id: p.id }); }}>
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

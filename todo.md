@@ -1580,3 +1580,25 @@
 ### 테스트 및 배포
 - [x] v8.8 vitest 테스트 작성 (20개 테스트 통과)
 - [ ] 프로덕션 배포 v8.8
+
+## v8.9 - 프리셋 태그 입력 + 내 프리셋 관리 + 자막 슬라이드 오버레이 프리뷰
+
+### 프리셋 공유 시 태그 입력 UI
+- [x] 프리셋 공유 시 태그 검색/자동완성 state/query 구현
+- [x] 기존 태그 자동완성 + 새 태그 생성 (createTagMut)
+- [x] 공유 시 태그를 presetTagMap에 연결 (removeFromPreset + addToPreset)
+
+### 내 프리셋 관리 페이지
+- [x] 내가 공유한 아바타 프리셋 목록 조회 백엔드 (myPresets.avatarList)
+- [x] 내가 공유한 자막 프리셋 목록 조회 백엔드 (myPresets.subtitleList)
+- [x] 내 프리셋 수정/삭제 기능 (updateAvatar/updateSubtitle/deleteAvatar/deleteSubtitle)
+- [x] 내 프리셋 관리 모달 UI (아바타/자막 탭, 통계, 태그, 수정/삭제)
+
+### 자막 스타일 실시간 슬라이드 오버레이 프리뷰
+- [x] 선택된 슬라이드 위에 자막 스타일 오버레이 렌더링 (showSubtitleOverlay)
+- [x] 슬라이드 변경 시 자막 위치/스타일 실시간 반영
+- [x] 자막 위치(상단/하단) 시각적 확인 + 토글 스위치
+
+### 테스트 및 배포
+- [x] v8.9 vitest 테스트 작성 (19개 테스트 통과)
+- [ ] 프로덕션 배포 v8.9
