@@ -1409,3 +1409,27 @@
 ### 테스트 및 배포
 - [x] v8.1 vitest 11개 테스트 통과 (v8.1-features.test.ts)
 - [ ] 프로덕션 배포 v8.1
+
+## v8.2 - 크레딧 자동 차감 + 갤러리 공유 + 대시보드 위젯
+
+### 크레딧 자동 차감 연동
+- [x] useCreditDeduction 커스텀 훅 구현 (deductAndRun 패턴)
+- [x] InsufficientCreditsDialog 컴포넌트 (크레딧 부족 시 충전 유도)
+- [x] 모든 AI Studio 탭에 크레딧 차감 연동 (TTS, VoiceClone, VoiceChange, ImageGen, BgRemove, VideoEffects)
+
+### 갤러리→AI Studio 원클릭 공유
+- [x] ShareToGalleryButton 공통 컴포넌트 생성
+- [x] AI Studio 각 결과에 갤러리 공유 버튼 (TTS, VoiceClone, VoiceChange, ImageGen, BgRemove, VideoEffects)
+- [x] community.create mutation 연동 + 성공 시 toast 알림
+
+### 사용자 대시보드 크레딧 위젯
+- [x] CreditDashboard 페이지 (/credits) - 잔액 + Progress bar
+- [x] 기간별 사용량 통계 (7일/30일/전체)
+- [x] 기능별 사용량 막대 그래프 (12개 기능 아이콘)
+- [x] 최근 사용 내역 리스트 (20건)
+- [x] 충전/AI Studio/갤러리 바로가기 카드
+- [x] StudioLayout 크레딧 표시 → 대시보드 링크 연결
+
+### 테스트 및 배포
+- [x] v8.2 vitest 11개 테스트 통과 (v8.2-features.test.ts)
+- [ ] 프로덕션 배포 v8.2

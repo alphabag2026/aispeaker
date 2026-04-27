@@ -48,6 +48,7 @@ import LectureBuilder from "./pages/LectureBuilder";
 import VideoHistory from "./pages/VideoHistory";
 import AdminFormatTemplates from "./pages/AdminFormatTemplates";
 import CommunityGallery from "./pages/CommunityGallery";
+import CreditDashboard from "./pages/CreditDashboard";
 import VideoEffectsStudio from "./pages/VideoEffectsStudio";
 import AkoolStudio, {
   AkoolImageToVideo,
@@ -139,6 +140,9 @@ function Router() {
 
       {/* Community Gallery */}
       <Route path="/community" component={CommunityGallery} />
+
+      {/* Credit Dashboard */}
+      <Route path="/credits" component={CreditDashboard} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

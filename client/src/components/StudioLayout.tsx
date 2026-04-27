@@ -148,13 +148,15 @@ export default function StudioLayout({ children, title, subtitle }: StudioLayout
 
           {/* Credits */}
           {!sidebarCollapsed && creditsQuery.data && (
-            <div className="px-3 py-2 border-b border-border/50">
-              <div className="flex items-center gap-2 text-xs">
-                <Zap className="h-3.5 w-3.5 text-yellow-500" />
-                <span className="text-muted-foreground">크레딧:</span>
-                <span className="font-semibold text-foreground">{creditsQuery.data.credits ?? "N/A"}</span>
+            <Link href="/credits">
+              <div className="px-3 py-2 border-b border-border/50 hover:bg-accent/50 transition-colors cursor-pointer">
+                <div className="flex items-center gap-2 text-xs">
+                  <Zap className="h-3.5 w-3.5 text-yellow-500" />
+                  <span className="text-muted-foreground">크레딧:</span>
+                  <span className="font-semibold text-foreground">{creditsQuery.data.credits ?? "N/A"}</span>
+                </div>
               </div>
-            </div>
+            </Link>
           )}
 
           {/* Menu Sections */}
