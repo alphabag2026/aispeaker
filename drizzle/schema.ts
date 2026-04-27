@@ -1641,3 +1641,20 @@ export const galleryPosts = mysqlTable("galleryPosts", {
 });
 export type GalleryPost = typeof galleryPosts.$inferSelect;
 export type InsertGalleryPost = typeof galleryPosts.$inferInsert;
+
+
+// v8.3 - AI Generations History
+export const aiGenerations = mysqlTable("ai_generations", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("userId").notNull(),
+  tool: varchar("tool", { length: 50 }).notNull(), // tts, voice_clone, voice_change, image_gen, bg_remove, video_effects, image_to_video, face_swap, talking_avatar, video_translate
+  inputSummary: text("inputSummary"), // brief description of input
+  outputUrl: text("outputUrl"), // S3 URL of result
+  outputType: varchar("outputType", { length: 20 }).notNull(), // audio, image, video
+  creditsUsed: int("creditsUsed").default(0).notNull(),
+  status: varchar("status", { length: 20 }).default("completed").notNull(), // completed, failed
+  metadata: json("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AiGeneration = typeof aiGenerations.$inferSelect;
+export type InsertAiGeneration = typeof aiGenerations.$inferInsert;

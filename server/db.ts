@@ -2622,3 +2622,91 @@ export async function getUserPostLikes(userId: number) {
   if (!db) return [];
   return db.select({ galleryItemId: galleryLikes.galleryItemId }).from(galleryLikes).where(eq(galleryLikes.userId, userId));
 }
+
+// ═══════════ v8.3 - AI Generations History ═══════════
+import { aiGenerations, type InsertAiGeneration } from "../drizzle/schema";
+
+export async function createAiGeneration(data: InsertAiGeneration) {
+  const db = await getDb(); if (!db) return null;
+  const [result] = await db.insert(aiGenerations).values(data);
+  return result.insertId;
+}
+
+export async function getAiGenerationsByUser(userId: number, opts?: { tool?: string; limit?: number; offset?: number }) {
+  const db = await getDb(); if (!db) return [];
+  const limit = opts?.limit ?? 20;
+  const offset = opts?.offset ?? 0;
+  const conditions = [eq(aiGenerations.userId, userId)];
+  if (opts?.tool) conditions.push(eq(aiGenerations.tool, opts.tool));
+  return db.select().from(aiGenerations)
+    .where(and(...conditions))
+    .orderBy(desc(aiGenerations.createdAt))
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function getAiGenerationCount(userId: number) {
+  const db = await getDb(); if (!db) return 0;
+  const [result] = await db.select({ count: sql<number>`count(*)` }).from(aiGenerations).where(eq(aiGenerations.userId, userId));
+  return result?.count ?? 0;
+}
+
+// ═══════════ v8.3 - Admin Analytics ═══════════
+export async function getAdminCreditSalesStats(period: "day" | "week" | "month") {
+  const db = await getDb(); if (!db) return [];
+  const groupFormat = period === "day" ? "%Y-%m-%d" : period === "week" ? "%Y-%u" : "%Y-%m";
+  const rows = await db.execute(sql`
+    SELECT DATE_FORMAT(createdAt, ${groupFormat}) as period, 
+           SUM(amount) as totalAmount, 
+           COUNT(*) as txCount
+    FROM credit_transactions 
+    WHERE type = 'purchase'
+    GROUP BY period 
+    ORDER BY period DESC 
+    LIMIT 30
+  `);
+  return (rows as any)[0] || [];
+}
+
+export async function getAdminToolUsageStats() {
+  const db = await getDb(); if (!db) return [];
+  const rows = await db.execute(sql`
+    SELECT tool, COUNT(*) as useCount, SUM(creditsUsed) as totalCredits
+    FROM ai_generations
+    GROUP BY tool
+    ORDER BY useCount DESC
+  `);
+  return (rows as any)[0] || [];
+}
+
+export async function getAdminUserStats() {
+  const db = await getDb(); if (!db) return { totalUsers: 0, dau: 0, wau: 0, mau: 0, newToday: 0 };
+  const [totalUsers] = await db.select({ count: sql<number>`count(*)` }).from(users);
+  const todayActive = await db.execute(sql`
+    SELECT COUNT(DISTINCT userId) as cnt FROM ai_generations WHERE DATE(createdAt) = CURDATE()
+  `);
+  const weekActive = await db.execute(sql`
+    SELECT COUNT(DISTINCT userId) as cnt FROM ai_generations WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+  `);
+  const monthActive = await db.execute(sql`
+    SELECT COUNT(DISTINCT userId) as cnt FROM ai_generations WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+  `);
+  const newToday = await db.execute(sql`
+    SELECT COUNT(*) as cnt FROM users WHERE DATE(createdAt) = CURDATE()
+  `);
+  return {
+    totalUsers: totalUsers?.count ?? 0,
+    dau: (todayActive as any)?.[0]?.[0]?.cnt ?? 0,
+    wau: (weekActive as any)?.[0]?.[0]?.cnt ?? 0,
+    mau: (monthActive as any)?.[0]?.[0]?.cnt ?? 0,
+    newToday: (newToday as any)?.[0]?.[0]?.cnt ?? 0,
+  };
+}
+
+export async function getGalleryPostsByUser(userId: number, limit = 20) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(galleryPosts)
+    .where(eq(galleryPosts.userId, userId))
+    .orderBy(desc(galleryPosts.createdAt))
+    .limit(limit);
+}

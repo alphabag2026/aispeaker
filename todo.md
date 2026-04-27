@@ -1433,3 +1433,30 @@
 ### 테스트 및 배포
 - [x] v8.2 vitest 11개 테스트 통과 (v8.2-features.test.ts)
 - [ ] 프로덕션 배포 v8.2
+
+## v8.3 - 사용자 프로필 + AI 히스토리 + 관리자 매출 분석
+
+### 사용자 프로필 페이지
+- [x] 프로필 정보 표시 (이름, 이메일, 가입일, 역할)
+- [x] 구독/크레딧 현황 요약 카드
+- [x] 내 작품 갤러리 (최근 공유한 콘텐츠)
+- [x] 계정 설정 (닉네임 변경, 소개 편집)
+- [x] /profile 라우트 등록
+
+### AI Studio 결과물 히스토리
+- [x] aiGenerations DB 테이블 (생성 이력 저장) + 마이그레이션 적용
+- [x] aiHistory.list tRPC 프로시저 (tool 필터 + 페이지네이션)
+- [x] AiHistory.tsx 페이지 (도구별 필터, 날짜 정렬, 10개 도구 레이블)
+- [x] 결과물 다운로드 링크
+- [x] /ai-history 라우트 등록
+
+### 관리자 대시보드 매출 분석
+- [x] adminAnalytics tRPC 라우터 (creditSales/toolUsage/userStats)
+- [x] 크레딧 판매 현황 (일/주/월별 Select)
+- [x] 인기 도구 순위 막대 그래프 (10개 도구)
+- [x] 사용자 통계 (DAU/WAU/MAU/신규가입) 5개 카드
+- [x] /admin/analytics 라우트 등록 + admin 권한 가드
+
+### 테스트 및 배포
+- [x] v8.3 vitest 13개 테스트 통과 (v8.3-features.test.ts)
+- [ ] 프로덕션 배포 v8.3
