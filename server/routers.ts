@@ -7129,6 +7129,45 @@ Return a JSON object with a "sections" array. Each section has:
         return { success: true };
       }),
   }),
+
+  // v9.3: Admin Statistics
+  adminStats: router({
+    userSignups: protectedProcedure
+      .input(z.object({ days: z.number().default(30) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getUserSignupStats(input.days);
+      }),
+    userActivity: protectedProcedure
+      .input(z.object({ days: z.number().default(30) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getUserActivityStats(input.days);
+      }),
+    userTotals: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getUserTotalStats();
+      }),
+    topPresets: protectedProcedure
+      .input(z.object({ limit: z.number().default(10), sortBy: z.enum(["likes", "downloads"]).default("likes"), type: z.enum(["avatar", "subtitle"]).default("avatar") }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (input.type === "avatar") return db.getTopPresets(input.limit, input.sortBy);
+        return db.getTopSubtitlePresets(input.limit, input.sortBy);
+      }),
+    presetCategories: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getPresetCategoryStats();
+      }),
+    presetGrowth: protectedProcedure
+      .input(z.object({ days: z.number().default(30) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getPresetGrowthStats(input.days);
+      }),
+  }),
 });
 
 // SRT time formatter
