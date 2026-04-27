@@ -1,0 +1,20 @@
+CREATE TABLE `galleryPosts` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`title` varchar(500) NOT NULL,
+	`description` text,
+	`mediaType` enum('image','video','audio') NOT NULL DEFAULT 'image',
+	`mediaUrl` text NOT NULL,
+	`mediaFileKey` text,
+	`thumbnailUrl` text,
+	`toolUsed` varchar(100),
+	`tags` json,
+	`likeCount` int NOT NULL DEFAULT 0,
+	`commentCount` int NOT NULL DEFAULT 0,
+	`viewCount` int NOT NULL DEFAULT 0,
+	`isPublic` boolean NOT NULL DEFAULT true,
+	`isFeatured` boolean NOT NULL DEFAULT false,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `galleryPosts_id` PRIMARY KEY(`id`)
+);

@@ -3238,7 +3238,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
     // Use credits for a feature
     useCredits: protectedProcedure
       .input(z.object({
-        feature: z.enum(["script_generation", "tts_conversion", "avatar_video", "deepfake_transform", "thumbnail_generation", "subtitle_generation", "voice_modulation", "live_broadcast"]),
+        feature: z.enum(["script_generation", "tts_conversion", "avatar_video", "deepfake_transform", "thumbnail_generation", "subtitle_generation", "voice_modulation", "live_broadcast", "image_generation", "bg_remove", "voice_clone", "voice_change", "video_effects", "image_to_video", "face_swap", "talking_avatar", "video_translate"]),
         resourceId: z.number().optional(),
         metadata: z.any().optional(),
       }))
@@ -6163,6 +6163,156 @@ Return a JSON object with a "sections" array. Each section has:
           originalImages: [{ url: input.imageUrl }],
         });
         return { imageUrl: result.url || null };
+      }),
+  }),
+
+  // ═══════════ v8.1 Video Effects (V2V) ═══════════
+  videoEffects: router({
+    categories: publicProcedure.query(async () => {
+      const { VIDEO_EFFECT_CATEGORIES } = await import("./kling");
+      return VIDEO_EFFECT_CATEGORIES;
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        effectScene: z.string().min(1),
+        imageUrl: z.string().url().optional(),
+        imageUrls: z.array(z.string().url()).length(2).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { createVideoEffect } = await import("./kling");
+        const result = await createVideoEffect({
+          effectScene: input.effectScene,
+          imageUrl: input.imageUrl,
+          imageUrls: input.imageUrls,
+        });
+        return result;
+      }),
+
+    status: publicProcedure
+      .input(z.object({ taskId: z.string() }))
+      .query(async ({ input }) => {
+        const { getVideoEffectStatus } = await import("./kling");
+        return getVideoEffectStatus(input.taskId);
+      }),
+
+    upload: protectedProcedure
+      .input(z.object({
+        fileData: z.string(),
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.fileData, "base64");
+        const fileKey = `v2v/${ctx.user.id}/${nanoid()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        return { url };
+      }),
+  }),
+
+  // ═══════════ v8.1 Community Gallery Posts ═══════════
+  community: router({
+    list: publicProcedure
+      .input(z.object({
+        limit: z.number().min(1).max(50).default(20),
+        offset: z.number().min(0).default(0),
+        toolUsed: z.string().optional(),
+        sort: z.enum(["latest", "popular"]).default("latest"),
+        tag: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.listGalleryPosts({
+          limit: input?.limit ?? 20,
+          offset: input?.offset ?? 0,
+          toolUsed: input?.toolUsed,
+          sort: input?.sort ?? "latest",
+          tag: input?.tag,
+        });
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const post = await db.getGalleryPostById(input.id);
+        if (post) await db.incrementGalleryPostView(input.id);
+        return post;
+      }),
+
+    myPosts: protectedProcedure.query(async ({ ctx }) => {
+      return db.getMyGalleryPosts(ctx.user.id);
+    }),
+
+    create: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1).max(500),
+        description: z.string().optional(),
+        mediaType: z.enum(["image", "video", "audio"]).default("image"),
+        mediaUrl: z.string().url(),
+        mediaFileKey: z.string().optional(),
+        thumbnailUrl: z.string().optional(),
+        toolUsed: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        isPublic: z.boolean().default(true),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createGalleryPost({
+          userId: ctx.user.id,
+          title: input.title,
+          description: input.description,
+          mediaType: input.mediaType,
+          mediaUrl: input.mediaUrl,
+          mediaFileKey: input.mediaFileKey,
+          thumbnailUrl: input.thumbnailUrl,
+          toolUsed: input.toolUsed,
+          tags: input.tags,
+          isPublic: input.isPublic,
+        });
+        return { id };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteGalleryPost(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    like: protectedProcedure
+      .input(z.object({ postId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const liked = await db.toggleGalleryPostLike(input.postId, ctx.user.id);
+        return { liked };
+      }),
+
+    comments: publicProcedure
+      .input(z.object({ postId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getGalleryPostComments(input.postId);
+      }),
+
+    addComment: protectedProcedure
+      .input(z.object({ postId: z.number(), content: z.string().min(1).max(1000) }))
+      .mutation(async ({ ctx, input }) => {
+        await db.addGalleryPostComment(input.postId, ctx.user.id, input.content);
+        return { success: true };
+      }),
+
+    myLikes: protectedProcedure.query(async ({ ctx }) => {
+      const likes = await db.getUserPostLikes(ctx.user.id);
+      return likes.map(l => l.galleryItemId);
+    }),
+
+    upload: protectedProcedure
+      .input(z.object({
+        fileData: z.string(), // base64
+        fileName: z.string(),
+        mimeType: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.fileData, "base64");
+        const fileKey = `community/${ctx.user.id}/${nanoid()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        return { url, fileKey };
       }),
   }),
 });

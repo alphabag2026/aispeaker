@@ -84,13 +84,23 @@ export default function Pricing() {
 
   const CREDIT_PRICING = [
     { action: t("pp.ci.script"), credits: 5, description: t("pp.ci.script_desc") },
-    { action: t("pp.ci.tts"), credits: 10, description: t("pp.ci.tts_desc") },
-    { action: t("pp.ci.avatar"), credits: 100, description: t("pp.ci.avatar_desc") },
-    { action: t("pp.ci.deepfake"), credits: 120, description: t("pp.ci.deepfake_desc") },
-    { action: t("pp.ci.thumbnail"), credits: 5, description: t("pp.ci.thumbnail_desc") },
+    { action: t("pp.ci.tts"), credits: 3, description: t("pp.ci.tts_desc") },
+    { action: t("pp.ci.avatar"), credits: 20, description: t("pp.ci.avatar_desc") },
+    { action: t("pp.ci.deepfake"), credits: 30, description: t("pp.ci.deepfake_desc") },
+    { action: t("pp.ci.thumbnail"), credits: 2, description: t("pp.ci.thumbnail_desc") },
     { action: t("pp.ci.subtitle"), credits: 3, description: t("pp.ci.subtitle_desc") },
-    { action: t("pp.ci.voice_mod"), credits: 15, description: t("pp.ci.voice_mod_desc") },
-    { action: t("pp.ci.live"), credits: 50, description: t("pp.ci.live_desc") },
+    { action: t("pp.ci.voice_mod"), credits: 5, description: t("pp.ci.voice_mod_desc") },
+    { action: t("pp.ci.live"), credits: 10, description: t("pp.ci.live_desc") },
+    // v8.1 AI Studio features
+    { action: "AI 이미지 생성", credits: 5, description: "AI Studio 이미지 생성 1건" },
+    { action: "배경 제거/교체", credits: 3, description: "AI 배경 제거 또는 교체 1건" },
+    { action: "음성 복제", credits: 5, description: "음성 복제(Voice Clone) 1건" },
+    { action: "음성 변환", credits: 3, description: "음성 변환(Voice Change) 1건" },
+    { action: "비디오 이펙트", credits: 15, description: "V2V 스타일 변환 1건" },
+    { action: "이미지→비디오", credits: 20, description: "Kling I2V 생성 1건" },
+    { action: "페이스 스왑", credits: 25, description: "AI 얼굴 변환 1건" },
+    { action: "토킹 아바타", credits: 20, description: "AI 토킹 아바타 1건" },
+    { action: "비디오 번역", credits: 30, description: "AI 비디오 번역 1건" },
   ];
 
   const handleSubscribe = async (planSlug: string) => {

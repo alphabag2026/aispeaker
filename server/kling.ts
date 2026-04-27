@@ -239,3 +239,125 @@ export async function getTextToVideoStatus(taskId: string): Promise<{
 export function isKlingConfigured(): boolean {
   return !!(ENV.klingAccessKey && ENV.klingSecretKey);
 }
+
+/**
+ * ═══════════════════════════════════════════════════════════
+ * v8.1 - Video Effects (V2V Style Transfer)
+ * POST /v1/videos/effects
+ * ═══════════════════════════════════════════════════════════
+ */
+
+/** Popular video effects categories for UI */
+export const VIDEO_EFFECT_CATEGORIES = {
+  style: [
+    { id: "japanese_anime_1", label: "일본 애니메이션", emoji: "🎌" },
+    { id: "american_comics", label: "미국 코믹스", emoji: "🦸" },
+    { id: "3d_cartoon_2", label: "3D 카툰", emoji: "🧸" },
+    { id: "c4d_cartoon_pro", label: "C4D 카툰 Pro", emoji: "✨" },
+    { id: "steampunk", label: "스팀펑크", emoji: "⚙️" },
+    { id: "mythic_style", label: "신화 스타일", emoji: "🏛️" },
+    { id: "anime_figure", label: "애니메 피규어", emoji: "🎎" },
+    { id: "yearbook", label: "졸업앨범", emoji: "📸" },
+    { id: "instant_film", label: "인스턴트 필름", emoji: "🎞️" },
+    { id: "pixelpixel", label: "픽셀 아트", emoji: "👾" },
+  ],
+  fun: [
+    { id: "color_mixing", label: "컬러 믹싱", emoji: "🎨" },
+    { id: "bullet_time", label: "불릿 타임", emoji: "🔫" },
+    { id: "bullet_time_360", label: "360° 불릿 타임", emoji: "🌀" },
+    { id: "zoom_out", label: "줌 아웃", emoji: "🔍" },
+    { id: "phantom_jewel", label: "팬텀 주얼", emoji: "💎" },
+    { id: "guardian_spirit", label: "수호 정령", emoji: "🐉" },
+    { id: "magic_fireball", label: "매직 파이어볼", emoji: "🔥" },
+    { id: "lightning_power", label: "라이트닝 파워", emoji: "⚡" },
+  ],
+  transform: [
+    { id: "pure_white_wings", label: "화이트 윙", emoji: "🕊️" },
+    { id: "black_wings", label: "블랙 윙", emoji: "🦇" },
+    { id: "golden_wing", label: "골든 윙", emoji: "✨" },
+    { id: "fairy_wing", label: "페어리 윙", emoji: "🧚" },
+    { id: "angel_wing", label: "엔젤 윙", emoji: "👼" },
+    { id: "dark_wing", label: "다크 윙", emoji: "🖤" },
+    { id: "throne_of_king", label: "왕좌", emoji: "👑" },
+    { id: "luminous_elf", label: "빛나는 엘프", emoji: "🌟" },
+  ],
+  dance: [
+    { id: "swag_dance", label: "스웨그 댄스", emoji: "💃" },
+    { id: "cute_dance", label: "큐트 댄스", emoji: "🎀" },
+    { id: "ghost_step_dance", label: "고스트 스텝", emoji: "👻" },
+    { id: "poping", label: "팝핑", emoji: "🤖" },
+    { id: "heart_gesture_dance", label: "하트 제스처", emoji: "💕" },
+    { id: "motorcycle_dance", label: "모터사이클 댄스", emoji: "🏍️" },
+    { id: "subject_3_dance", label: "과목3 댄스", emoji: "🎶" },
+    { id: "bouncy_dance", label: "바운시 댄스", emoji: "🦘" },
+  ],
+  dual: [
+    { id: "fight_pro", label: "파이트", emoji: "🥊", dual: true },
+    { id: "hug_pro", label: "허그", emoji: "🤗", dual: true },
+    { id: "heart_gesture_pro", label: "하트 제스처", emoji: "💕", dual: true },
+    { id: "kiss_pro", label: "키스", emoji: "💋", dual: true },
+    { id: "cheers_2026", label: "건배", emoji: "🥂", dual: true },
+  ],
+};
+
+/**
+ * Create a Video Effects task
+ */
+export async function createVideoEffect(params: {
+  effectScene: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+}): Promise<{ taskId: string; taskStatus: string }> {
+  const { effectScene, imageUrl, imageUrls } = params;
+
+  const input: any = {};
+  if (imageUrls && imageUrls.length === 2) {
+    input.images = imageUrls;
+  } else if (imageUrl) {
+    input.image = imageUrl;
+  } else {
+    throw new Error("imageUrl or imageUrls is required");
+  }
+
+  const result = await klingRequest("POST", "/v1/videos/effects", {
+    effect_scene: effectScene,
+    input,
+  });
+
+  console.log("[KLING] Video Effect task created:", JSON.stringify(result));
+
+  if (result.code !== 0) {
+    throw new Error(`KLING API error: ${result.message}`);
+  }
+
+  return {
+    taskId: result.data.task_id,
+    taskStatus: result.data.task_status,
+  };
+}
+
+/**
+ * Query the status of a Video Effects task
+ */
+export async function getVideoEffectStatus(taskId: string): Promise<{
+  taskId: string;
+  taskStatus: string;
+  taskStatusMsg?: string;
+  videoUrl?: string;
+}> {
+  const result = await klingRequest("GET", `/v1/videos/effects/${taskId}`);
+
+  if (result.code !== 0) {
+    throw new Error(`KLING API error: ${result.message}`);
+  }
+
+  const data = result.data;
+  const videoUrl = data.task_result?.videos?.[0]?.url || null;
+
+  return {
+    taskId: data.task_id,
+    taskStatus: data.task_status,
+    taskStatusMsg: data.task_status_msg,
+    videoUrl,
+  };
+}

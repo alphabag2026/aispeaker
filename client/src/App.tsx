@@ -47,6 +47,8 @@ import ResetPassword from "./pages/ResetPassword";
 import LectureBuilder from "./pages/LectureBuilder";
 import VideoHistory from "./pages/VideoHistory";
 import AdminFormatTemplates from "./pages/AdminFormatTemplates";
+import CommunityGallery from "./pages/CommunityGallery";
+import VideoEffectsStudio from "./pages/VideoEffectsStudio";
 import AkoolStudio, {
   AkoolImageToVideo,
   AkoolFaceSwap,
@@ -129,9 +131,14 @@ function Router() {
       {/* AI Studio - 실시간 */}
       <Route path="/ai-studio/live-camera" component={AkoolLiveCamera} />
       <Route path="/ai-studio/streaming-avatar" component={AkoolStreamingAvatar} />
+      {/* AI Studio - V2V Effects */}
+      <Route path="/ai-studio/video-effects" component={VideoEffectsStudio} />
       {/* AI Studio - 라이브러리 */}
       <Route path="/ai-studio/models" component={AkoolModels} />
       <Route path="/ai-studio/effects" component={AkoolEffects} />
+
+      {/* Community Gallery */}
+      <Route path="/community" component={CommunityGallery} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
