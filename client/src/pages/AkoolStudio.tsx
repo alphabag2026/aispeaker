@@ -46,8 +46,45 @@ import {
   Eraser,
   Type,
   Globe,
+  Share2,
 } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useCreditDeduction } from "@/hooks/useCreditDeduction";
+import InsufficientCreditsDialog from "@/components/InsufficientCreditsDialog";
+import { useLocation } from "wouter";
+
+/** Shared gallery share helper */
+function useGalleryShare() {
+  const shareMut = trpc.community.create.useMutation({
+    onSuccess: () => toast.success("커뮤니티 갤러리에 공유되었습니다! 🎉"),
+    onError: (err: any) => toast.error(err.message || "공유 실패"),
+  });
+  return shareMut;
+}
+
+function ShareToGalleryButton({ mediaUrl, mediaType, toolUsed }: { mediaUrl: string; mediaType: "image" | "video" | "audio"; toolUsed: string }) {
+  const shareMut = useGalleryShare();
+  const [shared, setShared] = useState(false);
+  return (
+    <Button
+      variant="outline"
+      className="flex-1 gap-2"
+      disabled={shareMut.isPending || shared}
+      onClick={() => {
+        shareMut.mutate({
+          title: `AI Studio - ${toolUsed}`,
+          description: `AI Studio ${toolUsed} 도구로 생성한 작품입니다.`,
+          mediaUrl,
+          mediaType,
+          toolUsed,
+        }, { onSuccess: () => setShared(true) });
+      }}
+    >
+      <Share2 className="h-4 w-4" />
+      {shared ? "공유 완료" : "갤러리 공유"}
+    </Button>
+  );
+}
 
 /* ── Status helpers ── */
 const statusMap: Record<number, { label: string; icon: typeof Clock; color: string }> = {
@@ -79,6 +116,7 @@ function ImageToVideoTab() {
   const [selectedEffect, setSelectedEffect] = useState("");
   const [resultId, setResultId] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
 
   const i2vMut = trpc.akool.imageToVideo.useMutation({
     onSuccess: (data: any) => {
@@ -179,8 +217,8 @@ function ImageToVideoTab() {
           </div>
           <Button
             className="w-full glow-button"
-            disabled={!imageUrl || i2vMut.isPending}
-            onClick={() => i2vMut.mutate({ imageUrl, prompt, duration: parseInt(duration), resolution, effect: selectedEffect === "none" ? undefined : selectedEffect } as any)}
+            disabled={!imageUrl || i2vMut.isPending || isDeducting}
+            onClick={() => deductAndRun("image_to_video", () => i2vMut.mutate({ imageUrl, prompt, duration: parseInt(duration), resolution, effect: selectedEffect === "none" ? undefined : selectedEffect } as any))}
           >
             {i2vMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
             비디오 생성
@@ -222,6 +260,7 @@ function ImageToVideoTab() {
           )}
         </CardContent>
       </Card>
+      <InsufficientCreditsDialog open={insufficientCredits.open} onClose={closeInsufficientModal} feature={insufficientCredits.feature} currentCredits={insufficientCredits.currentCredits} requiredCredits={insufficientCredits.requiredCredits} />
     </div>
   );
 }
@@ -235,6 +274,7 @@ function FaceSwapTab() {
   const [targetUrl, setTargetUrl] = useState("");
   const [faceEnhance, setFaceEnhance] = useState(true);
   const [resultId, setResultId] = useState<string | null>(null);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
   const [resultUrl, setResultUrl] = useState<string | null>(null);
 
   const faceSwapMut = trpc.akool.faceSwapPro.useMutation({
@@ -296,7 +336,7 @@ function FaceSwapTab() {
             <Label className="text-sm font-medium">얼굴 향상</Label>
             <Switch checked={faceEnhance} onCheckedChange={setFaceEnhance} />
           </div>
-          <Button className="w-full glow-button" disabled={!sourceUrl || !targetUrl || faceSwapMut.isPending} onClick={() => faceSwapMut.mutate({ sourceUrl, targetUrl, faceEnhance } as any)}>
+          <Button className="w-full glow-button" disabled={!sourceUrl || !targetUrl || faceSwapMut.isPending || isDeducting} onClick={() => deductAndRun("face_swap", () => faceSwapMut.mutate({ sourceUrl, targetUrl, faceEnhance } as any))}>
             {faceSwapMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
             얼굴 교환 시작
           </Button>
@@ -355,6 +395,7 @@ function TalkingAvatarTab() {
   const [bgColor, setBgColor] = useState("#000000");
   const [resultId, setResultId] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
 
   const avatarMut = trpc.akool.createTalkingAvatar.useMutation({
     onSuccess: (data: any) => {
@@ -431,7 +472,7 @@ function TalkingAvatarTab() {
           <Button
             className="w-full glow-button"
             disabled={!avatarUrl || !script || avatarMut.isPending}
-            onClick={() => avatarMut.mutate({ avatarUrl, inputText: script, voiceId } as any)}
+            onClick={() => deductAndRun("talking_avatar", () => avatarMut.mutate({ avatarUrl, inputText: script, voiceId } as any))}
           >
             {avatarMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
             아바타 비디오 생성
@@ -485,6 +526,7 @@ function VideoTranslationTab() {
   const [targetLang, setTargetLang] = useState("ko");
   const [resultId, setResultId] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
 
   const translateMut = trpc.akool.translateVideo.useMutation({
     onSuccess: (data: any) => {
@@ -552,7 +594,7 @@ function VideoTranslationTab() {
               </SelectContent>
             </Select>
           </div>
-          <Button className="w-full glow-button" disabled={!videoUrl || translateMut.isPending} onClick={() => translateMut.mutate({ videoUrl, targetLang } as any)}>
+          <Button className="w-full glow-button" disabled={!videoUrl || translateMut.isPending || isDeducting} onClick={() => deductAndRun("video_translate", () => translateMut.mutate({ videoUrl, targetLang } as any))}>
             {translateMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Languages className="h-4 w-4 mr-2" />}
             번역 시작
           </Button>
@@ -607,6 +649,7 @@ function TTSTab() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
 
   const voicesQuery = trpc.akool.ttsVoices.useQuery();
   const ttsMut = trpc.akool.ttsGenerate.useMutation({
@@ -693,7 +736,7 @@ function TTSTab() {
               audioRef.current = null;
               setAudioUrl(null);
               setIsPlaying(false);
-              ttsMut.mutate({ text, voiceId, speed });
+              deductAndRun("tts_conversion", () => ttsMut.mutate({ text, voiceId, speed }));
             }}
           >
             {ttsMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Volume2 className="h-4 w-4 mr-2" />}
@@ -730,12 +773,7 @@ function TTSTab() {
                 <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(audioUrl, "_blank")}>
                   <Download className="h-4 w-4" /> 다운로드
                 </Button>
-                <Button variant="outline" className="flex-1 gap-2" onClick={() => {
-                  navigator.clipboard.writeText(audioUrl);
-                  toast.success("URL이 복사되었습니다");
-                }}>
-                  <ArrowRight className="h-4 w-4" /> URL 복사
-                </Button>
+                <ShareToGalleryButton mediaUrl={audioUrl} mediaType="audio" toolUsed="tts" />
               </div>
             </div>
           ) : (
@@ -761,6 +799,7 @@ function VoiceCloneTab() {
   const [matchedVoice, setMatchedVoice] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
 
   const cloneMut = trpc.akool.voiceClone.useMutation({
     onSuccess: (data) => {
@@ -802,7 +841,7 @@ function VoiceCloneTab() {
               audioRef.current = null;
               setAudioUrl(null);
               setIsPlaying(false);
-              cloneMut.mutate({ sampleAudioUrl: sampleUrl, text });
+              deductAndRun("voice_clone", () => cloneMut.mutate({ sampleAudioUrl: sampleUrl, text }));
             }}
           >
             {cloneMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mic className="h-4 w-4 mr-2" />}
@@ -841,9 +880,12 @@ function VoiceCloneTab() {
                   {isPlaying ? <Pause className="h-7 w-7 text-white" /> : <Play className="h-7 w-7 text-white ml-1" />}
                 </button>
               </div>
-              <Button variant="outline" className="w-full gap-2" onClick={() => window.open(audioUrl, "_blank")}>
-                <Download className="h-4 w-4" /> 다운로드
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(audioUrl, "_blank")}>
+                  <Download className="h-4 w-4" /> 다운로드
+                </Button>
+                <ShareToGalleryButton mediaUrl={audioUrl} mediaType="audio" toolUsed="voice-clone" />
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -869,6 +911,7 @@ function VoiceChangeTab() {
   const [originalText, setOriginalText] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
 
   const voicesQuery = trpc.akool.ttsVoices.useQuery();
   const changeMut = trpc.akool.voiceChange.useMutation({
@@ -924,11 +967,11 @@ function VoiceChangeTab() {
               audioRef.current = null;
               setAudioUrl(null);
               setIsPlaying(false);
-              changeMut.mutate({
+              deductAndRun("voice_change", () => changeMut.mutate({
                 sourceAudioUrl: sourceUrl,
                 targetVoiceId: targetVoice,
                 text: useTranscription ? undefined : text,
-              });
+              }));
             }}
           >
             {changeMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Headphones className="h-4 w-4 mr-2" />}
@@ -968,9 +1011,12 @@ function VoiceChangeTab() {
                   {isPlaying ? <Pause className="h-7 w-7 text-white" /> : <Play className="h-7 w-7 text-white ml-1" />}
                 </button>
               </div>
-              <Button variant="outline" className="w-full gap-2" onClick={() => window.open(audioUrl, "_blank")}>
-                <Download className="h-4 w-4" /> 다운로드
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(audioUrl, "_blank")}>
+                  <Download className="h-4 w-4" /> 다운로드
+                </Button>
+                <ShareToGalleryButton mediaUrl={audioUrl} mediaType="audio" toolUsed="voice-change" />
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -991,6 +1037,7 @@ function ImageGenTab() {
   const [prompt, setPrompt] = useState("");
   const [style, setStyle] = useState("realistic");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
 
   const genMut = trpc.akool.imageGen.useMutation({
     onSuccess: (data) => {
@@ -1055,7 +1102,7 @@ function ImageGenTab() {
             disabled={!prompt.trim() || genMut.isPending}
             onClick={() => {
               setImageUrl(null);
-              genMut.mutate({ prompt, style: style as any });
+              deductAndRun("image_generation", () => genMut.mutate({ prompt, style: style as any }));
             }}
           >
             {genMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
@@ -1086,12 +1133,7 @@ function ImageGenTab() {
                 <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(imageUrl, "_blank")}>
                   <Download className="h-4 w-4" /> 다운로드
                 </Button>
-                <Button variant="outline" className="flex-1 gap-2" onClick={() => {
-                  navigator.clipboard.writeText(imageUrl);
-                  toast.success("URL이 복사되었습니다");
-                }}>
-                  <ArrowRight className="h-4 w-4" /> URL 복사
-                </Button>
+                <ShareToGalleryButton mediaUrl={imageUrl} mediaType="image" toolUsed="image-gen" />
               </div>
             </div>
           ) : (
@@ -1115,6 +1157,7 @@ function BgRemoveTab() {
   const [newBg, setNewBg] = useState("");
   const [mode, setMode] = useState<"remove" | "change">("remove");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
 
   const bgMut = trpc.akool.bgRemove.useMutation({
     onSuccess: (data) => {
@@ -1158,10 +1201,10 @@ function BgRemoveTab() {
             disabled={!imageUrl || bgMut.isPending || (mode === "change" && !newBg.trim())}
             onClick={() => {
               setResultUrl(null);
-              bgMut.mutate({
+              deductAndRun("bg_remove", () => bgMut.mutate({
                 imageUrl,
                 newBackground: mode === "change" ? newBg : undefined,
-              });
+              }));
             }}
           >
             {bgMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
@@ -1188,9 +1231,12 @@ function BgRemoveTab() {
               <div className="rounded-xl overflow-hidden" style={{ background: "repeating-conic-gradient(#808080 0% 25%, transparent 0% 50%) 50% / 20px 20px" }}>
                 <img src={resultUrl} alt="Result" className="w-full object-contain max-h-[400px]" />
               </div>
-              <Button variant="outline" className="w-full gap-2" onClick={() => window.open(resultUrl, "_blank")}>
-                <Download className="h-4 w-4" /> 다운로드
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(resultUrl, "_blank")}>
+                  <Download className="h-4 w-4" /> 다운로드
+                </Button>
+                <ShareToGalleryButton mediaUrl={resultUrl} mediaType="image" toolUsed="bg-remove" />
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">

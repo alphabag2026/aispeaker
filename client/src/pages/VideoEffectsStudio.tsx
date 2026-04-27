@@ -2,6 +2,9 @@ import { useState, useRef } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useCreditDeduction } from "@/hooks/useCreditDeduction";
+import InsufficientCreditsDialog from "@/components/InsufficientCreditsDialog";
+import ShareToGalleryButton from "@/components/ShareToGalleryButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +31,7 @@ export default function VideoEffectsStudio() {
   const [imageUrl, setImageUrl] = useState("");
   const [imageUrl2, setImageUrl2] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const { deductAndRun, isDeducting, insufficientCredits, closeInsufficientModal } = useCreditDeduction();
   const [taskId, setTaskId] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -110,11 +114,11 @@ export default function VideoEffectsStudio() {
       return;
     }
     setResultUrl(null);
-    createMut.mutate({
+    deductAndRun("video_effects", () => createMut.mutate({
       effectScene: selectedEffect,
       imageUrl: isDual ? undefined : imageUrl,
       imageUrls: isDual ? [imageUrl, imageUrl2] : undefined,
-    });
+    }));
   };
 
   const handleReset = () => {
@@ -332,6 +336,7 @@ export default function VideoEffectsStudio() {
                         새로 만들기
                       </Button>
                     </div>
+                    <ShareToGalleryButton mediaUrl={resultUrl} mediaType="video" toolUsed="video-effects" />
                   </div>
                 ) : taskId ? (
                   <div className="flex flex-col items-center justify-center py-8">
@@ -350,6 +355,7 @@ export default function VideoEffectsStudio() {
           </div>
         </div>
       </div>
+      <InsufficientCreditsDialog open={insufficientCredits.open} onClose={closeInsufficientModal} feature={insufficientCredits.feature} currentCredits={insufficientCredits.currentCredits} requiredCredits={insufficientCredits.requiredCredits} />
     </div>
   );
 }
