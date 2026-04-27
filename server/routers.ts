@@ -5559,6 +5559,119 @@ Return a JSON object with a "sections" array. Each section has:
         ]);
         return { project, avatars, slides, scripts, annotations, avatarOverrides, insertContent, transitions };
       }),
+
+    // --- Interpreter Settings ---
+    updateInterpreterSettings: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        interpreterEnabled: z.boolean(),
+        interpreterLanguage: z.string().optional(),
+        interpreterVoiceId: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        await db.updateLectureProjectInterpreter(input.projectId, ctx.user.id, {
+          interpreterEnabled: input.interpreterEnabled,
+          interpreterLanguage: input.interpreterLanguage,
+          interpreterVoiceId: input.interpreterVoiceId,
+        });
+        return { success: true };
+      }),
+
+    // --- Auto-translate all slide scripts ---
+    autoTranslateSlides: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        targetLanguage: z.string().min(2).max(10),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const scripts = await db.listSlideScripts(input.projectId);
+        const scriptsWithText = scripts.filter((s: any) => s.scriptText && s.scriptText.trim());
+        if (scriptsWithText.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "번역할 스크립트가 없습니다" });
+
+        const langNames: Record<string, string> = {
+          ko: "Korean", en: "English", ja: "Japanese", zh: "Chinese",
+          es: "Spanish", fr: "French", de: "German", pt: "Portuguese",
+          ru: "Russian", ar: "Arabic", hi: "Hindi", vi: "Vietnamese",
+          th: "Thai", id: "Indonesian", tr: "Turkish", pl: "Polish",
+          nl: "Dutch", sv: "Swedish", it: "Italian", ms: "Malay",
+        };
+        const targetLangName = langNames[input.targetLanguage] || input.targetLanguage;
+
+        const sectionsText = scriptsWithText.map((s: any, i: number) => `[Slide ${s.slideId}]\n${s.scriptText}`).join("\n\n");
+
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional lecture interpreter/translator. Translate the following lecture slide scripts into ${targetLangName}. Maintain the same slide structure. Keep technical terms accurate. The translation should sound natural as if spoken by a native interpreter. Return ONLY a JSON object with a "translations" array of objects with "slideId" (number) and "text" (string) fields.`,
+            },
+            {
+              role: "user",
+              content: `Translate these lecture slide scripts to ${targetLangName}:\n\n${sectionsText}`,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "translated_slides",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  translations: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        slideId: { type: "number" },
+                        text: { type: "string" },
+                      },
+                      required: ["slideId", "text"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["translations"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        const rawContent = response.choices[0].message.content;
+        const contentStr = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
+        const parsed = JSON.parse(contentStr || '{ "translations": [] }');
+        const translations = parsed.translations || [];
+
+        // Save to DB
+        await db.bulkUpdateSlideScriptInterpreterTexts(input.projectId, translations.map((t: any) => ({
+          slideId: t.slideId,
+          interpreterText: t.text,
+        })));
+
+        // Update project interpreter settings
+        await db.updateLectureProjectInterpreter(input.projectId, ctx.user.id, {
+          interpreterEnabled: true,
+          interpreterLanguage: input.targetLanguage,
+        });
+
+        return { translations, count: translations.length };
+      }),
+
+    // --- Update single slide interpreter text ---
+    updateSlideInterpreterText: protectedProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        interpreterText: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.updateSlideScriptInterpreterText(input.scriptId, input.interpreterText);
+        return { success: true };
+      }),
   }),
 
   // ============ Admin Dashboard ============

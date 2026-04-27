@@ -3343,3 +3343,30 @@ export async function getPresetGrowthStats(days: number) {
   }).from(sharedPresets).where(gte(sharedPresets.createdAt, since)).groupBy(sql`DATE(createdAt)`).orderBy(sql`DATE(createdAt)`);
   return avatarRows;
 }
+
+
+// ── LectureBuilder Interpreter (v9.4) ──
+export async function updateLectureProjectInterpreter(projectId: number, userId: number, data: {
+  interpreterEnabled?: boolean;
+  interpreterLanguage?: string;
+  interpreterVoiceId?: string;
+}) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(lectureProjects).set(data).where(and(eq(lectureProjects.id, projectId), eq(lectureProjects.userId, userId)));
+}
+
+export async function updateSlideScriptInterpreterText(scriptId: number, interpreterText: string) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(slideScripts).set({ interpreterText }).where(eq(slideScripts.id, scriptId));
+}
+
+export async function bulkUpdateSlideScriptInterpreterTexts(projectId: number, translations: Array<{ slideId: number; interpreterText: string }>) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const scripts = await db.select().from(slideScripts).where(eq(slideScripts.projectId, projectId));
+  for (const t of translations) {
+    const script = scripts.find(s => s.slideId === t.slideId);
+    if (script) {
+      await db.update(slideScripts).set({ interpreterText: t.interpreterText }).where(eq(slideScripts.id, script.id));
+    }
+  }
+}

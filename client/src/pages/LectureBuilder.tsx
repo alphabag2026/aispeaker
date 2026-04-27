@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRoute, useLocation } from "wouter";
@@ -19,7 +20,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save
+  Copy, Save, Globe, Languages
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -1868,16 +1869,36 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   // Script assignments per slide
   const [slideScriptMap, setSlideScriptMap] = useState<Record<number, { text: string; avatarId?: number }>>({});
 
+  // ── Interpreter state ──
+  const [interpreterEnabled, setInterpreterEnabled] = useState(false);
+  const [interpreterLanguage, setInterpreterLanguage] = useState("en");
+  const [interpreterVoiceId, setInterpreterVoiceId] = useState("");
+  const [interpreterTexts, setInterpreterTexts] = useState<Record<number, string>>({});
+  const [showInterpreterPanel, setShowInterpreterPanel] = useState(false);
+
   // Initialize from existing data
   useEffect(() => {
     const map: Record<number, { text: string; avatarId?: number }> = {};
+    const iTexts: Record<number, string> = {};
     scripts.forEach((s: any) => {
       if (s.slideId && s.slideId > 0) {
         map[s.slideId] = { text: s.scriptText, avatarId: s.avatarId || undefined };
+        if (s.interpreterText) iTexts[s.slideId] = s.interpreterText;
       }
     });
     setSlideScriptMap(map);
+    setInterpreterTexts(iTexts);
   }, [scripts]);
+
+  // Load interpreter settings from project (passed via parent)
+  const projectQuery = trpc.lectureBuilder.getProject.useQuery({ id: projectId });
+  useEffect(() => {
+    if (projectQuery.data) {
+      setInterpreterEnabled(projectQuery.data.interpreterEnabled || false);
+      setInterpreterLanguage(projectQuery.data.interpreterLanguage || "en");
+      setInterpreterVoiceId(projectQuery.data.interpreterVoiceId || "");
+    }
+  }, [projectQuery.data]);
 
   const unassignedScripts = scripts.filter((s: any) => !s.slideId || s.slideId === 0);
   const currentSlide = slides[selectedSlideIdx];
@@ -1887,6 +1908,38 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const setScriptMut = trpc.lectureBuilder.setScript.useMutation();
   const saveDrawingMut = trpc.lectureBuilder.saveCanvasDrawing.useMutation();
   const deleteAnnotationMut = trpc.lectureBuilder.deleteAnnotation.useMutation();
+
+  // Interpreter mutations
+  const updateInterpreterSettingsMut = trpc.lectureBuilder.updateInterpreterSettings.useMutation({
+    onSuccess: () => { toast.success("통역 설정 저장됨"); projectQuery.refetch(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const autoTranslateSlidesMut = trpc.lectureBuilder.autoTranslateSlides.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.count}개 슬라이드 번역 완료`);
+      const newTexts: Record<number, string> = {};
+      data.translations.forEach((t: any) => { newTexts[t.slideId] = t.text; });
+      setInterpreterTexts(prev => ({ ...prev, ...newTexts }));
+      onRefresh();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const updateSlideInterpreterTextMut = trpc.lectureBuilder.updateSlideInterpreterText.useMutation({
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const INTERPRETER_LANGUAGES = [
+    { code: "ko", name: "한국어", flag: "🇰🇷" }, { code: "en", name: "English", flag: "🇺🇸" },
+    { code: "zh", name: "中文", flag: "🇨🇳" }, { code: "ja", name: "日本語", flag: "🇯🇵" },
+    { code: "es", name: "Español", flag: "🇪🇸" }, { code: "fr", name: "Français", flag: "🇫🇷" },
+    { code: "de", name: "Deutsch", flag: "🇩🇪" }, { code: "pt", name: "Português", flag: "🇧🇷" },
+    { code: "ru", name: "Русский", flag: "🇷🇺" }, { code: "ar", name: "العربية", flag: "🇸🇦" },
+    { code: "hi", name: "हिन्दी", flag: "🇮🇳" }, { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
+    { code: "th", name: "ไทย", flag: "🇹🇭" }, { code: "id", name: "Indonesia", flag: "🇮🇩" },
+    { code: "tr", name: "Türkçe", flag: "🇹🇷" }, { code: "pl", name: "Polski", flag: "🇵🇱" },
+    { code: "nl", name: "Nederlands", flag: "🇳🇱" }, { code: "sv", name: "Svenska", flag: "🇸🇪" },
+    { code: "it", name: "Italiano", flag: "🇮🇹" }, { code: "ms", name: "Melayu", flag: "🇲🇾" },
+  ];
 
   // Avatar overlay per-slide
   const [showAvatarPanel, setShowAvatarPanel] = useState(false);
@@ -2897,6 +2950,109 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                   <p className="text-sm text-muted-foreground">슬라이드를 선택하세요</p>
                 )}
               </CardContent>
+            </Card>
+
+            {/* Interpreter Panel */}
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-1.5">
+                    <Globe className="h-4 w-4" /> 통역 모드
+                  </CardTitle>
+                  <Switch
+                    checked={interpreterEnabled}
+                    onCheckedChange={(checked) => {
+                      setInterpreterEnabled(checked);
+                      updateInterpreterSettingsMut.mutate({
+                        projectId,
+                        interpreterEnabled: checked,
+                        interpreterLanguage,
+                        interpreterVoiceId: interpreterVoiceId || undefined,
+                      });
+                    }}
+                  />
+                </div>
+              </CardHeader>
+              {interpreterEnabled && (
+                <CardContent className="space-y-3">
+                  {/* Language selector */}
+                  <div>
+                    <Label className="text-xs">통역 언어</Label>
+                    <Select
+                      value={interpreterLanguage}
+                      onValueChange={(v) => {
+                        setInterpreterLanguage(v);
+                        updateInterpreterSettingsMut.mutate({
+                          projectId,
+                          interpreterEnabled: true,
+                          interpreterLanguage: v,
+                          interpreterVoiceId: interpreterVoiceId || undefined,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {INTERPRETER_LANGUAGES.map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            {lang.flag} {lang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Auto translate button */}
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    variant="outline"
+                    disabled={autoTranslateSlidesMut.isPending}
+                    onClick={() => {
+                      autoTranslateSlidesMut.mutate({ projectId, targetLanguage: interpreterLanguage });
+                    }}
+                  >
+                    {autoTranslateSlidesMut.isPending ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> AI 번역 중...</>
+                    ) : (
+                      <><Languages className="h-3 w-3 mr-1" /> 전체 슬라이드 자동 번역</>
+                    )}
+                  </Button>
+
+                  {/* Current slide interpreter text */}
+                  {currentSlide && (
+                    <div>
+                      <Label className="text-xs">슬라이드 {selectedSlideIdx + 1} 통역 텍스트</Label>
+                      <Textarea
+                        value={interpreterTexts[currentSlide.id] || ""}
+                        onChange={(e) => {
+                          setInterpreterTexts(prev => ({ ...prev, [currentSlide.id]: e.target.value }));
+                        }}
+                        onBlur={() => {
+                          if (currentSlide) {
+                            const script = scripts.find((s: any) => s.slideId === currentSlide.id);
+                            if (script) {
+                              updateSlideInterpreterTextMut.mutate({
+                                scriptId: script.id,
+                                interpreterText: interpreterTexts[currentSlide.id] || "",
+                              });
+                            }
+                          }
+                        }}
+                        placeholder="통역 텍스트를 입력하거나 자동 번역을 사용하세요..."
+                        rows={3}
+                        className="text-xs"
+                      />
+                    </div>
+                  )}
+
+                  {/* Translation progress */}
+                  {Object.keys(interpreterTexts).length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      번역 완료: {Object.keys(interpreterTexts).filter(k => interpreterTexts[parseInt(k)]).length} / {slides.length} 슬라이드
+                    </div>
+                  )}
+                </CardContent>
+              )}
             </Card>
 
             {/* Unassigned scripts pool */}
