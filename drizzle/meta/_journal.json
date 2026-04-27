@@ -232,6 +232,13 @@
       "when": 1777265364620,
       "tag": "0032_certain_kinsey_walden",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1777287130942,
+      "tag": "0033_aspiring_sentinels",
+      "breakpoints": true
     }
   ]
 }

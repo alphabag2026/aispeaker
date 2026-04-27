@@ -91,3 +91,29 @@ registerTranslations("ja", {
   "trouble.need_help": "さらにサポートが必要ですか？",
   "trouble.contact_support": "カスタマーサポートにお問い合わせ",
 });
+
+// Other languages (fallback to English)
+const otherLanguages = ["vi","th","es","fr","de","pt","ru","ar","hi","id","ms","tr","it","nl","pl","sv"];
+otherLanguages.forEach(lang => {
+  registerTranslations(lang, {
+    "trouble.title": "Payment Troubleshooting Guide",
+    "trouble.subtitle": "We'll help you resolve payment issues quickly",
+    "trouble.test_card_title": "Test Card Information",
+    "trouble.test_card_desc": "Card numbers available for testing environment",
+    "trouble.test_card_number": "Test Card Number",
+    "trouble.copy": "Copy",
+    "trouble.copied": "Copied!",
+    "trouble.common_issues": "Common Payment Issues",
+    "trouble.failure_scenarios": "Stripe Test Card Failure Scenarios",
+    "trouble.failure_scenarios_desc": "Card numbers to test various payment failure situations",
+    "trouble.card_number": "Card Number",
+    "trouble.error_message": "Error Message",
+    "trouble.description": "Description",
+    "trouble.solution": "Solution",
+    "trouble.symptom": "Symptom",
+    "trouble.cause": "Cause",
+    "trouble.back_to_pricing": "Back to Pricing",
+    "trouble.need_help": "Need more help?",
+    "trouble.contact_support": "Contact customer support"
+  });
+});

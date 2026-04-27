@@ -187,3 +187,53 @@ registerTranslations("ja", {
   "pricing.business_plan": "ビジネス",
   "pricing.enterprise_plan": "エンタープライズ",
 });
+
+// Other languages (fallback to English)
+const otherLanguages = ["vi","th","es","fr","de","pt","ru","ar","hi","id","ms","tr","it","nl","pl","sv"];
+otherLanguages.forEach(lang => {
+  registerTranslations(lang, {
+    "pricing.title": "Pricing",
+    "pricing.subtitle": "All AI lecture automation features at reasonable prices",
+    "pricing.monthly": "Monthly",
+    "pricing.yearly": "Yearly",
+    "pricing.yearly_discount": "20% off",
+    "pricing.per_month": "/ mo",
+    "pricing.per_year": "/ yr",
+    "pricing.subscribe": "Subscribe",
+    "pricing.current_plan": "Current Plan",
+    "pricing.most_popular": "Most Popular",
+    "pricing.enterprise_contact": "Contact Us",
+    "pricing.credits_month": "credits/mo",
+    "pricing.lectures_month": "lectures/mo",
+    "pricing.video_quality": "Video Quality",
+    "pricing.face_presets": "Face Presets",
+    "pricing.voice_presets": "Voice Presets",
+    "pricing.deepfake": "Deepfake Transform",
+    "pricing.priority_support": "Priority Support",
+    "pricing.custom_branding": "Custom Branding",
+    "pricing.api_access": "API Access",
+    "pricing.unlimited": "Unlimited",
+    "pricing.credit_packages": "Credit Packages",
+    "pricing.credit_packages_subtitle": "Purchase additional credits as needed",
+    "pricing.per_credit": "per credit",
+    "pricing.buy_credits": "Buy Credits",
+    "pricing.credit_usage": "Credit Usage",
+    "pricing.credit_usage_subtitle": "Credit consumption by feature",
+    "pricing.roi_title": "How much can you save with AI Speaker?",
+    "pricing.roi_subtitle": "Cost savings compared to traditional lecture production",
+    "pricing.traditional": "Traditional (10 lectures/mo)",
+    "pricing.ai_speaker": "AI Speaker (10 lectures/mo)",
+    "pricing.total_monthly": "Total Monthly Cost",
+    "pricing.savings": "Monthly Savings",
+    "pricing.faq_title": "Frequently Asked Questions",
+    "pricing.crypto_title": "Crypto Payment",
+    "pricing.crypto_subtitle": "Pay with USDT, USDC, ETH, or BTC",
+    "pricing.troubleshoot_link": "Having payment issues?",
+    "pricing.login_required": "Login Required",
+    "pricing.free_plan": "Free",
+    "pricing.starter_plan": "Starter",
+    "pricing.pro_plan": "Professional",
+    "pricing.business_plan": "Business",
+    "pricing.enterprise_plan": "Enterprise"
+  });
+});

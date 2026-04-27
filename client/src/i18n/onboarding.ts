@@ -139,3 +139,41 @@ registerTranslations("ja", {
   "onboard.step6_title": "クレジット管理と最適化",
   "onboard.step6_subtitle": "効率的なクレジット使用でコストを削減",
 });
+
+// Other languages (fallback to English)
+const otherLanguages = ["vi","th","es","fr","de","pt","ru","ar","hi","id","ms","tr","it","nl","pl","sv"];
+otherLanguages.forEach(lang => {
+  registerTranslations(lang, {
+    "onboard.title": "Getting Started Guide",
+    "onboard.payment_complete": "Payment Complete",
+    "onboard.subtitle": "Step-by-step guide to the core features of the AI lecture platform. Follow these 6 steps to create your first AI lecture video and start live broadcasting.",
+    "onboard.total_time": "Estimated total time: about 30-42 minutes",
+    "onboard.progress": "Progress",
+    "onboard.steps_complete": "steps completed",
+    "onboard.all_complete": "All steps completed!",
+    "onboard.mark_complete": "Mark as Complete",
+    "onboard.mark_incomplete": "Mark as Incomplete",
+    "onboard.next_step": "Next Step",
+    "onboard.prev_step": "Previous Step",
+    "onboard.pro_tip": "PRO TIP",
+    "onboard.details": "Details",
+    "onboard.quick_links": "Quick Links",
+    "onboard.congrats": "Congratulations!",
+    "onboard.congrats_subtitle": "You've completed all onboarding steps",
+    "onboard.congrats_desc": "You're now ready to use all features of AI Speaker. Create your first AI lecture video!",
+    "onboard.go_studio": "Go to Studio",
+    "onboard.continue_browsing": "Continue Browsing",
+    "onboard.step1_title": "Choose AI Face",
+    "onboard.step1_subtitle": "Select an AI instructor persona for your lectures",
+    "onboard.step2_title": "Set Up AI Voice",
+    "onboard.step2_subtitle": "Configure voice style and language for lectures",
+    "onboard.step3_title": "Write Lecture Script",
+    "onboard.step3_subtitle": "AI automatically generates lecture scripts",
+    "onboard.step4_title": "Video Production Pipeline",
+    "onboard.step4_subtitle": "Create AI lecture videos with one click",
+    "onboard.step5_title": "Start Live Broadcasting",
+    "onboard.step5_subtitle": "Teach live on Zoom, Google Meet as an AI instructor",
+    "onboard.step6_title": "Credit Management & Optimization",
+    "onboard.step6_subtitle": "Save costs with efficient credit usage"
+  });
+});

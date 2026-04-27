@@ -103,3 +103,32 @@ registerTranslations("ja", {
   "nav.my_subscription": "サブスクリプション",
   "nav.certificates": "証明書",
 });
+
+// Other languages (fallback to English)
+const otherLanguages = ["vi","th","es","fr","de","pt","ru","ar","hi","id","ms","tr","it","nl","pl","sv"];
+otherLanguages.forEach(lang => {
+  registerTranslations(lang, {
+    "nav.home": "Home",
+    "nav.features": "Features",
+    "nav.ai_faces": "AI Faces",
+    "nav.ai_voices": "AI Voices",
+    "nav.pricing": "Pricing",
+    "nav.studio": "Studio",
+    "nav.dashboard": "Dashboard",
+    "nav.live": "Live",
+    "nav.admin": "Admin",
+    "nav.login": "Login",
+    "nav.signup": "Start Free",
+    "nav.logout": "Logout",
+    "nav.user": "User",
+    "nav.role_instructor": "Instructor",
+    "nav.role_student": "Student",
+    "nav.switch_instructor": "Switch to Instructor",
+    "nav.theme_toggle": "Toggle Theme",
+    "nav.ai_instructors": "AI Instructors",
+    "nav.my_lectures": "My Lectures",
+    "nav.create": "Create Lecture",
+    "nav.my_subscription": "Subscription",
+    "nav.certificates": "Certificates"
+  });
+});

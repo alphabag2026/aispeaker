@@ -20,7 +20,7 @@ import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, User2, Settings2, Edit3, History,
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera,
-  Presentation, Video, Zap, Film
+  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -78,6 +78,33 @@ export default function ProductionStudio() {
   const [pptUploadTitle, setPptUploadTitle] = useState("");
   const [pptUploading, setPptUploading] = useState(false);
   const [previewSlideIdx, setPreviewSlideIdx] = useState<number | null>(null);
+
+  // Interpreter mode state
+  const [interpreterEnabled, setInterpreterEnabled] = useState(false);
+  const [interpreterLanguage, setInterpreterLanguage] = useState("en");
+  const [interpreterVoiceId, setInterpreterVoiceId] = useState("");
+  const [interpreterSections, setInterpreterSections] = useState<Array<{originalContent: string; interpretedContent: string; durationSec: number}>>([]);
+
+  // Direct recording state
+  const [useDirectRecording, setUseDirectRecording] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
+  const webcamStreamRef = useRef<MediaStream | null>(null);
+
+  // Draggable PiP avatar position & size
+  const [pipPosition, setPipPosition] = useState({ x: 75, y: 75 });
+  const [pipSizePercent, setPipSizePercent] = useState(25);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0, pipX: 0, pipY: 0 });
+  const resizeStartRef = useRef({ x: 0, y: 0, size: 25 });
+  const slideContainerRef = useRef<HTMLDivElement>(null);
   // Batch PIP state
   const [batchPipEnabled, setBatchPipEnabled] = useState(false);
   const [batchSelectedPptId, setBatchSelectedPptId] = useState<string>("none");
@@ -174,6 +201,118 @@ export default function ProductionStudio() {
     onError: (err) => toast.error(`${t("ps.pptUploadFailed")}: ${err.message}`),
   });
   const pipSettingsQuery = trpc.pip.get.useQuery(undefined, { enabled: !!user });
+  const updatePipMutation = trpc.pip.update.useMutation();
+
+  // Hydrate PiP position from saved settings
+  useEffect(() => {
+    if (pipSettingsQuery.data) {
+      const s = pipSettingsQuery.data;
+      if (s.position === "custom" && s.customX != null && s.customY != null) {
+        setPipPosition({ x: s.customX, y: s.customY });
+      } else {
+        const posMap: Record<string, { x: number; y: number }> = {
+          "bottom-right": { x: 80, y: 80 },
+          "bottom-left": { x: 20, y: 80 },
+          "top-right": { x: 80, y: 20 },
+          "top-left": { x: 20, y: 20 },
+        };
+        setPipPosition(posMap[s.position] || { x: 75, y: 75 });
+      }
+      if (s.size === "small") setPipSizePercent(15);
+      else if (s.size === "large") setPipSizePercent(40);
+      else setPipSizePercent(25);
+    }
+  }, [pipSettingsQuery.data]);
+
+  // Drag handlers for PiP avatar
+  const onPipDragStart = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!slideContainerRef.current) return;
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX, y: e.clientY, pipX: pipPosition.x, pipY: pipPosition.y };
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const onPipDragMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !slideContainerRef.current) return;
+    const rect = slideContainerRef.current.getBoundingClientRect();
+    const deltaX = e.clientX - dragStartRef.current.x;
+    const deltaY = e.clientY - dragStartRef.current.y;
+    const newX = dragStartRef.current.pipX + (deltaX / rect.width) * 100;
+    const newY = dragStartRef.current.pipY + (deltaY / rect.height) * 100;
+    setPipPosition({ x: Math.max(5, Math.min(95, newX)), y: Math.max(5, Math.min(95, newY)) });
+  }, [isDragging]);
+
+  const onPipDragEnd = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      // Save position
+      updatePipMutation.mutate({
+        position: "custom",
+        customX: Math.round(pipPosition.x),
+        customY: Math.round(pipPosition.y),
+        size: pipSizePercent < 20 ? "small" : pipSizePercent > 35 ? "large" : "medium",
+      });
+    }
+  }, [isDragging, pipPosition, pipSizePercent]);
+
+  // Resize handlers
+  const onResizeStart = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsResizing(true);
+    resizeStartRef.current = { x: e.clientX, y: e.clientY, size: pipSizePercent };
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const onResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizing || !slideContainerRef.current) return;
+    const rect = slideContainerRef.current.getBoundingClientRect();
+    const deltaX = e.clientX - resizeStartRef.current.x;
+    const deltaPercent = (deltaX / rect.width) * 100;
+    const newSize = resizeStartRef.current.size + deltaPercent;
+    setPipSizePercent(Math.max(10, Math.min(60, newSize)));
+  }, [isResizing]);
+
+  const onResizeEnd = useCallback(() => {
+    if (isResizing) {
+      setIsResizing(false);
+      updatePipMutation.mutate({
+        position: "custom",
+        customX: Math.round(pipPosition.x),
+        customY: Math.round(pipPosition.y),
+        size: pipSizePercent < 20 ? "small" : pipSizePercent > 35 ? "large" : "medium",
+      });
+    }
+  }, [isResizing, pipPosition, pipSizePercent]);
+
+  // Window event listeners for drag/resize
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mousemove", onPipDragMove);
+      window.addEventListener("mouseup", onPipDragEnd);
+    } else {
+      window.removeEventListener("mousemove", onPipDragMove);
+      window.removeEventListener("mouseup", onPipDragEnd);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onPipDragMove);
+      window.removeEventListener("mouseup", onPipDragEnd);
+    };
+  }, [isDragging, onPipDragMove, onPipDragEnd]);
+
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", onResizeMove);
+      window.addEventListener("mouseup", onResizeEnd);
+    } else {
+      window.removeEventListener("mousemove", onResizeMove);
+      window.removeEventListener("mouseup", onResizeEnd);
+    }
+    return () => {
+      window.removeEventListener("mousemove", onResizeMove);
+      window.removeEventListener("mouseup", onResizeEnd);
+    };
+  }, [isResizing, onResizeMove, onResizeEnd]);
 
   // Mutations
   const generateScript = trpc.script.generate.useMutation({
@@ -269,23 +408,22 @@ export default function ProductionStudio() {
     if (selectedTemplateQuery.data) {
       const t = selectedTemplateQuery.data;
       setTitle(t.name);
-      setPrompt(t.prompt);
+      setPrompt(t.name);
       setCategory(t.category);
       setDifficulty(t.difficulty);
-      setLanguage(t.language);
-      setDurationMin(t.durationMin);
+      setLanguage("ko");
+      setDurationMin(t.targetDurationMin || 10);
     }
   }, [selectedTemplateQuery.data]);
 
   const handleGenerateScript = () => {
     const cost = templateId ? 1 : 5; // Template-based is cheaper
-    checkCredits(cost, () => {
-      if (templateId) {
-        generateFromTemplate.mutate({ templateId });
-      } else {
-        generateScript.mutate({ title, prompt, category, difficulty, language, durationMin });
-      }
-    });
+    if (!checkCredits("script_generate", currentCredits, cost)) return;
+    if (templateId) {
+      generateFromTemplate.mutate({ templateId, title, prompt });
+    } else {
+      generateScript.mutate({ title, prompt, category: category as any, difficulty: difficulty as any, language, targetDurationMin: durationMin });
+    }
   };
 
   const handleCreateDirectScript = () => {
@@ -303,52 +441,57 @@ export default function ProductionStudio() {
 
   const handleStartPipeline = () => {
     if (!selectedScriptId) { toast.error(t("ps.noScriptSelected")); return; }
-    if (selectedVoiceModId !== "none" && !voiceModsQuery.data?.find(v => v.id === selectedVoiceModId)) { toast.error(t("ps.selectVoiceModProfile")); return; }
-    if (selectedFaceSwapId !== "none" && !faceSwapsQuery.data?.find(f => f.id === selectedFaceSwapId)) { toast.error(t("ps.selectFaceSwapProfile")); return; }
+    if (selectedVoiceModId !== "none" && !voiceModsQuery.data?.find(v => String(v.id) === selectedVoiceModId)) { toast.error(t("ps.selectVoiceModProfile")); return; }
+    if (selectedFaceSwapId !== "none" && !faceSwapsQuery.data?.find(f => String(f.id) === selectedFaceSwapId)) { toast.error(t("ps.selectFaceSwapProfile")); return; }
     if (pipEnabled && selectedPptId === "none") { toast.error(t("ps.selectPpt")); return; }
 
     const cost = 10; // TODO: more granular cost calculation
-    checkCredits(cost, () => {
-      toast.info(t("ps.startingVideoProduction"));
-      startPipeline.mutate({
+    if (!checkCredits("pipeline_start", currentCredits, cost)) return;
+    toast.info(t("ps.startingVideoProduction"));
+    startPipeline.mutate({
         scriptId: selectedScriptId!,
         title: pipelineTitle,
         ttsVoiceId,
-        voiceModId: selectedVoiceModId === "none" ? null : selectedVoiceModId,
-        faceSwapId: selectedFaceSwapId === "none" ? null : selectedFaceSwapId,
+        voiceModProfileId: selectedVoiceModId === "none" ? undefined : parseInt(selectedVoiceModId),
+        faceSwapProfileId: selectedFaceSwapId === "none" ? undefined : parseInt(selectedFaceSwapId),
         avatarEngine,
-        useSeedanceIntro: seedanceIntro,
-        useSeedanceOutro: seedanceOutro,
-        seedanceIntroPrompt: seedanceIntro ? seedanceIntroPrompt : null,
-        seedanceOutroPrompt: seedanceOutro ? seedanceOutroPrompt : null,
+        seedanceIntro: seedanceIntro,
+        seedanceOutro: seedanceOutro,
+        seedanceIntroPrompt: seedanceIntro ? seedanceIntroPrompt : undefined,
+        seedanceOutroPrompt: seedanceOutro ? seedanceOutroPrompt : undefined,
         pipEnabled,
-        pptId: pipEnabled && selectedPptId !== "none" ? parseInt(selectedPptId) : null,
-      }, {
-        onSuccess: (data: any) => {
-          setActivePipelineId(data.id);
-        }
-      });
+        pptUploadId: pipEnabled && selectedPptId !== "none" ? parseInt(selectedPptId) : undefined,
+    }, {
+      onSuccess: (data: any) => {
+        setActivePipelineId(data.id);
+      }
     });
   };
 
   const handleBatchStart = () => {
     if (batchSelectedIds.size === 0) { toast.error(t("ps.noScriptsSelectedForBatch")); return; }
-    if (batchVoiceModId !== "none" && !voiceModsQuery.data?.find(v => v.id === batchVoiceModId)) { toast.error(t("ps.selectVoiceModProfile")); return; }
-    if (batchFaceSwapId !== "none" && !faceSwapsQuery.data?.find(f => f.id === batchFaceSwapId)) { toast.error(t("ps.selectFaceSwapProfile")); return; }
+    if (batchVoiceModId !== "none" && !voiceModsQuery.data?.find(v => String(v.id) === batchVoiceModId)) { toast.error(t("ps.selectVoiceModProfile")); return; }
+    if (batchFaceSwapId !== "none" && !faceSwapsQuery.data?.find(f => String(f.id) === batchFaceSwapId)) { toast.error(t("ps.selectFaceSwapProfile")); return; }
     if (batchPipEnabled && batchSelectedPptId === "none") { toast.error(t("ps.selectPpt")); return; }
 
     const cost = 10 * batchSelectedIds.size;
-    checkCredits(cost, () => {
-      toast.info(t("ps.startingBatchJob"));
-      batchStart.mutate({
-        scriptIds: Array.from(batchSelectedIds),
+    if (!checkCredits("pipeline_start", currentCredits, cost)) return;
+    toast.info(t("ps.startingBatchJob"));
+    const batchItems = Array.from(batchSelectedIds).map(scriptId => {
+      const s = scriptsQuery.data?.find(sc => sc.id === scriptId);
+      return {
+        scriptId,
+        title: s?.title || "Untitled",
         ttsVoiceId: batchTtsVoiceId,
-        voiceModId: batchVoiceModId === "none" ? null : batchVoiceModId,
-        faceSwapId: batchFaceSwapId === "none" ? null : batchFaceSwapId,
-        pipEnabled: batchPipEnabled,
-        pptId: batchPipEnabled && batchSelectedPptId !== "none" ? parseInt(batchSelectedPptId) : null,
-      });
+        voiceModProfileId: batchVoiceModId === "none" ? undefined : parseInt(batchVoiceModId),
+        faceSwapProfileId: batchFaceSwapId === "none" ? undefined : parseInt(batchFaceSwapId),
+      };
     });
+    batchStart.mutate({
+        items: batchItems,
+        pipEnabled: batchPipEnabled,
+        pptUploadId: batchPipEnabled && batchSelectedPptId !== "none" ? parseInt(batchSelectedPptId) : undefined,
+      });
   };
 
   const handlePptUpload = async (file: File) => {
@@ -362,7 +505,9 @@ export default function ProductionStudio() {
       reader.readAsDataURL(file);
       reader.onload = async () => {
         const base64 = reader.result as string;
-        await pptUploadMutation.mutateAsync({ title: pptUploadTitle, file: base64 });
+        const fileName = file.name || 'upload.pptx';
+        const mimeType = file.type || 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+        await pptUploadMutation.mutateAsync({ title: pptUploadTitle, fileName, fileData: base64.split(',')[1] || base64, mimeType });
         toast.success(t("ps.fileUploadSuccess"));
       };
     } catch (error) {
@@ -373,7 +518,7 @@ export default function ProductionStudio() {
 
   const handleQuickAvatar = async (file: File) => {
     if (!file) { toast.error(t("ps.uploadFacePhoto")); return; }
-    const profileName = prompt(t("ps.enterProfileName"));
+    const profileName = window.prompt(t("ps.enterProfileName"));
     if (!profileName) return;
 
     toast.info(t("ps.creatingFaceProfile"));
@@ -382,14 +527,93 @@ export default function ProductionStudio() {
       reader.readAsDataURL(file);
       reader.onload = async () => {
         const base64 = reader.result as string;
-        const { url } = await uploadFaceMutation.mutateAsync({ file: base64 });
-        await createFaceProfile.mutateAsync({ name: profileName, imageUrl: url });
+        const { url } = await uploadFaceMutation.mutateAsync({ imageData: base64, fileName: `face-${Date.now()}.png`, type: "target" as const });
+        await createFaceProfile.mutateAsync({ name: profileName, targetFaceUrl: url });
         toast.success(t("ps.faceProfileCreated"));
       };
     } catch (error) {
       toast.error(t("ps.faceProfileFailed"));
     }
   };
+
+  // Direct Recording handlers
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      webcamStreamRef.current = stream;
+      if (videoPreviewRef.current) {
+        videoPreviewRef.current.srcObject = stream;
+      }
+      recordedChunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9,opus' });
+      mediaRecorderRef.current = mediaRecorder;
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        setRecordedBlob(blob);
+        setRecordedUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach(t => t.stop());
+        webcamStreamRef.current = null;
+        if (videoPreviewRef.current) videoPreviewRef.current.srcObject = null;
+      };
+      mediaRecorder.start(1000);
+      setIsRecording(true);
+      setRecordingDuration(0);
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(d => d + 1);
+      }, 1000);
+    } catch (err: any) {
+      if (err.name === 'NotAllowedError') toast.error(t("ps.webcamPermissionDenied"));
+      else toast.error(t("ps.noWebcamFound"));
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+  };
+
+  const handleDeleteRecording = () => {
+    if (recordedUrl) URL.revokeObjectURL(recordedUrl);
+    setRecordedBlob(null);
+    setRecordedUrl(null);
+    setRecordingDuration(0);
+  };
+
+  const handleUploadRecording = async () => {
+    if (!recordedBlob) return;
+    toast.info(t("ps.uploadingFile"));
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(recordedBlob);
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        const { url } = await uploadFaceMutation.mutateAsync({ imageData: base64, fileName: `recording-${Date.now()}.webm`, type: "target" as const });
+        toast.success(t("ps.recordingUploaded"));
+        // Store the URL for pipeline use
+        setRecordedUrl(url);
+      };
+    } catch (error) {
+      toast.error(t("ps.recordingUploadFailed"));
+    }
+  };
+
+  // Cleanup recording on unmount
+  useEffect(() => {
+    return () => {
+      if (webcamStreamRef.current) webcamStreamRef.current.getTracks().forEach(t => t.stop());
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (recordedUrl && recordedUrl.startsWith('blob:')) URL.revokeObjectURL(recordedUrl);
+    };
+  }, []);
 
   const toggleBatchSelection = (id: number) => {
     const newSet = new Set(batchSelectedIds);
@@ -412,7 +636,7 @@ export default function ProductionStudio() {
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <CreditGuardModal {...modalState} subscription={subscriptionQuery.data?.subscription} />
+      <CreditGuardModal open={modalState.open} onClose={closeModal} featureKey={modalState.featureKey} currentCredits={modalState.currentCredits} requiredCredits={modalState.requiredCredits} />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t("ps.title")}</h1>
@@ -493,6 +717,57 @@ export default function ProductionStudio() {
                       <Input type="number" min={1} max={120} value={durationMin} onChange={(e) => setDurationMin(parseInt(e.target.value) || 10)} className="mt-1" />
                     </div>
                   </div>
+                  {/* Interpreter Mode Toggle */}
+                  <Card className="bg-blue-500/5 border-blue-500/20">
+                    <CardContent className="py-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2 cursor-pointer">
+                          <Languages className="w-4 h-4 text-blue-400" />
+                          <span className="font-medium">{t("ps.interpreterMode")}</span>
+                        </Label>
+                        <Switch checked={interpreterEnabled} onCheckedChange={setInterpreterEnabled} />
+                      </div>
+                      {interpreterEnabled && (
+                        <div className="space-y-3 pt-2 border-t border-blue-500/10">
+                          <p className="text-xs text-muted-foreground">{t("ps.interpreterModeDesc")}</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">{t("ps.interpreterLanguage")}</Label>
+                              <Select value={interpreterLanguage} onValueChange={setInterpreterLanguage}>
+                                <SelectTrigger className="mt-1 h-8"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="en">English</SelectItem>
+                                  <SelectItem value="ko">한국어</SelectItem>
+                                  <SelectItem value="ja">日本語</SelectItem>
+                                  <SelectItem value="zh">中文</SelectItem>
+                                  <SelectItem value="vi">Tiếng Việt</SelectItem>
+                                  <SelectItem value="th">ไทย</SelectItem>
+                                  <SelectItem value="es">Español</SelectItem>
+                                  <SelectItem value="fr">Français</SelectItem>
+                                  <SelectItem value="de">Deutsch</SelectItem>
+                                  <SelectItem value="pt">Português</SelectItem>
+                                  <SelectItem value="ru">Русский</SelectItem>
+                                  <SelectItem value="ar">العربية</SelectItem>
+                                  <SelectItem value="hi">हिन्दी</SelectItem>
+                                  <SelectItem value="id">Bahasa Indonesia</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs">{t("ps.interpreterVoice")}</Label>
+                              <Select value={interpreterVoiceId} onValueChange={setInterpreterVoiceId}>
+                                <SelectTrigger className="mt-1 h-8"><SelectValue placeholder="Select voice" /></SelectTrigger>
+                                <SelectContent>
+                                  {VOICES.map(v => <SelectItem key={v.value} value={v.value}>{v.label}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
                   {/* Template indicator */}
                   {templateId && selectedTemplateQuery.data && (
                     <Card className="bg-amber-500/10 border-amber-500/30">
@@ -500,7 +775,7 @@ export default function ProductionStudio() {
                         <div className="flex items-center gap-2">
                           <BookTemplate className="w-4 h-4 text-amber-400" />
                           <span className="text-sm font-medium text-amber-300">{t("ps.templateApplied")} {selectedTemplateQuery.data.name}</span>
-                          <Badge variant="outline" className="text-xs">{t("ps.sectionCountBadge", { count: selectedTemplateQuery.data.sectionCount })}</Badge>
+                          <Badge variant="outline" className="text-xs">{t("ps.sectionCountBadge", { count: selectedTemplateQuery.data.sectionCount || 0 })}</Badge>
                           <Link href="/studio">
                             <Button size="sm" variant="ghost" className="text-xs ml-auto">{t("ps.removeTemplate")}</Button>
                           </Link>
@@ -585,7 +860,7 @@ export default function ProductionStudio() {
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{script.prompt}</p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1"><Layers className="w-4 h-4" />{t("ps.sectionCount", { count: script.sectionCount })}</span>
+                          <span className="flex items-center gap-1"><Layers className="w-4 h-4" />{t("ps.sectionCount", { count: script.sectionCount || 0 })}</span>
                           <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{t("ps.durationMinutes", { minutes: Math.round((script.estimatedDurationSec || 0) / 60) })}</span>
                           <span>{new Date(script.createdAt).toLocaleDateString("ko-KR")}</span>
                         </div>
@@ -635,7 +910,7 @@ export default function ProductionStudio() {
                       <SelectTrigger className="mt-1"><SelectValue placeholder={t("ps.selectScriptPlaceholder")} /></SelectTrigger>
                       <SelectContent>
                         {scriptsQuery.data?.filter(s => s.status === "ready").map((s) => (
-                          <SelectItem key={s.id} value={s.id.toString()}>{s.title} ({t("ps.sectionCountDuration", { count: s.sectionCount, minutes: Math.round((s.estimatedDurationSec || 0) / 60) })})</SelectItem>
+                          <SelectItem key={s.id} value={s.id.toString()}>{s.title} ({t("ps.sectionCountDuration", { count: s.sectionCount || 0, minutes: Math.round((s.estimatedDurationSec || 0) / 60) })})</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -668,7 +943,7 @@ export default function ProductionStudio() {
                           <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">{t("ps.none")}</SelectItem>
-                            {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                            {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={String(v.id)}>{v.name}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -696,7 +971,7 @@ export default function ProductionStudio() {
                           <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="none">{t("ps.none")}</SelectItem>
-                            {faceSwapsQuery.data?.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                            {faceSwapsQuery.data?.map((f) => <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -714,7 +989,7 @@ export default function ProductionStudio() {
                             <span className="text-xs text-muted-foreground">{t("ps.uploadFacePhotoAction")}</span>
                           </div>
                         </label>
-                        <Select onValueChange={(val) => createFaceProfile.mutate({ name: val, imageUrl: sampleFacesQuery.data?.find(f => f.name === val)?.url || "" })}>
+                        <Select onValueChange={(val) => createFaceProfile.mutate({ name: val, targetFaceUrl: sampleFacesQuery.data?.find(f => f.name === val)?.imageUrl || "" })}>
                           <SelectTrigger className="text-xs h-auto py-2.5">
                             <SelectValue placeholder={t("ps.selectSampleFace")} />
                           </SelectTrigger>
@@ -724,6 +999,58 @@ export default function ProductionStudio() {
                         </Select>
                       </div>
                     </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Direct Recording Mode */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="flex items-center gap-2"><Camera className="w-4 h-4 text-orange-400" />{t("ps.directRecording")}</Label>
+                      <Switch checked={useDirectRecording} onCheckedChange={setUseDirectRecording} />
+                    </div>
+                    {useDirectRecording && (
+                      <Card className="bg-orange-500/5 border-orange-500/20">
+                        <CardContent className="py-4 space-y-4">
+                          <p className="text-xs text-muted-foreground">{t("ps.directRecordingDesc")}</p>
+                          {!recordedUrl ? (
+                            <div className="space-y-3">
+                              {!isRecording ? (
+                                <Button onClick={handleStartRecording} className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
+                                  <CircleDot className="w-4 h-4 mr-2" />{t("ps.startRecording")}
+                                </Button>
+                              ) : (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-center gap-3">
+                                    <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                                    <span className="text-sm font-medium text-red-400">{t("ps.recordingInProgress")} - {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}</span>
+                                  </div>
+                                  <Button onClick={handleStopRecording} variant="destructive" className="w-full">
+                                    <StopCircle className="w-4 h-4 mr-2" />{t("ps.stopRecording")}
+                                  </Button>
+                                </div>
+                              )}
+                              <video ref={videoPreviewRef} autoPlay muted playsInline className="w-full rounded-lg border border-border aspect-video bg-black" />
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <video src={recordedUrl} controls className="w-full rounded-lg border border-border aspect-video bg-black" />
+                              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                <span>{t("ps.recordingDuration")}: {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button onClick={handleDeleteRecording} variant="outline" size="sm" className="flex-1">
+                                  <RotateCcw className="w-4 h-4 mr-1" />{t("ps.reRecord")}
+                                </Button>
+                                <Button onClick={handleUploadRecording} size="sm" className="flex-1 bg-gradient-to-r from-orange-500 to-red-500">
+                                  <Upload className="w-4 h-4 mr-1" />{t("ps.uploadRecording")}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
 
                   <Separator />
@@ -772,7 +1099,7 @@ export default function ProductionStudio() {
                           if (!selectedPptId || selectedPptId === "none") return null;
                           const ppt = pptListQuery.data?.find(p => p.id.toString() === selectedPptId);
                           if (!ppt) return null;
-                          const slides = ppt.slideUrls ? JSON.parse(ppt.slideUrls) as string[] : [];
+                          const slides = ppt.slideImages || [];
                           if (slides.length === 0) return <p className="text-sm text-center text-muted-foreground py-4">{t("ps.noSlidesPreview")}</p>;
 
                           const pipPos = pipSettingsQuery.data?.position || "bottom-right";
@@ -793,32 +1120,63 @@ export default function ProductionStudio() {
                                 }
                                 return (
                                   <div className="relative">
-                                    <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                                      <img src={slides[previewSlideIdx]} className="w-full h-full object-contain" alt={`Slide ${previewSlideIdx + 1}`} />
-                                      <div className="absolute top-1/2 -translate-y-1/2 left-2">
+                                    <div ref={slideContainerRef} className="aspect-video bg-black rounded-lg overflow-hidden relative select-none">
+                                      <img src={slides[previewSlideIdx]} className="w-full h-full object-contain" alt={`Slide ${previewSlideIdx + 1}`} draggable={false} />
+                                      {/* Draggable Avatar PiP Overlay */}
+                                      <div
+                                        className={`absolute border-2 transition-colors cursor-move ${
+                                          isDragging ? 'border-violet-500 shadow-lg shadow-violet-500/30' : 'border-dashed border-violet-500/50 hover:border-violet-500'
+                                        }`}
+                                        style={{
+                                          width: `${pipSizePercent}%`,
+                                          aspectRatio: '1 / 1',
+                                          left: `${pipPosition.x}%`,
+                                          top: `${pipPosition.y}%`,
+                                          transform: `translate(-50%, -50%)`,
+                                          opacity: pipOp / 100,
+                                          borderRadius: pipSh === 'circle' ? '50%' : pipSh === 'rounded' ? '12px' : '4px',
+                                          background: 'rgba(139, 92, 246, 0.15)',
+                                          backdropFilter: 'blur(2px)',
+                                        }}
+                                        onMouseDown={onPipDragStart}
+                                      >
+                                        <div className="w-full h-full flex items-center justify-center">
+                                          <div className="text-center">
+                                            <User2 className="w-6 h-6 text-violet-400 mx-auto mb-1" />
+                                            <span className="text-[10px] text-violet-300 font-medium">{t("ps.avatarDragHint")}</span>
+                                          </div>
+                                        </div>
+                                        {/* Resize handle */}
+                                        <div
+                                          className="absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-violet-500 rounded-full cursor-se-resize border-2 border-white shadow-md hover:scale-125 transition-transform"
+                                          onMouseDown={onResizeStart}
+                                        />
+                                      </div>
+                                      {/* Slide navigation */}
+                                      <div className="absolute top-1/2 -translate-y-1/2 left-2 z-10">
                                         <button
                                           onClick={() => setPreviewSlideIdx(Math.max(0, previewSlideIdx - 1))}
                                           disabled={previewSlideIdx === 0}
                                           className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
                                         >←</button>
                                       </div>
-                                      <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                                      <div className="absolute top-1/2 -translate-y-1/2 right-2 z-10">
                                         <button
                                           onClick={() => setPreviewSlideIdx(Math.min(slides.length - 1, previewSlideIdx + 1))}
                                           disabled={previewSlideIdx === slides.length - 1}
                                           className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 disabled:opacity-30"
                                         >→</button>
                                       </div>
-                                      {/* PIP settings info bar */}
-                                      <div className="mt-2 flex items-center justify-center gap-3 text-xs text-white/60">
-                                        <span>{t("ps.pipPositionLabel")} {t(`ps.pipPos${pipPos.replace(/-/g, "").split("").map(c => c.toUpperCase()).join("")}`)}</span>
-                                        <span>·</span>
-                                        <span>{t("ps.pipSizeLabel")} {t(`ps.pipSize${pipSz.charAt(0).toUpperCase() + pipSz.slice(1)}`)}</span>
-                                        <span>·</span>
-                                        <span>{t("ps.pipShapeLabel")} {t(`ps.pipShape${pipSh.charAt(0).toUpperCase() + pipSh.slice(1)}`)}</span>
-                                        <span>·</span>
-                                        <span>{t("ps.pipOpacityLabel")} {pipOp}%</span>
-                                      </div>
+                                    </div>
+                                    {/* PIP info bar */}
+                                    <div className="mt-2 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+                                      <span>{t("ps.pipPositionLabel")} {Math.round(pipPosition.x)}%, {Math.round(pipPosition.y)}%</span>
+                                      <span>·</span>
+                                      <span>{t("ps.pipSizeLabel")} {Math.round(pipSizePercent)}%</span>
+                                      <span>·</span>
+                                      <span>{t("ps.pipShapeLabel")} {t(`ps.pipShape${pipSh.charAt(0).toUpperCase() + pipSh.slice(1)}`)}</span>
+                                      <span>·</span>
+                                      <span>{t("ps.pipOpacityLabel")} {pipOp}%</span>
                                     </div>
                                   </div>
                                 );
@@ -976,7 +1334,7 @@ export default function ProductionStudio() {
             {pipelinesQuery.isLoading && <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-violet-400" /></div>}
             {pipelinesQuery.data?.length === 0 && (
               <EmptyState
-                type="pipelines"
+                type="pipeline"
                 title={t("ps.noPipelinesTitle")}
                 description={t("ps.noPipelinesDesc")}
                 actionLabel={t("ps.produceVideoAction")}
@@ -996,14 +1354,14 @@ export default function ProductionStudio() {
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="font-semibold text-lg">{pipeline.title}</h3>
-                          <Badge variant={isSuccess ? "success" : isFailed ? "destructive" : "secondary"}>
+                          <Badge variant={isSuccess ? "default" : isFailed ? "destructive" : "secondary"}>
                             {t(`ps.pipelineStatus${status.charAt(0).toUpperCase() + status.slice(1)}`)}
                           </Badge>
                           {pipeline.avatarEngine && <Badge variant="outline">{pipeline.avatarEngine}</Badge>}
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-1 mb-3">{t("ps.originalScript")}: {script.title}</p>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1"><Layers className="w-4 h-4" />{t("ps.sections", { count: script.sectionCount })}</span>
+                          <span className="flex items-center gap-1"><Layers className="w-4 h-4" />{t("ps.sections", { count: script.sectionCount || 0 })}</span>
                           <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{t("ps.durationMinutes", { minutes: Math.round((script.estimatedDurationSec || 0) / 60) })}</span>
                           <span>{new Date(pipeline.createdAt).toLocaleString("ko-KR")}</span>
                         </div>
@@ -1021,7 +1379,7 @@ export default function ProductionStudio() {
                         {isSuccess && (
                           <>
                             <Button size="sm" variant="outline" asChild>
-                              <a href={pipeline.videoUrl!} target="_blank" rel="noreferrer"><Download className="w-4 h-4 mr-1" />{t("ps.downloadVideo")}</a>
+                              <a href={pipeline.finalVideoUrl!} target="_blank" rel="noreferrer"><Download className="w-4 h-4 mr-1" />{t("ps.downloadVideo")}</a>
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => generateThumbnail.mutate({ pipelineId: pipeline.id })} disabled={generateThumbnail.isPending && generateThumbnail.variables?.pipelineId === pipeline.id}>
                               {generateThumbnail.isPending && generateThumbnail.variables?.pipelineId === pipeline.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Image className="w-4 h-4 mr-1" />}
@@ -1039,10 +1397,10 @@ export default function ProductionStudio() {
                         </Button>
                       </div>
                     </div>
-                    {pipeline.status === 'failed' && pipeline.failReason && (
+                    {pipeline.status === 'failed' && pipeline.errorMessage && (
                       <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive-foreground">
                         <p className="font-semibold mb-1">{t("ps.failureReason")}</p>
-                        <p className="text-xs">{pipeline.failReason}</p>
+                        <p className="text-xs">{pipeline.errorMessage}</p>
                       </div>
                     )}
                   </CardContent>
@@ -1081,7 +1439,7 @@ export default function ProductionStudio() {
                           {batchSelectedIds.has(script.id) ? <CheckSquare className="w-5 h-5 text-violet-400" /> : <Square className="w-5 h-5 text-muted-foreground" />}
                           <div className="flex-1">
                             <p className="font-medium">{script.title}</p>
-                            <p className="text-xs text-muted-foreground">{t("ps.sectionCountDuration", { count: script.sectionCount, minutes: Math.round((script.estimatedDurationSec || 0) / 60) })}</p>
+                            <p className="text-xs text-muted-foreground">{t("ps.sectionCountDuration", { count: script.sectionCount || 0, minutes: Math.round((script.estimatedDurationSec || 0) / 60) })}</p>
                           </div>
                         </div>
                       ))}
@@ -1137,7 +1495,7 @@ export default function ProductionStudio() {
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">{t("ps.none")}</SelectItem>
-                        {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                        {voiceModsQuery.data?.map((v) => <SelectItem key={v.id} value={String(v.id)}>{v.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1147,7 +1505,7 @@ export default function ProductionStudio() {
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">{t("ps.none")}</SelectItem>
-                        {faceSwapsQuery.data?.map((f) => <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>)}
+                        {faceSwapsQuery.data?.map((f) => <SelectItem key={f.id} value={String(f.id)}>{f.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
