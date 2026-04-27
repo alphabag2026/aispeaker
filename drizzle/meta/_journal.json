@@ -274,6 +274,13 @@
       "when": 1777300172785,
       "tag": "0038_solid_pretty_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "5",
+      "when": 1777319190989,
+      "tag": "0039_colorful_cerebro",
+      "breakpoints": true
     }
   ]
 }

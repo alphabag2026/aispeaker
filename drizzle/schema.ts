@@ -1166,6 +1166,12 @@ export const lectureProjects = mysqlTable("lectureProjects", {
   generationStep: varchar("generationStep", { length: 255 }),
   /** Error message if generation failed */
   errorMessage: text("errorMessage"),
+  /** Interpreter mode enabled */
+  interpreterEnabled: boolean("interpreterEnabled").default(false),
+  /** Interpreter target language code */
+  interpreterLanguage: varchar("interpreterLanguage", { length: 10 }),
+  /** Interpreter voice ID */
+  interpreterVoiceId: varchar("interpreterVoiceId", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -1235,6 +1241,8 @@ export const slideScripts = mysqlTable("slideScripts", {
   estimatedDurationSec: int("estimatedDurationSec").default(30),
   /** Sort order within the slide (for multiple scripts per slide) */
   sortOrder: int("sortOrder").default(0),
+  /** Interpreter translated text for this slide */
+  interpreterText: text("interpreterText"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
