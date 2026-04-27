@@ -27,6 +27,16 @@ export interface ExportConfig {
   avatarShape: string;
   avatarOpacity: number; // 0-100
   includeSubtitles?: boolean;
+  subtitleStyle?: {
+    fontSize?: number;
+    fontColor?: string;
+    bgColor?: string;
+    position?: "top" | "bottom";
+    fontFamily?: string;
+    bold?: boolean;
+    italic?: boolean;
+    outline?: boolean;
+  };
 }
 
 export interface ExportProgress {

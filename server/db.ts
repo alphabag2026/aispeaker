@@ -60,6 +60,10 @@ import {
   sharedPresets, InsertSharedPreset,
   sharedPresetLikes,
   subtitleStyles, InsertSubtitleStyle,
+  sharedSubtitlePresets, InsertSharedSubtitlePreset,
+  sharedSubtitlePresetLikes,
+  presetTags, InsertPresetTag,
+  presetTagMap,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2808,4 +2812,116 @@ export async function upsertSubtitleStyle(userId: number, data: Partial<InsertSu
   } else {
     await db.insert(subtitleStyles).values({ userId, ...data } as InsertSubtitleStyle);
   }
+}
+
+// ── Shared Subtitle Presets (v8.8) ──
+export async function listSharedSubtitlePresets(sortBy: "latest" | "popular" = "latest", tagId?: number, limit = 50) {
+  const db = await getDb(); if (!db) return [];
+  if (tagId) {
+    // Join with tag map to filter by tag
+    const rows = await db.select({
+      preset: sharedSubtitlePresets,
+    }).from(sharedSubtitlePresets)
+      .innerJoin(presetTagMap, and(
+        eq(presetTagMap.presetId, sharedSubtitlePresets.id),
+        eq(presetTagMap.presetType, "subtitle"),
+        eq(presetTagMap.tagId, tagId),
+      ))
+      .orderBy(sortBy === "popular" ? desc(sharedSubtitlePresets.likes) : desc(sharedSubtitlePresets.createdAt))
+      .limit(limit);
+    return rows.map(r => r.preset);
+  }
+  if (sortBy === "popular") {
+    return db.select().from(sharedSubtitlePresets).orderBy(desc(sharedSubtitlePresets.likes)).limit(limit);
+  }
+  return db.select().from(sharedSubtitlePresets).orderBy(desc(sharedSubtitlePresets.createdAt)).limit(limit);
+}
+
+export async function createSharedSubtitlePreset(data: InsertSharedSubtitlePreset) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(sharedSubtitlePresets).values(data);
+  return result.insertId;
+}
+
+export async function deleteSharedSubtitlePreset(id: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.delete(sharedSubtitlePresets).where(and(eq(sharedSubtitlePresets.id, id), eq(sharedSubtitlePresets.userId, userId)));
+  // Also clean up tag mappings
+  await db.delete(presetTagMap).where(and(eq(presetTagMap.presetId, id), eq(presetTagMap.presetType, "subtitle")));
+}
+
+export async function toggleSharedSubtitlePresetLike(presetId: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(sharedSubtitlePresetLikes)
+    .where(and(eq(sharedSubtitlePresetLikes.presetId, presetId), eq(sharedSubtitlePresetLikes.userId, userId)));
+  if (existing.length > 0) {
+    await db.delete(sharedSubtitlePresetLikes).where(eq(sharedSubtitlePresetLikes.id, existing[0].id));
+    await db.update(sharedSubtitlePresets).set({ likes: sql`likes - 1` }).where(eq(sharedSubtitlePresets.id, presetId));
+    return false;
+  } else {
+    await db.insert(sharedSubtitlePresetLikes).values({ presetId, userId });
+    await db.update(sharedSubtitlePresets).set({ likes: sql`likes + 1` }).where(eq(sharedSubtitlePresets.id, presetId));
+    return true;
+  }
+}
+
+export async function incrementSharedSubtitlePresetDownloads(presetId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(sharedSubtitlePresets).set({ downloads: sql`downloads + 1` }).where(eq(sharedSubtitlePresets.id, presetId));
+}
+
+export async function getUserLikedSubtitlePresets(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  const likes = await db.select({ presetId: sharedSubtitlePresetLikes.presetId }).from(sharedSubtitlePresetLikes).where(eq(sharedSubtitlePresetLikes.userId, userId));
+  return likes.map(l => l.presetId);
+}
+
+// ── Preset Tags (v8.8) ──
+export async function listPresetTags(category?: "avatar" | "subtitle" | "general") {
+  const db = await getDb(); if (!db) return [];
+  if (category) {
+    return db.select().from(presetTags).where(eq(presetTags.category, category)).orderBy(desc(presetTags.usageCount));
+  }
+  return db.select().from(presetTags).orderBy(desc(presetTags.usageCount));
+}
+
+export async function getOrCreateTag(name: string, category: "avatar" | "subtitle" | "general" = "general") {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(presetTags).where(eq(presetTags.name, name.toLowerCase().trim())).limit(1);
+  if (existing.length > 0) return existing[0].id;
+  const [result] = await db.insert(presetTags).values({ name: name.toLowerCase().trim(), category });
+  return result.insertId;
+}
+
+export async function addTagsToPreset(presetType: "avatar" | "subtitle", presetId: number, tagIds: number[]) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  if (tagIds.length === 0) return;
+  const values = tagIds.map(tagId => ({ presetType, presetId, tagId }));
+  await db.insert(presetTagMap).values(values as any);
+  // Increment usage count for each tag
+  for (const tagId of tagIds) {
+    await db.update(presetTags).set({ usageCount: sql`usageCount + 1` }).where(eq(presetTags.id, tagId));
+  }
+}
+
+export async function getPresetTags(presetType: "avatar" | "subtitle", presetId: number) {
+  const db = await getDb(); if (!db) return [];
+  const rows = await db.select({ tag: presetTags })
+    .from(presetTagMap)
+    .innerJoin(presetTags, eq(presetTagMap.tagId, presetTags.id))
+    .where(and(eq(presetTagMap.presetType, presetType), eq(presetTagMap.presetId, presetId)));
+  return rows.map(r => r.tag);
+}
+
+export async function getPopularTags(category?: "avatar" | "subtitle" | "general", limit = 20) {
+  const db = await getDb(); if (!db) return [];
+  if (category) {
+    return db.select().from(presetTags).where(eq(presetTags.category, category)).orderBy(desc(presetTags.usageCount)).limit(limit);
+  }
+  return db.select().from(presetTags).orderBy(desc(presetTags.usageCount)).limit(limit);
+}
+
+// ── Add tags to existing avatar presets (v8.8) ──
+export async function addTagsToAvatarPreset(presetId: number, tagIds: number[]) {
+  return addTagsToPreset("avatar", presetId, tagIds);
 }

@@ -525,8 +525,14 @@ export default function ProductionStudio() {
     onError: (err) => toast.error(err.message),
   });
 
+  // Gallery state (v8.8)
+  const [gallerySortBy, setGallerySortBy] = useState<"latest" | "popular">("popular");
+  const [subtitleGallerySortBy, setSubtitleGallerySortBy] = useState<"latest" | "popular">("popular");
+  const [selectedTagId, setSelectedTagId] = useState<number | undefined>(undefined);
+  const [subtitleSelectedTagId, setSubtitleSelectedTagId] = useState<number | undefined>(undefined);
+
   // Community shared presets (v8.7)
-  const sharedPresetsQuery = trpc.sharedPreset.list.useQuery();
+  const sharedPresetsQuery = trpc.sharedPreset.list.useQuery({ sortBy: gallerySortBy });
   const sharePresetMut = trpc.sharedPreset.share.useMutation({
     onSuccess: () => { sharedPresetsQuery.refetch(); toast.success(t("ps.presetSharedToGallery")); },
     onError: (err: any) => toast.error(err.message),
@@ -554,6 +560,27 @@ export default function ProductionStudio() {
   const [subtitleItalic, setSubtitleItalic] = useState(false);
   const [subtitleOutline, setSubtitleOutline] = useState(true);
   const [showGallery, setShowGallery] = useState(false);
+  const [showSubtitleGallery, setShowSubtitleGallery] = useState(false);
+
+  // Shared subtitle presets (v8.8)
+  const sharedSubtitlePresetsQuery = trpc.sharedSubtitlePreset.list.useQuery({ sortBy: subtitleGallerySortBy, tagId: subtitleSelectedTagId });
+  const shareSubtitlePresetMut = trpc.sharedSubtitlePreset.share.useMutation({
+    onSuccess: () => { sharedSubtitlePresetsQuery.refetch(); toast.success(t("ps.presetSharedToGallery")); },
+    onError: (err: any) => toast.error(err.message),
+  });
+  const likeSubtitlePresetMut = trpc.sharedSubtitlePreset.like.useMutation({
+    onSuccess: () => { sharedSubtitlePresetsQuery.refetch(); mySubtitleLikesQuery.refetch(); },
+  });
+  const downloadSubtitlePresetMut = trpc.sharedSubtitlePreset.download.useMutation();
+  const deleteSharedSubtitlePresetMut = trpc.sharedSubtitlePreset.delete.useMutation({
+    onSuccess: () => { sharedSubtitlePresetsQuery.refetch(); toast.success(t("ps.presetDeleted")); },
+  });
+  const mySubtitleLikesQuery = trpc.sharedSubtitlePreset.myLikes.useQuery();
+
+  // Preset tags (v8.8)
+  const avatarTagsQuery = trpc.presetTag.popular.useQuery({ category: "avatar", limit: 15 });
+  const subtitleTagsQuery = trpc.presetTag.popular.useQuery({ category: "subtitle", limit: 15 });
+  const allTagsQuery = trpc.presetTag.popular.useQuery({ limit: 30 });
 
   // Hydrate subtitle style from DB
   useEffect(() => {
@@ -1375,6 +1402,137 @@ export default function ProductionStudio() {
                                         >
                                           {t("ps.saveSubtitleStyle")}
                                         </Button>
+
+                                        {/* Share subtitle style to gallery + Gallery toggle */}
+                                        <div className="flex gap-1 mt-1">
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-xs h-6 flex-1 border-emerald-500/50 text-emerald-400"
+                                            onClick={() => setShowSubtitleGallery(!showSubtitleGallery)}
+                                          >
+                                            <Globe className="w-3 h-3 mr-1" />{t("ps.subtitlePresetGallery")}
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-xs h-6 flex-1 border-blue-500/50 text-blue-400"
+                                            onClick={() => {
+                                              const name = window.prompt(t("ps.presetNamePrompt"));
+                                              if (!name) return;
+                                              const desc = window.prompt(t("ps.presetDescPrompt")) || "";
+                                              shareSubtitlePresetMut.mutate({
+                                                name,
+                                                description: desc,
+                                                fontSize: subtitleFontSize,
+                                                fontColor: subtitleFontColor,
+                                                bgColor: subtitleBgColor,
+                                                position: subtitlePosition === "custom" ? "bottom" : subtitlePosition as "top" | "bottom",
+                                                fontFamily: subtitleFontFamily,
+                                                bold: subtitleBold,
+                                                italic: subtitleItalic,
+                                                outline: subtitleOutline,
+                                              });
+                                            }}
+                                            disabled={shareSubtitlePresetMut.isPending}
+                                          >
+                                            <Upload className="w-3 h-3 mr-1" />{t("ps.shareToGallery")}
+                                          </Button>
+                                        </div>
+
+                                        {/* Subtitle Preset Gallery */}
+                                        {showSubtitleGallery && (
+                                          <div className="mt-2 p-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+                                            <div className="flex items-center justify-between mb-2">
+                                              <p className="text-[10px] font-medium flex items-center gap-1">
+                                                <Globe className="w-3 h-3 text-emerald-400" />
+                                                {t("ps.communitySubtitlePresets")}
+                                              </p>
+                                              <div className="flex gap-1">
+                                                <button className={`text-[10px] px-1.5 py-0.5 rounded ${subtitleGallerySortBy === 'popular' ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground'}`} onClick={() => setSubtitleGallerySortBy('popular')}>{t("ps.sortPopular")}</button>
+                                                <button className={`text-[10px] px-1.5 py-0.5 rounded ${subtitleGallerySortBy === 'latest' ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground'}`} onClick={() => setSubtitleGallerySortBy('latest')}>{t("ps.sortLatest")}</button>
+                                              </div>
+                                            </div>
+                                            {subtitleTagsQuery.data && subtitleTagsQuery.data.length > 0 && (
+                                              <div className="flex flex-wrap gap-1 mb-2">
+                                                <button className={`text-[10px] px-1.5 py-0.5 rounded-full border ${!subtitleSelectedTagId ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'border-border text-muted-foreground'}`} onClick={() => setSubtitleSelectedTagId(undefined)}>{t("ps.allTags")}</button>
+                                                {subtitleTagsQuery.data.map((tag: any) => (
+                                                  <button key={tag.id} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${subtitleSelectedTagId === tag.id ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'border-border text-muted-foreground hover:border-emerald-500/30'}`} onClick={() => setSubtitleSelectedTagId(tag.id)}>#{tag.name}</button>
+                                                ))}
+                                              </div>
+                                            )}
+                                            {sharedSubtitlePresetsQuery.isLoading ? (
+                                              <p className="text-[10px] text-muted-foreground">{t("ps.loading")}</p>
+                                            ) : !sharedSubtitlePresetsQuery.data?.length ? (
+                                              <p className="text-[10px] text-muted-foreground">{t("ps.noSharedPresets")}</p>
+                                            ) : (
+                                              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                                                {sharedSubtitlePresetsQuery.data.map((sp: any) => (
+                                                  <div key={sp.id} className="p-1.5 rounded bg-background/50 border border-border/50">
+                                                    <div className="flex items-center justify-between">
+                                                      <div className="flex-1 min-w-0">
+                                                        <p className="text-[10px] font-medium truncate">{sp.name}</p>
+                                                        <p className="text-[9px] text-muted-foreground">
+                                                          {sp.userName} · {sp.fontFamily} · {sp.fontSize}px
+                                                        </p>
+                                                      </div>
+                                                      <div className="flex items-center gap-1 ml-1 shrink-0">
+                                                        <button
+                                                          className={`text-[10px] px-1 ${(mySubtitleLikesQuery.data || []).includes(sp.id) ? 'text-red-400' : 'text-muted-foreground hover:text-red-400'}`}
+                                                          onClick={() => likeSubtitlePresetMut.mutate({ id: sp.id })}
+                                                        >
+                                                          ♥ {sp.likes || 0}
+                                                        </button>
+                                                        <Button
+                                                          size="sm"
+                                                          variant="ghost"
+                                                          className="text-[10px] h-5 px-1.5"
+                                                          onClick={() => {
+                                                            setSubtitleFontSize(sp.fontSize);
+                                                            setSubtitleFontColor(sp.fontColor);
+                                                            setSubtitleBgColor(sp.bgColor);
+                                                            setSubtitlePosition(sp.position);
+                                                            setSubtitleFontFamily(sp.fontFamily);
+                                                            setSubtitleBold(sp.bold);
+                                                            setSubtitleItalic(sp.italic);
+                                                            setSubtitleOutline(sp.outline);
+                                                            downloadSubtitlePresetMut.mutate({ id: sp.id });
+                                                            toast.success(t("ps.presetApplied"));
+                                                          }}
+                                                        >
+                                                          {t("ps.applyPreset")}
+                                                        </Button>
+                                                      </div>
+                                                    </div>
+                                                    {/* Mini preview */}
+                                                    <div className="mt-1 p-1 rounded bg-black/60 text-center">
+                                                      <span style={{
+                                                        fontSize: `${Math.min(sp.fontSize, 14)}px`,
+                                                        fontFamily: sp.fontFamily,
+                                                        color: sp.fontColor,
+                                                        backgroundColor: sp.bgColor,
+                                                        fontWeight: sp.bold ? 'bold' : 'normal',
+                                                        fontStyle: sp.italic ? 'italic' : 'normal',
+                                                        textShadow: sp.outline ? '1px 1px 2px rgba(0,0,0,0.8)' : 'none',
+                                                        padding: '1px 4px',
+                                                        borderRadius: '2px',
+                                                      }}>
+                                                        {t("ps.subtitlePreviewText")}
+                                                      </span>
+                                                    </div>
+                                                    {sp.tags && sp.tags.length > 0 && (
+                                                      <div className="flex flex-wrap gap-0.5 mt-1">
+                                                        {sp.tags.map((tag: any) => (
+                                                          <span key={tag.id} className="text-[9px] px-1 py-0 rounded-full bg-emerald-500/10 text-emerald-400/80">#{tag.name}</span>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
                                     </>
                                   )}
@@ -1573,10 +1731,24 @@ export default function ProductionStudio() {
                               {/* Community Preset Gallery */}
                               {showGallery && (
                                 <div className="mt-3 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
-                                  <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
-                                    <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                                    {t("ps.communityPresets")}
-                                  </p>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-sm font-medium flex items-center gap-1.5">
+                                      <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                                      {t("ps.communityPresets")}
+                                    </p>
+                                    <div className="flex gap-1">
+                                      <button className={`text-[10px] px-2 py-0.5 rounded ${gallerySortBy === 'popular' ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground'}`} onClick={() => setGallerySortBy('popular')}>{t("ps.sortPopular")}</button>
+                                      <button className={`text-[10px] px-2 py-0.5 rounded ${gallerySortBy === 'latest' ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground'}`} onClick={() => setGallerySortBy('latest')}>{t("ps.sortLatest")}</button>
+                                    </div>
+                                  </div>
+                                  {avatarTagsQuery.data && avatarTagsQuery.data.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mb-2">
+                                      <button className={`text-[10px] px-1.5 py-0.5 rounded-full border ${!selectedTagId ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'border-border text-muted-foreground'}`} onClick={() => setSelectedTagId(undefined)}>{t("ps.allTags")}</button>
+                                      {avatarTagsQuery.data.map((tag: any) => (
+                                        <button key={tag.id} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${selectedTagId === tag.id ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'border-border text-muted-foreground hover:border-emerald-500/30'}`} onClick={() => setSelectedTagId(tag.id)}>#{tag.name}</button>
+                                      ))}
+                                    </div>
+                                  )}
                                   {sharedPresetsQuery.isLoading ? (
                                     <p className="text-xs text-muted-foreground">{t("ps.loading")}</p>
                                   ) : !sharedPresetsQuery.data?.length ? (
