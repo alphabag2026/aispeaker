@@ -64,6 +64,9 @@ import {
   sharedSubtitlePresetLikes,
   presetTags, InsertPresetTag,
   presetTagMap,
+  presetReports, InsertPresetReport,
+  presetVersions, InsertPresetVersion,
+  blockedPresets,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3051,5 +3054,109 @@ export async function getSharedPresetById(id: number) {
 export async function getSharedSubtitlePresetById(id: number) {
   const db = await getDb(); if (!db) return null;
   const rows = await db.select().from(sharedSubtitlePresets).where(eq(sharedSubtitlePresets.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+
+// ============ Preset Search (v9.1) ============
+export async function searchSharedPresets(keyword: string, type: "avatar" | "subtitle", limit = 20) {
+  const db = await getDb(); if (!db) return [];
+  const table = type === "avatar" ? sharedPresets : sharedSubtitlePresets;
+  const pattern = `%${keyword}%`;
+  return db.select().from(table)
+    .where(or(like(table.name, pattern), like(table.description, pattern)))
+    .orderBy(desc(table.likes))
+    .limit(limit);
+}
+
+// ============ Preset Reports (v9.1) ============
+export async function createPresetReport(data: InsertPresetReport) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(presetReports).values(data);
+  return result[0].insertId;
+}
+
+export async function getPresetReports(filters?: { status?: string; presetType?: string }) {
+  const db = await getDb(); if (!db) return [];
+  const conditions: any[] = [];
+  if (filters?.status) conditions.push(eq(presetReports.status, filters.status as any));
+  if (filters?.presetType) conditions.push(eq(presetReports.presetType, filters.presetType as any));
+  return db.select().from(presetReports)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(presetReports.createdAt));
+}
+
+export async function updatePresetReportStatus(id: number, status: "pending" | "reviewed" | "blocked" | "dismissed", reviewedBy: number) {
+  const db = await getDb(); if (!db) return;
+  await db.update(presetReports).set({ status, reviewedBy, reviewedAt: new Date() }).where(eq(presetReports.id, id));
+}
+
+export async function hasUserReported(presetType: "avatar" | "subtitle", presetId: number, userId: number) {
+  const db = await getDb(); if (!db) return false;
+  const rows = await db.select().from(presetReports)
+    .where(and(
+      eq(presetReports.presetType, presetType),
+      eq(presetReports.presetId, presetId),
+      eq(presetReports.reporterId, userId)
+    )).limit(1);
+  return rows.length > 0;
+}
+
+// ============ Blocked Presets (v9.1) ============
+export async function blockPreset(presetType: "avatar" | "subtitle", presetId: number, blockedBy: number, reason?: string) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(blockedPresets).values({ presetType, presetId, blockedBy, reason });
+  return result[0].insertId;
+}
+
+export async function unblockPreset(presetType: "avatar" | "subtitle", presetId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(blockedPresets).where(and(
+    eq(blockedPresets.presetType, presetType),
+    eq(blockedPresets.presetId, presetId)
+  ));
+}
+
+export async function isPresetBlocked(presetType: "avatar" | "subtitle", presetId: number) {
+  const db = await getDb(); if (!db) return false;
+  const rows = await db.select().from(blockedPresets)
+    .where(and(eq(blockedPresets.presetType, presetType), eq(blockedPresets.presetId, presetId)))
+    .limit(1);
+  return rows.length > 0;
+}
+
+export async function getBlockedPresetIds(presetType: "avatar" | "subtitle") {
+  const db = await getDb(); if (!db) return [];
+  const rows = await db.select({ presetId: blockedPresets.presetId }).from(blockedPresets)
+    .where(eq(blockedPresets.presetType, presetType));
+  return rows.map(r => r.presetId);
+}
+
+// ============ Preset Versions (v9.1) ============
+export async function createPresetVersion(data: InsertPresetVersion) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(presetVersions).values(data);
+  return result[0].insertId;
+}
+
+export async function getPresetVersions(presetType: "avatar" | "subtitle", presetId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(presetVersions)
+    .where(and(eq(presetVersions.presetType, presetType), eq(presetVersions.presetId, presetId)))
+    .orderBy(desc(presetVersions.version));
+}
+
+export async function getLatestPresetVersion(presetType: "avatar" | "subtitle", presetId: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(presetVersions)
+    .where(and(eq(presetVersions.presetType, presetType), eq(presetVersions.presetId, presetId)))
+    .orderBy(desc(presetVersions.version))
+    .limit(1);
+  return rows[0] || null;
+}
+
+export async function getPresetVersionById(id: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(presetVersions).where(eq(presetVersions.id, id)).limit(1);
   return rows[0] || null;
 }
