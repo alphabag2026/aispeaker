@@ -36,7 +36,7 @@ export default function BrowserStudio() {
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("pip-bottom-right");
   const [pipSize, setPipSize] = useState(25); // percentage
   const [pipOpacity, setPipOpacity] = useState(100);
-  const [pipShape, setPipShape] = useState<"circle" | "rounded" | "square">("rounded");
+  const [pipShape, setPipShape] = useState<"circle" | "rounded" | "rectangle">("rounded");
   const [showOverlay, setShowOverlay] = useState(true);
 
   // PPT state

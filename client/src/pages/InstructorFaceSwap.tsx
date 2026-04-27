@@ -296,7 +296,7 @@ function PipLectureModeSection() {
             style={pipStyle}
             onPointerDown={handlePipPointerDown}
           >
-            <img src={user?.image || "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/default-avatar-gENTaGk3v4Xy3Fq8p3w8k.webp"} alt={t("ifs.instructorPipAlt")} className={`w-full h-full object-cover ${shapeMap[pipShape]} shadow-2xl ${pipPosition === "custom" ? "cursor-move" : ""}`} />
+            <img src={user?.avatarUrl || "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/default-avatar-gENTaGk3v4Xy3Fq8p3w8k.webp"} alt={t("ifs.instructorPipAlt")} className={`w-full h-full object-cover ${shapeMap[pipShape]} shadow-2xl ${pipPosition === "custom" ? "cursor-move" : ""}`} />
           </div>
         </div>
 
@@ -366,7 +366,7 @@ function PptEditorSection() {
 
   useEffect(() => {
     if (selectedPpt) {
-      setSlideImages(selectedPpt.slideUrls);
+      setSlideImages(selectedPpt.slideImages || []);
     }
   }, [selectedPpt]);
 
@@ -381,7 +381,7 @@ function PptEditorSection() {
     const [draggedItem] = newOrder.splice(dragIdx, 1);
     newOrder.splice(dropIdx, 0, draggedItem);
     setSlideImages(newOrder);
-    reorderSlides.mutate({ pptId: selectedPpt.id, newOrder });
+    if (selectedPpt) reorderSlides.mutate({ id: selectedPpt.id, slideOrder: newOrder.map((_, i) => i) });
   };
   const handleDragEnd = () => {
     setDragIdx(null);
@@ -393,7 +393,7 @@ function PptEditorSection() {
     const [item] = newOrder.splice(from, 1);
     newOrder.splice(to, 0, item);
     setSlideImages(newOrder);
-    reorderSlides.mutate({ pptId: selectedPpt.id, newOrder });
+    if (selectedPpt) reorderSlides.mutate({ id: selectedPpt.id, slideOrder: newOrder.map((_, i) => i) });
   };
 
   const handleDeleteSlide = (idx: number) => {
@@ -401,7 +401,7 @@ function PptEditorSection() {
       return;
     const newOrder = slideImages.filter((_, i) => i !== idx);
     setSlideImages(newOrder);
-    deleteSlide.mutate({ pptId: selectedPpt.id, slideIndex: idx });
+    if (selectedPpt) deleteSlide.mutate({ id: selectedPpt.id, slideIndex: idx });
   };
 
   return (
@@ -1148,7 +1148,7 @@ export default function InstructorFaceSwap() {
                       {p.previewUrl ? <img src={p.previewUrl} alt={t("ifs.previewAlt")} className="w-full h-full object-cover rounded-xl" /> : <p className="text-sm text-muted-foreground">{t("ifs.noPreview")}</p>}
                     </div>
                   </div>
-                  <Button onClick={() => generatePreview.mutate({ id: p.id })} disabled={generatePreview.isPending}>{t("ifs.generatePreviewButton")}</Button>
+                  <Button onClick={() => generatePreview.mutate({ profileId: p.id })} disabled={generatePreview.isPending}>{t("ifs.generatePreviewButton")}</Button>
                 </CardContent>
               </Card>
             ))}

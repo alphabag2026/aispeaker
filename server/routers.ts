@@ -545,7 +545,24 @@ export const appRouter = router({
                 const statusResponse = await fetch(`https://api.d-id.com/talks/${talkId}`, { headers: { "Authorization": `Basic ${effectiveDidKey}` } });
                 if (statusResponse.ok) {
                   const statusData = await statusResponse.json() as any;
-                  if (statusData.status === "done" && statusData.result_url) { videoUrl = statusData.result_url; break; }
+                  if (statusData.status === "done" && statusData.result_url) {
+                    // Upload D-ID video to S3 to prevent URL expiration
+                    try {
+                      const videoResponse = await fetch(statusData.result_url);
+                      if (videoResponse.ok) {
+                        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+                        const videoKey = `did-videos/${talkId}-${Date.now()}.mp4`;
+                        const { url: s3Url } = await storagePut(videoKey, videoBuffer, "video/mp4");
+                        videoUrl = s3Url;
+                      } else {
+                        videoUrl = statusData.result_url; // Fallback to D-ID URL
+                      }
+                    } catch (uploadErr) {
+                      console.error("[D-ID] S3 upload failed, using original URL:", uploadErr);
+                      videoUrl = statusData.result_url;
+                    }
+                    break;
+                  }
                   else if (statusData.status === "error") break;
                 }
                 attempts++;
@@ -7004,6 +7021,111 @@ Return a JSON object with a "sections" array. Each section has:
         } else {
           await db.updateSharedSubtitlePreset(version.presetId, ctx.user.id, data);
         }
+        return { success: true };
+      }),
+  }),
+
+  // ============ Notifications (v9.2) ============
+  notification: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().default(20), offset: z.number().default(0) }))
+      .query(async ({ ctx, input }) => {
+        return db.listNotifications(ctx.user.id, input.limit, input.offset);
+      }),
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUnreadNotificationCount(ctx.user.id);
+    }),
+    markRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.markNotificationRead(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    markAllRead: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.markAllNotificationsRead(ctx.user.id);
+      return { success: true };
+    }),
+  }),
+
+  // ============ Preset Comments (v9.2) ============
+  presetComment: router({
+    list: publicProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+        limit: z.number().default(20),
+        offset: z.number().default(0),
+      }))
+      .query(async ({ input }) => {
+        const comments = await db.listPresetComments(input.presetType, input.presetId, input.limit, input.offset);
+        const count = await db.getPresetCommentCount(input.presetType, input.presetId);
+        const rating = await db.getPresetAverageRating(input.presetType, input.presetId);
+        return { comments, total: count, rating };
+      }),
+    add: protectedProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+        content: z.string().min(1).max(1000),
+        rating: z.number().min(1).max(5).optional(),
+        parentId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const commentId = await db.addPresetComment({
+          presetType: input.presetType,
+          presetId: input.presetId,
+          userId: ctx.user.id,
+          content: input.content,
+          rating: input.rating ?? null,
+          parentId: input.parentId ?? null,
+        });
+        // Create notification for reply
+        if (input.parentId) {
+          const parentComments = await db.listPresetComments(input.presetType, input.presetId, 1000, 0);
+          const parent = parentComments.find((c: any) => c.comment.id === input.parentId);
+          if (parent && parent.comment.userId !== ctx.user.id) {
+            await db.createNotification({
+              userId: parent.comment.userId,
+              type: "reply",
+              title: "\uc0c8 \ub2f5\uae00",
+              message: `${ctx.user.name || '\uc0ac\uc6a9\uc790'}\ub2d8\uc774 \ud68c\uc6d0\ub2d8\uc758 \ub313\uae00\uc5d0 \ub2f5\uae00\uc744 \ub2ec\uc558\uc2b5\ub2c8\ub2e4.`,
+              link: `/studio?presetType=${input.presetType}&presetId=${input.presetId}`,
+            });
+          }
+        }
+        return { success: true, commentId };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deletePresetComment(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  // ============ Admin Report Management (v9.2) ============
+  adminReport: router({
+    list: protectedProcedure
+      .input(z.object({
+        status: z.string().optional(),
+        limit: z.number().default(20),
+        offset: z.number().default(0),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const reports = await db.listPresetReportsAdmin(input.status, input.limit, input.offset);
+        const totalPending = await db.getPresetReportCount("pending");
+        const totalAll = await db.getPresetReportCount();
+        return { reports, totalPending, totalAll };
+      }),
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "reviewed", "blocked", "dismissed"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await db.updatePresetReportStatus(input.id, input.status, ctx.user.id);
         return { success: true };
       }),
   }),

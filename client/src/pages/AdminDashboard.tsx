@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import {
   Users, CreditCard, BarChart3, Settings, Search,
   Crown, Zap, Building2, TrendingUp, Activity,
-  User, Image, Volume2, Shield, AlertCircle, Cpu, Clock, AlertTriangle, CheckCircle2
+  User, Image, Volume2, Shield, AlertCircle, Cpu, Clock, AlertTriangle, CheckCircle2,
+  Flag, Eye, Ban, XCircle
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -297,10 +298,11 @@ export default function AdminDashboard() {
         </header>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 border-b border-border/50 rounded-none bg-transparent px-0 pb-2 mb-6">
+          <TabsList className="grid w-full grid-cols-6 border-b border-border/50 rounded-none bg-transparent px-0 pb-2 mb-6">
             <TabsTrigger value="users" className="rounded-none"><Users className="w-4 h-4 mr-2" />{t("ad.users")}</TabsTrigger>
             <TabsTrigger value="revenue" className="rounded-none"><CreditCard className="w-4 h-4 mr-2" />{t("ad.revenue")}</TabsTrigger>
             <TabsTrigger value="samples" className="rounded-none"><Image className="w-4 h-4 mr-2" />{t("ad.samples")}</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-none relative"><Flag className="w-4 h-4 mr-2" />신고 관리</TabsTrigger>
             <TabsTrigger value="api" className="rounded-none"><Cpu className="w-4 h-4 mr-2" />{t("ad.api")}</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-none"><Settings className="w-4 h-4 mr-2" />{t("ad.settings")}</TabsTrigger>
           </TabsList>
@@ -334,12 +336,12 @@ export default function AdminDashboard() {
                     <tbody>
                       {filteredUsers.map(user => {
                         const sub = allSubs.find(s => s.userId === user.id && s.status === 'active');
-                        const plan = sub ? plans.find(p => p.id === sub.planId) : null;
+                        const plan = sub ? plans?.find(p => p.id === sub.planId) : null;
                         return (
                           <tr key={user.id} className="border-b border-border/30 hover:bg-muted/30">
                             <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
-                                <img src={user.image || `https://avatar.vercel.sh/${user.id}.png`} alt={user.name || 'User'} className="w-8 h-8 rounded-full" />
+                                <img src={user.avatarUrl || `https://avatar.vercel.sh/${user.id}.png`} alt={user.name || 'User'} className="w-8 h-8 rounded-full" />
                                 <div>
                                   <p className="font-semibold">{user.name || 'Unnamed User'}</p>
                                   <p className="text-xs text-muted-foreground">{user.email}</p>
@@ -347,8 +349,8 @@ export default function AdminDashboard() {
                               </div>
                             </td>
                             <td className="py-3 px-4">
-                              <Badge variant={user.isActive ? "default" : "outline"} className={user.isActive ? "bg-green-500/10 text-green-500 border-green-500/30" : ""}>
-                                {user.isActive ? t("ad.active") : t("ad.inactive")}
+                              <Badge variant={user.role === "admin" ? "default" : "outline"} className={user.role === "admin" ? "bg-green-500/10 text-green-500 border-green-500/30" : ""}>
+                                {user.role === "admin" ? t("ad.active") : t("ad.inactive")}
                               </Badge>
                             </td>
                             <td className="py-3 px-4">
@@ -359,7 +361,7 @@ export default function AdminDashboard() {
                               )}
                             </td>
                             <td className="py-3 px-4 text-xs text-muted-foreground">
-                              {getLastSeen(user.lastSeen)}
+                              {getLastSeen(user.lastSignedIn)}
                             </td>
                           </tr>
                         );
@@ -374,7 +376,7 @@ export default function AdminDashboard() {
           {/* Revenue Tab */}
           <TabsContent value="revenue">
             <div className="grid md:grid-cols-3 gap-4 mb-6">
-              {plans.map((plan: any) => {
+              {(plans || []).map((plan: any) => {
                 const planSubs = allSubs.filter((s: any) => s.planId === plan.id);
                 const Icon = plan.slug === "pro" ? Crown : plan.slug === "enterprise" ? Building2 : Zap;
                 return (
@@ -472,6 +474,11 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Settings Tab */}
+          {/* Reports Tab */}
+          <TabsContent value="reports">
+            <ReportManagementPanel />
+          </TabsContent>
+
           <TabsContent value="settings">
             <div className="space-y-6">
               <Card className="border-border/50">
@@ -480,7 +487,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {plans.map((plan: any) => (
+                    {(plans || []).map((plan: any) => (
                       <div key={plan.id} className="flex items-center justify-between p-4 border border-border/50 rounded-lg">
                         <div>
                           <h3 className="font-semibold">{plan.name}</h3>
@@ -535,6 +542,137 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+    </div>
+  );
+}
+
+/* Report Management Panel */
+function ReportManagementPanel() {
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const { data, isLoading } = trpc.adminReport.list.useQuery({
+    status: statusFilter,
+    limit: 50,
+    offset: 0,
+  });
+  const utils = trpc.useUtils();
+  const updateStatus = trpc.adminReport.updateStatus.useMutation({
+    onSuccess: () => {
+      utils.adminReport.list.invalidate();
+      toast.success("신고 상태가 업데이트되었습니다.");
+    },
+  });
+
+  const statusBadge = (status: string) => {
+    switch (status) {
+      case "pending": return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">대기</Badge>;
+      case "reviewed": return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">검토</Badge>;
+      case "blocked": return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/30">차단</Badge>;
+      case "dismissed": return <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/30">기각</Badge>;
+      default: return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const reasonLabel = (reason: string) => {
+    const map: Record<string, string> = {
+      spam: "스팸/광고",
+      inappropriate: "부적절한 콘텐츠",
+      copyright: "저작권 침해",
+      misleading: "오해 소지 정보",
+      other: "기타",
+    };
+    return map[reason] || reason;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-500" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-border/50">
+          <CardContent className="p-5">
+            <div className="text-2xl font-bold">{data?.totalAll || 0}</div>
+            <div className="text-sm text-muted-foreground">전체 신고</div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50 border-yellow-500/30">
+          <CardContent className="p-5">
+            <div className="text-2xl font-bold text-yellow-500">{data?.totalPending || 0}</div>
+            <div className="text-sm text-muted-foreground">대기 중</div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">상태:</span>
+        {([undefined, "pending", "reviewed", "blocked", "dismissed"] as const).map(s => (
+          <Button key={s || "all"} size="sm" variant={statusFilter === s ? "default" : "outline"} onClick={() => setStatusFilter(s as any)}>
+            {s === undefined ? "전체" : s === "pending" ? "대기" : s === "reviewed" ? "검토" : s === "blocked" ? "차단" : "기각"}
+          </Button>
+        ))}
+      </div>
+      <Card className="border-border/50">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/50 text-muted-foreground">
+                  <th className="text-left p-3">ID</th>
+                  <th className="text-left p-3">프리셋</th>
+                  <th className="text-left p-3">신고 사유</th>
+                  <th className="text-left p-3">신고자</th>
+                  <th className="text-left p-3">상태</th>
+                  <th className="text-left p-3">날짜</th>
+                  <th className="text-left p-3">액션</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(data?.reports || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                      <Flag className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                      신고 내역이 없습니다
+                    </td>
+                  </tr>
+                ) : (
+                  (data?.reports || []).map((item: any) => (
+                    <tr key={item.report.id} className="border-b border-border/30 hover:bg-accent/30">
+                      <td className="p-3 font-mono text-xs">#{item.report.id}</td>
+                      <td className="p-3">
+                        <Badge variant="outline" className="text-xs">{item.report.presetType === "avatar" ? "아바타" : "자막"}</Badge>
+                        <span className="ml-1 text-xs">#{item.report.presetId}</span>
+                      </td>
+                      <td className="p-3">{reasonLabel(item.report.reason)}</td>
+                      <td className="p-3">{item.reporterName || "알 수 없음"}</td>
+                      <td className="p-3">{statusBadge(item.report.status)}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{new Date(item.report.createdAt).toLocaleDateString("ko-KR")}</td>
+                      <td className="p-3">
+                        {item.report.status === "pending" && (
+                          <div className="flex gap-1">
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => updateStatus.mutate({ id: item.report.id, status: "reviewed" })}>
+                              <Eye className="h-3 w-3" /> 검토
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-red-500 hover:text-red-400" onClick={() => updateStatus.mutate({ id: item.report.id, status: "blocked" })}>
+                              <Ban className="h-3 w-3" /> 차단
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => updateStatus.mutate({ id: item.report.id, status: "dismissed" })}>
+                              <XCircle className="h-3 w-3" /> 기각
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

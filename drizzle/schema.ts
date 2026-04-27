@@ -1828,3 +1828,35 @@ export const blockedPresets = mysqlTable("blockedPresets", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type BlockedPreset = typeof blockedPresets.$inferSelect;
+export type InsertBlockedPreset = typeof blockedPresets.$inferInsert;
+
+// ============ Notifications (v9.2) ============
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", ["like", "comment", "reply", "report_resolved", "system"]).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  message: text("message").notNull(),
+  link: varchar("link", { length: 500 }),
+  isRead: boolean("isRead").default(false).notNull(),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+
+// ============ Preset Comments (v9.2) ============
+export const presetComments = mysqlTable("presetComments", {
+  id: int("id").autoincrement().primaryKey(),
+  presetType: mysqlEnum("presetType", ["avatar", "subtitle"]).notNull(),
+  presetId: int("presetId").notNull(),
+  userId: int("userId").notNull(),
+  parentId: int("parentId"),
+  content: text("content").notNull(),
+  rating: int("rating"),
+  isDeleted: boolean("isDeleted").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type PresetComment = typeof presetComments.$inferSelect;
+export type InsertPresetComment = typeof presetComments.$inferInsert;

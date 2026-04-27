@@ -456,3 +456,92 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+
+/* ── Mobile Responsive Enhancements ── */
+@media (max-width: 639px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  /* Touch-friendly tap targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent horizontal overflow */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Stack grids on mobile */
+  .grid-cols-2,
+  .grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Full-width cards on mobile */
+  .glass-card, .card {
+    border-radius: 0.75rem;
+  }
+
+  /* Smaller text on mobile */
+  h1 { font-size: 1.75rem !important; }
+  h2 { font-size: 1.375rem !important; }
+  h3 { font-size: 1.125rem !important; }
+
+  /* Mobile-friendly tabs */
+  [role="tablist"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  [role="tablist"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile dialog/modal full-width */
+  [role="dialog"] {
+    max-width: calc(100vw - 1rem) !important;
+    margin: 0.5rem;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Performance: Reduce Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── GPU Acceleration for animations ── */
+.animate-scale-in,
+.animate-fade-in,
+.glass-card:hover,
+[data-state="open"] {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* ── Lazy loading placeholder ── */
+.lazy-placeholder {
+  background: linear-gradient(90deg, oklch(0.15 0.02 280) 25%, oklch(0.2 0.02 280) 50%, oklch(0.15 0.02 280) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

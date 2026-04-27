@@ -67,6 +67,8 @@ import {
   presetReports, InsertPresetReport,
   presetVersions, InsertPresetVersion,
   blockedPresets,
+  notifications, InsertNotification,
+  presetComments, InsertPresetComment,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3159,4 +3161,117 @@ export async function getPresetVersionById(id: number) {
   const db = await getDb(); if (!db) return null;
   const rows = await db.select().from(presetVersions).where(eq(presetVersions.id, id)).limit(1);
   return rows[0] || null;
+}
+
+// ============ Notifications (v9.2) ============
+export async function createNotification(data: InsertNotification) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(notifications).values(data);
+  return result[0].insertId;
+}
+
+export async function listNotifications(userId: number, limit = 20, offset = 0) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(notifications)
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(limit).offset(offset);
+}
+
+export async function getUnreadNotificationCount(userId: number) {
+  const db = await getDb(); if (!db) return 0;
+  const rows = await db.select({ count: sql<number>`COUNT(*)` }).from(notifications)
+    .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+  return rows[0]?.count || 0;
+}
+
+export async function markNotificationRead(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.update(notifications).set({ isRead: true })
+    .where(and(eq(notifications.id, id), eq(notifications.userId, userId)));
+}
+
+export async function markAllNotificationsRead(userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.update(notifications).set({ isRead: true })
+    .where(and(eq(notifications.userId, userId), eq(notifications.isRead, false)));
+}
+
+// ============ Preset Comments (v9.2) ============
+export async function addPresetComment(data: InsertPresetComment) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(presetComments).values(data);
+  return result[0].insertId;
+}
+
+export async function listPresetComments(presetType: "avatar" | "subtitle", presetId: number, limit = 20, offset = 0) {
+  const db = await getDb(); if (!db) return [];
+  return db.select({
+    comment: presetComments,
+    userName: users.name,
+    userAvatar: users.avatarUrl,
+  }).from(presetComments)
+    .leftJoin(users, eq(presetComments.userId, users.id))
+    .where(and(
+      eq(presetComments.presetType, presetType),
+      eq(presetComments.presetId, presetId),
+      eq(presetComments.isDeleted, false)
+    ))
+    .orderBy(desc(presetComments.createdAt))
+    .limit(limit).offset(offset);
+}
+
+export async function getPresetCommentCount(presetType: "avatar" | "subtitle", presetId: number) {
+  const db = await getDb(); if (!db) return 0;
+  const rows = await db.select({ count: sql<number>`COUNT(*)` }).from(presetComments)
+    .where(and(
+      eq(presetComments.presetType, presetType),
+      eq(presetComments.presetId, presetId),
+      eq(presetComments.isDeleted, false)
+    ));
+  return rows[0]?.count || 0;
+}
+
+export async function deletePresetComment(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.update(presetComments).set({ isDeleted: true, updatedAt: new Date() })
+    .where(and(eq(presetComments.id, id), eq(presetComments.userId, userId)));
+}
+
+export async function getPresetAverageRating(presetType: "avatar" | "subtitle", presetId: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select({
+    avg: sql<number>`AVG(rating)`,
+    count: sql<number>`COUNT(rating)`,
+  }).from(presetComments)
+    .where(and(
+      eq(presetComments.presetType, presetType),
+      eq(presetComments.presetId, presetId),
+      eq(presetComments.isDeleted, false),
+      sql`rating IS NOT NULL`
+    ));
+  return { average: rows[0]?.avg || 0, count: rows[0]?.count || 0 };
+}
+
+// ============ Admin Report Management (v9.2) ============
+export async function listPresetReportsAdmin(status?: string, limit = 20, offset = 0) {
+  const db = await getDb(); if (!db) return [];
+  const conditions = status ? and(eq(presetReports.status, status as any)) : undefined;
+  return db.select({
+    report: presetReports,
+    reporterName: users.name,
+  }).from(presetReports)
+    .leftJoin(users, eq(presetReports.reporterId, users.id))
+    .where(conditions)
+    .orderBy(desc(presetReports.createdAt))
+    .limit(limit).offset(offset);
+}
+
+// updatePresetReportStatus already defined above (line ~3091)
+
+export async function getPresetReportCount(status?: string) {
+  const db = await getDb(); if (!db) return 0;
+  const conditions = status ? eq(presetReports.status, status as any) : undefined;
+  const rows = await db.select({ count: sql<number>`COUNT(*)` }).from(presetReports).where(conditions);
+  return rows[0]?.count || 0;
 }

@@ -20,7 +20,8 @@ import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, User2, Settings2, Edit3, History,
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera,
-  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye, Palette, Settings, Heart, Tag, Search, Flag
+  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye, Palette, Settings, Heart, Tag, Search, Flag,
+  MessageSquare, Star, Send, Trash
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -957,7 +958,7 @@ export default function ProductionStudio() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-4">
+        <TabsList className="flex w-full overflow-x-auto no-scrollbar mb-4 sm:grid sm:grid-cols-5">
           <TabsTrigger value="create"><Wand2 className="w-4 h-4 mr-2" />{t("ps.tabCreate")}</TabsTrigger>
           <TabsTrigger value="scripts"><FileText className="w-4 h-4 mr-2" />{t("ps.tabMyScripts")} ({scriptsQuery.data?.length || 0})</TabsTrigger>
           <TabsTrigger value="produce"><Play className="w-4 h-4 mr-2" />{t("ps.tabProduceVideo")}</TabsTrigger>
@@ -2725,6 +2726,7 @@ export default function ProductionStudio() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span><Heart className="w-4 h-4 inline" /> {detailPreset.likes || 0}</span>
                   <span><Download className="w-4 h-4 inline" /> {detailPreset.downloads || 0}</span>
+                  <span><MessageSquare className="w-4 h-4 inline" /> <PresetCommentCount presetType={detailPresetType} presetId={detailPreset.id} /></span>
                   <button className="text-xs text-amber-400 hover:text-amber-300" onClick={() => setShowReportModal({ type: detailPresetType, id: detailPreset.id })}>{t("ps.report")}</button>
                   <button className="text-xs text-blue-400 hover:text-blue-300" onClick={() => setShowVersionHistory({ type: detailPresetType, id: detailPreset.id })}>{t("ps.versionHistory")}</button>
                 </div>
@@ -2775,6 +2777,9 @@ export default function ProductionStudio() {
                   </Button>
                 </div>
               </div>
+
+              {/* Comments & Reviews Section */}
+              <PresetCommentSection presetType={detailPresetType} presetId={detailPreset.id} />
             </div>
           </div>
         </div>
@@ -2904,6 +2909,159 @@ export default function ProductionStudio() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Preset Comment Count (inline) ── */
+function PresetCommentCount({ presetType, presetId }: { presetType: "avatar" | "subtitle"; presetId: number }) {
+  const { data } = trpc.presetComment.list.useQuery({ presetType, presetId, limit: 1, offset: 0 });
+  return <>{data?.total || 0}</>;
+}
+
+/* ── Preset Comment Section ── */
+function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" | "subtitle"; presetId: number }) {
+  const { user } = useAuth();
+  const [newComment, setNewComment] = useState("");
+  const [rating, setRating] = useState(0);
+  const [replyTo, setReplyTo] = useState<number | null>(null);
+  const [showAll, setShowAll] = useState(false);
+
+  const { data, isLoading } = trpc.presetComment.list.useQuery({
+    presetType,
+    presetId,
+    limit: showAll ? 50 : 5,
+    offset: 0,
+  });
+
+  const utils = trpc.useUtils();
+  const addComment = trpc.presetComment.add.useMutation({
+    onSuccess: () => {
+      utils.presetComment.list.invalidate();
+      setNewComment("");
+      setRating(0);
+      setReplyTo(null);
+      toast.success("댓글이 등록되었습니다.");
+    },
+    onError: () => toast.error("댓글 등록에 실패했습니다."),
+  });
+  const deleteComment = trpc.presetComment.delete.useMutation({
+    onSuccess: () => {
+      utils.presetComment.list.invalidate();
+      toast.success("댓글이 삭제되었습니다.");
+    },
+  });
+
+  const handleSubmit = () => {
+    if (!newComment.trim()) return;
+    addComment.mutate({
+      presetType,
+      presetId,
+      content: newComment.trim(),
+      rating: rating > 0 ? rating : undefined,
+      parentId: replyTo ?? undefined,
+    });
+  };
+
+  return (
+    <div className="border-t border-border/50 pt-4 mt-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-sm font-semibold flex items-center gap-1.5">
+          <MessageSquare className="w-4 h-4" /> 댓글 & 리뷰
+          {data?.total ? <span className="text-xs text-muted-foreground">({data.total})</span> : null}
+        </h4>
+        {data?.rating && (typeof data.rating === 'object' ? data.rating.average : data.rating) > 0 && (
+          <div className="flex items-center gap-1 text-xs text-amber-400">
+            <Star className="w-3.5 h-3.5 fill-amber-400" />
+            {(typeof data.rating === 'object' ? data.rating.average : data.rating).toFixed(1)}
+          </div>
+        )}
+      </div>
+
+      {/* Comment Input */}
+      {user ? (
+        <div className="mb-3 space-y-2">
+          {replyTo && (
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              답글 작성 중...
+              <button className="text-primary hover:underline" onClick={() => setReplyTo(null)}>취소</button>
+            </div>
+          )}
+          {!replyTo && (
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">평점:</span>
+              {[1, 2, 3, 4, 5].map(s => (
+                <button key={s} onClick={() => setRating(rating === s ? 0 : s)}>
+                  <Star className={`w-4 h-4 ${s <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40"}`} />
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              placeholder={replyTo ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmit()}
+              className="text-sm h-9"
+            />
+            <Button size="sm" className="h-9 px-3" onClick={handleSubmit} disabled={addComment.isPending || !newComment.trim()}>
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground mb-3">로그인 후 댓글을 작성할 수 있습니다.</p>
+      )}
+
+      {/* Comment List */}
+      {isLoading ? (
+        <div className="text-center py-4">
+          <Loader2 className="w-4 h-4 animate-spin mx-auto text-muted-foreground" />
+        </div>
+      ) : (data?.comments || []).length === 0 ? (
+        <p className="text-xs text-muted-foreground text-center py-4">아직 댓글이 없습니다. 첫 번째 리뷰를 남겨보세요!</p>
+      ) : (
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {(data?.comments || []).map((item: any) => (
+            <div key={item.comment.id} className={`p-2.5 rounded-lg bg-background/50 border border-border/30 ${item.comment.parentId ? "ml-6" : ""}`}>
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium">{item.userName || "사용자"}</span>
+                  {item.comment.rating && (
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <Star key={s} className={`w-3 h-3 ${s <= item.comment.rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground/60">
+                    {new Date(item.comment.createdAt).toLocaleDateString("ko-KR")}
+                  </span>
+                  {user && !item.comment.parentId && (
+                    <button className="text-[10px] text-primary hover:underline" onClick={() => setReplyTo(item.comment.id)}>답글</button>
+                  )}
+                  {user && item.comment.userId === user.id && (
+                    <button className="text-[10px] text-destructive hover:underline" onClick={() => deleteComment.mutate({ id: item.comment.id })}>
+                      <Trash className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-foreground/80 leading-relaxed">{item.comment.content}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Show more */}
+      {data && data.total > 5 && !showAll && (
+        <button className="text-xs text-primary hover:underline mt-2 w-full text-center" onClick={() => setShowAll(true)}>
+          댓글 더보기 ({data.total - 5}개 더)
+        </button>
       )}
     </div>
   );
