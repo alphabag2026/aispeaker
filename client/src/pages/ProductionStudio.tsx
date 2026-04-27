@@ -20,7 +20,7 @@ import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, User2, Settings2, Edit3, History,
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera,
-  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye
+  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye, Palette
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -524,6 +524,51 @@ export default function ProductionStudio() {
     onSuccess: () => { pipPresetsQuery.refetch(); toast.success(t("ps.presetDeleted")); },
     onError: (err) => toast.error(err.message),
   });
+
+  // Community shared presets (v8.7)
+  const sharedPresetsQuery = trpc.sharedPreset.list.useQuery();
+  const sharePresetMut = trpc.sharedPreset.share.useMutation({
+    onSuccess: () => { sharedPresetsQuery.refetch(); toast.success(t("ps.presetSharedToGallery")); },
+    onError: (err: any) => toast.error(err.message),
+  });
+  const likePresetMut = trpc.sharedPreset.like.useMutation({
+    onSuccess: () => { sharedPresetsQuery.refetch(); myLikesQuery.refetch(); },
+  });
+  const downloadPresetMut = trpc.sharedPreset.download.useMutation();
+  const deleteSharedPresetMut = trpc.sharedPreset.delete.useMutation({
+    onSuccess: () => { sharedPresetsQuery.refetch(); toast.success(t("ps.presetDeleted")); },
+  });
+  const myLikesQuery = trpc.sharedPreset.myLikes.useQuery();
+
+  // Subtitle style (v8.7)
+  const subtitleStyleQuery = trpc.subtitleStyle.get.useQuery();
+  const updateSubtitleStyleMut = trpc.subtitleStyle.update.useMutation({
+    onSuccess: () => { subtitleStyleQuery.refetch(); toast.success(t("ps.subtitleStyleSaved")); },
+  });
+  const [subtitleFontSize, setSubtitleFontSize] = useState(16);
+  const [subtitleFontColor, setSubtitleFontColor] = useState("#FFFFFF");
+  const [subtitleBgColor, setSubtitleBgColor] = useState("rgba(0,0,0,0.7)");
+  const [subtitlePosition, setSubtitlePosition] = useState<"top" | "bottom" | "custom">("bottom");
+  const [subtitleFontFamily, setSubtitleFontFamily] = useState("sans-serif");
+  const [subtitleBold, setSubtitleBold] = useState(false);
+  const [subtitleItalic, setSubtitleItalic] = useState(false);
+  const [subtitleOutline, setSubtitleOutline] = useState(true);
+  const [showGallery, setShowGallery] = useState(false);
+
+  // Hydrate subtitle style from DB
+  useEffect(() => {
+    if (subtitleStyleQuery.data) {
+      const s = subtitleStyleQuery.data;
+      if (s.fontSize) setSubtitleFontSize(s.fontSize);
+      if (s.fontColor) setSubtitleFontColor(s.fontColor);
+      if (s.bgColor) setSubtitleBgColor(s.bgColor);
+      if (s.position) setSubtitlePosition(s.position as any);
+      if (s.fontFamily) setSubtitleFontFamily(s.fontFamily);
+      if (s.bold !== null) setSubtitleBold(!!s.bold);
+      if (s.italic !== null) setSubtitleItalic(!!s.italic);
+      if (s.outline !== null) setSubtitleOutline(!!s.outline);
+    }
+  }, [subtitleStyleQuery.data]);
 
   // Apply template if coming from template library
   useEffect(() => {
@@ -1213,6 +1258,124 @@ export default function ProductionStudio() {
                                           <Download className="w-3 h-3 mr-1" />{t("ps.exportSrt")}
                                         </Button>
                                       </div>
+
+                                      {/* Subtitle Style Customization */}
+                                      <div className="mt-3 p-2 rounded-lg border border-amber-500/30 bg-amber-500/5">
+                                        <p className="text-xs font-medium mb-2 flex items-center gap-1.5">
+                                          <Palette className="w-3 h-3 text-amber-400" />
+                                          {t("ps.subtitleStyle")}
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                          <div>
+                                            <label className="text-[10px] text-muted-foreground">{t("ps.fontSize")}</label>
+                                            <Input
+                                              type="number"
+                                              min={8}
+                                              max={48}
+                                              value={subtitleFontSize}
+                                              onChange={(e) => setSubtitleFontSize(Number(e.target.value))}
+                                              className="h-6 text-xs"
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] text-muted-foreground">{t("ps.fontFamily")}</label>
+                                            <select
+                                              value={subtitleFontFamily}
+                                              onChange={(e) => setSubtitleFontFamily(e.target.value)}
+                                              className="w-full h-6 text-xs rounded border border-border bg-background px-1"
+                                            >
+                                              <option value="sans-serif">Sans-serif</option>
+                                              <option value="serif">Serif</option>
+                                              <option value="monospace">Monospace</option>
+                                              <option value="'Noto Sans KR'">Noto Sans KR</option>
+                                              <option value="'Noto Sans JP'">Noto Sans JP</option>
+                                            </select>
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] text-muted-foreground">{t("ps.fontColor")}</label>
+                                            <div className="flex gap-1">
+                                              <input
+                                                type="color"
+                                                value={subtitleFontColor}
+                                                onChange={(e) => setSubtitleFontColor(e.target.value)}
+                                                className="w-6 h-6 rounded border border-border cursor-pointer"
+                                              />
+                                              <Input value={subtitleFontColor} onChange={(e) => setSubtitleFontColor(e.target.value)} className="h-6 text-xs flex-1" />
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] text-muted-foreground">{t("ps.bgColor")}</label>
+                                            <div className="flex gap-1">
+                                              <input
+                                                type="color"
+                                                value={subtitleBgColor.startsWith("rgba") ? "#000000" : subtitleBgColor}
+                                                onChange={(e) => setSubtitleBgColor(e.target.value)}
+                                                className="w-6 h-6 rounded border border-border cursor-pointer"
+                                              />
+                                              <Input value={subtitleBgColor} onChange={(e) => setSubtitleBgColor(e.target.value)} className="h-6 text-xs flex-1" />
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <label className="text-[10px] text-muted-foreground">{t("ps.subtitlePos")}</label>
+                                            <select
+                                              value={subtitlePosition}
+                                              onChange={(e) => setSubtitlePosition(e.target.value as any)}
+                                              className="w-full h-6 text-xs rounded border border-border bg-background px-1"
+                                            >
+                                              <option value="top">{t("ps.posTop")}</option>
+                                              <option value="bottom">{t("ps.posBottom")}</option>
+                                            </select>
+                                          </div>
+                                          <div className="flex items-end gap-2">
+                                            <label className="flex items-center gap-1 text-[10px]">
+                                              <input type="checkbox" checked={subtitleBold} onChange={(e) => setSubtitleBold(e.target.checked)} className="w-3 h-3" />
+                                              <span className="font-bold">B</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 text-[10px]">
+                                              <input type="checkbox" checked={subtitleItalic} onChange={(e) => setSubtitleItalic(e.target.checked)} className="w-3 h-3" />
+                                              <span className="italic">I</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 text-[10px]">
+                                              <input type="checkbox" checked={subtitleOutline} onChange={(e) => setSubtitleOutline(e.target.checked)} className="w-3 h-3" />
+                                              {t("ps.outline")}
+                                            </label>
+                                          </div>
+                                        </div>
+                                        {/* Preview */}
+                                        <div className="mt-2 p-2 rounded bg-black/80 text-center">
+                                          <span style={{
+                                            fontSize: `${subtitleFontSize}px`,
+                                            fontFamily: subtitleFontFamily,
+                                            color: subtitleFontColor,
+                                            backgroundColor: subtitleBgColor,
+                                            fontWeight: subtitleBold ? 'bold' : 'normal',
+                                            fontStyle: subtitleItalic ? 'italic' : 'normal',
+                                            textShadow: subtitleOutline ? '1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8)' : 'none',
+                                            padding: '2px 6px',
+                                            borderRadius: '2px',
+                                          }}>
+                                            {t("ps.subtitlePreviewText")}
+                                          </span>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="text-xs h-6 mt-2 w-full border-amber-500/50 text-amber-400"
+                                          onClick={() => updateSubtitleStyleMut.mutate({
+                                            fontSize: subtitleFontSize,
+                                            fontColor: subtitleFontColor,
+                                            bgColor: subtitleBgColor,
+                                            position: subtitlePosition,
+                                            fontFamily: subtitleFontFamily,
+                                            bold: subtitleBold,
+                                            italic: subtitleItalic,
+                                            outline: subtitleOutline,
+                                          })}
+                                          disabled={updateSubtitleStyleMut.isPending}
+                                        >
+                                          {t("ps.saveSubtitleStyle")}
+                                        </Button>
+                                      </div>
                                     </>
                                   )}
                                 </div>
@@ -1394,10 +1557,95 @@ export default function ProductionStudio() {
                                       >
                                         <Upload className="w-3 h-3 mr-1" />{t("ps.importPreset")}
                                       </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-xs h-7 border-dashed border-emerald-500/50 text-emerald-400"
+                                        onClick={() => setShowGallery(!showGallery)}
+                                      >
+                                        <Globe className="w-3 h-3 mr-1" />{t("ps.presetGallery")}
+                                      </Button>
                                     </div>
                                   </div>
                                 );
                               })()}
+
+                              {/* Community Preset Gallery */}
+                              {showGallery && (
+                                <div className="mt-3 p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/5">
+                                  <p className="text-sm font-medium mb-2 flex items-center gap-1.5">
+                                    <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                                    {t("ps.communityPresets")}
+                                  </p>
+                                  {sharedPresetsQuery.isLoading ? (
+                                    <p className="text-xs text-muted-foreground">{t("ps.loading")}</p>
+                                  ) : !sharedPresetsQuery.data?.length ? (
+                                    <p className="text-xs text-muted-foreground">{t("ps.noSharedPresets")}</p>
+                                  ) : (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                      {sharedPresetsQuery.data.map((sp: any) => (
+                                        <div key={sp.id} className="flex items-center justify-between p-2 rounded bg-background/50 border border-border/50">
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium truncate">{sp.name}</p>
+                                            <p className="text-[10px] text-muted-foreground">
+                                              {sp.userName} · {sp.position} · {sp.size}
+                                              {sp.description && ` · ${sp.description}`}
+                                            </p>
+                                          </div>
+                                          <div className="flex items-center gap-1 ml-2 shrink-0">
+                                            <button
+                                              className={`text-xs px-1 ${(myLikesQuery.data || []).includes(sp.id) ? 'text-red-400' : 'text-muted-foreground hover:text-red-400'}`}
+                                              onClick={() => likePresetMut.mutate({ id: sp.id })}
+                                            >
+                                              ♥ {sp.likes || 0}
+                                            </button>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="text-xs h-6 px-2"
+                                              onClick={() => {
+                                                setPipPosition({ x: sp.customX ?? 75, y: sp.customY ?? 75 });
+                                                setPipSizePercent(sp.customWidth ?? 25);
+                                                updatePipMutation.mutate({ customX: sp.customX ?? 75, customY: sp.customY ?? 75, size: sp.size, opacity: sp.opacity, shape: sp.shape, position: "custom" });
+                                                downloadPresetMut.mutate({ id: sp.id });
+                                                toast.success(t("ps.presetApplied"));
+                                              }}
+                                            >
+                                              {t("ps.applyPreset")}
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <div className="mt-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs h-7 border-emerald-500/50 text-emerald-400"
+                                      onClick={() => {
+                                        const name = window.prompt(t("ps.presetNamePrompt"));
+                                        if (!name) return;
+                                        const desc = window.prompt(t("ps.presetDescPrompt")) || "";
+                                        sharePresetMut.mutate({
+                                          name,
+                                          description: desc,
+                                          position: pipSettingsQuery.data?.position as any || "custom",
+                                          size: pipSettingsQuery.data?.size as any || "medium",
+                                          opacity: pipSettingsQuery.data?.opacity ?? 100,
+                                          shape: pipSettingsQuery.data?.shape as any || "rounded",
+                                          customX: pipPosition.x,
+                                          customY: pipPosition.y,
+                                          customWidth: pipSizePercent,
+                                          customHeight: pipSizePercent,
+                                        });
+                                      }}
+                                    >
+                                      {t("ps.shareToGallery")}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })()}

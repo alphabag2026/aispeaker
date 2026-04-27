@@ -1688,3 +1688,52 @@ export const pipPresets = mysqlTable("pipPresets", {
 });
 export type PipPreset = typeof pipPresets.$inferSelect;
 export type InsertPipPreset = typeof pipPresets.$inferInsert;
+
+
+// ============ Shared Presets (Community Gallery) ============
+export const sharedPresets = mysqlTable("sharedPresets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  userName: varchar("userName", { length: 100 }).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: varchar("description", { length: 500 }),
+  position: mysqlEnum("position", ["bottom-right", "bottom-left", "top-right", "top-left", "custom"]).default("custom").notNull(),
+  size: mysqlEnum("size", ["small", "medium", "large"]).default("medium").notNull(),
+  opacity: int("opacity").default(100).notNull(),
+  shape: mysqlEnum("shape", ["circle", "rounded", "rectangle"]).default("rounded").notNull(),
+  customX: int("customX").default(75),
+  customY: int("customY").default(75),
+  customWidth: int("customWidth").default(25),
+  customHeight: int("customHeight").default(25),
+  likes: int("likes").default(0).notNull(),
+  downloads: int("downloads").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SharedPreset = typeof sharedPresets.$inferSelect;
+export type InsertSharedPreset = typeof sharedPresets.$inferInsert;
+
+// ============ Shared Preset Likes (prevent duplicate likes) ============
+export const sharedPresetLikes = mysqlTable("sharedPresetLikes", {
+  id: int("id").autoincrement().primaryKey(),
+  presetId: int("presetId").notNull(),
+  userId: int("userId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// ============ Subtitle Styles ============
+export const subtitleStyles = mysqlTable("subtitleStyles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  fontSize: int("fontSize").default(16).notNull(),
+  fontColor: varchar("fontColor", { length: 20 }).default("#FFFFFF").notNull(),
+  bgColor: varchar("bgColor", { length: 20 }).default("rgba(0,0,0,0.7)").notNull(),
+  position: mysqlEnum("position", ["top", "bottom", "custom"]).default("bottom").notNull(),
+  customY: int("customY").default(90),
+  fontFamily: varchar("fontFamily", { length: 50 }).default("sans-serif").notNull(),
+  bold: boolean("bold").default(false).notNull(),
+  italic: boolean("italic").default(false).notNull(),
+  outline: boolean("outline").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type SubtitleStyle = typeof subtitleStyles.$inferSelect;
+export type InsertSubtitleStyle = typeof subtitleStyles.$inferInsert;

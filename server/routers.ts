@@ -6525,6 +6525,89 @@ Return a JSON object with a "sections" array. Each section has:
       return db.getAdminUserStats();
     }),
   }),
+
+  // ── Community Shared Presets (v8.7) ──
+  sharedPreset: router({
+    list: publicProcedure
+      .input(z.object({ sortBy: z.enum(["latest", "popular"]).optional() }).optional())
+      .query(async ({ input }) => {
+        return db.listSharedPresets(input?.sortBy || "latest");
+      }),
+    share: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().max(500).optional(),
+        position: z.enum(["bottom-right", "bottom-left", "top-right", "top-left", "custom"]).optional(),
+        size: z.enum(["small", "medium", "large"]).optional(),
+        opacity: z.number().min(0).max(100).optional(),
+        shape: z.enum(["circle", "rounded", "rectangle"]).optional(),
+        customX: z.number().optional(),
+        customY: z.number().optional(),
+        customWidth: z.number().optional(),
+        customHeight: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createSharedPreset({
+          userId: ctx.user.id,
+          userName: ctx.user.name || "Anonymous",
+          name: input.name,
+          description: input.description,
+          position: input.position || "custom",
+          size: input.size || "medium",
+          opacity: input.opacity ?? 100,
+          shape: input.shape || "rounded",
+          customX: input.customX ?? 75,
+          customY: input.customY ?? 75,
+          customWidth: input.customWidth ?? 25,
+          customHeight: input.customHeight ?? 25,
+        });
+        return { id };
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteSharedPreset(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    like: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const liked = await db.toggleSharedPresetLike(input.id, ctx.user.id);
+        return { liked };
+      }),
+    download: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.incrementSharedPresetDownloads(input.id);
+        return { success: true };
+      }),
+    myLikes: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserLikedPresets(ctx.user.id);
+    }),
+  }),
+
+  // ── Subtitle Styles (v8.7) ──
+  subtitleStyle: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return db.getSubtitleStyle(ctx.user.id);
+    }),
+    update: protectedProcedure
+      .input(z.object({
+        fontSize: z.number().min(8).max(48).optional(),
+        fontColor: z.string().max(20).optional(),
+        bgColor: z.string().max(30).optional(),
+        position: z.enum(["top", "bottom", "custom"]).optional(),
+        customY: z.number().min(0).max(100).optional(),
+        fontFamily: z.string().max(50).optional(),
+        bold: z.boolean().optional(),
+        italic: z.boolean().optional(),
+        outline: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.upsertSubtitleStyle(ctx.user.id, input);
+        return { success: true };
+      }),
+  }),
 });
 
 // SRT time formatter
