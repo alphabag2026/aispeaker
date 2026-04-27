@@ -613,6 +613,49 @@ export default function ProductionStudio() {
   // v8.9: Subtitle slide overlay preview
   const [showSubtitleOverlay, setShowSubtitleOverlay] = useState(true);
 
+  // v9.0: Share Preset Modal
+  const [showShareModal, setShowShareModal] = useState<"avatar" | "subtitle" | null>(null);
+  const [sharePresetName, setSharePresetName] = useState("");
+  const [sharePresetDesc, setSharePresetDesc] = useState("");
+
+  // v9.0: Infinite scroll for galleries
+  const [avatarGalleryItems, setAvatarGalleryItems] = useState<any[]>([]);
+  const [avatarNextCursor, setAvatarNextCursor] = useState<number | null>(null);
+  const [avatarLoadingMore, setAvatarLoadingMore] = useState(false);
+  const [subtitleGalleryItems, setSubtitleGalleryItems] = useState<any[]>([]);
+  const [subtitleNextCursor, setSubtitleNextCursor] = useState<number | null>(null);
+  const [subtitleLoadingMore, setSubtitleLoadingMore] = useState(false);
+  const avatarScrollRef = useRef<HTMLDivElement>(null);
+  const subtitleScrollRef = useRef<HTMLDivElement>(null);
+
+  const avatarPaginatedQuery = trpc.sharedPreset.listPaginated.useQuery(
+    { sortBy: gallerySortBy, tagId: selectedTagId, limit: 20 },
+    { enabled: showGallery }
+  );
+  const subtitlePaginatedQuery = trpc.sharedSubtitlePreset.listPaginated.useQuery(
+    { sortBy: subtitleGallerySortBy, tagId: subtitleSelectedTagId, limit: 20 },
+    { enabled: showSubtitleGallery }
+  );
+
+  // Sync paginated data to gallery items
+  useEffect(() => {
+    if (avatarPaginatedQuery.data) {
+      setAvatarGalleryItems(avatarPaginatedQuery.data.items);
+      setAvatarNextCursor(avatarPaginatedQuery.data.nextCursor);
+    }
+  }, [avatarPaginatedQuery.data]);
+
+  useEffect(() => {
+    if (subtitlePaginatedQuery.data) {
+      setSubtitleGalleryItems(subtitlePaginatedQuery.data.items);
+      setSubtitleNextCursor(subtitlePaginatedQuery.data.nextCursor);
+    }
+  }, [subtitlePaginatedQuery.data]);
+
+  // v9.0: Detail Preview Modal
+  const [detailPreset, setDetailPreset] = useState<any>(null);
+  const [detailPresetType, setDetailPresetType] = useState<"avatar" | "subtitle">("avatar");
+
   // Hydrate subtitle style from DB
   useEffect(() => {
     if (subtitleStyleQuery.data) {
@@ -1448,23 +1491,7 @@ export default function ProductionStudio() {
                                             size="sm"
                                             variant="outline"
                                             className="text-xs h-6 flex-1 border-blue-500/50 text-blue-400"
-                                            onClick={() => {
-                                              const name = window.prompt(t("ps.presetNamePrompt"));
-                                              if (!name) return;
-                                              const desc = window.prompt(t("ps.presetDescPrompt")) || "";
-                                              shareSubtitlePresetMut.mutate({
-                                                name,
-                                                description: desc,
-                                                fontSize: subtitleFontSize,
-                                                fontColor: subtitleFontColor,
-                                                bgColor: subtitleBgColor,
-                                                position: subtitlePosition === "custom" ? "bottom" : subtitlePosition as "top" | "bottom",
-                                                fontFamily: subtitleFontFamily,
-                                                bold: subtitleBold,
-                                                italic: subtitleItalic,
-                                                outline: subtitleOutline,
-                                              });
-                                            }}
+                                            onClick={() => setShowShareModal("subtitle")}
                                             disabled={shareSubtitlePresetMut.isPending}
                                           >
                                             <Upload className="w-3 h-3 mr-1" />{t("ps.shareToGallery")}
@@ -1499,7 +1526,7 @@ export default function ProductionStudio() {
                                             ) : (
                                               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                                                 {sharedSubtitlePresetsQuery.data.map((sp: any) => (
-                                                  <div key={sp.id} className="p-1.5 rounded bg-background/50 border border-border/50">
+                                                  <div key={sp.id} className="p-1.5 rounded bg-background/50 border border-border/50 cursor-pointer hover:border-emerald-500/50 transition-colors" onClick={() => { setDetailPreset(sp); setDetailPresetType('subtitle'); }}>
                                                     <div className="flex items-center justify-between">
                                                       <div className="flex-1 min-w-0">
                                                         <p className="text-[10px] font-medium truncate">{sp.name}</p>
@@ -1822,7 +1849,7 @@ export default function ProductionStudio() {
                                   ) : (
                                     <div className="space-y-2 max-h-48 overflow-y-auto">
                                       {sharedPresetsQuery.data.map((sp: any) => (
-                                        <div key={sp.id} className="flex items-center justify-between p-2 rounded bg-background/50 border border-border/50">
+                                        <div key={sp.id} className="flex items-center justify-between p-2 rounded bg-background/50 border border-border/50 cursor-pointer hover:border-violet-500/50 transition-colors" onClick={() => { setDetailPreset(sp); setDetailPresetType('avatar'); }}>
                                           <div className="flex-1 min-w-0">
                                             <p className="text-xs font-medium truncate">{sp.name}</p>
                                             <p className="text-[10px] text-muted-foreground">
@@ -1861,23 +1888,7 @@ export default function ProductionStudio() {
                                       size="sm"
                                       variant="outline"
                                       className="text-xs h-7 border-emerald-500/50 text-emerald-400"
-                                      onClick={() => {
-                                        const name = window.prompt(t("ps.presetNamePrompt"));
-                                        if (!name) return;
-                                        const desc = window.prompt(t("ps.presetDescPrompt")) || "";
-                                        sharePresetMut.mutate({
-                                          name,
-                                          description: desc,
-                                          position: pipSettingsQuery.data?.position as any || "custom",
-                                          size: pipSettingsQuery.data?.size as any || "medium",
-                                          opacity: pipSettingsQuery.data?.opacity ?? 100,
-                                          shape: pipSettingsQuery.data?.shape as any || "rounded",
-                                          customX: pipPosition.x,
-                                          customY: pipPosition.y,
-                                          customWidth: pipSizePercent,
-                                          customHeight: pipSizePercent,
-                                        });
-                                      }}
+                                      onClick={() => setShowShareModal("avatar")}
                                     >
                                       {t("ps.shareToGallery")}
                                     </Button>
@@ -2476,6 +2487,255 @@ export default function ProductionStudio() {
                 </div>
               )}
             </ScrollArea>
+          </div>
+        </div>
+      )}
+
+      {/* v9.0: Share Preset Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setShowShareModal(null)}>
+          <div className="bg-card border border-border rounded-xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="text-lg font-semibold">
+                {showShareModal === 'avatar' ? t("ps.shareToGallery") + ' - ' + t("ps.avatarPresets") : t("ps.shareToGallery") + ' - ' + t("ps.subtitlePresets")}
+              </h3>
+              <button onClick={() => setShowShareModal(null)} className="text-muted-foreground hover:text-foreground"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <Label className="text-sm mb-1 block">{t("ps.presetNamePrompt")}</Label>
+                <Input value={sharePresetName} onChange={(e) => setSharePresetName(e.target.value)} placeholder={t("ps.presetNamePrompt")} className="h-9" />
+              </div>
+              <div>
+                <Label className="text-sm mb-1 block">{t("ps.descriptionPlaceholder")}</Label>
+                <Input value={sharePresetDesc} onChange={(e) => setSharePresetDesc(e.target.value)} placeholder={t("ps.descriptionPlaceholder")} className="h-9" />
+              </div>
+              {/* Tag input */}
+              <div>
+                <Label className="text-sm mb-1 block"><Tag className="w-3.5 h-3.5 inline mr-1" />{t("ps.allTags")}</Label>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {shareSelectedTags.map(tag => (
+                    <Badge key={tag.id} variant="secondary" className="text-xs cursor-pointer" onClick={() => setShareSelectedTags(prev => prev.filter(t => t.id !== tag.id))}>
+                      {tag.name} <XCircle className="w-3 h-3 ml-1" />
+                    </Badge>
+                  ))}
+                </div>
+                <Input
+                  value={shareTagInput}
+                  onChange={(e) => setShareTagInput(e.target.value)}
+                  placeholder="Search or create tags..."
+                  className="h-8 text-sm"
+                />
+                {shareTagInput.length >= 1 && tagSearchQuery.data && (
+                  <div className="mt-1 border border-border rounded-md max-h-32 overflow-y-auto">
+                    {tagSearchQuery.data.map((tag: any) => (
+                      <button
+                        key={tag.id}
+                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent/50 flex items-center justify-between"
+                        onClick={() => {
+                          if (!shareSelectedTags.some(t => t.id === tag.id)) {
+                            setShareSelectedTags(prev => [...prev, { id: tag.id, name: tag.name }]);
+                          }
+                          setShareTagInput("");
+                        }}
+                      >
+                        <span>{tag.name}</span>
+                        <span className="text-xs text-muted-foreground">{tag.usageCount}</span>
+                      </button>
+                    ))}
+                    {tagSearchQuery.data.length === 0 && (
+                      <button
+                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent/50 text-violet-400"
+                        onClick={async () => {
+                          const result = await createTagMut.mutateAsync({ name: shareTagInput.trim(), category: showShareModal === 'avatar' ? 'avatar' : 'subtitle' });
+                          setShareSelectedTags(prev => [...prev, { id: result.id, name: shareTagInput.trim() }]);
+                          setShareTagInput("");
+                        }}
+                      >
+                        + Create \"{shareTagInput.trim()}\"
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* Share button */}
+              <Button
+                className="w-full"
+                disabled={!sharePresetName.trim() || sharePresetMut.isPending || shareSubtitlePresetMut.isPending}
+                onClick={async () => {
+                  const tagIds = shareSelectedTags.map(t => t.id);
+                  if (showShareModal === 'avatar') {
+                    await sharePresetMut.mutateAsync({
+                      name: sharePresetName.trim(),
+                      description: sharePresetDesc.trim() || undefined,
+                      position: "custom",
+                      size: pipSizePercent < 20 ? "small" : pipSizePercent > 35 ? "large" : "medium",
+                      opacity: 100,
+                      shape: "rounded",
+                      customX: Math.round(pipPosition.x),
+                      customY: Math.round(pipPosition.y),
+                      customWidth: pipSizePercent,
+                      customHeight: pipSizePercent,
+                      tagIds,
+                    });
+                  } else {
+                    await shareSubtitlePresetMut.mutateAsync({
+                      name: sharePresetName.trim(),
+                      description: sharePresetDesc.trim() || undefined,
+                      fontSize: subtitleFontSize,
+                      fontColor: subtitleFontColor,
+                      bgColor: subtitleBgColor,
+                      position: subtitlePosition === 'custom' ? 'bottom' : subtitlePosition as any,
+                      fontFamily: subtitleFontFamily,
+                      bold: subtitleBold,
+                      italic: subtitleItalic,
+                      outline: subtitleOutline,
+                      tagIds,
+                    });
+                  }
+                  setShowShareModal(null);
+                  setSharePresetName("");
+                  setSharePresetDesc("");
+                  setShareSelectedTags([]);
+                  setShareTagInput("");
+                  avatarPaginatedQuery.refetch();
+                  subtitlePaginatedQuery.refetch();
+                }}
+              >
+                {(sharePresetMut.isPending || shareSubtitlePresetMut.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                {t("ps.shareToGallery")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* v9.0: Detail Preview Modal */}
+      {detailPreset && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setDetailPreset(null)}>
+          <div className="bg-card border border-border rounded-xl w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <div>
+                <h3 className="text-lg font-semibold">{detailPreset.name}</h3>
+                <p className="text-xs text-muted-foreground">{t("ps.by")} {detailPreset.userName}</p>
+              </div>
+              <button onClick={() => setDetailPreset(null)} className="text-muted-foreground hover:text-foreground"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Preview visualization */}
+              <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg aspect-video overflow-hidden">
+                {/* Slide placeholder */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Presentation className="w-16 h-16 text-slate-600" />
+                </div>
+                {detailPresetType === 'avatar' ? (
+                  /* Avatar PiP visualization */
+                  <div
+                    className="absolute bg-gradient-to-br from-violet-500/30 to-blue-500/30 border-2 border-violet-400/50 flex items-center justify-center"
+                    style={{
+                      borderRadius: detailPreset.shape === 'circle' ? '50%' : detailPreset.shape === 'rounded' ? '12px' : '4px',
+                      width: `${detailPreset.customWidth || 25}%`,
+                      height: `${detailPreset.customHeight || 25}%`,
+                      left: detailPreset.position === 'bottom-left' || detailPreset.position === 'top-left' ? '3%' : detailPreset.position === 'custom' ? `${detailPreset.customX || 75}%` : undefined,
+                      right: detailPreset.position === 'bottom-right' || detailPreset.position === 'top-right' ? '3%' : undefined,
+                      top: detailPreset.position === 'top-left' || detailPreset.position === 'top-right' ? '3%' : detailPreset.position === 'custom' ? `${detailPreset.customY || 75}%` : undefined,
+                      bottom: detailPreset.position === 'bottom-left' || detailPreset.position === 'bottom-right' ? '3%' : undefined,
+                      opacity: (detailPreset.opacity || 100) / 100,
+                    }}
+                  >
+                    <User2 className="w-8 h-8 text-violet-300" />
+                  </div>
+                ) : (
+                  /* Subtitle overlay visualization */
+                  <div
+                    className="absolute left-1/2 -translate-x-1/2 px-3 py-1"
+                    style={{
+                      [detailPreset.position === 'top' ? 'top' : 'bottom']: '5%',
+                      fontSize: `${Math.min(detailPreset.fontSize || 16, 18)}px`,
+                      fontFamily: detailPreset.fontFamily || 'sans-serif',
+                      color: detailPreset.fontColor || '#FFFFFF',
+                      backgroundColor: detailPreset.bgColor || 'rgba(0,0,0,0.7)',
+                      fontWeight: detailPreset.bold ? 'bold' : 'normal',
+                      fontStyle: detailPreset.italic ? 'italic' : 'normal',
+                      textShadow: detailPreset.outline ? '1px 1px 2px rgba(0,0,0,0.8), -1px -1px 2px rgba(0,0,0,0.8)' : 'none',
+                      borderRadius: '3px',
+                      maxWidth: '90%',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {t("ps.subtitlePreviewText")}
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              {detailPreset.description && (
+                <p className="text-sm text-muted-foreground">{detailPreset.description}</p>
+              )}
+
+              {/* Tags */}
+              {detailPreset.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {detailPreset.tags.map((tag: any) => (
+                    <Badge key={tag.id} variant="outline" className="text-xs">{tag.name}</Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Stats + Actions */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span><Heart className="w-4 h-4 inline" /> {detailPreset.likes || 0}</span>
+                  <span><Download className="w-4 h-4 inline" /> {detailPreset.downloads || 0}</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (detailPresetType === 'avatar') {
+                        likePresetMut.mutate({ id: detailPreset.id });
+                      } else {
+                        likeSubtitlePresetMut.mutate({ id: detailPreset.id });
+                      }
+                    }}
+                  >
+                    <Heart className={`w-4 h-4 mr-1 ${(detailPresetType === 'avatar' ? myLikesQuery.data?.includes(detailPreset.id) : mySubtitleLikesQuery.data?.includes(detailPreset.id)) ? 'fill-red-400 text-red-400' : ''}`} />
+                    {t("ps.sortPopular")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      if (detailPresetType === 'avatar') {
+                        downloadPresetMut.mutate({ id: detailPreset.id });
+                        // Apply avatar preset
+                        if (detailPreset.customX != null && detailPreset.customY != null) {
+                          setPipPosition({ x: detailPreset.customX, y: detailPreset.customY });
+                        }
+                        if (detailPreset.size === "small") setPipSizePercent(15);
+                        else if (detailPreset.size === "large") setPipSizePercent(40);
+                        else setPipSizePercent(25);
+                      } else {
+                        downloadSubtitlePresetMut.mutate({ id: detailPreset.id });
+                        // Apply subtitle preset
+                        if (detailPreset.fontSize) setSubtitleFontSize(detailPreset.fontSize);
+                        if (detailPreset.fontColor) setSubtitleFontColor(detailPreset.fontColor);
+                        if (detailPreset.bgColor) setSubtitleBgColor(detailPreset.bgColor);
+                        if (detailPreset.position) setSubtitlePosition(detailPreset.position);
+                        if (detailPreset.fontFamily) setSubtitleFontFamily(detailPreset.fontFamily);
+                        if (detailPreset.bold != null) setSubtitleBold(detailPreset.bold);
+                        if (detailPreset.italic != null) setSubtitleItalic(detailPreset.italic);
+                        if (detailPreset.outline != null) setSubtitleOutline(detailPreset.outline);
+                      }
+                      toast.success(t("ps.presetApplied"));
+                      setDetailPreset(null);
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-1" />{t("ps.applyPreset")}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

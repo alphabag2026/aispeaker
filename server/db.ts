@@ -2966,3 +2966,90 @@ export async function removeTagsFromPreset(presetType: "avatar" | "subtitle", pr
   const db = await getDb(); if (!db) return;
   await db.delete(presetTagMap).where(and(eq(presetTagMap.presetType, presetType), eq(presetTagMap.presetId, presetId)));
 }
+
+// ── v9.0: Cursor-based Pagination for Presets ──
+export async function listSharedPresetsPaginated(
+  sortBy: "latest" | "popular" = "latest",
+  tagId?: number,
+  cursor?: number,
+  limit = 20
+) {
+  const db = await getDb(); if (!db) return { items: [], nextCursor: null as number | null };
+  const conditions: any[] = [];
+  if (cursor) conditions.push(sql`${sharedPresets.id} < ${cursor}`);
+
+  let query;
+  if (tagId) {
+    query = db.select({ preset: sharedPresets })
+      .from(sharedPresets)
+      .innerJoin(presetTagMap, and(
+        eq(presetTagMap.presetId, sharedPresets.id),
+        eq(presetTagMap.presetType, "avatar"),
+        eq(presetTagMap.tagId, tagId),
+      ));
+  } else {
+    query = db.select().from(sharedPresets);
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+
+  const orderCol = sortBy === "popular" ? desc(sharedPresets.likes) : desc(sharedPresets.id);
+  const rows = await (query as any).orderBy(orderCol).limit(limit + 1);
+
+  const items = tagId ? rows.map((r: any) => r.preset) : rows;
+  const hasMore = items.length > limit;
+  if (hasMore) items.pop();
+  const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null;
+  return { items, nextCursor };
+}
+
+export async function listSharedSubtitlePresetsPaginated(
+  sortBy: "latest" | "popular" = "latest",
+  tagId?: number,
+  cursor?: number,
+  limit = 20
+) {
+  const db = await getDb(); if (!db) return { items: [], nextCursor: null as number | null };
+  const conditions: any[] = [];
+  if (cursor) conditions.push(sql`${sharedSubtitlePresets.id} < ${cursor}`);
+
+  let query;
+  if (tagId) {
+    query = db.select({ preset: sharedSubtitlePresets })
+      .from(sharedSubtitlePresets)
+      .innerJoin(presetTagMap, and(
+        eq(presetTagMap.presetId, sharedSubtitlePresets.id),
+        eq(presetTagMap.presetType, "subtitle"),
+        eq(presetTagMap.tagId, tagId),
+      ));
+  } else {
+    query = db.select().from(sharedSubtitlePresets);
+  }
+
+  if (conditions.length > 0) {
+    query = query.where(and(...conditions)) as any;
+  }
+
+  const orderCol = sortBy === "popular" ? desc(sharedSubtitlePresets.likes) : desc(sharedSubtitlePresets.id);
+  const rows = await (query as any).orderBy(orderCol).limit(limit + 1);
+
+  const items = tagId ? rows.map((r: any) => r.preset) : rows;
+  const hasMore = items.length > limit;
+  if (hasMore) items.pop();
+  const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null;
+  return { items, nextCursor };
+}
+
+export async function getSharedPresetById(id: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(sharedPresets).where(eq(sharedPresets.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function getSharedSubtitlePresetById(id: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(sharedSubtitlePresets).where(eq(sharedSubtitlePresets.id, id)).limit(1);
+  return rows[0] || null;
+}
