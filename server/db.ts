@@ -2925,3 +2925,44 @@ export async function getPopularTags(category?: "avatar" | "subtitle" | "general
 export async function addTagsToAvatarPreset(presetId: number, tagIds: number[]) {
   return addTagsToPreset("avatar", presetId, tagIds);
 }
+
+// ── v8.9: My Presets Management ──
+export async function getMySharedPresets(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(sharedPresets).where(eq(sharedPresets.userId, userId)).orderBy(desc(sharedPresets.createdAt));
+}
+export async function getMySharedSubtitlePresets(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(sharedSubtitlePresets).where(eq(sharedSubtitlePresets.userId, userId)).orderBy(desc(sharedSubtitlePresets.createdAt));
+}
+export async function updateSharedPreset(id: number, userId: number, data: {
+  name?: string; description?: string | null;
+  position?: "bottom-right" | "bottom-left" | "top-right" | "top-left" | "custom";
+  size?: "small" | "medium" | "large";
+  opacity?: number;
+  shape?: "circle" | "rounded" | "rectangle";
+  customX?: number; customY?: number; customWidth?: number; customHeight?: number;
+}) {
+  const db = await getDb(); if (!db) return;
+  await db.update(sharedPresets).set(data).where(and(eq(sharedPresets.id, id), eq(sharedPresets.userId, userId)));
+}
+export async function updateSharedSubtitlePreset(id: number, userId: number, data: {
+  name?: string; description?: string | null;
+  fontSize?: number; fontColor?: string; bgColor?: string;
+  position?: "top" | "bottom";
+  fontFamily?: string;
+  bold?: boolean; italic?: boolean; outline?: boolean;
+}) {
+  const db = await getDb(); if (!db) return;
+  await db.update(sharedSubtitlePresets).set(data).where(and(eq(sharedSubtitlePresets.id, id), eq(sharedSubtitlePresets.userId, userId)));
+}
+export async function searchTags(query: string, category?: "avatar" | "subtitle" | "general", limit = 10) {
+  const db = await getDb(); if (!db) return [];
+  const conditions = [sql`${presetTags.name} LIKE ${`%${query}%`}`];
+  if (category) conditions.push(eq(presetTags.category, category));
+  return db.select().from(presetTags).where(and(...conditions)).orderBy(desc(presetTags.usageCount)).limit(limit);
+}
+export async function removeTagsFromPreset(presetType: "avatar" | "subtitle", presetId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(presetTagMap).where(and(eq(presetTagMap.presetType, presetType), eq(presetTagMap.presetId, presetId)));
+}

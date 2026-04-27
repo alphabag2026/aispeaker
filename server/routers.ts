@@ -6754,6 +6754,101 @@ Return a JSON object with a "sections" array. Each section has:
       .query(async ({ input }) => {
         return db.getPresetTags(input.presetType, input.presetId);
       }),
+    search: publicProcedure
+      .input(z.object({
+        query: z.string().min(1).max(50),
+        category: z.enum(["avatar", "subtitle", "general"]).optional(),
+      }))
+      .query(async ({ input }) => {
+        return db.searchTags(input.query, input.category);
+      }),
+    removeFromPreset: protectedProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.removeTagsFromPreset(input.presetType, input.presetId);
+        return { success: true };
+      }),
+  }),
+
+  // ── My Presets Management (v8.9) ──
+  myPresets: router({
+    avatarList: protectedProcedure.query(async ({ ctx }) => {
+      const presets = await db.getMySharedPresets(ctx.user.id);
+      const presetsWithTags = await Promise.all(presets.map(async (p) => {
+        const tags = await db.getPresetTags("avatar", p.id);
+        return { ...p, tags };
+      }));
+      return presetsWithTags;
+    }),
+    subtitleList: protectedProcedure.query(async ({ ctx }) => {
+      const presets = await db.getMySharedSubtitlePresets(ctx.user.id);
+      const presetsWithTags = await Promise.all(presets.map(async (p) => {
+        const tags = await db.getPresetTags("subtitle", p.id);
+        return { ...p, tags };
+      }));
+      return presetsWithTags;
+    }),
+    updateAvatar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).max(100).optional(),
+        description: z.string().max(500).optional(),
+        position: z.enum(["bottom-right", "bottom-left", "top-right", "top-left", "custom"]).optional(),
+        size: z.enum(["small", "medium", "large"]).optional(),
+        opacity: z.number().min(0).max(100).optional(),
+        shape: z.enum(["circle", "rounded", "rectangle"]).optional(),
+        tagIds: z.array(z.number()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, tagIds, ...data } = input;
+        await db.updateSharedPreset(id, ctx.user.id, data);
+        if (tagIds !== undefined) {
+          await db.removeTagsFromPreset("avatar", id);
+          if (tagIds.length > 0) await db.addTagsToPreset("avatar", id, tagIds);
+        }
+        return { success: true };
+      }),
+    updateSubtitle: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).max(100).optional(),
+        description: z.string().max(500).optional(),
+        fontSize: z.number().min(8).max(48).optional(),
+        fontColor: z.string().max(20).optional(),
+        bgColor: z.string().max(30).optional(),
+        position: z.enum(["top", "bottom"]).optional(),
+        fontFamily: z.string().max(50).optional(),
+        bold: z.boolean().optional(),
+        italic: z.boolean().optional(),
+        outline: z.boolean().optional(),
+        tagIds: z.array(z.number()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, tagIds, ...data } = input;
+        await db.updateSharedSubtitlePreset(id, ctx.user.id, data);
+        if (tagIds !== undefined) {
+          await db.removeTagsFromPreset("subtitle", id);
+          if (tagIds.length > 0) await db.addTagsToPreset("subtitle", id, tagIds);
+        }
+        return { success: true };
+      }),
+    deleteAvatar: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.removeTagsFromPreset("avatar", input.id);
+        await db.deleteSharedPreset(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    deleteSubtitle: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.removeTagsFromPreset("subtitle", input.id);
+        await db.deleteSharedSubtitlePreset(input.id, ctx.user.id);
+        return { success: true };
+      }),
   }),
 });
 
