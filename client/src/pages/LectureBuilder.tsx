@@ -20,7 +20,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages
+  Copy, Save, Globe, Languages, Headphones
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -1928,6 +1928,19 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
     onError: (e: any) => toast.error(e.message),
   });
 
+  const voicesQuery = trpc.tts.voices.useQuery();
+  const generateAllTtsMut = trpc.lectureBuilder.generateAllInterpreterTts.useMutation({
+    onSuccess: (data) => toast.success(`${data.generated}/${data.total}개 통역 오디오 생성 완료`),
+    onError: (e: any) => toast.error(e.message),
+  });
+  const exportSrtMut = trpc.lectureBuilder.exportInterpreterSrt.useMutation({
+    onSuccess: (data) => {
+      window.open(data.srtUrl, "_blank");
+      toast.success(`SRT 파일 다운로드 (${data.subtitleCount}개 자막)`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const INTERPRETER_LANGUAGES = [
     { code: "ko", name: "한국어", flag: "🇰🇷" }, { code: "en", name: "English", flag: "🇺🇸" },
     { code: "zh", name: "中文", flag: "🇨🇳" }, { code: "ja", name: "日本語", flag: "🇯🇵" },
@@ -3001,6 +3014,32 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                     </Select>
                   </div>
 
+                  {/* Voice selector */}
+                  <div>
+                    <Label className="text-xs">통역 음성</Label>
+                    <Select
+                      value={interpreterVoiceId || "Kore"}
+                      onValueChange={(v) => {
+                        setInterpreterVoiceId(v);
+                        updateInterpreterSettingsMut.mutate({
+                          projectId,
+                          interpreterEnabled: true,
+                          interpreterLanguage,
+                          interpreterVoiceId: v,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {voicesQuery.data?.map((voice: any) => (
+                          <SelectItem key={voice.id} value={voice.id}>
+                            {voice.name} ({voice.gender})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Auto translate button */}
                   <Button
                     size="sm"
@@ -3017,6 +3056,45 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                       <><Languages className="h-3 w-3 mr-1" /> 전체 슬라이드 자동 번역</>
                     )}
                   </Button>
+
+                  {/* Generate all interpreter TTS */}
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    variant="outline"
+                    disabled={generateAllTtsMut.isPending}
+                    onClick={() => {
+                      generateAllTtsMut.mutate({ projectId, voiceId: interpreterVoiceId || undefined });
+                    }}
+                  >
+                    {generateAllTtsMut.isPending ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> TTS 생성 중...</>
+                    ) : (
+                      <><Headphones className="h-3 w-3 mr-1" /> 전체 통역 오디오 생성</>
+                    )}
+                  </Button>
+
+                  {/* SRT Export */}
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="flex-1 text-xs"
+                      disabled={exportSrtMut.isPending}
+                      onClick={() => exportSrtMut.mutate({ projectId, mode: "interpreter_only" })}
+                    >
+                      <FileText className="h-3 w-3 mr-1" /> 통역 SRT
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="flex-1 text-xs"
+                      disabled={exportSrtMut.isPending}
+                      onClick={() => exportSrtMut.mutate({ projectId, mode: "dual" })}
+                    >
+                      <FileText className="h-3 w-3 mr-1" /> 이중 SRT
+                    </Button>
+                  </div>
 
                   {/* Current slide interpreter text */}
                   {currentSlide && (
@@ -3277,6 +3355,88 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   const currentSlideScript = currentSlide ? scripts.find((s: any) => s.slideId === currentSlide.id) : null;
   const currentAvatar = currentSlideScript?.avatarId ? avatars.find((a: any) => a.id === currentSlideScript.avatarId) : avatars[0];
 
+  // === Interpreter Audio Playback ===
+  const [interpreterMode, setInterpreterMode] = useState(false);
+  const [interpreterPlaying, setInterpreterPlaying] = useState(false);
+  const [interpreterPhase, setInterpreterPhase] = useState<"original" | "interpreter">("original");
+  const [interpreterAudioUrls, setInterpreterAudioUrls] = useState<Record<number, string>>({});
+  const interpreterAudioRef = useRef<HTMLAudioElement | null>(null);
+  const interpreterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const generateInterpreterTtsMut = trpc.lectureBuilder.generateInterpreterTts.useMutation({
+    onSuccess: (data) => {
+      setInterpreterAudioUrls(prev => ({ ...prev, [data.scriptId]: data.audioUrl }));
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const generateAllInterpreterTtsMut = trpc.lectureBuilder.generateAllInterpreterTts.useMutation({
+    onSuccess: (data) => {
+      data.results.forEach((r: any) => {
+        setInterpreterAudioUrls(prev => ({ ...prev, [r.scriptId]: r.audioUrl }));
+      });
+      toast.success(`${data.generated}/${data.total}개 통역 오디오 생성 완료`);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Interpreter sequential playback: original script (timer) -> interpreter audio -> next slide
+  useEffect(() => {
+    if (!interpreterMode || !interpreterPlaying) return;
+    const script = currentSlideScript;
+    if (!script) { setInterpreterPlaying(false); return; }
+
+    if (interpreterPhase === "original") {
+      // Show original script for estimated duration, then switch to interpreter
+      const dur = (script.estimatedDurationSec || 5) * 1000;
+      interpreterTimerRef.current = setTimeout(() => {
+        const audioUrl = interpreterAudioUrls[script.id];
+        if (audioUrl && script.interpreterText) {
+          setInterpreterPhase("interpreter");
+        } else {
+          // No interpreter audio, advance to next slide
+          if (previewSlideIdx < previewSlides.length - 1) {
+            changeSlide(previewSlideIdx + 1);
+            setInterpreterPhase("original");
+          } else {
+            setInterpreterPlaying(false);
+          }
+        }
+      }, dur);
+    } else {
+      // Play interpreter audio
+      const audioUrl = interpreterAudioUrls[currentSlideScript?.id || 0];
+      if (audioUrl) {
+        const audio = new Audio(audioUrl);
+        interpreterAudioRef.current = audio;
+        audio.onended = () => {
+          if (previewSlideIdx < previewSlides.length - 1) {
+            changeSlide(previewSlideIdx + 1);
+            setInterpreterPhase("original");
+          } else {
+            setInterpreterPlaying(false);
+          }
+        };
+        audio.onerror = () => {
+          if (previewSlideIdx < previewSlides.length - 1) {
+            changeSlide(previewSlideIdx + 1);
+            setInterpreterPhase("original");
+          } else {
+            setInterpreterPlaying(false);
+          }
+        };
+        audio.play().catch(() => {});
+      }
+    }
+
+    return () => {
+      if (interpreterTimerRef.current) clearTimeout(interpreterTimerRef.current);
+      if (interpreterAudioRef.current) {
+        interpreterAudioRef.current.pause();
+        interpreterAudioRef.current = null;
+      }
+    };
+  }, [interpreterMode, interpreterPlaying, interpreterPhase, previewSlideIdx, currentSlideScript, interpreterAudioUrls]);
+
   const toggleSlideSelection = (slideId: number) => {
     setSelectedSlideIds(prev => {
       const next = new Set(prev);
@@ -3422,7 +3582,16 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                     {/* Script overlay */}
                     {currentSlideScript && (
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 p-4">
-                        <p className="text-white text-sm line-clamp-2">{currentSlideScript.scriptText}</p>
+                        {interpreterMode && interpreterPhase === "interpreter" && currentSlideScript.interpreterText ? (
+                          <>
+                            <p className="text-yellow-300 text-xs mb-1 flex items-center gap-1">
+                              <Globe className="w-3 h-3" /> 통역
+                            </p>
+                            <p className="text-white text-sm line-clamp-2">{currentSlideScript.interpreterText}</p>
+                          </>
+                        ) : (
+                          <p className="text-white text-sm line-clamp-2">{currentSlideScript.scriptText}</p>
+                        )}
                       </div>
                     )}
                   </>
@@ -3448,7 +3617,67 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                   <div className="h-full bg-primary rounded-full transition-all" style={{ width: previewSlides.length > 0 ? `${((previewSlideIdx + 1) / previewSlides.length) * 100}%` : "0%" }} />
                 </div>
                 <span className="text-sm text-muted-foreground">{previewSlides.length > 0 ? previewSlideIdx + 1 : 0}/{previewSlides.length}</span>
+                {/* Interpreter mode toggle */}
+                <Button
+                  variant={interpreterMode ? "default" : "outline"}
+                  size="icon"
+                  className="ml-2"
+                  onClick={() => {
+                    setInterpreterMode(!interpreterMode);
+                    if (interpreterPlaying) {
+                      setInterpreterPlaying(false);
+                      setInterpreterPhase("original");
+                    }
+                  }}
+                  title="통역 모드"
+                >
+                  <Globe className="w-4 h-4" />
+                </Button>
               </div>
+              {/* Interpreter playback controls */}
+              {interpreterMode && (
+                <div className="flex items-center gap-2 mt-2 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                  <Globe className="w-4 h-4 text-yellow-500 shrink-0" />
+                  <span className="text-xs text-yellow-600 dark:text-yellow-400 shrink-0">통역 모드</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={() => {
+                      if (interpreterPlaying) {
+                        setInterpreterPlaying(false);
+                        setInterpreterPhase("original");
+                        if (interpreterAudioRef.current) { interpreterAudioRef.current.pause(); interpreterAudioRef.current = null; }
+                      } else {
+                        setInterpreterPlaying(true);
+                        setInterpreterPhase("original");
+                        setIsPlaying(false);
+                      }
+                    }}
+                  >
+                    {interpreterPlaying ? <><Pause className="w-3 h-3" /> 정지</> : <><Play className="w-3 h-3" /> 원문→통역 재생</>}
+                  </Button>
+                  {interpreterPlaying && (
+                    <Badge variant="outline" className="text-xs">
+                      {interpreterPhase === "original" ? "🇰🇷 원문" : "🌐 통역"}
+                    </Badge>
+                  )}
+                  <div className="flex-1" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    disabled={generateAllInterpreterTtsMut.isPending}
+                    onClick={() => generateAllInterpreterTtsMut.mutate({ projectId })}
+                  >
+                    {generateAllInterpreterTtsMut.isPending ? (
+                      <><Loader2 className="w-3 h-3 animate-spin" /> 생성중</>
+                    ) : (
+                      <><Headphones className="w-3 h-3" /> TTS 생성</>
+                    )}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 
