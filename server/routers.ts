@@ -6315,6 +6315,67 @@ Return a JSON object with a "sections" array. Each section has:
         return { url, fileKey };
       }),
   }),
+
+  // ═══════════ v8.3 - User Profile ═══════════
+  profile: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      const user = await db.getUserById(ctx.user.id);
+      if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+      const credits = await db.getUserCredits(ctx.user.id);
+      const genCount = await db.getAiGenerationCount(ctx.user.id);
+      const galleryPosts = await db.getGalleryPostsByUser(ctx.user.id, 6);
+      return { user, credits, generationCount: genCount, recentGallery: galleryPosts };
+    }),
+    update: protectedProcedure
+      .input(z.object({ name: z.string().optional(), bio: z.string().optional(), avatarUrl: z.string().optional(), preferredLang: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateUserProfile(ctx.user.id, input);
+        return { success: true };
+      }),
+  }),
+
+  // ═══════════ v8.3 - AI History ═══════════
+  aiHistory: router({
+    list: protectedProcedure
+      .input(z.object({ tool: z.string().optional(), limit: z.number().optional(), offset: z.number().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        const items = await db.getAiGenerationsByUser(ctx.user.id, input ?? undefined);
+        const total = await db.getAiGenerationCount(ctx.user.id);
+        return { items, total };
+      }),
+    record: protectedProcedure
+      .input(z.object({
+        tool: z.string(),
+        inputSummary: z.string().optional(),
+        outputUrl: z.string().optional(),
+        outputType: z.enum(["audio", "image", "video"]),
+        creditsUsed: z.number().optional(),
+        status: z.enum(["completed", "failed"]).optional(),
+        metadata: z.any().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createAiGeneration({ userId: ctx.user.id, ...input });
+        return { id };
+      }),
+  }),
+
+  // ═══════════ v8.3 - Admin Analytics ═══════════
+  adminAnalytics: router({
+    creditSales: protectedProcedure
+      .input(z.object({ period: z.enum(["day", "week", "month"]) }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getAdminCreditSalesStats(input?.period ?? "day");
+      }),
+    toolUsage: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return db.getAdminToolUsageStats();
+    }),
+    userStats: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return db.getAdminUserStats();
+    }),
+  }),
 });
 
 // SRT time formatter

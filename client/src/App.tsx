@@ -49,6 +49,9 @@ import VideoHistory from "./pages/VideoHistory";
 import AdminFormatTemplates from "./pages/AdminFormatTemplates";
 import CommunityGallery from "./pages/CommunityGallery";
 import CreditDashboard from "./pages/CreditDashboard";
+import UserProfile from "./pages/UserProfile";
+import AiHistory from "./pages/AiHistory";
+import AdminAnalytics from "./pages/AdminAnalytics";
 import VideoEffectsStudio from "./pages/VideoEffectsStudio";
 import AkoolStudio, {
   AkoolImageToVideo,
@@ -143,6 +146,11 @@ function Router() {
 
       {/* Credit Dashboard */}
       <Route path="/credits" component={CreditDashboard} />
+
+      {/* v8.3 - Profile, AI History, Admin Analytics */}
+      <Route path="/profile" component={UserProfile} />
+      <Route path="/ai-history" component={AiHistory} />
+      <Route path="/admin/analytics" component={AdminAnalytics} />
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
