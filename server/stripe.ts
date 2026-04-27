@@ -66,6 +66,16 @@ export const CREDIT_COSTS = {
   subtitle_generation: 3,  // 자막 생성 1건
   voice_modulation: 5,     // 음성 변조 1건
   live_broadcast: 10,      // 라이브 방송 10분당
+  // v8.1 AI Studio features
+  image_generation: 5,     // AI 이미지 생성 1건
+  bg_remove: 3,            // 배경 제거/교체 1건
+  voice_clone: 5,          // 음성 복제 1건
+  voice_change: 3,         // 음성 변환 1건
+  video_effects: 15,       // 비디오 이펙트 1건
+  image_to_video: 20,      // 이미지→비디오 1건
+  face_swap: 25,           // 페이스 스왑 1건
+  talking_avatar: 20,      // 토킹 아바타 1건
+  video_translate: 30,     // 비디오 번역 1건
 } as const;
 
 export type CreditFeature = keyof typeof CREDIT_COSTS;

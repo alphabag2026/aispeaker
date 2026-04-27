@@ -1382,3 +1382,30 @@
 ### 테스트 및 배포
 - [x] v8.0 vitest 21개 테스트 통과 (v8.0-features.test.ts)
 - [ ] 프로덕션 배포 v8.0
+
+## v8.1 - 커뮤니티 갤러리 + V2V + 크레딧 시스템
+
+### 커뮤니티 갤러리
+- [x] DB 스키마: galleryPosts 테이블 + 기존 galleryLikes/galleryComments 활용
+- [x] 백엔드: community tRPC 라우터 (list/create/like/comment/view)
+- [x] 프론트엔드: CommunityGallery.tsx - Masonry 그리드 + 좋아요/댓글
+- [x] 프론트엔드: 게시물 상세 모달 (좋아요/댓글)
+- [x] 프론트엔드: 내 작품 업로드 기능 (S3 연동)
+
+### Video-to-Video (V2V)
+- [x] Kling Video Effects API 연동 (263가지 이펙트)
+- [x] VideoEffectsStudio.tsx 전용 UI 페이지 구현
+- [x] useQuery refetchInterval 폴링 기반 결과 조회
+
+### 크레딧 시스템 + Stripe 결제
+- [x] DB: creditUsageLogs enum 확장 (9개 신규 AI Studio 기능)
+- [x] 백엔드: CREDIT_COSTS 확장 + useCredits 프로시저 enum 확장
+- [x] AI 도구 사용 시 크레딧 차감 (credit.useCredits 프로시저)
+- [x] Stripe Checkout 세션 (createCreditCheckout - 기존 연동 활용)
+- [x] Stripe Webhook 처리 (기존 연동 활용)
+- [x] 프론트엔드: Pricing 페이지 크레딧 비용 표 업데이트 (17개 기능)
+- [x] 프론트엔드: 기존 Pricing/결제 시스템 활용
+
+### 테스트 및 배포
+- [x] v8.1 vitest 11개 테스트 통과 (v8.1-features.test.ts)
+- [ ] 프로덕션 배포 v8.1

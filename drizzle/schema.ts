@@ -975,7 +975,16 @@ export const creditUsageLogs = mysqlTable("creditUsageLogs", {
     "thumbnail_generation",
     "subtitle_generation",
     "voice_modulation",
-    "live_broadcast"
+    "live_broadcast",
+    "image_generation",
+    "bg_remove",
+    "voice_clone",
+    "voice_change",
+    "video_effects",
+    "image_to_video",
+    "face_swap",
+    "talking_avatar",
+    "video_translate"
   ]).notNull(),
   /** Credits consumed */
   creditsUsed: int("creditsUsed").notNull(),
@@ -1605,3 +1614,30 @@ export const projectWatermarks = mysqlTable("projectWatermarks", {
 });
 export type ProjectWatermark = typeof projectWatermarks.$inferSelect;
 export type InsertProjectWatermark = typeof projectWatermarks.$inferInsert;
+
+/**
+ * v8.1 - Community Gallery Posts (extends existing faceSwapGallery system)
+ * Uses existing galleryLikes and galleryComments tables.
+ * New: galleryPosts table for multi-tool content sharing.
+ */
+export const galleryPosts = mysqlTable("galleryPosts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  mediaType: mysqlEnum("mediaType", ["image", "video", "audio"]).default("image").notNull(),
+  mediaUrl: text("mediaUrl").notNull(),
+  mediaFileKey: text("mediaFileKey"),
+  thumbnailUrl: text("thumbnailUrl"),
+  toolUsed: varchar("toolUsed", { length: 100 }),
+  tags: json("tags").$type<string[]>(),
+  likeCount: int("likeCount").default(0).notNull(),
+  commentCount: int("commentCount").default(0).notNull(),
+  viewCount: int("viewCount").default(0).notNull(),
+  isPublic: boolean("isPublic").default(true).notNull(),
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type GalleryPost = typeof galleryPosts.$inferSelect;
+export type InsertGalleryPost = typeof galleryPosts.$inferInsert;

@@ -55,6 +55,7 @@ import {
   whiteboardParticipants,
   slideLayouts, InsertSlideLayout,
   projectWatermarks, InsertProjectWatermark,
+  galleryPosts, InsertGalleryPost,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2481,4 +2482,143 @@ export async function deleteProjectWatermark(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(projectWatermarks).where(eq(projectWatermarks.id, id));
+}
+
+
+// ── v8.1 Community Gallery Posts helpers ──────────────────────────────────
+export async function listGalleryPosts(opts: {
+  limit?: number; offset?: number; toolUsed?: string; sort?: "latest" | "popular";
+  userId?: number; tag?: string;
+}) {
+  const db = await getDb();
+  if (!db) return { posts: [], total: 0 };
+  const { limit = 20, offset = 0, toolUsed, sort = "latest", userId, tag } = opts;
+  const conditions: any[] = [eq(galleryPosts.isPublic, true)];
+  if (toolUsed) conditions.push(eq(galleryPosts.toolUsed, toolUsed));
+  if (userId) conditions.push(eq(galleryPosts.userId, userId));
+  const orderByClause = sort === "popular" ? desc(galleryPosts.likeCount) : desc(galleryPosts.createdAt);
+  const posts = await db.select({
+    id: galleryPosts.id,
+    userId: galleryPosts.userId,
+    title: galleryPosts.title,
+    description: galleryPosts.description,
+    mediaType: galleryPosts.mediaType,
+    mediaUrl: galleryPosts.mediaUrl,
+    thumbnailUrl: galleryPosts.thumbnailUrl,
+    toolUsed: galleryPosts.toolUsed,
+    tags: galleryPosts.tags,
+    likeCount: galleryPosts.likeCount,
+    commentCount: galleryPosts.commentCount,
+    viewCount: galleryPosts.viewCount,
+    isFeatured: galleryPosts.isFeatured,
+    createdAt: galleryPosts.createdAt,
+    userName: users.name,
+    userAvatar: users.avatarUrl,
+  }).from(galleryPosts)
+    .leftJoin(users, eq(galleryPosts.userId, users.id))
+    .where(and(...conditions))
+    .orderBy(orderByClause)
+    .limit(limit).offset(offset);
+  const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(galleryPosts).where(and(...conditions));
+  return { posts, total: countRow?.count || 0 };
+}
+
+export async function getGalleryPostById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select({
+    id: galleryPosts.id,
+    userId: galleryPosts.userId,
+    title: galleryPosts.title,
+    description: galleryPosts.description,
+    mediaType: galleryPosts.mediaType,
+    mediaUrl: galleryPosts.mediaUrl,
+    thumbnailUrl: galleryPosts.thumbnailUrl,
+    toolUsed: galleryPosts.toolUsed,
+    tags: galleryPosts.tags,
+    likeCount: galleryPosts.likeCount,
+    commentCount: galleryPosts.commentCount,
+    viewCount: galleryPosts.viewCount,
+    isFeatured: galleryPosts.isFeatured,
+    isPublic: galleryPosts.isPublic,
+    createdAt: galleryPosts.createdAt,
+    userName: users.name,
+    userAvatar: users.avatarUrl,
+  }).from(galleryPosts)
+    .leftJoin(users, eq(galleryPosts.userId, users.id))
+    .where(eq(galleryPosts.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function createGalleryPost(data: InsertGalleryPost) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(galleryPosts).values(data);
+  return result.insertId;
+}
+
+export async function deleteGalleryPost(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(galleryPosts).where(and(eq(galleryPosts.id, id), eq(galleryPosts.userId, userId)));
+}
+
+export async function toggleGalleryPostLike(postId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Reuse existing galleryLikes table with galleryItemId = postId (shared)
+  const existing = await db.select().from(galleryLikes)
+    .where(and(eq(galleryLikes.galleryItemId, postId), eq(galleryLikes.userId, userId)));
+  if (existing.length > 0) {
+    await db.delete(galleryLikes).where(and(eq(galleryLikes.galleryItemId, postId), eq(galleryLikes.userId, userId)));
+    await db.update(galleryPosts).set({ likeCount: sql`likeCount - 1` }).where(eq(galleryPosts.id, postId));
+    return false;
+  } else {
+    await db.insert(galleryLikes).values({ galleryItemId: postId, userId });
+    await db.update(galleryPosts).set({ likeCount: sql`likeCount + 1` }).where(eq(galleryPosts.id, postId));
+    return true;
+  }
+}
+
+export async function getGalleryPostComments(postId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: galleryComments.id,
+    content: galleryComments.content,
+    userId: galleryComments.userId,
+    createdAt: galleryComments.createdAt,
+    userName: users.name,
+    userAvatar: users.avatarUrl,
+  }).from(galleryComments)
+    .leftJoin(users, eq(galleryComments.userId, users.id))
+    .where(eq(galleryComments.galleryItemId, postId))
+    .orderBy(desc(galleryComments.createdAt));
+}
+
+export async function addGalleryPostComment(postId: number, userId: number, content: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(galleryComments).values({ galleryItemId: postId, userId, content });
+  await db.update(galleryPosts).set({ commentCount: sql`commentCount + 1` }).where(eq(galleryPosts.id, postId));
+}
+
+export async function incrementGalleryPostView(postId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(galleryPosts).set({ viewCount: sql`viewCount + 1` }).where(eq(galleryPosts.id, postId));
+}
+
+export async function getMyGalleryPosts(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(galleryPosts)
+    .where(eq(galleryPosts.userId, userId))
+    .orderBy(desc(galleryPosts.createdAt));
+}
+
+export async function getUserPostLikes(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ galleryItemId: galleryLikes.galleryItemId }).from(galleryLikes).where(eq(galleryLikes.userId, userId));
 }
