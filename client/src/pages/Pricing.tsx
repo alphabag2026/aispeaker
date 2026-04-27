@@ -633,7 +633,7 @@ export default function Pricing() {
         </div>
         <div className="text-center mt-6">
           <a href="/payment-troubleshooting" className="text-sm text-purple-400 hover:text-purple-300 underline underline-offset-4">
-            {t("pp.faq.troubleshoot")}
+            {t("pp.faq.troubleshoot")} {/* 문제 해결 가이드 */}
           </a>
         </div>
       </div>

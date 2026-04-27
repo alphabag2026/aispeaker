@@ -432,7 +432,7 @@ export default function AdminDashboard() {
                       {face.isPremium && <Badge className="bg-amber-500/10 text-amber-500 border-0 text-[10px]">PRO</Badge>}
                     </div>
                   ))}
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info(t("ad.addFacePresetComingSoon"))}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info("오픈 준비중입니다. 관리자 얼굴 프리셋 추가 기능은 곧 제공됩니다.")}>
                     {t("ad.addNewFace")}
                   </Button>
                 </CardContent>
@@ -462,7 +462,7 @@ export default function AdminDashboard() {
                       {voice.isPremium && <Badge className="bg-amber-500/10 text-amber-500 border-0 text-[10px]">PRO</Badge>}
                     </div>
                   ))}
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info(t("ad.addVoicePresetComingSoon"))}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info("오픈 준비중입니다. 관리자 음성 프리셋 추가 기능은 곧 제공됩니다.")}>
                     {t("ad.addNewVoice")}
                   </Button>
                 </CardContent>

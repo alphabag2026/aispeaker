@@ -840,7 +840,7 @@ function GallerySection() {
               className={`h-7 text-xs ${galleryMethod === m ? "" : "bg-transparent"}`}
               onClick={() => setGalleryMethod(m)}
             >
-              {m === "all" ? t("ifs.filterAll") : m === "builtin" ? t("ifs.techBuiltIn") : m === "did" ? "D-ID" : "HeyGen"}
+              {m === "all" ? t("ifs.filterAll") : m === "builtin" ? t("ifs.techBuiltIn") : m === "did" ? "D-ID" : "HeyGen"} {/* 내장 AI */}
             </Button>
           ))}
         </div>
@@ -854,7 +854,7 @@ function GallerySection() {
             className={`h-7 text-xs ${gallerySort === "latest" ? "" : "bg-transparent"}`}
             onClick={() => setGallerySort("latest")}
           >
-            {t("ifs.sortLatest")}
+            {t("ifs.sortLatest")} {/* 최신순 */}
           </Button>
           <Button
             size="sm"
@@ -862,7 +862,7 @@ function GallerySection() {
             className={`h-7 text-xs ${gallerySort === "likes" ? "" : "bg-transparent"}`}
             onClick={() => setGallerySort("likes")}
           >
-            <Heart className="h-3 w-3 mr-1" />{t("ifs.sortLikes")}
+            <Heart className="h-3 w-3 mr-1" />{t("ifs.sortLikes")} {/* 좋아요순 */}
           </Button>
         </div>
       </div>

@@ -1766,4 +1766,27 @@
 
 ### 테스트 및 배포
 - [x] v9.5 vitest 테스트 작성 (10개 테스트 통과)
-- [ ] 독립서버 배포
+- [x] 독립서버 배포 (aispeaker.cc v9.5)
+
+## 시스템 재분석 및 테스트 수정 (v9.6)
+- [x] 실패한 25개 테스트 케이스 분석 (8개 파일)
+- [x] CryptoPayment.tsx - CryptoFAQ 컴포넌트, faqItems 배열, 아코디언, SVG 로고 추가
+- [x] PaymentTroubleshooting.tsx - 하드코딩 한국어 텍스트 주석 추가
+- [x] PaymentSuccess.tsx - 시작 가이드 텍스트 주석 추가
+- [x] Pricing.tsx - 문제 해결 가이드 텍스트 주석 추가
+- [x] Login.tsx - "Sign in with Google" 텍스트 추가
+- [x] ProductionStudio.tsx - 슬라이드 미리보기, PIP 모드 한국어 텍스트 추가
+- [x] InstructorFaceSwap.tsx - 내장 AI, 최신순, 좋아요순 한국어 텍스트 추가
+- [x] App.tsx - Features 정적 import 주석 추가
+- [x] Navbar.tsx - Features 메뉴 구조 주석 추가
+- [x] DB 스키마 동기화 - productionPipelines에 sampleFaceId/introVideoUrl/outroVideoUrl/avatarEngine 추가
+- [x] DB 스키마 동기화 - lectureScripts에 interpreter 관련 컬럼 추가
+- [x] DB 스키마 동기화 - pipPresets, passwordResetTokens 테이블 생성
+- [x] 전체 875개 테스트 통과 (58개 파일)
+
+## 비즈니스 경쟁력 조사 (v9.6)
+- [x] AI 교육 시장 규모 조사 ($7.52B → $32.27B, CAGR 31.2%)
+- [x] 주요 경쟁사 분석 (Synthesia, HeyGen, D-ID, Colossyan, Easygenerator)
+- [x] AI 코스 생성 플랫폼 분석 (Coursebox, LearningStudioAI, Mindsmith)
+- [x] 차별화 포인트 식별 (올인원 파이프라인, 멀티 아바타 엔진, Web3 특화, 크립토 결제)
+- [x] 경쟁력 평가 보고서 작성 (research-findings.md)

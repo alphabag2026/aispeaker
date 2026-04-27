@@ -44,6 +44,7 @@ const AdminRevenue = lazy(() => import("./pages/AdminRevenue"));
 const CryptoPayment = lazy(() => import("./pages/CryptoPayment"));
 const PaymentTroubleshooting = lazy(() => import("./pages/PaymentTroubleshooting"));
 const OnboardingTutorial = lazy(() => import("./pages/OnboardingTutorial"));
+// import Features from "./pages/Features";
 const Features = lazy(() => import("./pages/Features"));
 const FeatureDetail = lazy(() => import("./pages/FeatureDetail"));
 const Login = lazy(() => import("./pages/Login"));
