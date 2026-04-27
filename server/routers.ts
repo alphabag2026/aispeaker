@@ -5672,6 +5672,93 @@ Return a JSON object with a "sections" array. Each section has:
         await db.updateSlideScriptInterpreterText(input.scriptId, input.interpreterText);
         return { success: true };
       }),
+
+    // Generate TTS audio for interpreter text (single slide)
+    generateInterpreterTts: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        scriptId: z.number(),
+        voiceId: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const scripts = await db.listSlideScripts(input.projectId);
+        const script = scripts.find(s => s.id === input.scriptId);
+        if (!script || !script.interpreterText) throw new TRPCError({ code: "BAD_REQUEST", message: "통역 텍스트가 없습니다" });
+        const project = await db.getLectureProject(input.projectId);
+        const voiceId = input.voiceId || project?.interpreterVoiceId || "Kore";
+        const ttsResult = await generateGeminiTts({ text: script.interpreterText, voiceId });
+        if ('error' in ttsResult) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: ttsResult.error });
+        const fileKey = `interpreter-tts/${input.projectId}/${input.scriptId}-${Date.now()}.mp3`;
+        const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
+        return { audioUrl: url, scriptId: input.scriptId };
+      }),
+
+    // Generate TTS audio for all interpreter texts in a project
+    generateAllInterpreterTts: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        voiceId: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const scripts = await db.listSlideScripts(input.projectId);
+        const project = await db.getLectureProject(input.projectId);
+        const voiceId = input.voiceId || project?.interpreterVoiceId || "Kore";
+        const interpreterScripts = scripts.filter(s => s.interpreterText && s.interpreterText.trim());
+        if (interpreterScripts.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "통역 텍스트가 없습니다. 먼저 자동 번역을 실행해주세요." });
+        const results: Array<{ scriptId: number; slideId: number; audioUrl: string }> = [];
+        for (const script of interpreterScripts) {
+          try {
+            const ttsResult = await generateGeminiTts({ text: script.interpreterText!, voiceId });
+            if ('error' in ttsResult) continue;
+            const fileKey = `interpreter-tts/${input.projectId}/${script.id}-${Date.now()}.mp3`;
+            const { url } = await storagePut(fileKey, ttsResult.audioBuffer, ttsResult.mimeType);
+            results.push({ scriptId: script.id, slideId: script.slideId!, audioUrl: url });
+          } catch (e) { /* skip failed */ }
+        }
+        return { generated: results.length, total: interpreterScripts.length, results };
+      }),
+
+    // Export interpreter scripts as SRT subtitle file
+    exportInterpreterSrt: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        mode: z.enum(["interpreter_only", "dual", "original_only"]).default("interpreter_only"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const scripts = await db.listSlideScripts(input.projectId);
+        const slides = (await db.listProjectSlides(input.projectId)).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+        const orderedScripts = slides.map((slide: any) => {
+          const script = scripts.find(s => s.slideId === slide.id);
+          return { slideId: slide.id, sortOrder: slide.sortOrder, scriptText: script?.scriptText || "", interpreterText: script?.interpreterText || "", durationSec: script?.estimatedDurationSec || 30 };
+        }).filter((s: any) => s.scriptText || s.interpreterText);
+
+        let srtContent = "";
+        let idx = 1;
+        let currentTimeSec = 0;
+        for (const s of orderedScripts) {
+          const startTime = formatSrtTime(currentTimeSec);
+          const endTime = formatSrtTime(currentTimeSec + s.durationSec);
+          if (input.mode === "interpreter_only" && s.interpreterText) {
+            srtContent += `${idx}\n${startTime} --> ${endTime}\n${s.interpreterText}\n\n`;
+            idx++;
+          } else if (input.mode === "original_only" && s.scriptText) {
+            srtContent += `${idx}\n${startTime} --> ${endTime}\n${s.scriptText}\n\n`;
+            idx++;
+          } else if (input.mode === "dual") {
+            const lines: string[] = [];
+            if (s.scriptText) lines.push(s.scriptText);
+            if (s.interpreterText) lines.push(s.interpreterText);
+            if (lines.length > 0) {
+              srtContent += `${idx}\n${startTime} --> ${endTime}\n${lines.join("\n")}\n\n`;
+              idx++;
+            }
+          }
+          currentTimeSec += s.durationSec;
+        }
+        const fileKey = `interpreter-srt/${input.projectId}/${input.mode}-${Date.now()}.srt`;
+        const { url } = await storagePut(fileKey, Buffer.from(srtContent, "utf-8"), "text/plain");
+        return { srtUrl: url, subtitleCount: idx - 1, mode: input.mode };
+      }),
   }),
 
   // ============ Admin Dashboard ============
