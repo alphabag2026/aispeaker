@@ -431,6 +431,89 @@ export default function ProductionStudio() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // SRT export helper
+  const formatSrtTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    const ms = Math.round((seconds % 1) * 1000);
+    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')},${ms.toString().padStart(3,'0')}`;
+  };
+
+  const exportSrt = () => {
+    if (subtitleSegments.length === 0) return;
+    const srt = subtitleSegments.map((seg, i) => 
+      `${i + 1}\n${formatSrtTime(seg.start)} --> ${formatSrtTime(seg.end)}\n${seg.text}\n`
+    ).join('\n');
+    const blob = new Blob([srt], { type: 'text/srt;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'subtitles.srt';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(t('ps.srtExported'));
+  };
+
+  // Interpreter preview player state
+  const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [previewSectionIdx, setPreviewSectionIdx] = useState(0);
+  const [previewIsOriginal, setPreviewIsOriginal] = useState(true);
+  const previewTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const speechSynthRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const stopPreview = useCallback(() => {
+    setPreviewPlaying(false);
+    if (previewTimerRef.current) clearTimeout(previewTimerRef.current);
+    window.speechSynthesis.cancel();
+  }, []);
+
+  const playPreviewSection = useCallback((sections: any[], interpSections: any[], idx: number, isOrig: boolean) => {
+    if (idx >= sections.length) { stopPreview(); return; }
+    setPreviewSectionIdx(idx);
+    setPreviewIsOriginal(isOrig);
+    const text = isOrig ? sections[idx]?.content : (interpSections[idx]?.interpretedContent || sections[idx]?.content);
+    if (!text) { stopPreview(); return; }
+    const utterance = new SpeechSynthesisUtterance(text.substring(0, 200));
+    utterance.lang = isOrig ? language : interpreterLanguage;
+    utterance.rate = 1.0;
+    speechSynthRef.current = utterance;
+    utterance.onend = () => {
+      if (isOrig && interpSections.length > 0) {
+        playPreviewSection(sections, interpSections, idx, false);
+      } else {
+        playPreviewSection(sections, interpSections, idx + 1, true);
+      }
+    };
+    utterance.onerror = () => {
+      if (isOrig && interpSections.length > 0) {
+        previewTimerRef.current = setTimeout(() => playPreviewSection(sections, interpSections, idx, false), 500);
+      } else {
+        previewTimerRef.current = setTimeout(() => playPreviewSection(sections, interpSections, idx + 1, true), 500);
+      }
+    };
+    window.speechSynthesis.speak(utterance);
+  }, [language, interpreterLanguage, stopPreview]);
+
+  // Preset share helpers
+  const exportPresetCode = (preset: any) => {
+    const data = { n: preset.name, x: preset.customX, y: preset.customY, w: preset.customWidth, h: preset.customHeight, o: preset.opacity, s: preset.shape, p: preset.position };
+    const code = btoa(JSON.stringify(data));
+    navigator.clipboard.writeText(code);
+    toast.success(t('ps.presetCodeCopied'));
+  };
+
+  const importPresetCode = () => {
+    const code = window.prompt(t('ps.enterPresetCode'));
+    if (!code) return;
+    try {
+      const data = JSON.parse(atob(code));
+      savePipPreset.mutate({ name: data.n || 'Imported', customX: data.x ?? 75, customY: data.y ?? 75, customWidth: data.w ?? 25, customHeight: data.h ?? 25, opacity: data.o ?? 100, shape: data.s || 'rounded', position: data.p || 'custom' });
+    } catch {
+      toast.error(t('ps.invalidPresetCode'));
+    }
+  };
+
   // PiP Presets
   const pipPresetsQuery = trpc.pip.presets.useQuery(undefined, { enabled: !!user });
   const savePipPreset = trpc.pip.savePreset.useMutation({
@@ -1106,24 +1189,31 @@ export default function ProductionStudio() {
                                     </Button>
                                   </div>
                                   {subtitleSegments.length > 0 && (
-                                    <ScrollArea className="h-[120px]">
-                                      <div className="space-y-1">
-                                        {subtitleSegments.map((seg, i) => (
-                                          <div key={i} className="flex items-center gap-2 text-xs">
-                                            <span className="text-muted-foreground w-16 shrink-0">{formatTime(seg.start)}</span>
-                                            <Input
-                                              value={seg.text}
-                                              onChange={(e) => {
-                                                const updated = [...subtitleSegments];
-                                                updated[i] = { ...updated[i], text: e.target.value };
-                                                setSubtitleSegments(updated);
-                                              }}
-                                              className="h-6 text-xs"
-                                            />
-                                          </div>
-                                        ))}
+                                    <>
+                                      <ScrollArea className="h-[120px]">
+                                        <div className="space-y-1">
+                                          {subtitleSegments.map((seg, i) => (
+                                            <div key={i} className="flex items-center gap-2 text-xs">
+                                              <span className="text-muted-foreground w-16 shrink-0">{formatTime(seg.start)}</span>
+                                              <Input
+                                                value={seg.text}
+                                                onChange={(e) => {
+                                                  const updated = [...subtitleSegments];
+                                                  updated[i] = { ...updated[i], text: e.target.value };
+                                                  setSubtitleSegments(updated);
+                                                }}
+                                                className="h-6 text-xs"
+                                              />
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </ScrollArea>
+                                      <div className="mt-2 flex gap-2">
+                                        <Button size="sm" variant="outline" className="text-xs h-6" onClick={exportSrt}>
+                                          <Download className="w-3 h-3 mr-1" />{t("ps.exportSrt")}
+                                        </Button>
                                       </div>
-                                    </ScrollArea>
+                                    </>
                                   )}
                                 </div>
                               )}
@@ -1273,25 +1363,37 @@ export default function ProductionStudio() {
                                         <Download className="w-3 h-3 mr-1" />{t("ps.savePreset")}
                                       </Button>
                                       {pipPresetsQuery.data?.map((preset) => (
-                                        <Button
-                                          key={preset.id}
-                                          size="sm"
-                                          variant="ghost"
-                                          className="text-xs h-7 border border-border/50"
-                                          onClick={() => {
-                                            setPipPosition({ x: preset.customX ?? 75, y: preset.customY ?? 75 });
-                                            setPipSizePercent(preset.customWidth ?? 25);
-                                            updatePipMutation.mutate({ customX: preset.customX ?? 75, customY: preset.customY ?? 75, size: preset.size, opacity: preset.opacity, shape: preset.shape, position: "custom" });
-                                            pipSettingsQuery.refetch();
-                                          }}
-                                          title={`${preset.customX}%, ${preset.customY}% / ${preset.customWidth}%`}
-                                        >
-                                          {preset.name}
+                                        <div key={preset.id} className="flex items-center gap-0.5">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-xs h-7 border border-border/50 pr-1"
+                                            onClick={() => {
+                                              setPipPosition({ x: preset.customX ?? 75, y: preset.customY ?? 75 });
+                                              setPipSizePercent(preset.customWidth ?? 25);
+                                              updatePipMutation.mutate({ customX: preset.customX ?? 75, customY: preset.customY ?? 75, size: preset.size, opacity: preset.opacity, shape: preset.shape, position: "custom" });
+                                              pipSettingsQuery.refetch();
+                                            }}
+                                            title={`${preset.customX}%, ${preset.customY}% / ${preset.customWidth}%`}
+                                          >
+                                            {preset.name}
+                                          </Button>
                                           {!preset.isBuiltIn && (
-                                            <span className="ml-1 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); deletePipPreset.mutate({ id: preset.id }); }}>×</span>
+                                            <>
+                                              <button className="text-xs text-blue-400 hover:text-blue-300 px-1" onClick={() => exportPresetCode(preset)} title={t("ps.sharePreset")}>↗</button>
+                                              <button className="text-xs text-destructive hover:text-destructive/80 px-1" onClick={() => deletePipPreset.mutate({ id: preset.id })} title={t("ps.deletePreset")}>×</button>
+                                            </>
                                           )}
-                                        </Button>
+                                        </div>
                                       ))}
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-xs h-7 border-dashed"
+                                        onClick={importPresetCode}
+                                      >
+                                        <Upload className="w-3 h-3 mr-1" />{t("ps.importPreset")}
+                                      </Button>
                                     </div>
                                   </div>
                                 );
@@ -1407,6 +1509,7 @@ export default function ProductionStudio() {
                 const script = scriptsQuery.data!.find(s => s.id === selectedScriptId)!;
                 const sections = script.sections ? JSON.parse(script.sections) : [];
                 return (
+                  <>
                   <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20">
                     <CardHeader>
                       <CardTitle className="text-lg">{t("ps.scriptPreview")}</CardTitle>
@@ -1449,6 +1552,91 @@ export default function ProductionStudio() {
                       </ScrollArea>
                     </CardContent>
                   </Card>
+
+                  {/* Interpreter Preview Player */}
+                  {interpreterEnabled && interpreterSections.length > 0 && (() => {
+                    const sections = script.sections ? JSON.parse(script.sections) : [];
+                    return (
+                      <Card className="mt-4 bg-gradient-to-b from-blue-500/5 to-transparent border-blue-500/20">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <Play className="w-4 h-4 text-blue-400" />
+                            {t("ps.interpreterPreview")}
+                          </CardTitle>
+                          <CardDescription className="text-xs">{t("ps.interpreterPreviewDesc")}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {/* Player controls */}
+                          <div className="flex items-center gap-2 mb-4">
+                            <Button
+                              size="sm"
+                              variant={previewPlaying ? "destructive" : "default"}
+                              className="text-xs h-8"
+                              onClick={() => {
+                                if (previewPlaying) {
+                                  stopPreview();
+                                } else {
+                                  setPreviewPlaying(true);
+                                  playPreviewSection(sections, interpreterSections, 0, true);
+                                }
+                              }}
+                            >
+                              {previewPlaying ? <><StopCircle className="w-3 h-3 mr-1" />{t("ps.stopPreview")}</> : <><Play className="w-3 h-3 mr-1" />{t("ps.playPreview")}</>}
+                            </Button>
+                            {previewPlaying && (
+                              <>
+                                <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => {
+                                  stopPreview();
+                                  const prevIdx = Math.max(0, previewSectionIdx - 1);
+                                  setPreviewPlaying(true);
+                                  playPreviewSection(sections, interpreterSections, prevIdx, true);
+                                }}>
+                                  <SkipForward className="w-3 h-3 rotate-180" />
+                                </Button>
+                                <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => {
+                                  stopPreview();
+                                  const nextIdx = Math.min(sections.length - 1, previewSectionIdx + 1);
+                                  setPreviewPlaying(true);
+                                  playPreviewSection(sections, interpreterSections, nextIdx, true);
+                                }}>
+                                  <SkipForward className="w-3 h-3" />
+                                </Button>
+                                <Badge variant="outline" className="text-xs">
+                                  {previewSectionIdx + 1}/{sections.length} · {previewIsOriginal ? t("ps.originalLabel") : t("ps.interpretedLabel")}
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                          {/* Section timeline */}
+                          <div className="space-y-2">
+                            {sections.map((s: any, i: number) => (
+                              <div key={i} className={`p-2 rounded-lg border text-xs transition-all ${
+                                previewPlaying && previewSectionIdx === i
+                                  ? (previewIsOriginal ? 'border-violet-500/50 bg-violet-500/10' : 'border-blue-500/50 bg-blue-500/10')
+                                  : 'border-border/30 bg-card/30'
+                              }`}>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{i + 1}.</span>
+                                  <span className="flex-1 truncate">{s.title}</span>
+                                  {previewPlaying && previewSectionIdx === i && (
+                                    <Badge variant="secondary" className="text-[10px] h-5">
+                                      {previewIsOriginal ? `🎤 ${language.toUpperCase()}` : `🌐 ${interpreterLanguage.toUpperCase()}`}
+                                    </Badge>
+                                  )}
+                                </div>
+                                {interpreterSections[i]?.interpretedContent && (
+                                  <p className="text-[10px] text-blue-400/70 mt-1 line-clamp-1">
+                                    🌐 {interpreterSections[i].interpretedContent.substring(0, 80)}...
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })()}
+                  </>
                 );
               })() : (
                 <Card className="border-dashed">
