@@ -1625,3 +1625,28 @@
 ### 테스트 및 배포
 - [x] v9.0 vitest 테스트 작성 (16개 테스트 통과)
 - [ ] 프로덕션 배포 v9.0
+
+## v9.1 - 프리셋 검색 + 신고/차단 + 버전 관리
+
+### 프리셋 갤러리 검색 기능
+- [x] 백엔드 검색 라우터 (searchSharedPresets/searchSharedSubtitlePresets)
+- [x] 프론트엔드 검색바 UI (디바운스 적용 + Search 아이콘)
+- [x] 검색 결과 갤러리 내 표시
+- [x] 빈 결과 시 안내 메시지 (noSearchResults)
+
+### 프리셋 신고/차단 시스템
+- [x] 신고 DB 테이블 (presetReports) + 마이그레이션 적용
+- [x] 신고 백엔드 라우터 (submit, getReports, updateStatus)
+- [x] 신고 모달 UI (5가지 사유 선택 + 상세 설명)
+- [x] 중복 신고 방지 (alreadyReported)
+- [x] 관리자 신고 목록 조회 (presetReport.list)
+
+### 프리셋 버전 관리
+- [x] 버전 이력 DB 테이블 (presetVersions) + 마이그레이션 적용
+- [x] 버전 스냅샷 생성/조회 라우터 (create, list, getById)
+- [x] 버전 이력 UI (타임라인 + 변경 메모)
+- [x] 이전 버전 복원 기능 (restore + 확인 다이얼로그)
+
+### 테스트 및 배포
+- [x] v9.1 vitest 테스트 작성 (15개 테스트 통과)
+- [ ] 프로덕션 배포 v9.1

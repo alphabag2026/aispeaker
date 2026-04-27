@@ -6910,6 +6910,103 @@ Return a JSON object with a "sections" array. Each section has:
         return { success: true };
       }),
   }),
+
+  // ============ Preset Search (v9.1) ============
+  presetSearch: router({
+    search: publicProcedure
+      .input(z.object({
+        keyword: z.string().min(1).max(100),
+        type: z.enum(["avatar", "subtitle"]),
+        limit: z.number().min(1).max(50).optional(),
+      }))
+      .query(async ({ input }) => {
+        const results = await db.searchSharedPresets(input.keyword, input.type, input.limit || 20);
+        const blockedIds = await db.getBlockedPresetIds(input.type);
+        return results.filter((r: any) => !blockedIds.includes(r.id));
+      }),
+  }),
+
+  // ============ Preset Reports (v9.1) ============
+  presetReport: router({
+    report: protectedProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+        reason: z.enum(["inappropriate", "spam", "copyright", "offensive", "other"]),
+        description: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const alreadyReported = await db.hasUserReported(input.presetType, input.presetId, ctx.user.id);
+        if (alreadyReported) return { success: false, error: "already_reported" };
+        const id = await db.createPresetReport({ ...input, reporterId: ctx.user.id });
+        return { success: true, id };
+      }),
+    list: protectedProcedure
+      .input(z.object({
+        status: z.enum(["pending", "reviewed", "blocked", "dismissed"]).optional(),
+        presetType: z.enum(["avatar", "subtitle"]).optional(),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") return [];
+        return db.getPresetReports(input || {});
+      }),
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "reviewed", "blocked", "dismissed"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") return { success: false };
+        await db.updatePresetReportStatus(input.id, input.status, ctx.user.id);
+        return { success: true };
+      }),
+    block: protectedProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+        reason: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") return { success: false };
+        await db.blockPreset(input.presetType, input.presetId, ctx.user.id, input.reason);
+        return { success: true };
+      }),
+    unblock: protectedProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") return { success: false };
+        await db.unblockPreset(input.presetType, input.presetId);
+        return { success: true };
+      }),
+  }),
+
+  // ============ Preset Versions (v9.1) ============
+  presetVersion: router({
+    list: publicProcedure
+      .input(z.object({
+        presetType: z.enum(["avatar", "subtitle"]),
+        presetId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return db.getPresetVersions(input.presetType, input.presetId);
+      }),
+    restore: protectedProcedure
+      .input(z.object({ versionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const version = await db.getPresetVersionById(input.versionId);
+        if (!version) return { success: false, error: "version_not_found" };
+        const data = version.data as any;
+        if (version.presetType === "avatar") {
+          await db.updateSharedPreset(version.presetId, ctx.user.id, data);
+        } else {
+          await db.updateSharedSubtitlePreset(version.presetId, ctx.user.id, data);
+        }
+        return { success: true };
+      }),
+  }),
 });
 
 // SRT time formatter

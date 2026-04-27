@@ -20,7 +20,7 @@ import {
   Wand2, Play, FileText, Clock, Layers, Volume2, Trash2, ChevronRight,
   Loader2, Sparkles, Download, ArrowLeft, RefreshCw, Mic, UserCircle2, User2, Settings2, Edit3, History,
   BookTemplate, Image, CheckCircle2, XCircle, SkipForward, ListChecks, CheckSquare, Square, Upload, Camera,
-  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye, Palette, Settings, Heart, Tag
+  Presentation, Video, Zap, Film, Languages, Globe, StopCircle, CircleDot, RotateCcw, Eye, Palette, Settings, Heart, Tag, Search, Flag
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
@@ -655,6 +655,42 @@ export default function ProductionStudio() {
   // v9.0: Detail Preview Modal
   const [detailPreset, setDetailPreset] = useState<any>(null);
   const [detailPresetType, setDetailPresetType] = useState<"avatar" | "subtitle">("avatar");
+
+  // v9.1: Preset Search
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchType, setSearchType] = useState<"avatar" | "subtitle">("avatar");
+  const [isSearching, setIsSearching] = useState(false);
+  const searchQuery = trpc.presetSearch.search.useQuery(
+    { keyword: searchKeyword, type: searchType, limit: 30 },
+    { enabled: searchKeyword.length >= 2 && isSearching }
+  );
+
+  // v9.1: Preset Report
+  const [showReportModal, setShowReportModal] = useState<{ type: "avatar" | "subtitle"; id: number } | null>(null);
+  const [reportReason, setReportReason] = useState<"inappropriate" | "spam" | "copyright" | "offensive" | "other">("inappropriate");
+  const [reportDescription, setReportDescription] = useState("");
+  const reportMut = trpc.presetReport.report.useMutation({
+    onSuccess: (data) => {
+      if (data.success) { toast.success(t("ps.reportSubmitted")); setShowReportModal(null); }
+      else if (data.error === "already_reported") toast.error(t("ps.alreadyReported"));
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  // v9.1: Preset Version History
+  const [showVersionHistory, setShowVersionHistory] = useState<{ type: "avatar" | "subtitle"; id: number } | null>(null);
+  const versionListQuery = trpc.presetVersion.list.useQuery(
+    { presetType: showVersionHistory?.type || "avatar", presetId: showVersionHistory?.id || 0 },
+    { enabled: !!showVersionHistory }
+  );
+  const restoreVersionMut = trpc.presetVersion.restore.useMutation({
+    onSuccess: () => {
+      toast.success(t("ps.versionRestored"));
+      sharedPresetsQuery.refetch();
+      sharedSubtitlePresetsQuery.refetch();
+      if (showVersionHistory) versionListQuery.refetch();
+    },
+  });
 
   // Hydrate subtitle style from DB
   useEffect(() => {
@@ -1506,7 +1542,8 @@ export default function ProductionStudio() {
                                                 <Globe className="w-3 h-3 text-emerald-400" />
                                                 {t("ps.communitySubtitlePresets")}
                                               </p>
-                                              <div className="flex gap-1">
+                                              <div className="flex gap-1 items-center">
+                                                <button className="text-[10px] px-1.5 py-0.5 rounded text-blue-400 hover:bg-blue-500/20" onClick={() => { setSearchType('subtitle'); setIsSearching(true); }}><Search className="w-3 h-3" /></button>
                                                 <button className={`text-[10px] px-1.5 py-0.5 rounded ${subtitleGallerySortBy === 'popular' ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground'}`} onClick={() => setSubtitleGallerySortBy('popular')}>{t("ps.sortPopular")}</button>
                                                 <button className={`text-[10px] px-1.5 py-0.5 rounded ${subtitleGallerySortBy === 'latest' ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground'}`} onClick={() => setSubtitleGallerySortBy('latest')}>{t("ps.sortLatest")}</button>
                                               </div>
@@ -1829,7 +1866,8 @@ export default function ProductionStudio() {
                                       <Globe className="w-3.5 h-3.5 text-emerald-400" />
                                       {t("ps.communityPresets")}
                                     </p>
-                                    <div className="flex gap-1">
+                                    <div className="flex gap-1 items-center">
+                                      <button className="text-[10px] px-1.5 py-0.5 rounded text-blue-400 hover:bg-blue-500/20" onClick={() => { setSearchType('avatar'); setIsSearching(true); }}><Search className="w-3 h-3" /></button>
                                       <button className={`text-[10px] px-2 py-0.5 rounded ${gallerySortBy === 'popular' ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground'}`} onClick={() => setGallerySortBy('popular')}>{t("ps.sortPopular")}</button>
                                       <button className={`text-[10px] px-2 py-0.5 rounded ${gallerySortBy === 'latest' ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground'}`} onClick={() => setGallerySortBy('latest')}>{t("ps.sortLatest")}</button>
                                     </div>
@@ -2687,6 +2725,8 @@ export default function ProductionStudio() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span><Heart className="w-4 h-4 inline" /> {detailPreset.likes || 0}</span>
                   <span><Download className="w-4 h-4 inline" /> {detailPreset.downloads || 0}</span>
+                  <button className="text-xs text-amber-400 hover:text-amber-300" onClick={() => setShowReportModal({ type: detailPresetType, id: detailPreset.id })}>{t("ps.report")}</button>
+                  <button className="text-xs text-blue-400 hover:text-blue-300" onClick={() => setShowVersionHistory({ type: detailPresetType, id: detailPreset.id })}>{t("ps.versionHistory")}</button>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -2735,6 +2775,132 @@ export default function ProductionStudio() {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* v9.1: Search Bar Modal */}
+      {isSearching && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-start justify-center pt-20 p-4" onClick={() => { setIsSearching(false); setSearchKeyword(""); }}>
+          <div className="bg-card border border-border rounded-xl w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Search className="w-5 h-5 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  placeholder={t("ps.searchPresets")}
+                  value={searchKeyword}
+                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  className="border-0 focus-visible:ring-0 text-lg"
+                />
+                <div className="flex gap-1">
+                  <Button size="sm" variant={searchType === "avatar" ? "default" : "outline"} onClick={() => setSearchType("avatar")} className="text-xs">{t("ps.avatarPresets")}</Button>
+                  <Button size="sm" variant={searchType === "subtitle" ? "default" : "outline"} onClick={() => setSearchType("subtitle")} className="text-xs">{t("ps.subtitlePresets")}</Button>
+                </div>
+              </div>
+            </div>
+            <div className="max-h-80 overflow-y-auto p-2">
+              {searchQuery.isLoading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}
+              {searchQuery.data?.length === 0 && searchKeyword.length >= 2 && (
+                <p className="text-center text-muted-foreground py-8">{t("ps.noSearchResults")}</p>
+              )}
+              {searchQuery.data?.map((preset: any) => (
+                <div key={preset.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => { setDetailPreset(preset); setDetailPresetType(searchType); setIsSearching(false); setSearchKeyword(""); }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{preset.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{preset.description || t("ps.noDescription")}</p>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground ml-3">
+                    <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{preset.likes || 0}</span>
+                    <span className="flex items-center gap-1"><Download className="w-3 h-3" />{preset.downloads || 0}</span>
+                  </div>
+                </div>
+              ))}
+              {searchKeyword.length < 2 && (
+                <p className="text-center text-muted-foreground py-8 text-sm">{t("ps.typeToSearch")}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* v9.1: Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" onClick={() => setShowReportModal(null)}>
+          <div className="bg-card border border-border rounded-xl w-full max-w-sm overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-semibold">{t("ps.reportPreset")}</h3>
+              <button onClick={() => setShowReportModal(null)} className="text-muted-foreground hover:text-foreground"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <Label className="text-sm">{t("ps.reportReason")}</Label>
+                <Select value={reportReason} onValueChange={(v) => setReportReason(v as any)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inappropriate">{t("ps.reasonInappropriate")}</SelectItem>
+                    <SelectItem value="spam">{t("ps.reasonSpam")}</SelectItem>
+                    <SelectItem value="copyright">{t("ps.reasonCopyright")}</SelectItem>
+                    <SelectItem value="offensive">{t("ps.reasonOffensive")}</SelectItem>
+                    <SelectItem value="other">{t("ps.reasonOther")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm">{t("ps.reportDescription")}</Label>
+                <textarea
+                  className="w-full mt-1 rounded-md border border-border bg-background p-2 text-sm resize-none"
+                  rows={3}
+                  maxLength={500}
+                  placeholder={t("ps.reportDescPlaceholder")}
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                />
+              </div>
+              <Button
+                className="w-full"
+                disabled={reportMut.isPending}
+                onClick={() => reportMut.mutate({ presetType: showReportModal.type, presetId: showReportModal.id, reason: reportReason, description: reportDescription || undefined })}
+              >
+                {reportMut.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                {t("ps.submitReport")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* v9.1: Version History Modal */}
+      {showVersionHistory && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4" onClick={() => setShowVersionHistory(null)}>
+          <div className="bg-card border border-border rounded-xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="font-semibold">{t("ps.versionHistory")}</h3>
+              <button onClick={() => setShowVersionHistory(null)} className="text-muted-foreground hover:text-foreground"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="max-h-80 overflow-y-auto p-4 space-y-2">
+              {versionListQuery.isLoading && <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}
+              {versionListQuery.data?.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">{t("ps.noVersions")}</p>
+              )}
+              {versionListQuery.data?.map((ver: any) => (
+                <div key={ver.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-background/50">
+                  <div>
+                    <p className="text-sm font-medium">v{ver.version}</p>
+                    <p className="text-xs text-muted-foreground">{ver.changeNote || t("ps.noChangeNote")}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(ver.createdAt).toLocaleString()}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={restoreVersionMut.isPending}
+                    onClick={() => { if (confirm(t("ps.confirmRestore"))) restoreVersionMut.mutate({ versionId: ver.id }); }}
+                  >
+                    {t("ps.restore")}
+                  </Button>
+                </div>
+              ))}
             </div>
           </div>
         </div>

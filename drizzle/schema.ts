@@ -1787,3 +1787,44 @@ export const presetTagMap = mysqlTable("presetTagMap", {
   presetId: int("presetId").notNull(),
   tagId: int("tagId").notNull(),
 });
+
+// ============ Preset Reports (v9.1) ============
+export const presetReports = mysqlTable("presetReports", {
+  id: int("id").autoincrement().primaryKey(),
+  presetType: mysqlEnum("presetType", ["avatar", "subtitle"]).notNull(),
+  presetId: int("presetId").notNull(),
+  reporterId: int("reporterId").notNull(),
+  reason: mysqlEnum("reason", ["inappropriate", "spam", "copyright", "offensive", "other"]).notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["pending", "reviewed", "blocked", "dismissed"]).default("pending").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PresetReport = typeof presetReports.$inferSelect;
+export type InsertPresetReport = typeof presetReports.$inferInsert;
+
+// ============ Preset Versions (v9.1) ============
+export const presetVersions = mysqlTable("presetVersions", {
+  id: int("id").autoincrement().primaryKey(),
+  presetType: mysqlEnum("presetType", ["avatar", "subtitle"]).notNull(),
+  presetId: int("presetId").notNull(),
+  version: int("version").default(1).notNull(),
+  data: json("data").notNull(),
+  changedBy: int("changedBy").notNull(),
+  changeNote: varchar("changeNote", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PresetVersion = typeof presetVersions.$inferSelect;
+export type InsertPresetVersion = typeof presetVersions.$inferInsert;
+
+// ============ Blocked Presets (v9.1) ============
+export const blockedPresets = mysqlTable("blockedPresets", {
+  id: int("id").autoincrement().primaryKey(),
+  presetType: mysqlEnum("presetType", ["avatar", "subtitle"]).notNull(),
+  presetId: int("presetId").notNull(),
+  blockedBy: int("blockedBy").notNull(),
+  reason: varchar("reason", { length: 500 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type BlockedPreset = typeof blockedPresets.$inferSelect;
