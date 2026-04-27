@@ -49,6 +49,8 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { Bell, Check } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 /* ── Mega Menu Data ── */
 const productCategories = [
@@ -353,6 +355,9 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
 
+          {/* Notification Bell */}
+          {isAuthenticated && <NotificationBell />}
+
           {switchable && toggleTheme && (
             <Button
               variant="ghost"
@@ -520,5 +525,135 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+  );
+}
+
+/* ── Notification Bell Component ── */
+function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
+  const { data: unreadCount = 0 } = trpc.notification.unreadCount.useQuery(undefined, {
+    refetchInterval: 30000,
+  });
+  const { data: notifications = [] } = trpc.notification.list.useQuery(
+    { limit: 10, offset: 0 },
+    { enabled: open }
+  );
+  const utils = trpc.useUtils();
+  const markRead = trpc.notification.markRead.useMutation({
+    onSuccess: () => {
+      utils.notification.unreadCount.invalidate();
+      utils.notification.list.invalidate();
+    },
+  });
+  const markAllRead = trpc.notification.markAllRead.useMutation({
+    onSuccess: () => {
+      utils.notification.unreadCount.invalidate();
+      utils.notification.list.invalidate();
+    },
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const typeIcon = (type: string) => {
+    switch (type) {
+      case "like": return "\u2764\ufe0f";
+      case "comment": return "\ud83d\udcac";
+      case "reply": return "\u21a9\ufe0f";
+      case "report_resolved": return "\u2705";
+      case "system": return "\ud83d\udd14";
+      default: return "\ud83d\udd14";
+    }
+  };
+
+  const formatTime = (date: Date | string) => {
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    if (diff < 60000) return "\ubc29\uae08";
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}\ubd84 \uc804`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}\uc2dc\uac04 \uc804`;
+    return `${Math.floor(diff / 86400000)}\uc77c \uc804`;
+  };
+
+  return (
+    <div ref={bellRef} className="relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground hover:text-foreground relative"
+        onClick={() => setOpen(!open)}
+      >
+        <Bell className="h-4 w-4" />
+        {(unreadCount as number) > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+            {(unreadCount as number) > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </Button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-border/50 bg-popover/95 backdrop-blur-xl shadow-xl z-50">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+            <h3 className="text-sm font-semibold">\uc54c\ub9bc</h3>
+            {(unreadCount as number) > 0 && (
+              <button
+                onClick={() => markAllRead.mutate()}
+                className="text-xs text-primary hover:underline flex items-center gap-1"
+              >
+                <Check className="h-3 w-3" /> \ubaa8\ub450 \uc77d\uc74c
+              </button>
+            )}
+          </div>
+          {(notifications as any[]).length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+              \uc54c\ub9bc\uc774 \uc5c6\uc2b5\ub2c8\ub2e4
+            </div>
+          ) : (
+            <div className="divide-y divide-border/30">
+              {(notifications as any[]).map((n: any) => (
+                <div
+                  key={n.id}
+                  className={`px-4 py-3 hover:bg-accent/50 cursor-pointer transition-colors ${
+                    !n.isRead ? "bg-primary/5" : ""
+                  }`}
+                  onClick={() => {
+                    if (!n.isRead) markRead.mutate({ id: n.id });
+                    if (n.link) window.location.href = n.link;
+                    setOpen(false);
+                  }}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <span className="text-base mt-0.5">{typeIcon(n.type)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm leading-snug ${!n.isRead ? "font-semibold" : ""}`}>
+                        {n.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        {n.message}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">
+                        {formatTime(n.createdAt)}
+                      </p>
+                    </div>
+                    {!n.isRead && (
+                      <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

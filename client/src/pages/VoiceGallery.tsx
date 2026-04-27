@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -120,20 +120,34 @@ export default function VoiceGallery() {
   const playAudio = (url: string, voiceId: number) => {
     const audio = new Audio(url);
     audioRef.current = audio;
-    audio.play().catch(() => {
-      toast.error(t("vg.playbackFailed"));
-      setPlayingId(null);
-    });
     setPlayingId(voiceId);
     audio.onended = () => {
       setPlayingId(null);
       audioRef.current = null;
     };
     audio.onerror = () => {
+      toast.error(t("vg.playbackFailed"));
       setPlayingId(null);
       audioRef.current = null;
     };
+    audio.oncanplaythrough = () => {
+      audio.play().catch(() => {
+        toast.error(t("vg.playbackFailed"));
+        setPlayingId(null);
+      });
+    };
+    audio.load();
   };
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">

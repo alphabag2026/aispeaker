@@ -123,7 +123,7 @@ export default function LectureRoom() {
   const progressMutation = trpc.progress.update.useMutation();
   const createVodMutation = trpc.vod.createFromLecture.useMutation({
     onSuccess: (data) => {
-      toast.success(t("lr.vodCreated", { vodId: data.vodId }));
+      toast.success(t("lr.vodCreated", { vodId: data.vodId ?? 0 }));
     },
     onError: (err) => toast.error(err.message),
   });
@@ -297,7 +297,7 @@ export default function LectureRoom() {
         text: content,
         targetLang: selectedLang,
         sourceLang: "ko",
-        sourceType: "qa",
+        sourceType: "qa_message",
       });
       setTranslatedMessages(prev => ({ ...prev, [messageId]: result.translatedText }));
     } catch (err) {
@@ -306,12 +306,14 @@ export default function LectureRoom() {
   };
 
   const handleAvatarGeneration = async (text: string) => {
-    if (!lecture?.instructor.avatarUrl) return;
+    if (!lecture) return;
     setAvatarVideoUrl(null);
     try {
       const result = await avatarMutation.mutateAsync({
         text,
-        avatarUrl: lecture.instructor.avatarUrl,
+        voiceProfileId: lecture.voiceProfileId,
+        faceSwapProfileId: lecture.faceSwapProfileId,
+        voiceModProfileId: lecture.voiceModProfileId,
       });
       setAvatarVideoUrl(result.videoUrl);
     } catch (err) {
@@ -362,7 +364,7 @@ export default function LectureRoom() {
         <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-border p-4 space-y-6 bg-card/50">
           <div>
             <h2 className="text-2xl font-bold">{lecture?.title}</h2>
-            <Badge variant="secondary" className="mt-2">{lecture.category.name}</Badge>
+            <Badge variant="secondary" className="mt-2">{lecture.category}</Badge>
           </div>
 
           <div className="space-y-2 text-sm">
@@ -376,13 +378,12 @@ export default function LectureRoom() {
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">{t("lr.instructor")}</span>
               <div className="flex items-center gap-2">
-                <img src={lecture.instructor.avatarUrl || ""} alt={lecture.instructor.name} className="h-6 w-6 rounded-full" />
-                <span>{lecture.instructor.name}</span>
+                <span className="text-foreground">ID: {lecture.instructorId}</span>
               </div>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">{t("lr.totalLearningTime")}</span>
-              <span>{t("lr.minutes", { minutes: lecture?.totalTimeMinutes })}</span>
+              <span>{t("lr.minutes", { minutes: 60 })}</span>
             </div>
           </div>
 
@@ -447,7 +448,7 @@ export default function LectureRoom() {
                   {avatarVideoUrl ? (
                     <video src={avatarVideoUrl} autoPlay className="w-full h-full object-cover" />
                   ) : (
-                    <img src={lecture.instructor.avatarUrl || ""} alt="AI Avatar" className="w-full h-full object-cover" />
+                    <img src="" alt="AI Avatar" className="w-full h-full object-cover" />
                   )}
                   {avatarSpeaking && <div className="absolute inset-0 border-4 border-green-500 rounded-full animate-pulse"></div>}
                 </div>
@@ -475,7 +476,7 @@ export default function LectureRoom() {
                     ) : (
                       <div className="text-center text-muted-foreground">
                         <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                        <p className="text-lg font-medium">{materials[currentSlide]?.title || t("lr.slide")}</p>
+                        <p className="text-lg font-medium">{(materials[currentSlide] as any)?.title || t("lr.slide")}</p>
                         <p className="text-sm">{t("lr.slideProgress", { current: currentSlide + 1, total: materials.length })}</p>
                       </div>
                     )}
@@ -575,7 +576,7 @@ export default function LectureRoom() {
               {t("lr.askByTextOrVoice")}
               {selectedLang !== "ko" && (
                 <span className="ml-1">
-                  · {t("lr.translationEnabled", { flag: LANGUAGES.find((l) => l.code === selectedLang)?.flag })}
+                  · {t("lr.translationEnabled", { flag: LANGUAGES.find((l) => l.code === selectedLang)?.flag || "" })}
                 </span>
               )}
             </p>

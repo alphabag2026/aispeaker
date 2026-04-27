@@ -267,6 +267,13 @@
       "when": 1777297125654,
       "tag": "0037_goofy_bloodscream",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "5",
+      "when": 1777300172785,
+      "tag": "0038_solid_pretty_boy",
+      "breakpoints": true
     }
   ]
 }

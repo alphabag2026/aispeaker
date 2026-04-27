@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -162,7 +162,17 @@ const tutorialSteps: TutorialStep[] = [
 
 export default function OnboardingTutorial() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
+    try {
+      const saved = localStorage.getItem('onboarding_completed_steps');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  // Persist completed steps to localStorage
+  useEffect(() => {
+    localStorage.setItem('onboarding_completed_steps', JSON.stringify(Array.from(completedSteps)));
+  }, [completedSteps]);
 
   const toggleComplete = (stepId: number) => {
     setCompletedSteps((prev) => {
