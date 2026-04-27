@@ -57,6 +57,9 @@ import {
   projectWatermarks, InsertProjectWatermark,
   galleryPosts, InsertGalleryPost,
   pipPresets, InsertPipPreset,
+  sharedPresets, InsertSharedPreset,
+  sharedPresetLikes,
+  subtitleStyles, InsertSubtitleStyle,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2741,4 +2744,68 @@ export async function updateScriptInterpreter(scriptId: number, userId: number, 
 }) {
   const db = await getDb(); if (!db) throw new Error("DB not available");
   await db.update(lectureScripts).set(data).where(and(eq(lectureScripts.id, scriptId), eq(lectureScripts.userId, userId)));
+}
+
+
+// ── Shared Presets (Community Gallery) (v8.7) ──
+export async function listSharedPresets(sortBy: "latest" | "popular" = "latest", limit = 50) {
+  const db = await getDb(); if (!db) return [];
+  if (sortBy === "popular") {
+    return db.select().from(sharedPresets).orderBy(desc(sharedPresets.likes)).limit(limit);
+  }
+  return db.select().from(sharedPresets).orderBy(desc(sharedPresets.createdAt)).limit(limit);
+}
+
+export async function createSharedPreset(data: InsertSharedPreset) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(sharedPresets).values(data);
+  return result.insertId;
+}
+
+export async function deleteSharedPreset(id: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.delete(sharedPresets).where(and(eq(sharedPresets.id, id), eq(sharedPresets.userId, userId)));
+}
+
+export async function toggleSharedPresetLike(presetId: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(sharedPresetLikes)
+    .where(and(eq(sharedPresetLikes.presetId, presetId), eq(sharedPresetLikes.userId, userId)));
+  if (existing.length > 0) {
+    await db.delete(sharedPresetLikes).where(eq(sharedPresetLikes.id, existing[0].id));
+    await db.update(sharedPresets).set({ likes: sql`likes - 1` }).where(eq(sharedPresets.id, presetId));
+    return false;
+  } else {
+    await db.insert(sharedPresetLikes).values({ presetId, userId });
+    await db.update(sharedPresets).set({ likes: sql`likes + 1` }).where(eq(sharedPresets.id, presetId));
+    return true;
+  }
+}
+
+export async function incrementSharedPresetDownloads(presetId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(sharedPresets).set({ downloads: sql`downloads + 1` }).where(eq(sharedPresets.id, presetId));
+}
+
+export async function getUserLikedPresets(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  const likes = await db.select({ presetId: sharedPresetLikes.presetId }).from(sharedPresetLikes).where(eq(sharedPresetLikes.userId, userId));
+  return likes.map(l => l.presetId);
+}
+
+// ── Subtitle Styles (v8.7) ──
+export async function getSubtitleStyle(userId: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(subtitleStyles).where(eq(subtitleStyles.userId, userId)).limit(1);
+  return rows[0] || null;
+}
+
+export async function upsertSubtitleStyle(userId: number, data: Partial<InsertSubtitleStyle>) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(subtitleStyles).where(eq(subtitleStyles.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    await db.update(subtitleStyles).set({ ...data, updatedAt: new Date() }).where(eq(subtitleStyles.userId, userId));
+  } else {
+    await db.insert(subtitleStyles).values({ userId, ...data } as InsertSubtitleStyle);
+  }
 }
