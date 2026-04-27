@@ -7,6 +7,7 @@ import { lazy, Suspense } from "react";
 
 // Eagerly loaded (critical path)
 import Home from "./pages/Home";
+import { GuideTour } from "./components/GuideTour";
 import NotFound from "@/pages/NotFound";
 
 // Lazy-loaded pages (code splitting)
@@ -178,6 +179,7 @@ function App() {
       <ThemeProvider defaultTheme="dark" switchable>
         <TooltipProvider>
           <Toaster />
+          <GuideTour />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

@@ -298,8 +298,10 @@ export default function AdminDashboard() {
         </header>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 border-b border-border/50 rounded-none bg-transparent px-0 pb-2 mb-6">
+          <TabsList className="grid w-full grid-cols-8 border-b border-border/50 rounded-none bg-transparent px-0 pb-2 mb-6">
             <TabsTrigger value="users" className="rounded-none"><Users className="w-4 h-4 mr-2" />{t("ad.users")}</TabsTrigger>
+            <TabsTrigger value="stats" className="rounded-none"><BarChart3 className="w-4 h-4 mr-2" />통계</TabsTrigger>
+            <TabsTrigger value="presetRank" className="rounded-none"><TrendingUp className="w-4 h-4 mr-2" />프리셋 순위</TabsTrigger>
             <TabsTrigger value="revenue" className="rounded-none"><CreditCard className="w-4 h-4 mr-2" />{t("ad.revenue")}</TabsTrigger>
             <TabsTrigger value="samples" className="rounded-none"><Image className="w-4 h-4 mr-2" />{t("ad.samples")}</TabsTrigger>
             <TabsTrigger value="reports" className="rounded-none relative"><Flag className="w-4 h-4 mr-2" />신고 관리</TabsTrigger>
@@ -474,6 +476,16 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Settings Tab */}
+          {/* Stats Tab */}
+          <TabsContent value="stats">
+            <UserStatsPanel />
+          </TabsContent>
+
+          {/* Preset Rank Tab */}
+          <TabsContent value="presetRank">
+            <PresetRankPanel />
+          </TabsContent>
+
           {/* Reports Tab */}
           <TabsContent value="reports">
             <ReportManagementPanel />
@@ -667,6 +679,223 @@ function ReportManagementPanel() {
                       </td>
                     </tr>
                   ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+
+/* ── v9.3: User Statistics Panel ── */
+function UserStatsPanel() {
+  const [days, setDays] = useState(30);
+  const { data: totals } = trpc.adminStats.userTotals.useQuery();
+  const { data: signups } = trpc.adminStats.userSignups.useQuery({ days });
+  const { data: activity } = trpc.adminStats.userActivity.useQuery({ days });
+
+  // Dynamic import recharts
+  const [Recharts, setRecharts] = useState<any>(null);
+  useState(() => {
+    import("recharts").then(m => setRecharts(m));
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-border/50">
+          <CardContent className="pt-4 text-center">
+            <p className="text-2xl font-bold">{totals?.total || 0}</p>
+            <p className="text-xs text-muted-foreground">전체 사용자</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="pt-4 text-center">
+            <p className="text-2xl font-bold text-violet-400">{totals?.instructors || 0}</p>
+            <p className="text-xs text-muted-foreground">강사</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="pt-4 text-center">
+            <p className="text-2xl font-bold text-blue-400">{totals?.students || 0}</p>
+            <p className="text-xs text-muted-foreground">수강생</p>
+          </CardContent>
+        </Card>
+        <Card className="border-border/50">
+          <CardContent className="pt-4 text-center">
+            <p className="text-2xl font-bold text-amber-400">{totals?.admins || 0}</p>
+            <p className="text-xs text-muted-foreground">관리자</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Period Filter */}
+      <div className="flex gap-2">
+        {[7, 30, 90].map(d => (
+          <Button key={d} size="sm" variant={days === d ? "default" : "outline"} onClick={() => setDays(d)}>
+            {d}일
+          </Button>
+        ))}
+      </div>
+
+      {/* Signup Chart */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><Users className="w-4 h-4" /> 가입 추이 ({days}일)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {Recharts && signups && signups.length > 0 ? (
+            <Recharts.ResponsiveContainer width="100%" height={250}>
+              <Recharts.AreaChart data={signups}>
+                <Recharts.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <Recharts.XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.4)" />
+                <Recharts.YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.4)" />
+                <Recharts.Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
+                <Recharts.Area type="monotone" dataKey="count" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} name="가입자 수" />
+              </Recharts.AreaChart>
+            </Recharts.ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">데이터가 없습니다.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Activity Chart */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4" /> 활동 추이 ({days}일)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {Recharts && activity && activity.length > 0 ? (
+            <Recharts.ResponsiveContainer width="100%" height={250}>
+              <Recharts.BarChart data={activity}>
+                <Recharts.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <Recharts.XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.4)" />
+                <Recharts.YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.4)" />
+                <Recharts.Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
+                <Recharts.Bar dataKey="count" fill="#3b82f6" name="활동 사용자" radius={[4, 4, 0, 0]} />
+              </Recharts.BarChart>
+            </Recharts.ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">데이터가 없습니다.</p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+/* ── v9.3: Preset Rank Panel ── */
+function PresetRankPanel() {
+  const [sortBy, setSortBy] = useState<"likes" | "downloads">("likes");
+  const [type, setType] = useState<"avatar" | "subtitle">("avatar");
+  const { data: topPresets } = trpc.adminStats.topPresets.useQuery({ limit: 10, sortBy, type });
+  const { data: categories } = trpc.adminStats.presetCategories.useQuery();
+  const { data: growth } = trpc.adminStats.presetGrowth.useQuery({ days: 30 });
+
+  const [Recharts, setRecharts] = useState<any>(null);
+  useState(() => {
+    import("recharts").then(m => setRecharts(m));
+  });
+
+  const pieData = categories ? [
+    { name: "아바타 프리셋", value: categories.avatar, fill: "#8b5cf6" },
+    { name: "자막 프리셋", value: categories.subtitle, fill: "#06b6d4" },
+  ] : [];
+
+  return (
+    <div className="space-y-6">
+      {/* Category Distribution */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">카테고리별 분포</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Recharts && pieData.length > 0 ? (
+              <Recharts.ResponsiveContainer width="100%" height={200}>
+                <Recharts.PieChart>
+                  <Recharts.Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label>
+                    {pieData.map((entry: any, idx: number) => (
+                      <Recharts.Cell key={idx} fill={entry.fill} />
+                    ))}
+                  </Recharts.Pie>
+                  <Recharts.Tooltip />
+                  <Recharts.Legend />
+                </Recharts.PieChart>
+              </Recharts.ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">데이터가 없습니다.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base">프리셋 생성 추이 (30일)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Recharts && growth && growth.length > 0 ? (
+              <Recharts.ResponsiveContainer width="100%" height={200}>
+                <Recharts.LineChart data={growth}>
+                  <Recharts.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <Recharts.XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="rgba(255,255,255,0.4)" />
+                  <Recharts.YAxis tick={{ fontSize: 10 }} stroke="rgba(255,255,255,0.4)" />
+                  <Recharts.Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
+                  <Recharts.Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} dot={false} name="생성 수" />
+                </Recharts.LineChart>
+              </Recharts.ResponsiveContainer>
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-8">데이터가 없습니다.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top Presets */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">TOP 10 인기 프리셋</CardTitle>
+            <div className="flex gap-2">
+              <Button size="sm" variant={type === "avatar" ? "default" : "outline"} onClick={() => setType("avatar")}>아바타</Button>
+              <Button size="sm" variant={type === "subtitle" ? "default" : "outline"} onClick={() => setType("subtitle")}>자막</Button>
+              <span className="mx-2 text-border">|</span>
+              <Button size="sm" variant={sortBy === "likes" ? "default" : "outline"} onClick={() => setSortBy("likes")}>좋아요순</Button>
+              <Button size="sm" variant={sortBy === "downloads" ? "default" : "outline"} onClick={() => setSortBy("downloads")}>다운로드순</Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/50 text-muted-foreground">
+                  <th className="text-left py-2 px-2">#</th>
+                  <th className="text-left py-2 px-2">이름</th>
+                  <th className="text-left py-2 px-2">작성자</th>
+                  <th className="text-right py-2 px-2">좋아요</th>
+                  <th className="text-right py-2 px-2">다운로드</th>
+                  <th className="text-right py-2 px-2">생성일</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(topPresets || []).map((preset: any, idx: number) => (
+                  <tr key={preset.id} className="border-b border-border/30 hover:bg-muted/20">
+                    <td className="py-2 px-2 font-medium">{idx + 1}</td>
+                    <td className="py-2 px-2">{preset.name}</td>
+                    <td className="py-2 px-2 text-muted-foreground">{preset.userName}</td>
+                    <td className="py-2 px-2 text-right text-red-400">{preset.likes}</td>
+                    <td className="py-2 px-2 text-right text-blue-400">{preset.downloads}</td>
+                    <td className="py-2 px-2 text-right text-muted-foreground text-xs">{new Date(preset.createdAt).toLocaleDateString("ko-KR")}</td>
+                  </tr>
+                ))}
+                {(!topPresets || topPresets.length === 0) && (
+                  <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">프리셋 데이터가 없습니다.</td></tr>
                 )}
               </tbody>
             </table>

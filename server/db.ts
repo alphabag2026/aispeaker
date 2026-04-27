@@ -3275,3 +3275,71 @@ export async function getPresetReportCount(status?: string) {
   const rows = await db.select({ count: sql<number>`COUNT(*)` }).from(presetReports).where(conditions);
   return rows[0]?.count || 0;
 }
+
+// ============ v9.3: User Statistics ============
+export async function getUserSignupStats(days: number) {
+  const db = await getDb(); if (!db) return [];
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await db.select({
+    date: sql<string>`DATE(createdAt)`,
+    count: sql<number>`COUNT(*)`,
+  }).from(users).where(gte(users.createdAt, since)).groupBy(sql`DATE(createdAt)`).orderBy(sql`DATE(createdAt)`);
+  return rows;
+}
+
+export async function getUserActivityStats(days: number) {
+  const db = await getDb(); if (!db) return [];
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await db.select({
+    date: sql<string>`DATE(lastSignedIn)`,
+    count: sql<number>`COUNT(*)`,
+  }).from(users).where(gte(users.lastSignedIn, since)).groupBy(sql`DATE(lastSignedIn)`).orderBy(sql`DATE(lastSignedIn)`);
+  return rows;
+}
+
+export async function getUserTotalStats() {
+  const db = await getDb(); if (!db) return { total: 0, instructors: 0, students: 0, admins: 0 };
+  const total = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
+  const instructors = await db.select({ count: sql<number>`COUNT(*)` }).from(users).where(eq(users.platformRole, "instructor"));
+  const students = await db.select({ count: sql<number>`COUNT(*)` }).from(users).where(eq(users.platformRole, "student"));
+  const admins = await db.select({ count: sql<number>`COUNT(*)` }).from(users).where(eq(users.role, "admin"));
+  return {
+    total: total[0]?.count || 0,
+    instructors: instructors[0]?.count || 0,
+    students: students[0]?.count || 0,
+    admins: admins[0]?.count || 0,
+  };
+}
+
+// ============ v9.3: Preset Popularity Stats ============
+export async function getTopPresets(limit: number = 10, sortBy: "likes" | "downloads" = "likes") {
+  const db = await getDb(); if (!db) return [];
+  const orderCol = sortBy === "likes" ? sharedPresets.likes : sharedPresets.downloads;
+  return db.select().from(sharedPresets).orderBy(desc(orderCol)).limit(limit);
+}
+
+export async function getTopSubtitlePresets(limit: number = 10, sortBy: "likes" | "downloads" = "likes") {
+  const db = await getDb(); if (!db) return [];
+  const orderCol = sortBy === "likes" ? sharedSubtitlePresets.likes : sharedSubtitlePresets.downloads;
+  return db.select().from(sharedSubtitlePresets).orderBy(desc(orderCol)).limit(limit);
+}
+
+export async function getPresetCategoryStats() {
+  const db = await getDb(); if (!db) return { avatar: 0, subtitle: 0 };
+  const avatarCount = await db.select({ count: sql<number>`COUNT(*)` }).from(sharedPresets);
+  const subtitleCount = await db.select({ count: sql<number>`COUNT(*)` }).from(sharedSubtitlePresets);
+  return {
+    avatar: avatarCount[0]?.count || 0,
+    subtitle: subtitleCount[0]?.count || 0,
+  };
+}
+
+export async function getPresetGrowthStats(days: number) {
+  const db = await getDb(); if (!db) return [];
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const avatarRows = await db.select({
+    date: sql<string>`DATE(createdAt)`,
+    count: sql<number>`COUNT(*)`,
+  }).from(sharedPresets).where(gte(sharedPresets.createdAt, since)).groupBy(sql`DATE(createdAt)`).orderBy(sql`DATE(createdAt)`);
+  return avatarRows;
+}
