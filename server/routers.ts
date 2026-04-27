@@ -6562,6 +6562,34 @@ Return a JSON object with a "sections" array. Each section has:
       .query(async ({ input }) => {
         return db.listSharedPresets(input?.sortBy || "latest");
       }),
+    listPaginated: publicProcedure
+      .input(z.object({
+        sortBy: z.enum(["latest", "popular"]).optional(),
+        tagId: z.number().optional(),
+        cursor: z.number().optional(),
+        limit: z.number().min(1).max(50).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const result = await db.listSharedPresetsPaginated(
+          input?.sortBy || "latest",
+          input?.tagId,
+          input?.cursor,
+          input?.limit || 20
+        );
+        const itemsWithTags = await Promise.all(result.items.map(async (p: any) => {
+          const tags = await db.getPresetTags("avatar", p.id);
+          return { ...p, tags };
+        }));
+        return { items: itemsWithTags, nextCursor: result.nextCursor };
+      }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const preset = await db.getSharedPresetById(input.id);
+        if (!preset) return null;
+        const tags = await db.getPresetTags("avatar", preset.id);
+        return { ...preset, tags };
+      }),
     share: protectedProcedure
       .input(z.object({
         name: z.string().min(1).max(100),
@@ -6574,22 +6602,27 @@ Return a JSON object with a "sections" array. Each section has:
         customY: z.number().optional(),
         customWidth: z.number().optional(),
         customHeight: z.number().optional(),
+        tagIds: z.array(z.number()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const { tagIds, ...presetInput } = input;
         const id = await db.createSharedPreset({
           userId: ctx.user.id,
           userName: ctx.user.name || "Anonymous",
-          name: input.name,
-          description: input.description,
-          position: input.position || "custom",
-          size: input.size || "medium",
-          opacity: input.opacity ?? 100,
-          shape: input.shape || "rounded",
-          customX: input.customX ?? 75,
-          customY: input.customY ?? 75,
-          customWidth: input.customWidth ?? 25,
-          customHeight: input.customHeight ?? 25,
+          name: presetInput.name,
+          description: presetInput.description,
+          position: presetInput.position || "custom",
+          size: presetInput.size || "medium",
+          opacity: presetInput.opacity ?? 100,
+          shape: presetInput.shape || "rounded",
+          customX: presetInput.customX ?? 75,
+          customY: presetInput.customY ?? 75,
+          customWidth: presetInput.customWidth ?? 25,
+          customHeight: presetInput.customHeight ?? 25,
         });
+        if (tagIds && tagIds.length > 0) {
+          await db.addTagsToPreset("avatar", id, tagIds);
+        }
         return { id };
       }),
     delete: protectedProcedure
@@ -6647,12 +6680,39 @@ Return a JSON object with a "sections" array. Each section has:
       }).optional())
       .query(async ({ input }) => {
         const presets = await db.listSharedSubtitlePresets(input?.sortBy || "latest", input?.tagId);
-        // Attach tags to each preset
         const presetsWithTags = await Promise.all(presets.map(async (p) => {
           const tags = await db.getPresetTags("subtitle", p.id);
           return { ...p, tags };
         }));
         return presetsWithTags;
+      }),
+    listPaginated: publicProcedure
+      .input(z.object({
+        sortBy: z.enum(["latest", "popular"]).optional(),
+        tagId: z.number().optional(),
+        cursor: z.number().optional(),
+        limit: z.number().min(1).max(50).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const result = await db.listSharedSubtitlePresetsPaginated(
+          input?.sortBy || "latest",
+          input?.tagId,
+          input?.cursor,
+          input?.limit || 20
+        );
+        const itemsWithTags = await Promise.all(result.items.map(async (p: any) => {
+          const tags = await db.getPresetTags("subtitle", p.id);
+          return { ...p, tags };
+        }));
+        return { items: itemsWithTags, nextCursor: result.nextCursor };
+      }),
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const preset = await db.getSharedSubtitlePresetById(input.id);
+        if (!preset) return null;
+        const tags = await db.getPresetTags("subtitle", preset.id);
+        return { ...preset, tags };
       }),
     share: protectedProcedure
       .input(z.object({

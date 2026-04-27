@@ -261,6 +261,7 @@ registerTranslations("ko", {
   "ps.communitySubtitlePresets": "커뮤니티 자막 프리셋",
   "ps.subtitlePresetGallery": "자막 프리셋 갤러리",
   "ps.presetApplied": "프리셋이 적용되었습니다.",
+  "ps.by": "작성자:",
   "ps.loading": "로딩 중...",
   "ps.generateThumbnail": "썸네일 생성",
 });
@@ -526,6 +527,7 @@ registerTranslations("en", {
   "ps.communitySubtitlePresets": "Community Subtitle Presets",
   "ps.subtitlePresetGallery": "Subtitle Preset Gallery",
   "ps.presetApplied": "Preset applied.",
+  "ps.by": "By",
   "ps.loading": "Loading...",
   "ps.generateThumbnail": "Generate Thumbnail",
 });
@@ -791,6 +793,7 @@ registerTranslations("zh", {
   "ps.communitySubtitlePresets": "社区字幕预设",
   "ps.subtitlePresetGallery": "字幕预设库",
   "ps.presetApplied": "预设已应用。",
+  "ps.by": "作者:",
   "ps.loading": "加载中...",
   "ps.generateThumbnail": "生成缩略图",
 });
@@ -1056,6 +1059,7 @@ registerTranslations("ja", {
   "ps.communitySubtitlePresets": "コミュニティ字幕プリセット",
   "ps.subtitlePresetGallery": "字幕プリセットギャラリー",
   "ps.presetApplied": "プリセットが適用されました。",
+  "ps.by": "作成者:",
   "ps.loading": "読み込み中...",
   "ps.generateThumbnail": "サムネイル生成",
 });
@@ -1323,6 +1327,7 @@ otherLanguages.forEach(lang => {
     "ps.communitySubtitlePresets": "Community Subtitle Presets",
     "ps.subtitlePresetGallery": "Subtitle Preset Gallery",
     "ps.presetApplied": "Preset applied.",
+    "ps.by": "By",
     "ps.loading": "Loading...",
     "ps.generateThumbnail": "Generate Thumbnail",
   });
