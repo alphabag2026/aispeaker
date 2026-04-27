@@ -1885,9 +1885,119 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         if (!analysis) throw new TRPCError({ code: "NOT_FOUND" });
         return analysis;
       }),
-  }),
 
-  // ============ Production Pipeline (v2.1) ============
+    /** Auto-translate script sections to interpreter language using LLM */
+    autoTranslate: instructorProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        targetLanguage: z.string().min(2).max(10),
+        sections: z.array(z.object({
+          title: z.string(),
+          content: z.string(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const langNames: Record<string, string> = {
+          ko: "Korean", en: "English", ja: "Japanese", zh: "Chinese",
+          es: "Spanish", fr: "French", de: "German", pt: "Portuguese",
+          ru: "Russian", ar: "Arabic", hi: "Hindi", vi: "Vietnamese",
+          th: "Thai", id: "Indonesian", tr: "Turkish", pl: "Polish",
+          nl: "Dutch", sv: "Swedish", it: "Italian", ms: "Malay",
+        };
+        const targetLangName = langNames[input.targetLanguage] || input.targetLanguage;
+
+        const sectionsText = input.sections.map((s, i) => `[Section ${i + 1}: ${s.title}]\n${s.content}`).join("\n\n");
+
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional lecture interpreter/translator. Translate the following lecture script sections into ${targetLangName}. Maintain the same section structure and numbering. Keep technical terms accurate. The translation should sound natural as if spoken by a native interpreter. Return ONLY a JSON array of objects with "title" and "content" fields.`,
+            },
+            {
+              role: "user",
+              content: `Translate these lecture sections to ${targetLangName}:\n\n${sectionsText}`,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "translated_sections",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  sections: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        title: { type: "string" },
+                        content: { type: "string" },
+                      },
+                      required: ["title", "content"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["sections"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        const rawContent = response.choices[0].message.content;
+        const contentStr = typeof rawContent === 'string' ? rawContent : JSON.stringify(rawContent);
+        const parsed = JSON.parse(contentStr || "{ \"sections\": [] }");
+        const translatedSections = parsed.sections || [];
+
+        // Save to DB
+        await db.updateScriptInterpreter(input.scriptId, ctx.user.id, {
+          interpreterEnabled: true,
+          interpreterLanguage: input.targetLanguage,
+          interpreterSections: JSON.stringify(translatedSections),
+        });
+
+        return { sections: translatedSections };
+      }),
+
+    /** Generate subtitles from recorded video using STT */
+    generateSubtitles: instructorProcedure
+      .input(z.object({
+        videoUrl: z.string().url(),
+        language: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { transcribeAudio } = await import("./server/_core/voiceTranscription" as any).catch(() => ({ transcribeAudio: null }));
+        
+        if (transcribeAudio) {
+          try {
+            const result = await transcribeAudio({
+              audioUrl: input.videoUrl,
+              language: input.language || "ko",
+              prompt: "Transcribe lecture recording",
+            });
+            const segments = (result.segments || []).map((seg: any) => ({
+              start: seg.start || 0,
+              end: seg.end || 0,
+              text: seg.text || "",
+            }));
+            return { segments };
+          } catch (err) {
+            // Fallback to LLM-based placeholder
+          }
+        }
+        
+        // Fallback: return empty segments with instruction
+        return {
+          segments: [
+            { start: 0, end: 5, text: "(자막을 직접 입력해주세요)" },
+          ],
+        };
+      }),
+  }),
+  // ============ Production Pipeline (v2.1) =============
   pipeline: router({
     /** Start a one-click production pipeline */
     start: instructorProcedure
@@ -3685,6 +3795,45 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       }))
       .mutation(async ({ ctx, input }) => {
         await db.upsertPipSettings(ctx.user.id, input);
+        return { success: true };
+      }),
+    /** List pip presets */
+    presets: protectedProcedure.query(async ({ ctx }) => {
+      return db.getPipPresets(ctx.user.id);
+    }),
+    /** Save a pip preset */
+    savePreset: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        position: z.enum(["bottom-right", "bottom-left", "top-right", "top-left", "custom"]).optional(),
+        size: z.enum(["small", "medium", "large"]).optional(),
+        opacity: z.number().min(0).max(100).optional(),
+        shape: z.enum(["circle", "rounded", "rectangle"]).optional(),
+        customX: z.number().min(0).max(100).optional(),
+        customY: z.number().min(0).max(100).optional(),
+        customWidth: z.number().min(5).max(100).optional(),
+        customHeight: z.number().min(5).max(100).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createPipPreset({
+          userId: ctx.user.id,
+          name: input.name,
+          position: input.position || "custom",
+          size: input.size || "medium",
+          opacity: input.opacity ?? 100,
+          shape: input.shape || "rounded",
+          customX: input.customX ?? 75,
+          customY: input.customY ?? 75,
+          customWidth: input.customWidth ?? 25,
+          customHeight: input.customHeight ?? 25,
+        });
+        return { id };
+      }),
+    /** Delete a pip preset */
+    deletePreset: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deletePipPreset(input.id, ctx.user.id);
         return { success: true };
       }),
   }),

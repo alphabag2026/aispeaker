@@ -97,6 +97,9 @@ export default function ProductionStudio() {
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const webcamStreamRef = useRef<MediaStream | null>(null);
 
+  // Subtitle segments for direct recording
+  const [subtitleSegments, setSubtitleSegments] = useState<Array<{start: number; end: number; text: string}>>([]);
+
   // Draggable PiP avatar position & size
   const [pipPosition, setPipPosition] = useState({ x: 75, y: 75 });
   const [pipSizePercent, setPipSizePercent] = useState(25);
@@ -400,6 +403,42 @@ export default function ProductionStudio() {
   const uploadFaceMutation = trpc.faceSwap.uploadFace.useMutation();
   const createFaceProfile = trpc.faceSwap.create.useMutation({
     onSuccess: () => faceSwapsQuery.refetch(),
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Auto-translate interpreter script
+  const autoTranslateMut = trpc.script.autoTranslate.useMutation({
+    onSuccess: (data) => {
+      setInterpreterSections(data.sections.map((s: any) => ({ originalContent: '', interpretedContent: s.content, durationSec: 60 })));
+      toast.success(t("ps.autoTranslateSuccess"));
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Generate subtitles from recording via STT
+  const generateSubtitlesMut = trpc.script.generateSubtitles.useMutation({
+    onSuccess: (data) => {
+      setSubtitleSegments(data.segments);
+      toast.success(t("ps.subtitlesGenerated"));
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Format time helper
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // PiP Presets
+  const pipPresetsQuery = trpc.pip.presets.useQuery(undefined, { enabled: !!user });
+  const savePipPreset = trpc.pip.savePreset.useMutation({
+    onSuccess: () => { pipPresetsQuery.refetch(); toast.success(t("ps.presetSaved")); },
+    onError: (err) => toast.error(err.message),
+  });
+  const deletePipPreset = trpc.pip.deletePreset.useMutation({
+    onSuccess: () => { pipPresetsQuery.refetch(); toast.success(t("ps.presetDeleted")); },
     onError: (err) => toast.error(err.message),
   });
 
@@ -1046,6 +1085,48 @@ export default function ProductionStudio() {
                                   <Upload className="w-4 h-4 mr-1" />{t("ps.uploadRecording")}
                                 </Button>
                               </div>
+                              {/* Subtitle generation */}
+                              {recordedUrl && !recordedUrl.startsWith('blob:') && (
+                                <div className="mt-3 p-3 bg-orange-500/5 rounded-lg border border-orange-500/10">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <Label className="text-xs flex items-center gap-1">
+                                      <FileText className="w-3 h-3" />{t("ps.subtitleOverlay")}
+                                    </Label>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs h-6"
+                                      onClick={() => {
+                                        generateSubtitlesMut.mutate({ videoUrl: recordedUrl!, language: language });
+                                      }}
+                                      disabled={generateSubtitlesMut.isPending}
+                                    >
+                                      {generateSubtitlesMut.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Wand2 className="w-3 h-3 mr-1" />}
+                                      {t("ps.generateSubtitles")}
+                                    </Button>
+                                  </div>
+                                  {subtitleSegments.length > 0 && (
+                                    <ScrollArea className="h-[120px]">
+                                      <div className="space-y-1">
+                                        {subtitleSegments.map((seg, i) => (
+                                          <div key={i} className="flex items-center gap-2 text-xs">
+                                            <span className="text-muted-foreground w-16 shrink-0">{formatTime(seg.start)}</span>
+                                            <Input
+                                              value={seg.text}
+                                              onChange={(e) => {
+                                                const updated = [...subtitleSegments];
+                                                updated[i] = { ...updated[i], text: e.target.value };
+                                                setSubtitleSegments(updated);
+                                              }}
+                                              className="h-6 text-xs"
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </ScrollArea>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </CardContent>
@@ -1178,6 +1259,40 @@ export default function ProductionStudio() {
                                       <span>·</span>
                                       <span>{t("ps.pipOpacityLabel")} {pipOp}%</span>
                                     </div>
+                                    {/* Preset buttons */}
+                                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-xs h-7"
+                                        onClick={() => {
+                                          const name = window.prompt(t("ps.presetNamePrompt"));
+                                          if (name) savePipPreset.mutate({ name, customX: Math.round(pipPosition.x), customY: Math.round(pipPosition.y), customWidth: Math.round(pipSizePercent), customHeight: Math.round(pipSizePercent), opacity: pipOp, shape: pipSh, position: "custom" });
+                                        }}
+                                      >
+                                        <Download className="w-3 h-3 mr-1" />{t("ps.savePreset")}
+                                      </Button>
+                                      {pipPresetsQuery.data?.map((preset) => (
+                                        <Button
+                                          key={preset.id}
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-xs h-7 border border-border/50"
+                                          onClick={() => {
+                                            setPipPosition({ x: preset.customX ?? 75, y: preset.customY ?? 75 });
+                                            setPipSizePercent(preset.customWidth ?? 25);
+                                            updatePipMutation.mutate({ customX: preset.customX ?? 75, customY: preset.customY ?? 75, size: preset.size, opacity: preset.opacity, shape: preset.shape, position: "custom" });
+                                            pipSettingsQuery.refetch();
+                                          }}
+                                          title={`${preset.customX}%, ${preset.customY}% / ${preset.customWidth}%`}
+                                        >
+                                          {preset.name}
+                                          {!preset.isBuiltIn && (
+                                            <span className="ml-1 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); deletePipPreset.mutate({ id: preset.id }); }}>×</span>
+                                          )}
+                                        </Button>
+                                      ))}
+                                    </div>
                                   </div>
                                 );
                               })()}
@@ -1295,7 +1410,27 @@ export default function ProductionStudio() {
                   <Card className="bg-gradient-to-b from-violet-500/5 to-transparent border-violet-500/20">
                     <CardHeader>
                       <CardTitle className="text-lg">{t("ps.scriptPreview")}</CardTitle>
-                      <CardDescription>{script.title}</CardDescription>
+                      <CardDescription className="flex items-center justify-between">
+                        <span>{script.title}</span>
+                        {interpreterEnabled && sections.length > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                            onClick={() => {
+                              autoTranslateMut.mutate({
+                                scriptId: script.id,
+                                targetLanguage: interpreterLanguage,
+                                sections: sections.map((s: any) => ({ title: s.title, content: s.content })),
+                              });
+                            }}
+                            disabled={autoTranslateMut.isPending}
+                          >
+                            {autoTranslateMut.isPending ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Languages className="w-3 h-3 mr-1" />}
+                            {t("ps.autoTranslate")}
+                          </Button>
+                        )}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ScrollArea className="h-[400px]">

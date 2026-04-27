@@ -1,4 +1,4 @@
-import { eq, desc, and, like, sql, gte } from "drizzle-orm";
+import { eq, desc, and, like, sql, gte, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -56,6 +56,7 @@ import {
   slideLayouts, InsertSlideLayout,
   projectWatermarks, InsertProjectWatermark,
   galleryPosts, InsertGalleryPost,
+  pipPresets, InsertPipPreset,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -2709,4 +2710,35 @@ export async function getGalleryPostsByUser(userId: number, limit = 20) {
     .where(eq(galleryPosts.userId, userId))
     .orderBy(desc(galleryPosts.createdAt))
     .limit(limit);
+}
+
+
+// ── PiP Presets (v8.5) ──
+export async function getPipPresets(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(pipPresets)
+    .where(or(eq(pipPresets.userId, userId), eq(pipPresets.isBuiltIn, true)))
+    .orderBy(desc(pipPresets.isBuiltIn), pipPresets.name);
+}
+
+export async function createPipPreset(data: InsertPipPreset) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const result = await db.insert(pipPresets).values(data);
+  return result[0].insertId;
+}
+
+export async function deletePipPreset(id: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.delete(pipPresets).where(and(eq(pipPresets.id, id), eq(pipPresets.userId, userId), eq(pipPresets.isBuiltIn, false)));
+}
+
+// ── Interpreter Script Translation (v8.5) ──
+export async function updateScriptInterpreter(scriptId: number, userId: number, data: {
+  interpreterEnabled?: boolean;
+  interpreterLanguage?: string;
+  interpreterSections?: string;
+  interpreterVoiceId?: string;
+}) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(lectureScripts).set(data).where(and(eq(lectureScripts.id, scriptId), eq(lectureScripts.userId, userId)));
 }

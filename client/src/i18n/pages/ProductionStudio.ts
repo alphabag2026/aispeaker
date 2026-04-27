@@ -205,6 +205,15 @@ registerTranslations("ko", {
   "ps.previewRecording": "녹화 미리보기",
   "ps.deleteRecording": "녹화 삭제",
   "ps.reRecord": "다시 녹화",
+  "ps.autoTranslate": "AI 자동 번역",
+  "ps.autoTranslateSuccess": "통역 스크립트가 자동 생성되었습니다.",
+  "ps.savePreset": "프리셋 저장",
+  "ps.presetSaved": "프리셋이 저장되었습니다.",
+  "ps.presetDeleted": "프리셋이 삭제되었습니다.",
+  "ps.presetNamePrompt": "프리셋 이름을 입력하세요",
+  "ps.subtitleOverlay": "자막 오버레이",
+  "ps.generateSubtitles": "자막 생성",
+  "ps.subtitlesGenerated": "자막이 생성되었습니다.",
 });
 
 registerTranslations("en", {
@@ -412,6 +421,15 @@ registerTranslations("en", {
   "ps.previewRecording": "Preview Recording",
   "ps.deleteRecording": "Delete Recording",
   "ps.reRecord": "Re-record",
+  "ps.autoTranslate": "AI Auto Translate",
+  "ps.autoTranslateSuccess": "Interpreter script generated automatically.",
+  "ps.savePreset": "Save Preset",
+  "ps.presetSaved": "Preset saved.",
+  "ps.presetDeleted": "Preset deleted.",
+  "ps.presetNamePrompt": "Enter preset name",
+  "ps.subtitleOverlay": "Subtitle Overlay",
+  "ps.generateSubtitles": "Generate Subtitles",
+  "ps.subtitlesGenerated": "Subtitles generated.",
 });
 
 registerTranslations("zh", {
@@ -619,6 +637,15 @@ registerTranslations("zh", {
   "ps.previewRecording": "预览录制",
   "ps.deleteRecording": "删除录制",
   "ps.reRecord": "重新录制",
+  "ps.autoTranslate": "AI 自动翻译",
+  "ps.autoTranslateSuccess": "口译脚本已自动生成。",
+  "ps.savePreset": "保存预设",
+  "ps.presetSaved": "预设已保存。",
+  "ps.presetDeleted": "预设已删除。",
+  "ps.presetNamePrompt": "请输入预设名称",
+  "ps.subtitleOverlay": "字幕叠加",
+  "ps.generateSubtitles": "生成字幕",
+  "ps.subtitlesGenerated": "字幕已生成。",
 });
 
 registerTranslations("ja", {
@@ -826,6 +853,15 @@ registerTranslations("ja", {
   "ps.previewRecording": "録画プレビュー",
   "ps.deleteRecording": "録画削除",
   "ps.reRecord": "再録画",
+  "ps.autoTranslate": "AI 自動翻訳",
+  "ps.autoTranslateSuccess": "通訳スクリプトが自動生成されました。",
+  "ps.savePreset": "プリセット保存",
+  "ps.presetSaved": "プリセットが保存されました。",
+  "ps.presetDeleted": "プリセットが削除されました。",
+  "ps.presetNamePrompt": "プリセット名を入力してください",
+  "ps.subtitleOverlay": "字幕オーバーレイ",
+  "ps.generateSubtitles": "字幕生成",
+  "ps.subtitlesGenerated": "字幕が生成されました。",
 });
 
 const otherLanguages = ["vi", "th", "es", "fr", "de", "pt", "ru", "ar", "hi", "id", "ms", "tr", "it", "nl", "pl", "sv"];
@@ -1034,6 +1070,15 @@ otherLanguages.forEach(lang => {
     "ps.recordingDuration": "Recording Duration",
     "ps.previewRecording": "Preview Recording",
     "ps.deleteRecording": "Delete Recording",
-    "ps.reRecord": "Re-record"
+    "ps.reRecord": "Re-record",
+    "ps.autoTranslate": "AI Auto Translate",
+    "ps.autoTranslateSuccess": "Interpreter script generated.",
+    "ps.savePreset": "Save Preset",
+    "ps.presetSaved": "Preset saved.",
+    "ps.presetDeleted": "Preset deleted.",
+    "ps.presetNamePrompt": "Enter preset name",
+    "ps.subtitleOverlay": "Subtitle Overlay",
+    "ps.generateSubtitles": "Generate Subtitles",
+    "ps.subtitlesGenerated": "Subtitles generated.",
   });
 });

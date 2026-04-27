@@ -1666,3 +1666,25 @@ export const aiGenerations = mysqlTable("ai_generations", {
 });
 export type AiGeneration = typeof aiGenerations.$inferSelect;
 export type InsertAiGeneration = typeof aiGenerations.$inferInsert;
+
+
+/**
+ * PiP Position Presets - saved avatar position/size layouts
+ */
+export const pipPresets = mysqlTable("pipPresets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  position: mysqlEnum("position", ["bottom-right", "bottom-left", "top-right", "top-left", "custom"]).default("custom").notNull(),
+  size: mysqlEnum("size", ["small", "medium", "large"]).default("medium").notNull(),
+  opacity: int("opacity").default(100).notNull(),
+  shape: mysqlEnum("shape", ["circle", "rounded", "rectangle"]).default("rounded").notNull(),
+  customX: int("customX").default(75),
+  customY: int("customY").default(75),
+  customWidth: int("customWidth").default(25),
+  customHeight: int("customHeight").default(25),
+  isBuiltIn: boolean("isBuiltIn").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PipPreset = typeof pipPresets.$inferSelect;
+export type InsertPipPreset = typeof pipPresets.$inferInsert;
