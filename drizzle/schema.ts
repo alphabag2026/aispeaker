@@ -459,6 +459,14 @@ export const lectureScripts = mysqlTable("lectureScripts", {
   sectionCount: int("sectionCount").default(0),
   /** Generation status */
   status: mysqlEnum("status", ["generating", "ready", "error"]).default("generating").notNull(),
+  /** Interpreter mode: original lecture + interpretation */
+  interpreterEnabled: boolean("interpreterEnabled").default(false),
+  /** Interpreter target language */
+  interpreterLanguage: varchar("interpreterLanguage", { length: 10 }),
+  /** Interpreter sections as JSON array [{originalContent, interpretedContent, durationSec}] */
+  interpreterSections: text("interpreterSections"),
+  /** Interpreter TTS voice ID */
+  interpreterVoiceId: varchar("interpreterVoiceId", { length: 128 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
