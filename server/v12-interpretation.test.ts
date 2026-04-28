@@ -349,3 +349,160 @@ describe("v12 - Real-time AI Interpretation", () => {
     });
   });
 });
+
+// ===== v12.1 - Whisper API Server-side STT Tests =====
+describe("v12.1 - Whisper API Server-side STT", () => {
+  describe("tRPC Router - transcribeAudioUpload", () => {
+    it("should define transcribeAudioUpload procedure in routers.ts", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      expect(routers).toContain("transcribeAudioUpload");
+      expect(routers).toContain("audioData: z.string()");
+    });
+
+    it("should validate file size limit of 16MB", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      expect(routers).toContain("sizeMB > 16");
+      expect(routers).toContain("최대 16MB까지 허용됩니다");
+    });
+
+    it("should upload audio to S3 before transcription", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      expect(routers).toContain("storagePut(fileKey, buffer, input.mimeType)");
+    });
+
+    it("should call transcribeAudio with audioUrl", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const section = routers.substring(
+        routers.indexOf("transcribeAudioUpload"),
+        routers.indexOf("transcribeAndTranslate")
+      );
+      expect(section).toContain("transcribeAudio({");
+      expect(section).toContain("audioUrl");
+    });
+
+    it("should return text, language, duration, segments, and audioUrl", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const section = routers.substring(
+        routers.indexOf("transcribeAudioUpload"),
+        routers.indexOf("transcribeAndTranslate")
+      );
+      expect(section).toContain("text: result.text");
+      expect(section).toContain("language: result.language");
+      expect(section).toContain("duration: result.duration");
+    });
+  });
+
+  describe("tRPC Router - transcribeAndTranslate", () => {
+    it("should define transcribeAndTranslate procedure", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      expect(routers).toContain("transcribeAndTranslate");
+      expect(routers).toContain("targetLanguages: z.array(z.string()).min(1)");
+      expect(routers).toContain("sessionId: z.number().optional()");
+    });
+
+    it("should transcribe then translate to multiple languages in parallel", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const section = routers.substring(routers.indexOf("transcribeAndTranslate"));
+      expect(section).toContain("transcribeAudio({");
+      expect(section).toContain("Promise.all");
+      expect(section).toContain("invokeLLM");
+    });
+
+    it("should return empty translations when no speech detected", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const section = routers.substring(routers.indexOf("transcribeAndTranslate"));
+      expect(section).toContain('sourceText: ""');
+      expect(section).toContain("translations: []");
+    });
+
+    it("should save segments to DB when sessionId provided", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const section = routers.substring(routers.indexOf("transcribeAndTranslate"));
+      expect(section).toContain("db.addTranslationSegment");
+    });
+
+    it("should support all 15 languages", () => {
+      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const section = routers.substring(routers.indexOf("transcribeAndTranslate"));
+      for (const lang of ["Korean", "Chinese", "English", "Japanese", "Vietnamese", "Thai",
+        "Spanish", "French", "German", "Arabic", "Hindi", "Portuguese", "Russian", "Indonesian", "Turkish"]) {
+        expect(section).toContain(lang);
+      }
+    });
+  });
+
+  describe("Frontend - Whisper STT Integration", () => {
+    it("should have STT mode selector (server/browser)", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain('sttMode');
+      expect(page).toContain('"server"');
+      expect(page).toContain('"browser"');
+    });
+
+    it("should use MediaRecorder for server mode", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("MediaRecorder");
+      expect(page).toContain("mediaRecorderRef");
+      expect(page).toContain("audioChunksRef");
+    });
+
+    it("should convert audio blob to base64", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("FileReader");
+      expect(page).toContain("readAsDataURL");
+      expect(page).toContain('.split(",")[1]');
+    });
+
+    it("should call transcribeAndTranslate when autoTranslate is on", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("transcribeAndTranslate.mutate");
+    });
+
+    it("should call transcribeOnly when autoTranslate is off", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("transcribeOnly.mutate");
+    });
+
+    it("should show recording duration in server mode", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("recordingDuration");
+      expect(page).toContain("formatDuration");
+    });
+
+    it("should show Whisper STT badge", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("Whisper STT");
+    });
+
+    it("should validate 16MB size limit on frontend", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("sizeMB > 16");
+      expect(page).toContain("16MB를 초과");
+    });
+
+    it("should clean up media resources on unmount", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("streamRef.current");
+      expect(page).toContain("getTracks().forEach");
+      expect(page).toContain("clearInterval(timerRef.current)");
+    });
+
+    it("should show transcribing state", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("isTranscribing");
+      expect(page).toContain("인식 중...");
+    });
+
+    it("should have auto-translate toggle", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("autoTranslate");
+      expect(page).toContain("setAutoTranslate");
+    });
+
+    it("should still support browser Web Speech API as fallback", () => {
+      const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
+      expect(page).toContain("webkitSpeechRecognition");
+      expect(page).toContain("startBrowserRecording");
+    });
+  });
+});

@@ -8030,6 +8030,151 @@ Return a JSON object with a "sections" array. Each section has:
         const translatedText = (llmResponse.choices?.[0]?.message?.content as string || "").trim();
         return { translatedText };
       }),
+
+    // Upload audio and transcribe using Whisper API (server-side STT)
+    transcribeAudioUpload: protectedProcedure
+      .input(z.object({
+        audioData: z.string(), // base64 encoded audio
+        fileName: z.string().default("recording.webm"),
+        mimeType: z.string().default("audio/webm"),
+        language: z.string().optional(), // ISO 639-1 language code hint
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // 1. Decode base64 audio
+        const buffer = Buffer.from(input.audioData, "base64");
+        const sizeMB = buffer.length / (1024 * 1024);
+        if (sizeMB > 16) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `파일 크기가 ${sizeMB.toFixed(1)}MB입니다. 최대 16MB까지 허용됩니다.` });
+        }
+
+        // 2. Upload to S3
+        const fileKey = `stt-audio/${ctx.user.id}/${Date.now()}-${input.fileName}`;
+        const { url: audioUrl } = await storagePut(fileKey, buffer, input.mimeType);
+
+        // 3. Transcribe using Whisper API
+        const result = await transcribeAudio({
+          audioUrl,
+          language: input.language,
+        });
+
+        if ("error" in result) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: result.error,
+            cause: result,
+          });
+        }
+
+        return {
+          text: result.text,
+          language: result.language,
+          duration: result.duration,
+          segments: result.segments,
+          audioUrl,
+        };
+      }),
+
+    // Transcribe audio and translate to multiple languages in one call
+    transcribeAndTranslate: protectedProcedure
+      .input(z.object({
+        audioData: z.string(), // base64 encoded audio
+        fileName: z.string().default("recording.webm"),
+        mimeType: z.string().default("audio/webm"),
+        sourceLanguage: z.string().default("ko"),
+        targetLanguages: z.array(z.string()).min(1),
+        sessionId: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // 1. Decode and validate
+        const buffer = Buffer.from(input.audioData, "base64");
+        const sizeMB = buffer.length / (1024 * 1024);
+        if (sizeMB > 16) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `파일 크기가 ${sizeMB.toFixed(1)}MB입니다. 최대 16MB까지 허용됩니다.` });
+        }
+
+        // 2. Upload to S3
+        const fileKey = `stt-audio/${ctx.user.id}/${Date.now()}-${input.fileName}`;
+        const { url: audioUrl } = await storagePut(fileKey, buffer, input.mimeType);
+
+        // 3. Transcribe using Whisper API
+        const sttResult = await transcribeAudio({
+          audioUrl,
+          language: input.sourceLanguage,
+        });
+
+        if ("error" in sttResult) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `음성 인식 실패: ${sttResult.error}`,
+            cause: sttResult,
+          });
+        }
+
+        const sourceText = sttResult.text.trim();
+        if (!sourceText) {
+          return {
+            sourceText: "",
+            detectedLanguage: sttResult.language,
+            duration: sttResult.duration,
+            translations: [],
+            audioUrl,
+          };
+        }
+
+        // 4. Translate to all target languages in parallel
+        const langNames: Record<string, string> = {
+          ko: "Korean", zh: "Chinese", en: "English", ja: "Japanese",
+          vi: "Vietnamese", th: "Thai", es: "Spanish", fr: "French",
+          de: "German", ar: "Arabic", hi: "Hindi", pt: "Portuguese",
+          ru: "Russian", id: "Indonesian", tr: "Turkish",
+        };
+        const sourceLangName = langNames[input.sourceLanguage] || input.sourceLanguage;
+
+        const translations = await Promise.all(
+          input.targetLanguages.map(async (targetLang) => {
+            const targetLangName = langNames[targetLang] || targetLang;
+            try {
+              const llmResponse = await invokeLLM({
+                messages: [
+                  {
+                    role: "system",
+                    content: `You are a professional real-time interpreter. Translate the following ${sourceLangName} lecture content to ${targetLangName}. Maintain the original meaning, tone, and technical terminology. Provide ONLY the translation without any explanation.`,
+                  },
+                  { role: "user", content: sourceText },
+                ],
+              });
+              const translatedText = (llmResponse.choices?.[0]?.message?.content as string || "").trim();
+
+              // Save segment to DB if session is active
+              if (input.sessionId) {
+                try {
+                  await db.addTranslationSegment({
+                    sessionId: input.sessionId,
+                    sourceText,
+                    translatedText,
+                    sourceLanguage: input.sourceLanguage,
+                    targetLanguage: targetLang,
+                    startTimeSec: 0,
+                    endTimeSec: sttResult.duration ?? 0,
+                  });
+                } catch (_) { /* ignore DB errors for real-time flow */ }
+              }
+
+              return { language: targetLang, languageName: targetLangName, text: translatedText, success: true };
+            } catch (err) {
+              return { language: targetLang, languageName: targetLangName, text: "", success: false, error: err instanceof Error ? err.message : "번역 실패" };
+            }
+          })
+        );
+
+        return {
+          sourceText,
+          detectedLanguage: sttResult.language,
+          duration: sttResult.duration,
+          translations,
+          audioUrl,
+        };
+      }),
   }),
 });
 
