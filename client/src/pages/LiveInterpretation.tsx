@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Languages, Mic, MicOff, Volume2, VolumeX, Play, Square,
   Globe, Clock, MessageSquare, History, Loader2, ArrowLeft,
-  Zap, Radio, ChevronDown, ChevronUp, Trash2
+  Zap, Radio, ChevronDown, ChevronUp, Trash2, Server, Monitor
 } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -40,13 +41,27 @@ export default function LiveInterpretation() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
-  // Speech recognition
+  // STT mode: "server" = Whisper API, "browser" = Web Speech API
+  const [sttMode, setSttMode] = useState<"server" | "browser">("server");
+
+  // Browser STT refs
   const recognitionRef = useRef<any>(null);
   const [interimTranscript, setInterimTranscript] = useState("");
+
+  // Server STT (MediaRecorder) refs
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   // TTS
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [ttsLang, setTtsLang] = useState("en");
+
+  // Auto-translate after STT
+  const [autoTranslate, setAutoTranslate] = useState(true);
 
   // Queries
   const languagesQuery = trpc.interpretation.getSupportedLanguages.useQuery();
@@ -72,7 +87,7 @@ export default function LiveInterpretation() {
           targetLanguage: r.targetLanguage,
           translatedText: r.translatedText,
           timestamp: new Date(),
-          sourceText: inputText,
+          sourceText: inputText || data.results[0]?.translatedText || "",
         }));
       setTranslations((prev) => [...newTranslations, ...prev]);
       setIsTranslating(false);
@@ -99,6 +114,60 @@ export default function LiveInterpretation() {
   });
 
   const translateChat = trpc.interpretation.translateChat.useMutation();
+
+  // Server-side STT + translate mutation
+  const transcribeAndTranslate = trpc.interpretation.transcribeAndTranslate.useMutation({
+    onSuccess: (data) => {
+      if (!data.sourceText) {
+        toast.info("음성이 감지되지 않았습니다. 다시 시도해주세요.");
+        setIsTranscribing(false);
+        return;
+      }
+
+      setInputText(data.sourceText);
+
+      const newTranslations: TranslationResult[] = data.translations
+        .filter((r) => r.success)
+        .map((r) => ({
+          targetLanguage: r.language,
+          translatedText: r.text,
+          timestamp: new Date(),
+          sourceText: data.sourceText,
+        }));
+      setTranslations((prev) => [...newTranslations, ...prev]);
+      setIsTranscribing(false);
+
+      // TTS
+      if (ttsEnabled) {
+        const ttsResult = data.translations.find((r) => r.language === ttsLang && r.success);
+        if (ttsResult) speakText(ttsResult.text, ttsResult.language);
+      }
+
+      toast.success(`음성 인식 완료 (${data.detectedLanguage || sourceLanguage})`);
+    },
+    onError: (err) => {
+      setIsTranscribing(false);
+      toast.error(`음성 인식 실패: ${err.message}`);
+    },
+  });
+
+  // Server-side STT only mutation
+  const transcribeOnly = trpc.interpretation.transcribeAudioUpload.useMutation({
+    onSuccess: (data) => {
+      if (!data.text) {
+        toast.info("음성이 감지되지 않았습니다.");
+        setIsTranscribing(false);
+        return;
+      }
+      setInputText((prev) => (prev ? prev + " " + data.text : data.text));
+      setIsTranscribing(false);
+      toast.success("음성 인식 완료");
+    },
+    onError: (err) => {
+      setIsTranscribing(false);
+      toast.error(`음성 인식 실패: ${err.message}`);
+    },
+  });
 
   // Languages data
   const languages = languagesQuery.data || [];
@@ -132,7 +201,7 @@ export default function LiveInterpretation() {
     });
   };
 
-  // Handle translation
+  // Handle translation (text input)
   const handleTranslate = () => {
     if (!activeSessionId || !inputText.trim()) return;
     setIsTranslating(true);
@@ -145,10 +214,110 @@ export default function LiveInterpretation() {
     setInputText("");
   };
 
-  // Speech Recognition (Web Speech API)
-  const startRecording = useCallback(() => {
+  // ========== Server-side STT (Whisper API via MediaRecorder) ==========
+  const startServerRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      // Choose supported mimeType
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "audio/mp4";
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      audioChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        // Stop stream tracks
+        stream.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+
+        // Clear timer
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+
+        const blob = new Blob(audioChunksRef.current, { type: mimeType });
+        const sizeMB = blob.size / (1024 * 1024);
+
+        if (sizeMB > 16) {
+          toast.error("녹음 파일이 16MB를 초과합니다. 더 짧게 녹음해주세요.");
+          return;
+        }
+
+        if (blob.size < 1000) {
+          toast.info("녹음이 너무 짧습니다. 다시 시도해주세요.");
+          return;
+        }
+
+        // Convert to base64
+        setIsTranscribing(true);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(",")[1];
+          const actualMime = mimeType.split(";")[0]; // "audio/webm"
+
+          if (autoTranslate && activeSessionId) {
+            // Transcribe + translate in one call
+            transcribeAndTranslate.mutate({
+              audioData: base64,
+              fileName: `recording-${Date.now()}.webm`,
+              mimeType: actualMime,
+              sourceLanguage,
+              targetLanguages: selectedTargetLanguages,
+              sessionId: activeSessionId,
+            });
+          } else {
+            // Transcribe only
+            transcribeOnly.mutate({
+              audioData: base64,
+              fileName: `recording-${Date.now()}.webm`,
+              mimeType: actualMime,
+              language: sourceLanguage,
+            });
+          }
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start(1000); // Collect data every second
+      setIsRecording(true);
+      setRecordingDuration(0);
+
+      // Start timer
+      timerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+
+      toast.info("녹음을 시작합니다. 말씀하세요...");
+    } catch (err) {
+      console.error("Microphone access error:", err);
+      toast.error("마이크 접근 권한이 필요합니다.");
+    }
+  }, [sourceLanguage, selectedTargetLanguages, activeSessionId, autoTranslate]);
+
+  const stopServerRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
+    setIsRecording(false);
+    setRecordingDuration(0);
+  }, []);
+
+  // ========== Browser-side STT (Web Speech API) ==========
+  const startBrowserRecording = useCallback(() => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      toast.error("이 브라우저에서는 음성 인식을 지원하지 않습니다.");
+      toast.error("이 브라우저에서는 음성 인식을 지원하지 않습니다. 서버 모드를 사용해주세요.");
       return;
     }
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -192,7 +361,7 @@ export default function LiveInterpretation() {
     setIsRecording(true);
   }, [sourceLanguage]);
 
-  const stopRecording = useCallback(() => {
+  const stopBrowserRecording = useCallback(() => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       recognitionRef.current = null;
@@ -200,6 +369,10 @@ export default function LiveInterpretation() {
     setIsRecording(false);
     setInterimTranscript("");
   }, []);
+
+  // Unified start/stop recording
+  const startRecording = sttMode === "server" ? startServerRecording : startBrowserRecording;
+  const stopRecording = sttMode === "server" ? stopServerRecording : stopBrowserRecording;
 
   // TTS (Web Speech Synthesis)
   const speakText = useCallback((text: string, lang: string) => {
@@ -219,10 +392,24 @@ export default function LiveInterpretation() {
     window.speechSynthesis.speak(utterance);
   }, []);
 
+  // Format duration
+  const formatDuration = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
   // Cleanup
   useEffect(() => {
     return () => {
       if (recognitionRef.current) recognitionRef.current.stop();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
+      if (timerRef.current) clearInterval(timerRef.current);
       window.speechSynthesis?.cancel();
     };
   }, []);
@@ -249,11 +436,13 @@ export default function LiveInterpretation() {
                 </p>
               </div>
             </div>
-            {activeSessionId && (
-              <Badge variant="default" className="bg-green-600 animate-pulse">
-                <Radio className="w-3 h-3 mr-1" /> LIVE
-              </Badge>
-            )}
+            <div className="flex items-center gap-2">
+              {activeSessionId && (
+                <Badge variant="default" className="bg-green-600 animate-pulse">
+                  <Radio className="w-3 h-3 mr-1" /> LIVE
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -262,6 +451,59 @@ export default function LiveInterpretation() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel: Controls */}
           <div className="lg:col-span-1 space-y-4">
+            {/* STT Mode Selector */}
+            <Card className="glass-card border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary" />
+                  음성 인식 모드
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setSttMode("server")}
+                    disabled={isRecording}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      sttMode === "server"
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                        : "border-border hover:border-primary/50"
+                    } ${isRecording ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <Server className="w-5 h-5 mb-1.5 text-primary" />
+                    <div className="text-sm font-medium">서버 (Whisper)</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      높은 정확도, 모든 브라우저
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setSttMode("browser")}
+                    disabled={isRecording}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      sttMode === "browser"
+                        ? "border-primary bg-primary/10 ring-1 ring-primary/30"
+                        : "border-border hover:border-primary/50"
+                    } ${isRecording ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <Monitor className="w-5 h-5 mb-1.5 text-primary" />
+                    <div className="text-sm font-medium">브라우저 (Web API)</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      실시간 표시, Chrome 권장
+                    </div>
+                  </button>
+                </div>
+                {sttMode === "server" && (
+                  <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                    <div className="text-xs">
+                      <span className="font-medium">자동 번역</span>
+                      <span className="text-muted-foreground ml-1">(녹음 후 즉시)</span>
+                    </div>
+                    <Switch checked={autoTranslate} onCheckedChange={setAutoTranslate} />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Language Settings */}
             <Card className="glass-card">
               <CardHeader className="pb-3">
@@ -291,7 +533,7 @@ export default function LiveInterpretation() {
                 {/* Target Languages */}
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                    통역 대상 언어 ({selectedTargetLanguages.length}개 선택)
+                    대상 언어 ({selectedTargetLanguages.length}개 선택)
                   </label>
                   <div className="flex flex-wrap gap-1.5">
                     {languages
@@ -299,56 +541,47 @@ export default function LiveInterpretation() {
                       .map((lang) => (
                         <button
                           key={lang.code}
-                          onClick={() => !activeSessionId && toggleTargetLang(lang.code)}
+                          onClick={() => toggleTargetLang(lang.code)}
                           disabled={!!activeSessionId}
                           className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
                             selectedTargetLanguages.includes(lang.code)
                               ? "bg-primary text-primary-foreground shadow-sm"
                               : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          } ${activeSessionId ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                          } ${activeSessionId ? "opacity-60 cursor-not-allowed" : ""}`}
                         >
                           {lang.flag} {lang.nativeName}
                         </button>
                       ))}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Session Control */}
-            <Card className="glass-card">
-              <CardContent className="pt-5 space-y-3">
-                {!activeSessionId ? (
-                  <Button
-                    onClick={handleStartSession}
-                    className="w-full"
-                    size="lg"
-                    disabled={startSession.isPending || !user}
-                  >
-                    {startSession.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Zap className="w-4 h-4 mr-2" />
-                    )}
-                    통역 세션 시작
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => endSession.mutate({ sessionId: activeSessionId })}
-                    variant="destructive"
-                    className="w-full"
-                    size="lg"
-                    disabled={endSession.isPending}
-                  >
-                    <Square className="w-4 h-4 mr-2" />
-                    세션 종료
-                  </Button>
-                )}
-                {!user && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    통역 기능을 사용하려면 로그인이 필요합니다.
-                  </p>
-                )}
+                {/* Session Controls */}
+                <div className="pt-2 border-t border-border/50">
+                  {!activeSessionId ? (
+                    <Button
+                      onClick={handleStartSession}
+                      className="w-full"
+                      disabled={startSession.isPending || !user}
+                    >
+                      {startSession.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Play className="w-4 h-4 mr-2" />
+                      )}
+                      통역 세션 시작
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => endSession.mutate({ sessionId: activeSessionId })}
+                      variant="destructive"
+                      className="w-full"
+                      disabled={endSession.isPending}
+                    >
+                      <Square className="w-4 h-4 mr-2" />
+                      세션 종료
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -362,20 +595,14 @@ export default function LiveInterpretation() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">음성 출력</span>
-                  <Button
-                    variant={ttsEnabled ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setTtsEnabled(!ttsEnabled)}
-                  >
-                    {ttsEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-                  </Button>
+                  <span className="text-sm">자동 음성 출력</span>
+                  <Switch checked={ttsEnabled} onCheckedChange={setTtsEnabled} />
                 </div>
-                {ttsEnabled && (
+                {ttsEnabled && selectedTargetLanguages.length > 0 && (
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">TTS 언어</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">출력 언어</label>
                     <Select value={ttsLang} onValueChange={setTtsLang}>
-                      <SelectTrigger className="h-8 text-sm">
+                      <SelectTrigger className="h-8 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -465,10 +692,18 @@ export default function LiveInterpretation() {
             {/* Input Area */}
             <Card className="glass-card">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-primary" />
-                  입력 ({getLangInfo(sourceLanguage).flag} {getLangInfo(sourceLanguage).nativeName})
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    입력 ({getLangInfo(sourceLanguage).flag} {getLangInfo(sourceLanguage).nativeName})
+                  </CardTitle>
+                  {sttMode === "server" && (
+                    <Badge variant="outline" className="text-xs">
+                      <Server className="w-3 h-3 mr-1" />
+                      Whisper STT
+                    </Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="relative">
@@ -477,7 +712,9 @@ export default function LiveInterpretation() {
                     onChange={(e) => setInputText(e.target.value)}
                     placeholder={
                       activeSessionId
-                        ? "번역할 텍스트를 입력하거나 마이크 버튼을 눌러 음성으로 입력하세요..."
+                        ? sttMode === "server"
+                          ? "마이크 버튼을 눌러 녹음하면 Whisper AI가 음성을 인식합니다. 텍스트 직접 입력도 가능합니다."
+                          : "번역할 텍스트를 입력하거나 마이크 버튼을 눌러 음성으로 입력하세요..."
                         : "세션을 먼저 시작해주세요..."
                     }
                     disabled={!activeSessionId}
@@ -489,7 +726,7 @@ export default function LiveInterpretation() {
                       }
                     }}
                   />
-                  {interimTranscript && (
+                  {interimTranscript && sttMode === "browser" && (
                     <div className="absolute bottom-2 left-3 text-sm text-muted-foreground italic">
                       {interimTranscript}
                     </div>
@@ -500,13 +737,24 @@ export default function LiveInterpretation() {
                     onClick={isRecording ? stopRecording : startRecording}
                     variant={isRecording ? "destructive" : "outline"}
                     size="sm"
-                    disabled={!activeSessionId}
+                    disabled={!activeSessionId || isTranscribing}
                     className="shrink-0"
                   >
                     {isRecording ? (
                       <>
                         <MicOff className="w-4 h-4 mr-1" />
-                        <span className="animate-pulse">녹음 중...</span>
+                        {sttMode === "server" ? (
+                          <span className="animate-pulse">
+                            녹음 중 {formatDuration(recordingDuration)}
+                          </span>
+                        ) : (
+                          <span className="animate-pulse">녹음 중...</span>
+                        )}
+                      </>
+                    ) : isTranscribing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                        <span>인식 중...</span>
                       </>
                     ) : (
                       <>
@@ -636,10 +884,10 @@ export default function LiveInterpretation() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Card className="glass-card">
                   <CardContent className="pt-5 text-center">
-                    <Mic className="w-8 h-8 mx-auto mb-2 text-primary" />
-                    <h3 className="font-medium text-sm">음성 인식 (STT)</h3>
+                    <Server className="w-8 h-8 mx-auto mb-2 text-primary" />
+                    <h3 className="font-medium text-sm">Whisper STT</h3>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Web Speech API로 실시간 음성을 텍스트로 변환
+                      OpenAI Whisper API로 높은 정확도의 음성 인식
                     </p>
                   </CardContent>
                 </Card>

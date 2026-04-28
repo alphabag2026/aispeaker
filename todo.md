@@ -1967,3 +1967,18 @@
 - [x] App.tsx 라우트 등록 (/live-interpretation)
 - [x] Navbar 데스크톱/모바일 메뉴에 실시간통역 링크 추가
 - [x] v12 테스트 작성 (53개 테스트 통과)
+
+### 시장 조사 (v12.1)
+- [x] AI가 실제 강의하는 플랫폼 경쟁사 조사 (Synthesia, HeyGen, Colossyan 등)
+- [x] 실시간 AI 통역 플랫폼 조사 (KUDO, Interprefy, Wordly 등)
+- [x] 우리 플랫폼(Virtual Speaker) 유일성 검증 및 차별점 분석
+- [x] 경쟁 우위 분석 보고서 작성 (market-analysis-v12-interpretation.md)
+
+### Whisper API 서버사이드 STT (v12.1)
+- [x] transcribeAudioUpload tRPC 프로시저 추가 (음성 업로드 → S3 → Whisper STT)
+- [x] transcribeAndTranslate tRPC 프로시저 추가 (STT + 다국어 번역 통합)
+- [x] 프론트엔드 MediaRecorder 녹음 → base64 변환 → 서버 전송 연동
+- [x] LiveInterpretation 페이지에 서버/브라우저 STT 모드 선택 UI 추가
+- [x] 자동 번역 토글 기능 (Whisper STT 후 자동 번역)
+- [x] 녹음 시간 표시, 16MB 크기 제한, 인식 중 상태 표시
+- [x] v12.1 테스트 작성 (75개 전체 통과)
