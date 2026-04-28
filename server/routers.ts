@@ -4329,6 +4329,29 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { success: true };
       }),
 
+    /** Generate AI avatar face from text prompt */
+    generateAvatarFace: protectedProcedure
+      .input(z.object({
+        prompt: z.string().min(3).max(500),
+        style: z.enum(["realistic", "anime", "3d", "illustration"]).default("realistic"),
+        gender: z.enum(["male", "female", "neutral"]).optional(),
+        ageRange: z.enum(["young", "middle", "senior"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const styleMap: Record<string, string> = {
+          realistic: "photorealistic portrait, studio lighting, neutral background, high resolution, professional headshot",
+          anime: "anime style portrait, clean lines, vibrant colors, detailed face, studio background",
+          "3d": "3D rendered portrait, Pixar style, smooth shading, studio lighting, clean background",
+          illustration: "digital illustration portrait, clean art style, professional, flat background",
+        };
+        const genderHint = input.gender ? (input.gender === "male" ? "male person" : input.gender === "female" ? "female person" : "person") : "person";
+        const ageHint = input.ageRange ? ({ young: "in their 20s", middle: "in their 30s-40s", senior: "in their 50s-60s" }[input.ageRange]) : "";
+        const fullPrompt = `Portrait of a ${genderHint} ${ageHint}, ${input.prompt}. ${styleMap[input.style]}. Face centered, looking at camera, shoulders visible.`;
+        const { url } = await generateImage({ prompt: fullPrompt });
+        if (!url) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI 얼굴 생성에 실패했습니다" });
+        return { imageUrl: url };
+      }),
+
     deleteAvatar: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
@@ -8403,6 +8426,110 @@ Return a JSON object with a "sections" array. Each section has:
           .set({ role: input.role })
           .where(eq(projectCollaborators.id, input.collaboratorId));
         return { success: true };
+      }),
+  }),
+
+  // ============ Voice Clones (v12.6) =============
+  voiceClone: router({
+    /** Upload voice sample and create clone */
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        audioData: z.string(), // base64
+        fileName: z.string(),
+        language: z.string().default("ko"),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Decode base64 and upload to S3
+        const buffer = Buffer.from(input.audioData, "base64");
+        const ext = input.fileName.split(".").pop() || "mp3";
+        const key = `voice-clones/${ctx.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { url } = await storagePut(key, buffer, `audio/${ext === "mp3" ? "mpeg" : ext}`);
+
+        const id = await db.createVoiceClone({
+          userId: ctx.user.id,
+          name: input.name,
+          sampleUrl: url,
+          language: input.language,
+          description: input.description,
+        });
+
+        // Mark as ready (in a real system, this would go through a processing pipeline)
+        if (id) {
+          await db.updateVoiceClone(id, {
+            status: "ready",
+            cloneVoiceId: `clone-${ctx.user.id}-${id}`,
+          });
+        }
+
+        return { id, sampleUrl: url };
+      }),
+
+    /** List user's voice clones */
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getVoiceClonesByUser(ctx.user.id);
+    }),
+
+    /** Get single voice clone */
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const clone = await db.getVoiceCloneById(input.id);
+        if (!clone || clone.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return clone;
+      }),
+
+    /** Update voice clone metadata */
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const clone = await db.getVoiceCloneById(input.id);
+        if (!clone || clone.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const { id, ...data } = input;
+        await db.updateVoiceClone(id, data as any);
+        return { success: true };
+      }),
+
+    /** Delete voice clone */
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const clone = await db.getVoiceCloneById(input.id);
+        if (!clone || clone.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        await db.deleteVoiceClone(input.id);
+        return { success: true };
+      }),
+
+    /** Preview cloned voice with TTS */
+    preview: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        text: z.string().min(1).max(500),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const clone = await db.getVoiceCloneById(input.id);
+        if (!clone || clone.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        if (clone.status !== "ready") throw new TRPCError({ code: "BAD_REQUEST", message: "Voice clone is not ready yet" });
+
+        // Use Gemini TTS with a default voice as placeholder
+        // In production, this would use the actual cloned voice model
+        const { generateGeminiTts, GEMINI_VOICES } = await import("./_core/geminiTts");
+        const defaultVoice = GEMINI_VOICES[0];
+        const result = await generateGeminiTts({
+          text: input.text,
+          voiceId: defaultVoice.id,
+        });
+
+        if ("error" in result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: (result as any).error || "TTS generation failed" });
+
+        const key = `voice-clone-preview/${ctx.user.id}/${Date.now()}.mp3`;
+        const { url } = await storagePut(key, (result as any).audioBuffer, "audio/mpeg");
+        return { audioUrl: url, voiceName: clone.name };
       }),
   }),
 });

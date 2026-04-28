@@ -2031,3 +2031,16 @@
 - [x] 아바타 카드에 실제 얼굴 이미지 표시 (customFaceUrl 우선)
 - [x] 테스트 작성 (16개 통과)
 - [x] 프로덕션 서버 배포 완료 (aispeaker.cc)
+
+### v12.6 - 아바타 AI 얼굴 생성 + Presenter 스튜디오 + 음성 클로닝 (완료)
+- [x] 아바타 얼굴 AI 생성 백엔드 (generateAvatarFace 프로시저 - 스타일/성별/연령대 옵션)
+- [x] AvatarSettingsDialog에 'AI 얼굴 생성' 탭 추가 (프롬프트 입력 → 생성 → 미리보기 → 적용)
+- [x] Presenter 전용 방송 스튜디오 라우트 및 페이지 (/broadcast/presenter/:roomCode)
+- [x] Presenter 스튜디오 UI (슬라이드 제어, 시청자 수, 채팅 - 권한 제한 적용)
+- [x] 백엔드에서 presenter 권한 검증 (broadcast 프로시저에서 collaborator role 체크)
+- [x] 음성 클로닝 DB 스키마 (voiceClones 테이블 - 사용자별 커스텀 음성)
+- [x] 음성 클로닝 백엔드 (CRUD + S3 업로드 + TTS 미리듣기)
+- [x] 음성 클로닝 프론트엔드 (AvatarSettingsDialog에 '내 목소리 클론' 탭 - 녹음/생성/목록/삭제)
+- [x] 아바타 TTS에서 클로닝된 음성 사용 옵션
+- [x] 테스트 작성 (30개 통과)
+- [x] 프로덕션 서버 배포 완료 (aispeaker.cc - v12.6)

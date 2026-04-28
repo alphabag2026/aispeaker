@@ -2237,3 +2237,31 @@ export const projectCollaborators = mysqlTable("projectCollaborators", {
 });
 export type ProjectCollaborator = typeof projectCollaborators.$inferSelect;
 export type InsertProjectCollaborator = typeof projectCollaborators.$inferInsert;
+
+
+/**
+ * Voice Clones - user-uploaded voice samples for custom TTS
+ */
+export const voiceClones = mysqlTable("voiceClones", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  /** S3 URL of the original voice sample */
+  sampleUrl: text("sampleUrl").notNull(),
+  /** Duration of the sample in seconds */
+  sampleDurationSec: int("sampleDurationSec"),
+  /** Language of the voice sample */
+  language: varchar("language", { length: 10 }).default("ko"),
+  /** Processing status */
+  status: mysqlEnum("status", ["uploading", "processing", "ready", "failed"]).default("uploading").notNull(),
+  /** Custom TTS voice ID (assigned after processing) */
+  cloneVoiceId: varchar("cloneVoiceId", { length: 255 }),
+  /** Error message if processing failed */
+  errorMessage: text("errorMessage"),
+  /** Description or notes */
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type VoiceClone = typeof voiceClones.$inferSelect;
+export type InsertVoiceClone = typeof voiceClones.$inferInsert;
