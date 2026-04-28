@@ -1,15 +1,23 @@
 import jwt from "jsonwebtoken";
-import { ENV } from "./_core/env";
 
 const KLING_API_BASE = "https://api.klingai.com";
+
+/**
+ * Get KLING keys from process.env directly (supports runtime updates from DB)
+ */
+function getKlingKeys() {
+  return {
+    accessKey: process.env.KLING_ACCESS_KEY || "",
+    secretKey: process.env.KLING_SECRET_KEY || "",
+  };
+}
 
 /**
  * Generate a JWT token for KLING API authentication
  * Uses HS256 algorithm with access_key as header kid and secret_key for signing
  */
 function generateKlingToken(): string {
-  const accessKey = ENV.klingAccessKey;
-  const secretKey = ENV.klingSecretKey;
+  const { accessKey, secretKey } = getKlingKeys();
 
   if (!accessKey || !secretKey) {
     throw new Error("KLING_ACCESS_KEY or KLING_SECRET_KEY is not configured");
@@ -235,9 +243,11 @@ export async function getTextToVideoStatus(taskId: string): Promise<{
 
 /**
  * Check if KLING API is configured
+ * Reads process.env directly to support runtime updates from DB
  */
 export function isKlingConfigured(): boolean {
-  return !!(ENV.klingAccessKey && ENV.klingSecretKey);
+  const { accessKey, secretKey } = getKlingKeys();
+  return !!(accessKey && secretKey);
 }
 
 /**
