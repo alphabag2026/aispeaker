@@ -5,6 +5,8 @@ import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
+import { eq } from "drizzle-orm";
+import { projectCollaborators } from "../drizzle/schema";
 import { invokeLLM } from "./_core/llm";
 import { storagePut } from "./storage";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -8174,6 +8176,122 @@ Return a JSON object with a "sections" array. Each section has:
           translations,
           audioUrl,
         };
+      }),
+  }),
+
+  // ============ v12.3 - Collaboration ============
+  collaboration: router({
+    // 이메일로 사용자 검색
+    searchUser: protectedProcedure
+      .input(z.object({ email: z.string().email() }))
+      .query(async ({ input }) => {
+        const user = await db.findUserByEmail(input.email);
+        return user;
+      }),
+
+    // 프로젝트에 협업자 초대
+    invite: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        email: z.string().email(),
+        role: z.enum(["editor", "viewer"]).default("editor"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // 프로젝트 소유자 확인
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "프로젝트 소유자만 초대할 수 있습니다" });
+        }
+        // 초대할 사용자 찾기
+        const targetUser = await db.findUserByEmail(input.email);
+        if (!targetUser) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "해당 이메일로 등록된 사용자를 찾을 수 없습니다" });
+        }
+        if (targetUser.id === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "자기 자신을 초대할 수 없습니다" });
+        }
+        // 이미 초대된 사용자인지 확인
+        const existing = await db.getProjectCollaborators(input.projectId);
+        if (existing.some(c => c.userId === targetUser.id)) {
+          throw new TRPCError({ code: "CONFLICT", message: "이미 초대된 사용자입니다" });
+        }
+        const id = await db.addCollaborator({
+          projectId: input.projectId,
+          userId: targetUser.id,
+          role: input.role,
+          invitedBy: ctx.user.id,
+          inviteStatus: "pending",
+          inviteEmail: input.email,
+        });
+        return { id, userName: targetUser.name };
+      }),
+
+    // 프로젝트 협업자 목록
+    listByProject: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        // 소유자 또는 협업자만 조회 가능
+        const project = await db.getLectureProject(input.projectId);
+        if (!project) throw new TRPCError({ code: "NOT_FOUND" });
+        const isOwner = project.userId === ctx.user.id;
+        const isCollab = await db.isProjectCollaborator(input.projectId, ctx.user.id);
+        if (!isOwner && !isCollab) throw new TRPCError({ code: "FORBIDDEN" });
+        return db.getProjectCollaborators(input.projectId);
+      }),
+
+    // 내가 참여 중인 협업 프로젝트 목록
+    myCollaborations: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getMyCollaborations(ctx.user.id);
+      }),
+
+    // 받은 초대 목록
+    pendingInvitations: protectedProcedure
+      .query(async ({ ctx }) => {
+        return db.getPendingInvitations(ctx.user.id);
+      }),
+
+    // 초대 수락/거절
+    respondToInvite: protectedProcedure
+      .input(z.object({
+        inviteId: z.number(),
+        accept: z.boolean(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.updateCollaboratorStatus(input.inviteId, input.accept ? "accepted" : "rejected");
+        return { success: true };
+      }),
+
+    // 협업자 제거 (소유자만)
+    remove: protectedProcedure
+      .input(z.object({ collaboratorId: z.number(), projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "프로젝트 소유자만 제거할 수 있습니다" });
+        }
+        await db.removeCollaborator(input.collaboratorId);
+        return { success: true };
+      }),
+
+    // 협업자 역할 변경 (소유자만)
+    updateRole: protectedProcedure
+      .input(z.object({
+        collaboratorId: z.number(),
+        projectId: z.number(),
+        role: z.enum(["editor", "viewer"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const dbConn = await db.getDb();
+        if (!dbConn) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        await dbConn.update(projectCollaborators)
+          .set({ role: input.role })
+          .where(eq(projectCollaborators.id, input.collaboratorId));
+        return { success: true };
       }),
   }),
 });

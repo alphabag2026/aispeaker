@@ -1990,3 +1990,12 @@
   - 원인: 0040/0041 마이그레이션 전체 누락 (marketplace, scorm, creator, recommendation 테이블)
   - 해결: 모든 누락 컨럼/테이블 수동 생성 완료
   - onError 핸들러 추가로 에러 시 사용자에게 알림 표시
+
+### v12.3 - KLING 설정 버튼 + 협업 기능 (완료)
+- [x] KLING AI 영상 생성 다이얼로그에 '바로 설정하기' 버튼 추가 (관리자 API 키 입력 UI)
+- [x] 협업 기능 DB 스키마 (systemSettings + projectCollaborators 테이블)
+- [x] 협업 기능 백엔드 tRPC 라우터 (초대/수락/거절/역할변경/제거)
+- [x] 협업 기능 프론트엔드 UI (팀원 초대 다이얼로그, 프로젝트 멤버 목록, 대기 초대 패널)
+- [x] 프로젝트 목록에서 공유받은 프로젝트도 표시 (myPendingInvites + accepted collaborations)
+- [x] 테스트 작성 (19개 통과)
+- [x] 프로덕션 서버 배포 완료 (aispeaker.cc)
