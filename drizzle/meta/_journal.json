@@ -288,6 +288,13 @@
       "when": 1777345757826,
       "tag": "0040_unique_stryfe",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1777355109233,
+      "tag": "0041_dazzling_zombie",
+      "breakpoints": true
     }
   ]
 }

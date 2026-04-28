@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Store, DollarSign, ShoppingCart, TrendingUp, Plus, ArrowLeft, Loader2, Eye, Star, Package, Edit } from "lucide-react";
+import { Store, DollarSign, ShoppingCart, TrendingUp, Plus, ArrowLeft, Loader2, Eye, Star, Package, Edit, Wallet, CreditCard, ArrowUpRight, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "wouter";
 
 const CATEGORIES = [
@@ -38,10 +39,36 @@ export default function CreatorDashboard() {
   const [tags, setTags] = useState("");
   const [acceptCrypto, setAcceptCrypto] = useState(false);
 
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [isPayoutDialogOpen, setIsPayoutDialogOpen] = useState(false);
+
   const myListingsQuery = trpc.marketplace.myListings.useQuery(undefined, { enabled: !!user });
   const earningsQuery = trpc.marketplace.earnings.useQuery(undefined, { enabled: !!user });
   const pipelinesQuery = trpc.pipeline.list.useQuery(undefined, { enabled: !!user });
   const [selectedPipelineId, setSelectedPipelineId] = useState<number | undefined>();
+
+  // Stripe Connect
+  const connectStatusQuery = trpc.payout.connectStatus.useQuery(undefined, { enabled: !!user });
+  const payoutEarningsQuery = trpc.payout.earnings.useQuery(undefined, { enabled: !!user });
+  const payoutHistoryQuery = trpc.payout.payoutHistory.useQuery(undefined, { enabled: !!user });
+  const connectOnboardMutation = trpc.payout.connectOnboard.useMutation({
+    onSuccess: (data) => {
+      toast.success("Stripe Connect 온보딩 페이지로 이동합니다.");
+      window.open(data.url, "_blank");
+      connectStatusQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const requestPayoutMutation = trpc.payout.requestPayout.useMutation({
+    onSuccess: (data) => {
+      toast.success(`출금 요청 완료! 순 지급액: $${(data.netPayout / 100).toFixed(2)} (수수료 20%)`);
+      setIsPayoutDialogOpen(false);
+      setPayoutAmount("");
+      payoutEarningsQuery.refetch();
+      payoutHistoryQuery.refetch();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const publishMutation = trpc.marketplace.publish.useMutation({
     onSuccess: () => {
@@ -218,7 +245,143 @@ export default function CreatorDashboard() {
           </Card>
         </div>
 
-        {/* My Listings */}
+        {/* Tabs: Listings / Payouts */}
+        <Tabs defaultValue="listings" className="mb-6">
+          <TabsList className="bg-[#16213e] border-gray-700">
+            <TabsTrigger value="listings">내 상품</TabsTrigger>
+            <TabsTrigger value="payouts">정산/출금</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="payouts">
+            <div className="space-y-4">
+              {/* Connect Status */}
+              <Card className="bg-[#1a1a2e] border-gray-800">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Wallet className="w-5 h-5 text-purple-400" />
+                    Stripe Connect 계정
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {connectStatusQuery.data?.status === "active" ? (
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <span className="text-green-400 font-medium">연결됨</span>
+                      <Badge className="bg-green-500/20 text-green-400">Active</Badge>
+                    </div>
+                  ) : connectStatusQuery.data?.status === "pending" ? (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <Clock className="w-5 h-5 text-yellow-400" />
+                      <span className="text-yellow-400">온보딩 진행 중...</span>
+                      <Button size="sm" onClick={() => connectOnboardMutation.mutate({ returnUrl: window.location.href })} className="bg-yellow-600 hover:bg-yellow-700">
+                        온보딩 계속하기
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                      <AlertCircle className="w-5 h-5 text-gray-400" />
+                      <span className="text-gray-400">Stripe Connect 계정을 연결하면 수익을 출금할 수 있습니다.</span>
+                      <Button onClick={() => connectOnboardMutation.mutate({ returnUrl: window.location.href })} disabled={connectOnboardMutation.isPending} className="bg-purple-600 hover:bg-purple-700">
+                        {connectOnboardMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                        계정 연결하기
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Earnings Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <Card className="bg-[#1a1a2e] border-gray-800">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-gray-400">총 수익</p>
+                    <p className="text-xl font-bold text-green-400">{formatPrice(payoutEarningsQuery.data?.totalEarnings || 0)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-[#1a1a2e] border-gray-800">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-gray-400">출금 가능</p>
+                    <p className="text-xl font-bold text-blue-400">{formatPrice(payoutEarningsQuery.data?.availableBalance || 0)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-[#1a1a2e] border-gray-800">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-gray-400">출금 대기중</p>
+                    <p className="text-xl font-bold text-yellow-400">{formatPrice(payoutEarningsQuery.data?.pendingPayouts || 0)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-[#1a1a2e] border-gray-800">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-gray-400">출금 완료</p>
+                    <p className="text-xl font-bold text-gray-300">{formatPrice(payoutEarningsQuery.data?.completedPayouts || 0)}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Payout Request */}
+              <Card className="bg-[#1a1a2e] border-gray-800">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="text-lg">출금 요청</CardTitle>
+                  <Dialog open={isPayoutDialogOpen} onOpenChange={setIsPayoutDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" disabled={connectStatusQuery.data?.status !== "active" || (payoutEarningsQuery.data?.availableBalance || 0) < 1000} className="bg-green-600 hover:bg-green-700">
+                        <ArrowUpRight className="w-4 h-4 mr-1" />출금 신청
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-[#1a1a2e] border-gray-700 text-white">
+                      <DialogHeader>
+                        <DialogTitle>출금 신청</DialogTitle>
+                        <DialogDescription className="text-gray-400">출금 가능 잔액: {formatPrice(payoutEarningsQuery.data?.availableBalance || 0)} (최소 $10.00, 수수료 20%)</DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label>출금 금액 (USD)</Label>
+                          <Input type="number" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} placeholder="10.00" min={10} step={0.01} className="bg-[#16213e] border-gray-600" />
+                        </div>
+                        {payoutAmount && Number(payoutAmount) >= 10 && (
+                          <div className="text-sm text-gray-400 space-y-1">
+                            <p>요청 금액: ${Number(payoutAmount).toFixed(2)}</p>
+                            <p>플랫폼 수수료 (20%): -${(Number(payoutAmount) * 0.2).toFixed(2)}</p>
+                            <p className="text-green-400 font-medium">순 지급액: ${(Number(payoutAmount) * 0.8).toFixed(2)}</p>
+                          </div>
+                        )}
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsPayoutDialogOpen(false)} className="border-gray-600">취소</Button>
+                        <Button onClick={() => requestPayoutMutation.mutate({ amountInCents: Math.round(Number(payoutAmount) * 100) })} disabled={requestPayoutMutation.isPending || !payoutAmount || Number(payoutAmount) < 10} className="bg-green-600 hover:bg-green-700">
+                          {requestPayoutMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                          출금 신청
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </CardHeader>
+                <CardContent>
+                  {payoutHistoryQuery.isLoading ? (
+                    <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-purple-400" /></div>
+                  ) : (payoutHistoryQuery.data?.length || 0) === 0 ? (
+                    <p className="text-gray-500 text-center py-4">출금 내역이 없습니다.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {payoutHistoryQuery.data?.map((payout: any) => (
+                        <div key={payout.id} className="flex items-center justify-between p-3 bg-[#16213e] rounded-lg">
+                          <div>
+                            <p className="text-sm font-medium">{formatPrice(payout.netPayoutInCents)} 출금</p>
+                            <p className="text-xs text-gray-400">{new Date(payout.requestedAt).toLocaleDateString("ko-KR")}</p>
+                          </div>
+                          <Badge className={payout.status === "completed" ? "bg-green-500/20 text-green-400" : payout.status === "pending" ? "bg-yellow-500/20 text-yellow-400" : payout.status === "failed" ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"}>
+                            {payout.status === "completed" ? "완료" : payout.status === "pending" ? "대기" : payout.status === "processing" ? "처리중" : payout.status === "failed" ? "실패" : payout.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="listings">
         <Card className="bg-[#1a1a2e] border-gray-800">
           <CardHeader>
             <CardTitle className="text-lg">내 등록 상품</CardTitle>
@@ -263,6 +426,8 @@ export default function CreatorDashboard() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

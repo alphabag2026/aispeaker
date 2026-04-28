@@ -1870,3 +1870,59 @@
 - [x] 전체 60개 테스트 파일, 1001개 테스트 케이스 통과
 - [x] TypeScript 에러 0개
 - [x] 모바일 반응형 387개 클래스 적용
+
+## 마켓플레이스 수수료 정산 시스템 - Stripe Connect (v10.3)
+
+### DB 스키마
+- [x] creatorPayouts 테이블 (정산 기록, 상태, 금액)
+- [x] creatorProfiles에 stripeConnectAccountId 필드 추가
+
+### 백엔드
+- [x] payout.connectOnboard - Stripe Connect 온보딩 URL 생성
+- [x] payout.connectStatus - Connect 계정 상태 확인
+- [x] payout.requestPayout - 정산 요청
+- [x] payout.payoutHistory - 정산 내역 조회
+- [x] payout.earnings - 수수료 차감 후 실수익 계산
+- [x] 구매 시 자동 수수료 분배 로직 (플랫폼 20%, 크리에이터 80%)
+
+### 프론트엔드
+- [x] 크리에이터 정산 대시보드 (수익/정산 현황)
+- [x] Stripe Connect 온보딩 플로우
+- [x] 정산 요청 UI
+- [x] 정산 내역 테이블
+
+### 테스트
+- [x] Connect 온보딩 테스트
+- [x] 정산 요청/내역 테스트
+- [x] 수수료 계산 테스트
+
+## AI 강의 추천 엔진 (v10.4)
+
+### DB 스키마
+- [x] userLearningHistory 테이블 (학습 이력, 진도율, 완료 시간)
+- [x] userPreferences 테이블 (관심 카테고리, 선호 강사)
+- [x] recommendationCache 테이블 (추천 결과 캐시)
+
+### 백엔드
+- [x] recommendation.getPersonalized - 개인화 추천 (협업 필터링 + 콘텐츠 기반)
+- [x] recommendation.getTrending - 인기 강의 추천
+- [x] recommendation.getSimilar - 유사 강의 추천
+- [x] recommendation.trackProgress - 학습 진도 기록
+- [x] recommendation.updatePreferences - 선호도 업데이트
+- [x] LLM 기반 콘텐츠 유사도 분석
+
+### 프론트엔드
+- [x] AI 추천 페이지 (Recommendations) - 개인화 추천 섹션
+- [x] 인기 강의 섹션 (Trending)
+- [x] 학습 진도 트래커 UI
+- [x] 관심사 설정 패널
+- [x] Navbar에 AI추천 링크 추가
+
+### 테스트
+- [x] 추천 알고리즘 테스트
+- [x] 학습 이력 기록 테스트
+- [x] 개인화 결과 테스트
+
+## v11 전체 결과
+- [x] 전체 61개 테스트 파일, 1045개 테스트 케이스 통과
+- [x] TypeScript 에러 0개
