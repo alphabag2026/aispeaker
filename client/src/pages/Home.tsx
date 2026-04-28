@@ -388,7 +388,7 @@ export default function Home() {
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {activeProduct.features.map((f, i) => (
-                        <div key={i} className="flex items-center gap-2 text-xs text-foreground/80">
+                        <div key={i} className="flex items-center gap-2 text-xs font-medium text-foreground">
                           <Check className="h-3.5 w-3.5 text-primary shrink-0" />
                           {f}
                         </div>
@@ -481,11 +481,11 @@ export default function Home() {
               </div>
               <div className="space-y-3">
                 {activeProduct.features.map((f, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-background/50 border border-border/30">
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border/40">
                     <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${activeProduct.gradient} flex items-center justify-center shrink-0`}>
                       <Check className="h-4 w-4 text-white" />
                     </div>
-                    <span className="text-sm font-medium">{f}</span>
+                    <span className="text-sm font-semibold text-foreground">{f}</span>
                   </div>
                 ))}
               </div>
@@ -507,10 +507,10 @@ export default function Home() {
             {(showAllTools ? allTools : allTools.slice(0, 12)).map((tool, i) => (
               <Link key={i} href={tool.href}>
                 <div className="glass-card p-4 text-center group cursor-pointer h-full">
-                  <div className="mx-auto w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mb-3 group-hover:bg-primary/20 transition-colors">
+                  <div className="mx-auto w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center mb-3 group-hover:bg-primary/25 transition-colors">
                     <tool.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-xs font-medium text-foreground/80 group-hover:text-foreground transition-colors">{tool.label}</p>
+                  <p className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors">{tool.label}</p>
                   {tool.badge && <span className={`mt-1.5 inline-block ${tool.badge === "hot" ? "badge-hot" : tool.badge === "new" ? "badge-new" : "badge-unlimited"}`}>{tool.badge}</span>}
                 </div>
               </Link>
@@ -609,15 +609,15 @@ export default function Home() {
             {featureKeys.map((feat, i) => (
               <div key={i} className="glass-card p-5 group">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors shrink-0">
+                  <div className="p-2 rounded-lg bg-primary/15 group-hover:bg-primary/25 transition-colors shrink-0">
                     <feat.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-sm">{t(feat.titleKey)}</h3>
+                      <h3 className="font-bold text-sm text-foreground">{t(feat.titleKey)}</h3>
                       {feat.badge && <span className="badge-new">{feat.badge}</span>}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{t(feat.descKey)}</p>
+                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{t(feat.descKey)}</p>
                   </div>
                 </div>
               </div>
@@ -643,7 +643,7 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {pricingPlans.map((plan, i) => (
-              <Card key={i} className={`relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 ${plan.popular ? "ring-2 ring-primary shadow-xl shadow-primary/10 scale-[1.02]" : ""}`}>
+              <Card key={i} className={`relative overflow-hidden border-border/50 bg-card backdrop-blur-sm transition-all duration-300 hover:border-primary/30 ${plan.popular ? "ring-2 ring-primary shadow-xl shadow-primary/10 scale-[1.02]" : ""}`}>
                 {plan.popular && (
                   <div className="absolute top-0 right-0 px-4 py-1 bg-gradient-to-r from-violet-600 to-blue-600 text-white text-xs font-bold rounded-bl-xl">
                     POPULAR
