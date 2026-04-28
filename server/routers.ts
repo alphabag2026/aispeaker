@@ -7810,6 +7810,227 @@ Return a JSON object with a "sections" array. Each section has:
         return db.upsertUserPreferences(ctx.user.id, data);
       }),
   }),
+
+  // ============ Real-time AI Interpretation (v12.0) ============
+  interpretation: router({
+    // Get all supported languages (public)
+    getSupportedLanguages: publicProcedure.query(async () => {
+      return db.getSupportedLanguages();
+    }),
+
+    // Start a new interpretation session
+    startSession: protectedProcedure
+      .input(z.object({
+        broadcastId: z.number().optional(),
+        pipelineId: z.number().optional(),
+        sourceLanguage: z.string().default("ko"),
+        targetLanguages: z.array(z.string()).min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const sessionId = await db.createInterpretationSession({
+          hostUserId: ctx.user.id,
+          broadcastId: input.broadcastId ?? null,
+          pipelineId: input.pipelineId ?? null,
+          sourceLanguage: input.sourceLanguage,
+          targetLanguages: JSON.stringify(input.targetLanguages),
+          status: "active",
+        });
+        return { sessionId };
+      }),
+
+    // Translate a text segment using AI (LLM)
+    translate: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        sourceText: z.string().min(1),
+        sourceLanguage: z.string(),
+        targetLanguage: z.string(),
+        startTimeSec: z.number().optional(),
+        endTimeSec: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify session exists and belongs to user
+        const session = await db.getInterpretationSession(input.sessionId);
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다." });
+        }
+
+        // Language name mapping for better LLM translation
+        const langNames: Record<string, string> = {
+          ko: "Korean", zh: "Chinese", en: "English", ja: "Japanese",
+          vi: "Vietnamese", th: "Thai", es: "Spanish", fr: "French",
+          de: "German", ar: "Arabic", hi: "Hindi", pt: "Portuguese",
+          ru: "Russian", id: "Indonesian", tr: "Turkish",
+        };
+        const sourceLangName = langNames[input.sourceLanguage] || input.sourceLanguage;
+        const targetLangName = langNames[input.targetLanguage] || input.targetLanguage;
+
+        // Use LLM for high-quality translation
+        const llmResponse = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional real-time interpreter. Translate the following ${sourceLangName} text to ${targetLangName}. Provide ONLY the translated text, no explanations or notes. Maintain the original tone, formality level, and meaning. For technical terms, use the most commonly accepted translation in the target language.`,
+            },
+            { role: "user", content: input.sourceText },
+          ],
+        });
+
+        const translatedText = (llmResponse.choices?.[0]?.message?.content as string || "").trim();
+        if (!translatedText) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "번역에 실패했습니다." });
+        }
+
+        // Save translation segment
+        const segmentId = await db.addTranslationSegment({
+          sessionId: input.sessionId,
+          sourceText: input.sourceText,
+          sourceLanguage: input.sourceLanguage,
+          targetLanguage: input.targetLanguage,
+          translatedText,
+          startTimeSec: input.startTimeSec ?? null,
+          endTimeSec: input.endTimeSec ?? null,
+          confidence: 90, // LLM translations are generally high confidence
+        });
+
+        // Update session stats
+        const segmentCount = await db.getSessionSegmentCount(input.sessionId);
+        await db.updateInterpretationSessionStats(input.sessionId, segmentCount, input.endTimeSec ?? 0);
+
+        return { segmentId, translatedText };
+      }),
+
+    // Batch translate to multiple languages at once
+    batchTranslate: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        sourceText: z.string().min(1),
+        sourceLanguage: z.string(),
+        targetLanguages: z.array(z.string()).min(1),
+        startTimeSec: z.number().optional(),
+        endTimeSec: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const session = await db.getInterpretationSession(input.sessionId);
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다." });
+        }
+
+        const langNames: Record<string, string> = {
+          ko: "Korean", zh: "Chinese", en: "English", ja: "Japanese",
+          vi: "Vietnamese", th: "Thai", es: "Spanish", fr: "French",
+          de: "German", ar: "Arabic", hi: "Hindi", pt: "Portuguese",
+          ru: "Russian", id: "Indonesian", tr: "Turkish",
+        };
+
+        // Translate to all target languages in parallel
+        const results = await Promise.all(
+          input.targetLanguages.map(async (targetLang) => {
+            const sourceLangName = langNames[input.sourceLanguage] || input.sourceLanguage;
+            const targetLangName = langNames[targetLang] || targetLang;
+            try {
+              const llmResponse = await invokeLLM({
+                messages: [
+                  {
+                    role: "system",
+                    content: `You are a professional real-time interpreter. Translate the following ${sourceLangName} text to ${targetLangName}. Provide ONLY the translated text, no explanations.`,
+                  },
+                  { role: "user", content: input.sourceText },
+                ],
+              });
+              const translatedText = (llmResponse.choices?.[0]?.message?.content as string || "").trim();
+              const segmentId = await db.addTranslationSegment({
+                sessionId: input.sessionId,
+                sourceText: input.sourceText,
+                sourceLanguage: input.sourceLanguage,
+                targetLanguage: targetLang,
+                translatedText,
+                startTimeSec: input.startTimeSec ?? null,
+                endTimeSec: input.endTimeSec ?? null,
+                confidence: 90,
+              });
+              return { targetLanguage: targetLang, translatedText, segmentId, success: true };
+            } catch (e) {
+              return { targetLanguage: targetLang, translatedText: "", segmentId: 0, success: false };
+            }
+          })
+        );
+
+        const segmentCount = await db.getSessionSegmentCount(input.sessionId);
+        await db.updateInterpretationSessionStats(input.sessionId, segmentCount, input.endTimeSec ?? 0);
+
+        return { results };
+      }),
+
+    // End an interpretation session
+    endSession: protectedProcedure
+      .input(z.object({ sessionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const session = await db.getInterpretationSession(input.sessionId);
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다." });
+        }
+        await db.endInterpretationSession(input.sessionId);
+        return { success: true };
+      }),
+
+    // Get session history with segments
+    getHistory: protectedProcedure
+      .input(z.object({
+        sessionId: z.number(),
+        targetLanguage: z.string().optional(),
+        limit: z.number().optional().default(100),
+      }))
+      .query(async ({ ctx, input }) => {
+        const session = await db.getInterpretationSession(input.sessionId);
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다." });
+        }
+        const segments = await db.getSessionSegments(input.sessionId, input.targetLanguage, input.limit);
+        return { session, segments };
+      }),
+
+    // Get user's interpretation sessions list
+    mySessions: protectedProcedure
+      .input(z.object({ limit: z.number().optional().default(20) }))
+      .query(async ({ ctx, input }) => {
+        return db.getUserInterpretationSessions(ctx.user.id, input.limit);
+      }),
+
+    // Translate chat message (for multilingual chat)
+    translateChat: protectedProcedure
+      .input(z.object({
+        text: z.string().min(1),
+        sourceLanguage: z.string(),
+        targetLanguage: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const langNames: Record<string, string> = {
+          ko: "Korean", zh: "Chinese", en: "English", ja: "Japanese",
+          vi: "Vietnamese", th: "Thai", es: "Spanish", fr: "French",
+          de: "German", ar: "Arabic", hi: "Hindi", pt: "Portuguese",
+          ru: "Russian", id: "Indonesian", tr: "Turkish",
+        };
+        const sourceLangName = langNames[input.sourceLanguage] || input.sourceLanguage;
+        const targetLangName = langNames[input.targetLanguage] || input.targetLanguage;
+
+        const llmResponse = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `Translate the following ${sourceLangName} chat message to ${targetLangName}. Keep it natural and conversational. Provide ONLY the translation.`,
+            },
+            { role: "user", content: input.text },
+          ],
+        });
+        const translatedText = (llmResponse.choices?.[0]?.message?.content as string || "").trim();
+        return { translatedText };
+      }),
+  }),
 });
 
 // SRT time formatter

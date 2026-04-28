@@ -65,6 +65,7 @@ const Marketplace = lazy(() => import("./pages/Marketplace"));
 const MarketplaceDetail = lazy(() => import("./pages/MarketplaceDetail"));
 const CreatorDashboard = lazy(() => import("./pages/CreatorDashboard"));
 const Recommendations = lazy(() => import("./pages/Recommendations"));
+const LiveInterpretation = lazy(() => import("./pages/LiveInterpretation"));
 
 // AkoolStudio sub-pages
 const AkoolStudio = lazy(() => import("./pages/AkoolStudio").then(m => ({ default: m.default })));
@@ -169,6 +170,9 @@ function Router() {
         <Route path="/marketplace/:id" component={MarketplaceDetail} />
         <Route path="/creator-dashboard" component={CreatorDashboard} />
         <Route path="/recommendations" component={Recommendations} />
+
+        {/* Live Interpretation */}
+        <Route path="/live-interpretation" component={LiveInterpretation} />
 
         {/* Community Gallery */}
         <Route path="/community" component={CommunityGallery} />
