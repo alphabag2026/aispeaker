@@ -1245,6 +1245,10 @@ export const slideScripts = mysqlTable("slideScripts", {
   sortOrder: int("sortOrder").default(0),
   /** Interpreter translated text for this slide */
   interpreterText: text("interpreterText"),
+  /** Emotion tag for avatar expression and TTS tone */
+  emotion: mysqlEnum("emotion", ["neutral", "happy", "serious", "excited", "empathetic", "confident", "questioning"]).default("neutral"),
+  /** Emotion intensity (1-10) */
+  emotionIntensity: int("emotionIntensity").default(5),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -2265,3 +2269,62 @@ export const voiceClones = mysqlTable("voiceClones", {
 });
 export type VoiceClone = typeof voiceClones.$inferSelect;
 export type InsertVoiceClone = typeof voiceClones.$inferInsert;
+
+
+/**
+ * Broadcast Recordings - stores timeline data for VOD conversion
+ */
+export const broadcastRecordings = mysqlTable("broadcastRecordings", {
+  id: int("id").autoincrement().primaryKey(),
+  broadcastId: int("broadcastId").notNull(),
+  /** Recording status */
+  status: mysqlEnum("status", ["recording", "processing", "ready", "failed"]).default("recording").notNull(),
+  /** Timeline events as JSON [{timestamp, type, slideIndex, audioUrl, duration}] */
+  timeline: text("timeline"),
+  /** Total duration in seconds */
+  totalDurationSec: int("totalDurationSec").default(0),
+  /** Generated VOD URL (combined video/audio) */
+  vodUrl: text("vodUrl"),
+  /** Thumbnail URL */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** Number of slides captured */
+  slideCount: int("slideCount").default(0),
+  /** Error message if processing failed */
+  errorMessage: text("errorMessage"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BroadcastRecording = typeof broadcastRecordings.$inferSelect;
+export type InsertBroadcastRecording = typeof broadcastRecordings.$inferInsert;
+
+/**
+ * Broadcast Analytics - aggregated stats for each broadcast
+ */
+export const broadcastAnalytics = mysqlTable("broadcastAnalytics", {
+  id: int("id").autoincrement().primaryKey(),
+  broadcastId: int("broadcastId").notNull(),
+  /** Total unique viewers */
+  totalViewers: int("totalViewers").default(0),
+  /** Peak concurrent viewers */
+  peakConcurrentViewers: int("peakConcurrentViewers").default(0),
+  /** Average watch duration in seconds */
+  avgWatchDurationSec: int("avgWatchDurationSec").default(0),
+  /** Total chat messages */
+  totalChatMessages: int("totalChatMessages").default(0),
+  /** Total questions asked */
+  totalQuestions: int("totalQuestions").default(0),
+  /** Viewer retention rate (percentage who stayed till end) */
+  retentionRate: int("retentionRate").default(0),
+  /** Engagement score (0-100) */
+  engagementScore: int("engagementScore").default(0),
+  /** Viewer count timeline as JSON [{timestamp, count}] */
+  viewerTimeline: text("viewerTimeline"),
+  /** Chat activity timeline as JSON [{timestamp, count}] */
+  chatTimeline: text("chatTimeline"),
+  /** Geographic distribution as JSON {country: count} */
+  geoDistribution: text("geoDistribution"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type BroadcastAnalytic = typeof broadcastAnalytics.$inferSelect;
+export type InsertBroadcastAnalytic = typeof broadcastAnalytics.$inferInsert;
