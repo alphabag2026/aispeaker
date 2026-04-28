@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { setupWebSocket } from "../websocket";
+import { loadKlingKeysFromDb } from "./systemRouter";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -201,6 +202,9 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Load KLING API keys from database
+  await loadKlingKeysFromDb();
 
   // Initialize WebSocket server for whiteboard collaboration
   setupWebSocket(server);
