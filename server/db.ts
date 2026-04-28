@@ -83,6 +83,7 @@ import {
   supportedLanguages, InsertSupportedLanguage,
   systemSettings, InsertSystemSetting,
   projectCollaborators, InsertProjectCollaborator,
+  voiceClones, InsertVoiceClone,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3800,4 +3801,54 @@ export async function findUserByEmail(email: string) {
   const rows = await db.select({ id: users.id, name: users.name, email: users.email, avatarUrl: users.avatarUrl })
     .from(users).where(eq(users.email, email)).limit(1);
   return rows[0] ?? null;
+}
+
+
+// ─── Voice Clones ─────────────────────────────────────────────
+export async function createVoiceClone(data: {
+  userId: number;
+  name: string;
+  sampleUrl: string;
+  sampleDurationSec?: number;
+  language?: string;
+  description?: string;
+}) {
+  const db = await getDb(); if (!db) return null;
+  const [result] = await db.insert(voiceClones).values({
+    userId: data.userId,
+    name: data.name,
+    sampleUrl: data.sampleUrl,
+    sampleDurationSec: data.sampleDurationSec,
+    language: data.language || "ko",
+    description: data.description,
+    status: "processing",
+  });
+  return result.insertId;
+}
+
+export async function getVoiceClonesByUser(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(voiceClones).where(eq(voiceClones.userId, userId)).orderBy(desc(voiceClones.createdAt));
+}
+
+export async function getVoiceCloneById(id: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(voiceClones).where(eq(voiceClones.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function updateVoiceClone(id: number, data: Partial<{
+  name: string;
+  status: "uploading" | "processing" | "ready" | "failed";
+  cloneVoiceId: string;
+  errorMessage: string;
+  description: string;
+}>) {
+  const db = await getDb(); if (!db) return;
+  await db.update(voiceClones).set(data).where(eq(voiceClones.id, id));
+}
+
+export async function deleteVoiceClone(id: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(voiceClones).where(eq(voiceClones.id, id));
 }
