@@ -91,7 +91,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
-        <Card className="w-full max-w-md border-border/50 shadow-xl">
+        <Card className="w-full max-w-md mx-4 sm:mx-0 border-border/50 shadow-xl">
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl font-bold">{t.title}</CardTitle>
             <CardDescription className="text-muted-foreground">{t.subtitle}</CardDescription>

@@ -60,6 +60,10 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const AiHistory = lazy(() => import("./pages/AiHistory"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const VideoEffectsStudio = lazy(() => import("./pages/VideoEffectsStudio"));
+const ScormExport = lazy(() => import("./pages/ScormExport"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const MarketplaceDetail = lazy(() => import("./pages/MarketplaceDetail"));
+const CreatorDashboard = lazy(() => import("./pages/CreatorDashboard"));
 
 // AkoolStudio sub-pages
 const AkoolStudio = lazy(() => import("./pages/AkoolStudio").then(m => ({ default: m.default })));
@@ -155,6 +159,14 @@ function Router() {
         <Route path="/ai-studio/video-effects" component={VideoEffectsStudio} />
         <Route path="/ai-studio/models" component={AkoolModels} />
         <Route path="/ai-studio/effects" component={AkoolEffects} />
+
+        {/* SCORM Export */}
+        <Route path="/scorm-export" component={ScormExport} />
+
+        {/* Marketplace */}
+        <Route path="/marketplace" component={Marketplace} />
+        <Route path="/marketplace/:id" component={MarketplaceDetail} />
+        <Route path="/creator-dashboard" component={CreatorDashboard} />
 
         {/* Community Gallery */}
         <Route path="/community" component={CommunityGallery} />

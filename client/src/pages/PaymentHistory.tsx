@@ -57,13 +57,13 @@ export default function PaymentHistory() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-4xl py-8">
+      <div className="container px-4 sm:px-6 max-w-4xl py-4 sm:py-8 px-4 sm:px-6">
         <div className="flex items-center gap-3 mb-8">
           <Link href="/my-subscription">
             <Button variant="ghost" size="icon"><ArrowLeft className="w-5 h-5" /></Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{t("ph.title")}</h1>
+            <h1 className="text-xl sm:text-3xl font-bold">{t("ph.title")}</h1>
             <p className="text-muted-foreground">{t("ph.subtitle")}</p>
           </div>
         </div>

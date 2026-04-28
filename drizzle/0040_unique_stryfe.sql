@@ -1,0 +1,103 @@
+CREATE TABLE `creatorProfiles` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`displayName` varchar(255) NOT NULL,
+	`bio` text,
+	`avatarUrl` text,
+	`bannerUrl` text,
+	`specialties` text,
+	`socialLinks` text,
+	`totalSales` int DEFAULT 0,
+	`totalRevenue` int DEFAULT 0,
+	`rating` int DEFAULT 0,
+	`isVerified` boolean DEFAULT false,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `creatorProfiles_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `marketplaceListings` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`sellerId` int NOT NULL,
+	`pipelineId` int,
+	`scriptId` int,
+	`title` varchar(500) NOT NULL,
+	`description` text,
+	`shortDescription` varchar(255),
+	`category` enum('web3','ai','blockchain','defi','nft','metaverse','programming','business','design','other') NOT NULL DEFAULT 'other',
+	`priceInCents` int NOT NULL,
+	`salePriceInCents` int,
+	`currency` varchar(10) DEFAULT 'USD',
+	`thumbnailUrl` text,
+	`previewVideoUrl` text,
+	`tags` text,
+	`language` varchar(10) DEFAULT 'ko',
+	`durationSec` int DEFAULT 0,
+	`status` enum('draft','pending','active','suspended','archived') NOT NULL DEFAULT 'draft',
+	`totalPurchases` int DEFAULT 0,
+	`avgRating` int DEFAULT 0,
+	`reviewCount` int DEFAULT 0,
+	`viewCount` int DEFAULT 0,
+	`scormPackageId` int,
+	`acceptCrypto` boolean DEFAULT false,
+	`isFeatured` boolean DEFAULT false,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `marketplaceListings_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `marketplacePurchases` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`buyerId` int NOT NULL,
+	`listingId` int NOT NULL,
+	`sellerId` int NOT NULL,
+	`amountInCents` int NOT NULL,
+	`platformFeeInCents` int DEFAULT 0,
+	`sellerPayoutInCents` int DEFAULT 0,
+	`paymentMethod` enum('stripe','crypto') NOT NULL DEFAULT 'stripe',
+	`stripePaymentIntentId` varchar(255),
+	`cryptoTxHash` varchar(255),
+	`status` enum('pending','completed','refunded','disputed') NOT NULL DEFAULT 'pending',
+	`accessGranted` boolean DEFAULT false,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `marketplacePurchases_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `marketplaceReviews` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`listingId` int NOT NULL,
+	`buyerId` int NOT NULL,
+	`purchaseId` int NOT NULL,
+	`rating` int NOT NULL,
+	`title` varchar(255),
+	`content` text,
+	`helpfulCount` int DEFAULT 0,
+	`sellerResponse` text,
+	`sellerRespondedAt` timestamp,
+	`isVerified` boolean DEFAULT true,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `marketplaceReviews_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `scormPackages` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`pipelineId` int NOT NULL,
+	`title` varchar(500) NOT NULL,
+	`scormVersion` enum('1.2','2004') NOT NULL DEFAULT '2004',
+	`status` enum('generating','ready','failed') NOT NULL DEFAULT 'generating',
+	`completionCriteria` enum('slide_view','quiz_pass','time_spent') NOT NULL DEFAULT 'slide_view',
+	`minTimeSec` int DEFAULT 0,
+	`packageUrl` text,
+	`fileSizeBytes` int DEFAULT 0,
+	`xapiEndpoint` text,
+	`includeSubtitles` boolean DEFAULT true,
+	`includeThumbnail` boolean DEFAULT true,
+	`language` varchar(10) DEFAULT 'ko',
+	`errorMessage` text,
+	`downloadCount` int DEFAULT 0,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `scormPackages_id` PRIMARY KEY(`id`)
+);

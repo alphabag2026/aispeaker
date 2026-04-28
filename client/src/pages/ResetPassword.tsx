@@ -39,7 +39,7 @@ export default function ResetPassword() {
       <div className="min-h-screen bg-background">
         <Navbar />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
-          <Card className="w-full max-w-md border-border/50 shadow-xl">
+          <Card className="w-full max-w-md mx-4 sm:mx-0 border-border/50 shadow-xl">
             <CardContent className="pt-6 text-center space-y-4">
               <p className="text-muted-foreground">{t("rp.invalidToken")}</p>
               <Button onClick={() => navigate("/forgot-password")} variant="outline">
@@ -65,7 +65,7 @@ export default function ResetPassword() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="flex items-center justify-center min-h-[calc(100vh-80px)] px-4">
-        <Card className="w-full max-w-md border-border/50 shadow-xl">
+        <Card className="w-full max-w-md mx-4 sm:mx-0 border-border/50 shadow-xl">
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl font-bold">{t("rp.title")}</CardTitle>
             <CardDescription className="text-muted-foreground">{t("rp.subtitle")}</CardDescription>

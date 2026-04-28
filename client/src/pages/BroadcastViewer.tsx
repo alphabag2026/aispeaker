@@ -240,7 +240,7 @@ export default function BroadcastViewer() {
           <Badge className="bg-red-500 text-white animate-pulse text-xs">
             <Radio className="w-3 h-3 mr-1" />LIVE
           </Badge>
-          <span className="font-medium text-sm truncate max-w-[400px]">{broadcast.data?.title}</span>
+          <span className="font-medium text-sm truncate max-w-[150px] sm:max-w-[400px]">{broadcast.data?.title}</span>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-400 flex items-center gap-1">
@@ -256,12 +256,12 @@ export default function BroadcastViewer() {
       </div>
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-3rem)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-3rem)]">
         {/* Slide Area */}
-        <div ref={slideContainerRef} className="flex-1 flex items-center justify-center p-6 bg-gray-950 relative">
+        <div ref={slideContainerRef} className="flex-1 flex items-center justify-center p-3 sm:p-6 bg-gray-950 relative">
           {currentSection ? (
             <div className="w-full max-w-4xl">
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-10 shadow-2xl border border-gray-700 min-h-[350px] flex flex-col">
+              <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-10 shadow-2xl border border-gray-700 min-h-[200px] sm:min-h-[350px] flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <Badge variant="outline" className="text-violet-400 border-violet-400">
                     {t("bv.sectionProgress")} {currentSlideIndex + 1} / {sections.length}
@@ -273,7 +273,7 @@ export default function BroadcastViewer() {
                     </div>
                   )}
                 </div>
-                <h2 className="text-2xl font-bold mb-4 text-white">{currentSection.title}</h2>
+                <h2 className="text-lg sm:text-2xl font-bold mb-3 sm:mb-4 text-white">{currentSection.title}</h2>
                 <div className="flex-1 text-base text-gray-300 leading-relaxed whitespace-pre-wrap">
                   {currentSection.content}
                 </div>
@@ -303,7 +303,7 @@ export default function BroadcastViewer() {
         </div>
 
         {/* Chat Area */}
-        <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col">
+        <div className="w-full lg:w-80 bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-800 flex flex-col max-h-[40vh] lg:max-h-none">
           <div className="h-10 flex items-center px-3 border-b border-gray-800">
             <MessageSquare className="w-3 h-3 mr-2 text-gray-400" />
             <span className="text-xs font-medium">{t("bv.liveChat")}</span>

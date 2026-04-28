@@ -1868,3 +1868,178 @@ export const presetComments = mysqlTable("presetComments", {
 });
 export type PresetComment = typeof presetComments.$inferSelect;
 export type InsertPresetComment = typeof presetComments.$inferInsert;
+
+
+// ============ SCORM/xAPI Export (v10.0) ============
+
+/**
+ * SCORM Packages - exported learning packages for LMS integration
+ * Links to production pipelines and stores package metadata
+ */
+export const scormPackages = mysqlTable("scormPackages", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  pipelineId: int("pipelineId").notNull(),
+  /** Package title */
+  title: varchar("title", { length: 500 }).notNull(),
+  /** SCORM version: 1.2 or 2004 */
+  scormVersion: mysqlEnum("scormVersion", ["1.2", "2004"]).default("2004").notNull(),
+  /** Package status */
+  status: mysqlEnum("status", ["generating", "ready", "failed"]).default("generating").notNull(),
+  /** Completion criteria: slide_view, quiz_pass, time_spent */
+  completionCriteria: mysqlEnum("completionCriteria", ["slide_view", "quiz_pass", "time_spent"]).default("slide_view").notNull(),
+  /** Minimum time (seconds) for time_spent criteria */
+  minTimeSec: int("minTimeSec").default(0),
+  /** Package file URL (ZIP) in S3 */
+  packageUrl: text("packageUrl"),
+  /** Package file size in bytes */
+  fileSizeBytes: int("fileSizeBytes").default(0),
+  /** xAPI endpoint URL (optional) */
+  xapiEndpoint: text("xapiEndpoint"),
+  /** Include subtitles in package */
+  includeSubtitles: boolean("includeSubtitles").default(true),
+  /** Include thumbnail */
+  includeThumbnail: boolean("includeThumbnail").default(true),
+  /** Language code */
+  language: varchar("language", { length: 10 }).default("ko"),
+  /** Error message if failed */
+  errorMessage: text("errorMessage"),
+  /** Download count */
+  downloadCount: int("downloadCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ScormPackage = typeof scormPackages.$inferSelect;
+export type InsertScormPackage = typeof scormPackages.$inferInsert;
+
+// ============ Marketplace (v10.2) ============
+
+/**
+ * Creator Profiles - extended profile for marketplace sellers
+ */
+export const creatorProfiles = mysqlTable("creatorProfiles", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  displayName: varchar("displayName", { length: 255 }).notNull(),
+  bio: text("bio"),
+  avatarUrl: text("avatarUrl"),
+  bannerUrl: text("bannerUrl"),
+  specialties: text("specialties"),
+  socialLinks: text("socialLinks"),
+  totalSales: int("totalSales").default(0),
+  totalRevenue: int("totalRevenue").default(0),
+  rating: int("rating").default(0),
+  isVerified: boolean("isVerified").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CreatorProfile = typeof creatorProfiles.$inferSelect;
+export type InsertCreatorProfile = typeof creatorProfiles.$inferInsert;
+
+/**
+ * Marketplace Listings - lectures/courses for sale
+ */
+export const marketplaceListings = mysqlTable("marketplaceListings", {
+  id: int("id").autoincrement().primaryKey(),
+  sellerId: int("sellerId").notNull(),
+  pipelineId: int("pipelineId"),
+  scriptId: int("scriptId"),
+  /** Listing title */
+  title: varchar("title", { length: 500 }).notNull(),
+  description: text("description"),
+  /** Short description for cards */
+  shortDescription: varchar("shortDescription", { length: 255 }),
+  /** Category */
+  category: mysqlEnum("category", ["web3", "ai", "blockchain", "defi", "nft", "metaverse", "programming", "business", "design", "other"]).default("other").notNull(),
+  /** Price in cents (USD) */
+  priceInCents: int("priceInCents").notNull(),
+  /** Sale price in cents (optional) */
+  salePriceInCents: int("salePriceInCents"),
+  /** Currency */
+  currency: varchar("currency", { length: 10 }).default("USD"),
+  /** Thumbnail URL */
+  thumbnailUrl: text("thumbnailUrl"),
+  /** Preview video URL */
+  previewVideoUrl: text("previewVideoUrl"),
+  /** Tags (comma-separated) */
+  tags: text("tags"),
+  /** Language */
+  language: varchar("language", { length: 10 }).default("ko"),
+  /** Duration in seconds */
+  durationSec: int("durationSec").default(0),
+  /** Listing status */
+  status: mysqlEnum("status", ["draft", "pending", "active", "suspended", "archived"]).default("draft").notNull(),
+  /** Total purchases */
+  totalPurchases: int("totalPurchases").default(0),
+  /** Average rating (0-500, divide by 100 for display) */
+  avgRating: int("avgRating").default(0),
+  /** Review count */
+  reviewCount: int("reviewCount").default(0),
+  /** View count */
+  viewCount: int("viewCount").default(0),
+  /** SCORM package ID (optional) */
+  scormPackageId: int("scormPackageId"),
+  /** Accept crypto payment */
+  acceptCrypto: boolean("acceptCrypto").default(false),
+  /** Featured listing */
+  isFeatured: boolean("isFeatured").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MarketplaceListing = typeof marketplaceListings.$inferSelect;
+export type InsertMarketplaceListing = typeof marketplaceListings.$inferInsert;
+
+/**
+ * Marketplace Purchases - purchase records
+ */
+export const marketplacePurchases = mysqlTable("marketplacePurchases", {
+  id: int("id").autoincrement().primaryKey(),
+  buyerId: int("buyerId").notNull(),
+  listingId: int("listingId").notNull(),
+  sellerId: int("sellerId").notNull(),
+  /** Amount paid in cents */
+  amountInCents: int("amountInCents").notNull(),
+  /** Platform fee in cents (commission) */
+  platformFeeInCents: int("platformFeeInCents").default(0),
+  /** Seller payout in cents */
+  sellerPayoutInCents: int("sellerPayoutInCents").default(0),
+  /** Payment method */
+  paymentMethod: mysqlEnum("paymentMethod", ["stripe", "crypto"]).default("stripe").notNull(),
+  /** Stripe payment intent ID */
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  /** Crypto transaction hash */
+  cryptoTxHash: varchar("cryptoTxHash", { length: 255 }),
+  /** Purchase status */
+  status: mysqlEnum("status", ["pending", "completed", "refunded", "disputed"]).default("pending").notNull(),
+  /** Access granted */
+  accessGranted: boolean("accessGranted").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type MarketplacePurchase = typeof marketplacePurchases.$inferSelect;
+export type InsertMarketplacePurchase = typeof marketplacePurchases.$inferInsert;
+
+/**
+ * Marketplace Reviews - buyer reviews for listings
+ */
+export const marketplaceReviews = mysqlTable("marketplaceReviews", {
+  id: int("id").autoincrement().primaryKey(),
+  listingId: int("listingId").notNull(),
+  buyerId: int("buyerId").notNull(),
+  purchaseId: int("purchaseId").notNull(),
+  /** Rating 1-5 */
+  rating: int("rating").notNull(),
+  /** Review title */
+  title: varchar("title", { length: 255 }),
+  /** Review content */
+  content: text("content"),
+  /** Helpful count */
+  helpfulCount: int("helpfulCount").default(0),
+  /** Seller response */
+  sellerResponse: text("sellerResponse"),
+  sellerRespondedAt: timestamp("sellerRespondedAt"),
+  isVerified: boolean("isVerified").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MarketplaceReview = typeof marketplaceReviews.$inferSelect;
+export type InsertMarketplaceReview = typeof marketplaceReviews.$inferInsert;

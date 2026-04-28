@@ -69,6 +69,11 @@ import {
   blockedPresets,
   notifications, InsertNotification,
   presetComments, InsertPresetComment,
+  scormPackages, InsertScormPackage,
+  creatorProfiles, InsertCreatorProfile,
+  marketplaceListings, InsertMarketplaceListing,
+  marketplacePurchases, InsertMarketplacePurchase,
+  marketplaceReviews, InsertMarketplaceReview,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3369,4 +3374,149 @@ export async function bulkUpdateSlideScriptInterpreterTexts(projectId: number, t
       await db.update(slideScripts).set({ interpreterText: t.interpreterText }).where(eq(slideScripts.id, script.id));
     }
   }
+}
+
+
+// ============ SCORM Packages (v10.0) ============
+
+export async function createScormPackage(data: InsertScormPackage) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(scormPackages).values(data).$returningId();
+  return result;
+}
+
+export async function getScormPackagesByUser(userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(scormPackages).where(eq(scormPackages.userId, userId)).orderBy(desc(scormPackages.createdAt));
+}
+
+export async function getScormPackageById(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(scormPackages).where(eq(scormPackages.id, id));
+  return rows[0] || null;
+}
+
+export async function updateScormPackage(id: number, data: Partial<InsertScormPackage>) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(scormPackages).set(data).where(eq(scormPackages.id, id));
+}
+
+export async function incrementScormDownloadCount(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(scormPackages).set({ downloadCount: sql`${scormPackages.downloadCount} + 1` }).where(eq(scormPackages.id, id));
+}
+
+// ============ Creator Profiles (v10.2) ============
+
+export async function getCreatorProfile(userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(creatorProfiles).where(eq(creatorProfiles.userId, userId));
+  return rows[0] || null;
+}
+
+export async function upsertCreatorProfile(userId: number, data: Partial<InsertCreatorProfile>) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await getCreatorProfile(userId);
+  if (existing) {
+    await db.update(creatorProfiles).set(data).where(eq(creatorProfiles.userId, userId));
+    return { ...existing, ...data };
+  } else {
+    const [result] = await db.insert(creatorProfiles).values({ userId, displayName: data.displayName || "Creator", ...data }).$returningId();
+    return { id: result.id, userId, ...data };
+  }
+}
+
+// ============ Marketplace Listings (v10.2) ============
+
+export async function createMarketplaceListing(data: InsertMarketplaceListing) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(marketplaceListings).values(data).$returningId();
+  return result;
+}
+
+export async function getMarketplaceListings(filters?: { category?: string; status?: string; search?: string; sellerId?: number; limit?: number; offset?: number }) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const conditions = [eq(marketplaceListings.status, "active")];
+  if (filters?.category && filters.category !== "all") {
+    conditions.push(eq(marketplaceListings.category, filters.category as any));
+  }
+  if (filters?.sellerId) {
+    conditions.push(eq(marketplaceListings.sellerId, filters.sellerId));
+  }
+  if (filters?.search) {
+    conditions.push(like(marketplaceListings.title, `%${filters.search}%`));
+  }
+  const limit = filters?.limit || 20;
+  const offset = filters?.offset || 0;
+  return db.select().from(marketplaceListings).where(and(...conditions)).orderBy(desc(marketplaceListings.createdAt)).limit(limit).offset(offset);
+}
+
+export async function getMarketplaceListingById(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(marketplaceListings).where(eq(marketplaceListings.id, id));
+  return rows[0] || null;
+}
+
+export async function updateMarketplaceListing(id: number, data: Partial<InsertMarketplaceListing>) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(marketplaceListings).set(data).where(eq(marketplaceListings.id, id));
+}
+
+export async function getMyListings(sellerId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(marketplaceListings).where(eq(marketplaceListings.sellerId, sellerId)).orderBy(desc(marketplaceListings.createdAt));
+}
+
+export async function incrementListingViewCount(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(marketplaceListings).set({ viewCount: sql`${marketplaceListings.viewCount} + 1` }).where(eq(marketplaceListings.id, id));
+}
+
+// ============ Marketplace Purchases (v10.2) ============
+
+export async function createMarketplacePurchase(data: InsertMarketplacePurchase) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(marketplacePurchases).values(data).$returningId();
+  return result;
+}
+
+export async function getMyPurchases(buyerId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(marketplacePurchases).where(eq(marketplacePurchases.buyerId, buyerId)).orderBy(desc(marketplacePurchases.createdAt));
+}
+
+export async function getPurchaseById(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(marketplacePurchases).where(eq(marketplacePurchases.id, id));
+  return rows[0] || null;
+}
+
+export async function hasPurchased(buyerId: number, listingId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(marketplacePurchases).where(and(eq(marketplacePurchases.buyerId, buyerId), eq(marketplacePurchases.listingId, listingId), eq(marketplacePurchases.status, "completed")));
+  return rows.length > 0;
+}
+
+export async function getSellerEarnings(sellerId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select({ total: sql<number>`COALESCE(SUM(${marketplacePurchases.sellerPayoutInCents}), 0)`, count: sql<number>`COUNT(*)` }).from(marketplacePurchases).where(and(eq(marketplacePurchases.sellerId, sellerId), eq(marketplacePurchases.status, "completed")));
+  return rows[0] || { total: 0, count: 0 };
+}
+
+// ============ Marketplace Reviews (v10.2) ============
+
+export async function createMarketplaceReview(data: InsertMarketplaceReview) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(marketplaceReviews).values(data).$returningId();
+  // Update listing avg rating
+  const reviews = await db.select({ avg: sql<number>`AVG(${marketplaceReviews.rating})`, count: sql<number>`COUNT(*)` }).from(marketplaceReviews).where(eq(marketplaceReviews.listingId, data.listingId));
+  if (reviews[0]) {
+    await db.update(marketplaceListings).set({ avgRating: Math.round((reviews[0].avg || 0) * 100), reviewCount: reviews[0].count }).where(eq(marketplaceListings.id, data.listingId));
+  }
+  return result;
+}
+
+export async function getListingReviews(listingId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(marketplaceReviews).where(eq(marketplaceReviews.listingId, listingId)).orderBy(desc(marketplaceReviews.createdAt));
 }

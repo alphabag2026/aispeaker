@@ -52,14 +52,14 @@ export default function AiHistory() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container max-w-5xl py-8">
+      <div className="container max-w-5xl py-4 sm:py-8 px-4 sm:px-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <Link href="/profile">
               <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
-            <h1 className="text-3xl font-bold">AI 생성 히스토리</h1>
+            <h1 className="text-xl sm:text-3xl font-bold">AI 생성 히스토리</h1>
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="text-sm">

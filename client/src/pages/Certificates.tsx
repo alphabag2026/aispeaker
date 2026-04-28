@@ -49,7 +49,7 @@ export default function Certificates() {
         </div>
       </div>
 
-      <div className="container max-w-4xl py-8">
+      <div className="container max-w-4xl py-4 sm:py-8 px-4 sm:px-6">
 
         {isLoading ? (
           <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>

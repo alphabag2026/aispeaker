@@ -7368,6 +7368,313 @@ Return a JSON object with a "sections" array. Each section has:
         return db.getPresetGrowthStats(input.days);
       }),
   }),
+
+  // ============ SCORM/xAPI Export (v10.0) ============
+  scorm: router({
+    generate: instructorProcedure
+      .input(z.object({
+        pipelineId: z.number(),
+        title: z.string().min(1).max(500),
+        scormVersion: z.enum(["1.2", "2004"]).default("2004"),
+        completionCriteria: z.enum(["slide_view", "quiz_pass", "time_spent"]).default("slide_view"),
+        minTimeSec: z.number().default(0),
+        includeSubtitles: z.boolean().default(true),
+        includeThumbnail: z.boolean().default(true),
+        language: z.string().default("ko"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const pipelineResult = await db.getProductionPipelineById(input.pipelineId);
+        if (!pipelineResult || pipelineResult.pipeline.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "파이프라인을 찾을 수 없습니다." });
+        }
+        const pipelineData = pipelineResult.pipeline;
+        if (pipelineData.status !== "completed") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "완료된 파이프라인만 SCORM으로 내보낼 수 있습니다." });
+        }
+        const scriptData = pipelineResult.script;
+        const pkg = await db.createScormPackage({
+          userId: ctx.user.id,
+          pipelineId: input.pipelineId,
+          title: input.title,
+          scormVersion: input.scormVersion,
+          completionCriteria: input.completionCriteria,
+          minTimeSec: input.minTimeSec,
+          includeSubtitles: input.includeSubtitles,
+          includeThumbnail: input.includeThumbnail,
+          language: input.language,
+          status: "generating",
+        });
+
+        // Generate SCORM package asynchronously
+        (async () => {
+          try {
+            const sections = scriptData?.sections ? JSON.parse(scriptData.sections) : [];
+            const manifest = generateScormManifest(input.title, input.scormVersion, sections, input.language);
+            const scoHtml = generateScoHtml(input.title, pipelineData, sections, input.scormVersion, input.includeSubtitles);
+            const xapiStatements = generateXapiStatements(input.title, pipelineData, sections);
+
+            // Create package content as JSON (simulated ZIP)
+            const packageContent = JSON.stringify({
+              manifest,
+              scoHtml,
+              xapiStatements,
+              metadata: {
+                title: input.title,
+                version: input.scormVersion,
+                language: input.language,
+                duration: pipelineData.totalDurationSec,
+                sections: sections.length,
+              },
+            });
+
+            const { url } = await storagePut(
+              `scorm/${ctx.user.id}/${pkg.id}/package.json`,
+              Buffer.from(packageContent),
+              "application/json"
+            );
+
+            await db.updateScormPackage(pkg.id, {
+              status: "ready",
+              packageUrl: url,
+              fileSizeBytes: Buffer.byteLength(packageContent),
+            });
+          } catch (err: any) {
+            await db.updateScormPackage(pkg.id, {
+              status: "failed",
+              errorMessage: err.message || "패키지 생성 실패",
+            });
+          }
+        })();
+
+        return { id: pkg.id, status: "generating" };
+      }),
+
+    list: instructorProcedure.query(async ({ ctx }) => {
+      return db.getScormPackagesByUser(ctx.user.id);
+    }),
+
+    get: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const pkg = await db.getScormPackageById(input.id);
+        if (!pkg || pkg.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "패키지를 찾을 수 없습니다." });
+        }
+        return pkg;
+      }),
+
+    download: instructorProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const pkg = await db.getScormPackageById(input.id);
+        if (!pkg || pkg.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "패키지를 찾을 수 없습니다." });
+        }
+        if (pkg.status !== "ready" || !pkg.packageUrl) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "패키지가 준비되지 않았습니다." });
+        }
+        await db.incrementScormDownloadCount(input.id);
+        return { url: pkg.packageUrl };
+      }),
+  }),
+
+  // ============ Marketplace (v10.2) ============
+  marketplace: router({
+    list: publicProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        search: z.string().optional(),
+        limit: z.number().default(20),
+        offset: z.number().default(0),
+      }).optional())
+      .query(async ({ input }) => {
+        return db.getMarketplaceListings(input || {});
+      }),
+
+    get: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const listing = await db.getMarketplaceListingById(input.id);
+        if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "상품을 찾을 수 없습니다." });
+        await db.incrementListingViewCount(input.id);
+        return listing;
+      }),
+
+    publish: instructorProcedure
+      .input(z.object({
+        pipelineId: z.number().optional(),
+        scriptId: z.number().optional(),
+        title: z.string().min(1).max(500),
+        description: z.string().optional(),
+        shortDescription: z.string().max(255).optional(),
+        category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "programming", "business", "design", "other"]).default("other"),
+        priceInCents: z.number().min(50),
+        salePriceInCents: z.number().optional(),
+        thumbnailUrl: z.string().optional(),
+        previewVideoUrl: z.string().optional(),
+        tags: z.string().optional(),
+        language: z.string().default("ko"),
+        durationSec: z.number().default(0),
+        acceptCrypto: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const listing = await db.createMarketplaceListing({
+          sellerId: ctx.user.id,
+          ...input,
+          status: "active",
+        });
+        return listing;
+      }),
+
+    update: instructorProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().min(1).max(500).optional(),
+        description: z.string().optional(),
+        shortDescription: z.string().max(255).optional(),
+        category: z.enum(["web3", "ai", "blockchain", "defi", "nft", "metaverse", "programming", "business", "design", "other"]).optional(),
+        priceInCents: z.number().min(50).optional(),
+        salePriceInCents: z.number().nullable().optional(),
+        tags: z.string().optional(),
+        status: z.enum(["draft", "active", "archived"]).optional(),
+        acceptCrypto: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const listing = await db.getMarketplaceListingById(input.id);
+        if (!listing || listing.sellerId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "상품을 찾을 수 없습니다." });
+        }
+        const { id, ...data } = input;
+        await db.updateMarketplaceListing(id, data);
+        return { success: true };
+      }),
+
+    myListings: instructorProcedure.query(async ({ ctx }) => {
+      return db.getMyListings(ctx.user.id);
+    }),
+
+    purchase: protectedProcedure
+      .input(z.object({
+        listingId: z.number(),
+        paymentMethod: z.enum(["stripe", "crypto"]).default("stripe"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const listing = await db.getMarketplaceListingById(input.listingId);
+        if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "상품을 찾을 수 없습니다." });
+        if (listing.sellerId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "자신의 상품은 구매할 수 없습니다." });
+        }
+        const alreadyPurchased = await db.hasPurchased(ctx.user.id, input.listingId);
+        if (alreadyPurchased) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "이미 구매한 상품입니다." });
+        }
+        const price = listing.salePriceInCents || listing.priceInCents;
+        const platformFee = Math.round(price * 0.15); // 15% platform fee
+        const sellerPayout = price - platformFee;
+
+        if (input.paymentMethod === "stripe") {
+          // Create Stripe checkout session
+          const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+          const session = await stripe.checkout.sessions.create({
+            payment_method_types: ["card"],
+            line_items: [{
+              price_data: {
+                currency: listing.currency || "usd",
+                product_data: { name: listing.title },
+                unit_amount: price,
+              },
+              quantity: 1,
+            }],
+            mode: "payment",
+            success_url: `${ctx.req.headers.origin}/marketplace?purchased=${listing.id}`,
+            cancel_url: `${ctx.req.headers.origin}/marketplace/${listing.id}`,
+            client_reference_id: ctx.user.id.toString(),
+            metadata: {
+              type: "marketplace_purchase",
+              listing_id: listing.id.toString(),
+              seller_id: listing.sellerId.toString(),
+              buyer_id: ctx.user.id.toString(),
+              platform_fee: platformFee.toString(),
+              seller_payout: sellerPayout.toString(),
+            },
+          });
+          return { checkoutUrl: session.url, sessionId: session.id };
+        } else {
+          // Crypto payment - create pending purchase
+          const purchase = await db.createMarketplacePurchase({
+            buyerId: ctx.user.id,
+            listingId: input.listingId,
+            sellerId: listing.sellerId,
+            amountInCents: price,
+            platformFeeInCents: platformFee,
+            sellerPayoutInCents: sellerPayout,
+            paymentMethod: "crypto",
+            status: "pending",
+          });
+          return { purchaseId: purchase.id, amount: price, currency: listing.currency };
+        }
+      }),
+
+    myPurchases: protectedProcedure.query(async ({ ctx }) => {
+      return db.getMyPurchases(ctx.user.id);
+    }),
+
+    hasPurchased: protectedProcedure
+      .input(z.object({ listingId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.hasPurchased(ctx.user.id, input.listingId);
+      }),
+
+    earnings: instructorProcedure.query(async ({ ctx }) => {
+      return db.getSellerEarnings(ctx.user.id);
+    }),
+
+    review: protectedProcedure
+      .input(z.object({
+        listingId: z.number(),
+        purchaseId: z.number(),
+        rating: z.number().min(1).max(5),
+        title: z.string().max(255).optional(),
+        content: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const purchase = await db.getPurchaseById(input.purchaseId);
+        if (!purchase || purchase.buyerId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "구매 기록을 찾을 수 없습니다." });
+        }
+        return db.createMarketplaceReview({
+          listingId: input.listingId,
+          buyerId: ctx.user.id,
+          purchaseId: input.purchaseId,
+          rating: input.rating,
+          title: input.title,
+          content: input.content,
+        });
+      }),
+
+    reviews: publicProcedure
+      .input(z.object({ listingId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getListingReviews(input.listingId);
+      }),
+
+    creatorProfile: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getCreatorProfile(input.userId);
+      }),
+
+    updateCreatorProfile: instructorProcedure
+      .input(z.object({
+        displayName: z.string().min(1).max(255).optional(),
+        bio: z.string().optional(),
+        specialties: z.string().optional(),
+        socialLinks: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.upsertCreatorProfile(ctx.user.id, input);
+      }),
+  }),
 });
 
 // SRT time formatter
@@ -7405,6 +7712,150 @@ function generateCertificateHtml(studentName: string, lectureTitle: string, code
     <div class="date">${date}</div>
     <div class="code">인증코드: ${code}</div>
   </div></body></html>`;
+}
+
+// ============ SCORM Helper Functions ============
+
+function generateScormManifest(title: string, version: string, sections: any[], language: string): string {
+  const orgId = `ORG-${Date.now()}`;
+  const itemId = `ITEM-${Date.now()}`;
+  const resourceId = `RES-${Date.now()}`;
+  
+  if (version === "1.2") {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="${orgId}" version="1.0"
+  xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+  </metadata>
+  <organizations default="${orgId}">
+    <organization identifier="${orgId}">
+      <title>${title}</title>
+      ${sections.map((s: any, i: number) => `<item identifier="${itemId}-${i}" identifierref="${resourceId}"><title>${s.title || `Section ${i+1}`}</title></item>`).join('\n      ')}
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="${resourceId}" type="webcontent" adlcp:scormtype="sco" href="index.html">
+      <file href="index.html"/>
+    </resource>
+  </resources>
+</manifest>`;
+  }
+  
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="${orgId}" version="1.3"
+  xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"
+  xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_v1p3"
+  xmlns:adlseq="http://www.adlnet.org/xsd/adlseq_v1p3"
+  xmlns:adlnav="http://www.adlnet.org/xsd/adlnav_v1p3"
+  xmlns:imsss="http://www.imsglobal.org/xsd/imsss">
+  <metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>2004 4th Edition</schemaversion>
+  </metadata>
+  <organizations default="${orgId}">
+    <organization identifier="${orgId}">
+      <title>${title}</title>
+      ${sections.map((s: any, i: number) => `<item identifier="${itemId}-${i}" identifierref="${resourceId}"><title>${s.title || `Section ${i+1}`}</title></item>`).join('\n      ')}
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="${resourceId}" type="webcontent" adlcp:scormType="sco" href="index.html">
+      <file href="index.html"/>
+    </resource>
+  </resources>
+</manifest>`;
+}
+
+function generateScoHtml(title: string, pipeline: any, sections: any[], version: string, includeSubtitles: boolean): string {
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>${title}</title>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; margin: 0; padding: 20px; background: #0f0f23; color: #e0e0e0; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { color: #6c63ff; text-align: center; }
+    .video-container { background: #1a1a2e; border-radius: 12px; padding: 20px; margin: 20px 0; }
+    video { width: 100%; border-radius: 8px; }
+    .sections { margin-top: 20px; }
+    .section { background: #16213e; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 3px solid #6c63ff; }
+    .section h3 { color: #6c63ff; margin: 0 0 8px 0; }
+    .section p { margin: 0; line-height: 1.6; }
+    .progress-bar { height: 4px; background: #333; border-radius: 2px; margin: 20px 0; }
+    .progress-fill { height: 100%; background: #6c63ff; border-radius: 2px; transition: width 0.3s; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>${title}</h1>
+    <div class="video-container">
+      ${pipeline.finalVideoUrl ? `<video controls src="${pipeline.finalVideoUrl}"></video>` : '<p>영상이 준비되지 않았습니다.</p>'}
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+    <div class="sections">
+      ${sections.map((s: any, i: number) => `<div class="section"><h3>${i+1}. ${s.title || ''}</h3><p>${s.content || ''}</p></div>`).join('')}
+    </div>
+  </div>
+  <script>
+    // SCORM ${version} API Communication
+    var API = null;
+    function findAPI(win) {
+      var attempts = 0;
+      while ((!win.${version === '1.2' ? 'API' : 'API_1484_11'}) && (win.parent) && (win.parent != win) && (attempts < 10)) {
+        attempts++; win = win.parent;
+      }
+      return win.${version === '1.2' ? 'API' : 'API_1484_11'} || null;
+    }
+    API = findAPI(window);
+    if (API) {
+      API.${version === '1.2' ? 'LMSInitialize' : 'Initialize'}("");
+      API.${version === '1.2' ? 'LMSSetValue' : 'SetValue'}("${version === '1.2' ? 'cmi.core.lesson_status' : 'cmi.completion_status'}", "incomplete");
+    }
+    // Track completion
+    var sectionsViewed = new Set();
+    document.querySelectorAll('.section').forEach(function(el, i) {
+      new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting) {
+          sectionsViewed.add(i);
+          var pct = (sectionsViewed.size / ${sections.length || 1}) * 100;
+          document.getElementById('progress').style.width = pct + '%';
+          if (pct >= 100 && API) {
+            API.${version === '1.2' ? 'LMSSetValue' : 'SetValue'}("${version === '1.2' ? 'cmi.core.lesson_status' : 'cmi.completion_status'}", "completed");
+            API.${version === '1.2' ? 'LMSCommit' : 'Commit'}("");
+          }
+        }
+      }).observe(el);
+    });
+    window.onbeforeunload = function() { if (API) API.${version === '1.2' ? 'LMSFinish' : 'Terminate'}(""); };
+  </script>
+</body>
+</html>`;
+}
+
+function generateXapiStatements(title: string, pipeline: any, sections: any[]): object[] {
+  const activityId = `https://virtualspeaker.ai/lectures/${pipeline.id}`;
+  return [
+    {
+      verb: { id: "http://adlnet.gov/expapi/verbs/launched", display: { "en-US": "launched" } },
+      object: { id: activityId, definition: { name: { "ko": title }, type: "http://adlnet.gov/expapi/activities/course" } },
+    },
+    {
+      verb: { id: "http://adlnet.gov/expapi/verbs/completed", display: { "en-US": "completed" } },
+      object: { id: activityId, definition: { name: { "ko": title }, type: "http://adlnet.gov/expapi/activities/course" } },
+      result: { completion: true, duration: `PT${pipeline.totalDurationSec || 0}S` },
+    },
+    ...sections.map((s: any, i: number) => ({
+      verb: { id: "http://adlnet.gov/expapi/verbs/experienced", display: { "en-US": "experienced" } },
+      object: {
+        id: `${activityId}/section/${i}`,
+        definition: { name: { "ko": s.title || `Section ${i+1}` }, type: "http://adlnet.gov/expapi/activities/module" },
+      },
+    })),
+  ];
 }
 
 export type AppRouter = typeof appRouter;

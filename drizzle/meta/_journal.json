@@ -281,6 +281,13 @@
       "when": 1777319190989,
       "tag": "0039_colorful_cerebro",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1777345757826,
+      "tag": "0040_unique_stryfe",
+      "breakpoints": true
     }
   ]
 }
