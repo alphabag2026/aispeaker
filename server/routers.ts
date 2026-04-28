@@ -3079,6 +3079,59 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         await db.pinBroadcastChat(input.chatId, input.isPinned);
         return { success: true };
       }),
+
+    /** Translate current slide content to target language (viewer interpretation) */
+    translateSlide: protectedProcedure
+      .input(z.object({
+        broadcastId: z.number(),
+        slideIndex: z.number(),
+        targetLanguage: z.string().min(2).max(5),
+        sourceLanguage: z.string().min(2).max(5).default("ko"),
+      }))
+      .mutation(async ({ input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "방송을 찾을 수 없습니다." });
+        const script = await db.getLectureScriptById(broadcast.scriptId);
+        if (!script) throw new TRPCError({ code: "NOT_FOUND", message: "스크립트를 찾을 수 없습니다." });
+
+        let sections: any[] = [];
+        try { sections = JSON.parse(script.sections as string); } catch {}
+        const section = sections[input.slideIndex];
+        if (!section) throw new TRPCError({ code: "BAD_REQUEST", message: "해당 슬라이드를 찾을 수 없습니다." });
+
+        const langNames: Record<string, string> = {
+          ko: "Korean", zh: "Chinese", en: "English", ja: "Japanese",
+          vi: "Vietnamese", th: "Thai", es: "Spanish", fr: "French",
+          de: "German", ar: "Arabic", hi: "Hindi", pt: "Portuguese",
+          ru: "Russian", id: "Indonesian", tr: "Turkish",
+        };
+        const sourceLangName = langNames[input.sourceLanguage] || input.sourceLanguage;
+        const targetLangName = langNames[input.targetLanguage] || input.targetLanguage;
+
+        const textToTranslate = `Title: ${section.title}\n\nContent: ${section.content}`;
+        const llmResponse = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are a professional real-time interpreter for a live lecture broadcast. Translate the following ${sourceLangName} lecture slide to ${targetLangName}. Keep the structure (Title and Content). Provide ONLY the translated text.`,
+            },
+            { role: "user", content: textToTranslate },
+          ],
+        });
+        const translated = (llmResponse.choices?.[0]?.message?.content as string || "").trim();
+
+        // Parse translated title and content
+        const titleMatch = translated.match(/Title:\s*(.+?)\n/i) || translated.match(/제목:\s*(.+?)\n/i);
+        const contentMatch = translated.match(/Content:\s*([\s\S]+)/i) || translated.match(/내용:\s*([\s\S]+)/i);
+
+        return {
+          translatedTitle: titleMatch ? titleMatch[1].trim() : translated.split("\n")[0],
+          translatedContent: contentMatch ? contentMatch[1].trim() : translated,
+          sourceLanguage: input.sourceLanguage,
+          targetLanguage: input.targetLanguage,
+          slideIndex: input.slideIndex,
+        };
+      }),
   }),
 
   // ========== Sample Faces Gallery ==========
@@ -8223,6 +8276,16 @@ Return a JSON object with a "sections" array. Each section has:
           inviteStatus: "pending",
           inviteEmail: input.email,
         });
+        // 초대 수신자에게 알림 발송
+        try {
+          await db.createNotification({
+            userId: targetUser.id,
+            type: "system",
+            title: "협업 초대",
+            message: `${ctx.user.name || '사용자'}님이 프로젝트 "${project.title || '제목 없음'}"(에) ${input.role === 'editor' ? '편집자' : '뷰어'}로 초대했습니다.`,
+            link: "/lecture-builder",
+          });
+        } catch (_) { /* 알림 실패는 무시 */ }
         return { id, userName: targetUser.name };
       }),
 
@@ -8258,7 +8321,37 @@ Return a JSON object with a "sections" array. Each section has:
         accept: z.boolean(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // 초대 정보 조회 (알림 발송용)
+        const dbConn = await db.getDb();
+        let inviterUserId: number | null = null;
+        let projectTitle = "";
+        if (dbConn) {
+          const rows = await dbConn.select({
+            invitedBy: projectCollaborators.invitedBy,
+            projectId: projectCollaborators.projectId,
+          }).from(projectCollaborators).where(eq(projectCollaborators.id, input.inviteId)).limit(1);
+          if (rows[0]) {
+            inviterUserId = rows[0].invitedBy;
+            const project = await db.getLectureProject(rows[0].projectId);
+            projectTitle = project?.title || "제목 없음";
+          }
+        }
+
         await db.updateCollaboratorStatus(input.inviteId, input.accept ? "accepted" : "rejected");
+
+        // 초대자에게 수락/거절 알림 발송
+        if (inviterUserId) {
+          try {
+            await db.createNotification({
+              userId: inviterUserId,
+              type: "system",
+              title: input.accept ? "협업 초대 수락" : "협업 초대 거절",
+              message: `${ctx.user.name || '사용자'}님이 프로젝트 "${projectTitle}" 협업 초대를 ${input.accept ? '수락' : '거절'}했습니다.`,
+              link: "/lecture-builder",
+            });
+          } catch (_) { /* 알림 실패는 무시 */ }
+        }
+
         return { success: true };
       }),
 

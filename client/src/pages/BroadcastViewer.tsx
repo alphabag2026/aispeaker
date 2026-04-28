@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { useTranslation } from "@/contexts/LanguageContext";
+import BroadcastInterpretationPanel from "@/components/BroadcastInterpretationPanel";
 
 interface Section {
   title: string;
@@ -302,8 +303,8 @@ export default function BroadcastViewer() {
           </Button>
         </div>
 
-        {/* Chat Area */}
-        <div className="w-full lg:w-80 bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-800 flex flex-col max-h-[40vh] lg:max-h-none">
+        {/* Chat + Interpretation Area */}
+        <div className="w-full lg:w-80 bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-800 flex flex-col max-h-[50vh] lg:max-h-none">
           <div className="h-10 flex items-center px-3 border-b border-gray-800">
             <MessageSquare className="w-3 h-3 mr-2 text-gray-400" />
             <span className="text-xs font-medium">{t("bv.liveChat")}</span>
@@ -354,6 +355,14 @@ export default function BroadcastViewer() {
               </Button>
             )}
           </div>
+
+          {/* Real-time Interpretation Panel */}
+          <BroadcastInterpretationPanel
+            broadcastId={broadcastId}
+            currentSlideIndex={currentSlideIndex}
+            sourceLanguage="ko"
+            isAuthenticated={isAuthenticated}
+          />
         </div>
       </div>
     </div>
