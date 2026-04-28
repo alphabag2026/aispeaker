@@ -1982,3 +1982,11 @@
 - [x] 자동 번역 토글 기능 (Whisper STT 후 자동 번역)
 - [x] 녹음 시간 표시, 16MB 크기 제한, 인식 중 상태 표시
 - [x] v12.1 테스트 작성 (75개 전체 통과)
+
+### 버그 수정 (v12.2)
+- [x] 강의 제작 페이지(lecture-builder) '이 포맷으로 강의 구성하기' 버튼 클릭 후 반응 없는 버그 수정
+  - 원인: 프로덕션 DB에 interpreterEnabled/interpreterLanguage/interpreterVoiceId 컨럼 누락
+  - 원인: slideScripts 테이블에 interpreterText 컨럼 누락
+  - 원인: 0040/0041 마이그레이션 전체 누락 (marketplace, scorm, creator, recommendation 테이블)
+  - 해결: 모든 누락 컨럼/테이블 수동 생성 완료
+  - onError 핸들러 추가로 에러 시 사용자에게 알림 표시
