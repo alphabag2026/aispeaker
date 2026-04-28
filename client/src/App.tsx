@@ -67,6 +67,7 @@ const CreatorDashboard = lazy(() => import("./pages/CreatorDashboard"));
 const Recommendations = lazy(() => import("./pages/Recommendations"));
 const LiveInterpretation = lazy(() => import("./pages/LiveInterpretation"));
 const PresenterStudio = lazy(() => import("./pages/PresenterStudio"));
+const BroadcastAnalytics = lazy(() => import("./pages/BroadcastAnalytics"));
 
 // AkoolStudio sub-pages
 const AkoolStudio = lazy(() => import("./pages/AkoolStudio").then(m => ({ default: m.default })));
@@ -129,6 +130,7 @@ function Router() {
         <Route path="/broadcast/studio/:id" component={BroadcastStudio} />
         <Route path="/broadcast/view/:roomCode" component={BroadcastViewer} />
         <Route path="/broadcast/presenter/:roomCode" component={PresenterStudio} />
+        <Route path="/broadcast/analytics" component={BroadcastAnalytics} />
         <Route path="/obs-tutorial" component={ObsTutorial} />
         <Route path="/browser-studio" component={BrowserStudio} />
         <Route path="/faces" component={FaceGallery} />

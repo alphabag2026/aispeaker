@@ -2981,6 +2981,23 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           endedAt: new Date(),
           isAudioPlaying: false,
         });
+        // Auto-generate recording entry and analytics
+        try {
+          const { createBroadcastRecording, generateBroadcastAnalytics } = await import("./db");
+          // Create recording entry (will be processed async)
+          const startTime = broadcast.startedAt?.getTime() || broadcast.createdAt?.getTime() || Date.now();
+          const totalDuration = Math.floor((Date.now() - startTime) / 1000);
+          await createBroadcastRecording({
+            broadcastId: input.broadcastId,
+            status: "ready",
+            totalDurationSec: totalDuration,
+            slideCount: broadcast.currentSlideIndex ? broadcast.currentSlideIndex + 1 : 0,
+          });
+          // Generate analytics
+          await generateBroadcastAnalytics(input.broadcastId);
+        } catch (e) {
+          console.error("[Broadcast] Failed to generate recording/analytics:", e);
+        }
         return { success: true };
       }),
 
@@ -3147,6 +3164,48 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           targetLanguage: input.targetLanguage,
           slideIndex: input.slideIndex,
         };
+      }),
+
+    /** List my broadcast recordings (VOD) */
+    recordings: instructorProcedure
+      .query(async ({ ctx }) => {
+        const { listBroadcastRecordings } = await import("./db");
+        return listBroadcastRecordings(ctx.user.id);
+      }),
+
+    /** Get recording for a specific broadcast */
+    getRecording: instructorProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .query(async ({ input }) => {
+        const { getBroadcastRecording } = await import("./db");
+        return getBroadcastRecording(input.broadcastId);
+      }),
+
+    /** Get analytics for a specific broadcast */
+    getAnalytics: instructorProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const { getBroadcastAnalytics } = await import("./db");
+        return getBroadcastAnalytics(input.broadcastId);
+      }),
+
+    /** List all my broadcast analytics */
+    analyticsList: instructorProcedure
+      .query(async ({ ctx }) => {
+        const { listBroadcastAnalytics } = await import("./db");
+        return listBroadcastAnalytics(ctx.user.id);
+      }),
+
+    /** Regenerate analytics for a broadcast */
+    regenerateAnalytics: instructorProcedure
+      .input(z.object({ broadcastId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const broadcast = await db.getBroadcastById(input.broadcastId);
+        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const { generateBroadcastAnalytics } = await import("./db");
+        return generateBroadcastAnalytics(input.broadcastId);
       }),
   }),
 
@@ -4485,11 +4544,83 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         scriptText: z.string().optional(),
         avatarId: z.number().optional(),
         estimatedDurationSec: z.number().optional(),
+        emotion: z.enum(["neutral", "happy", "serious", "excited", "empathetic", "confident", "questioning"]).optional(),
+        emotionIntensity: z.number().min(1).max(10).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
         await db.updateSlideScript(id, data as any);
         return { success: true };
+      }),
+
+    /** AI auto-analyze emotions for all scripts in a project */
+    analyzeEmotions: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const scripts = await db.listSlideScripts(input.projectId);
+        if (!scripts || scripts.length === 0) return { updated: 0 };
+        const { invokeLLM } = await import("./_core/llm");
+        const scriptsForAnalysis = scripts.slice(0, 50).map(s => ({
+          id: s.id,
+          text: s.scriptText?.substring(0, 200) || "",
+        }));
+        const response = await invokeLLM({
+          messages: [
+            {
+              role: "system",
+              content: `You are an emotion analyzer for lecture scripts. For each script segment, determine the most appropriate emotion and intensity.
+Emotions: neutral, happy, serious, excited, empathetic, confident, questioning
+Intensity: 1-10 (1=subtle, 10=very strong)
+Respond with JSON array: [{"id": number, "emotion": string, "intensity": number}]`,
+            },
+            {
+              role: "user",
+              content: JSON.stringify(scriptsForAnalysis),
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "emotion_analysis",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  results: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "number" },
+                        emotion: { type: "string" },
+                        intensity: { type: "number" },
+                      },
+                      required: ["id", "emotion", "intensity"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["results"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const content = response.choices?.[0]?.message?.content as string || "{}";
+        let results: { id: number; emotion: string; intensity: number }[] = [];
+        try {
+          const parsed = JSON.parse(content);
+          results = parsed.results || [];
+        } catch { return { updated: 0 }; }
+        const validEmotions = ["neutral", "happy", "serious", "excited", "empathetic", "confident", "questioning"];
+        let updated = 0;
+        for (const r of results) {
+          if (validEmotions.includes(r.emotion) && r.intensity >= 1 && r.intensity <= 10) {
+            await db.updateSlideScript(r.id, { emotion: r.emotion as any, emotionIntensity: r.intensity });
+            updated++;
+          }
+        }
+        return { updated };
       }),
 
     deleteScript: protectedProcedure

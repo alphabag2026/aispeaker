@@ -1,0 +1,2 @@
+ALTER TABLE `slideScripts` ADD `emotion` enum('neutral','happy','serious','excited','empathetic','confident','questioning') DEFAULT 'neutral';--> statement-breakpoint
+ALTER TABLE `slideScripts` ADD `emotionIntensity` int DEFAULT 5;

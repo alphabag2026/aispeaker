@@ -2044,3 +2044,16 @@
 - [x] 아바타 TTS에서 클로닝된 음성 사용 옵션
 - [x] 테스트 작성 (30개 통과)
 - [x] 프로덕션 서버 배포 완료 (aispeaker.cc - v12.6)
+
+### v12.7 - 방송 녹화/VOD 변환 + 감정 표현 + 분석 대시보드 (완료)
+- [x] 방송 녹화 DB 스키마 (broadcastRecordings 테이블 - vodUrl, thumbnailUrl, duration)
+- [x] 방송 종료 시 자동 VOD 변환 백엔드 (broadcast.end → createBroadcastRecording + generateBroadcastAnalytics)
+- [x] 녹화 목록 조회 프로시저 (broadcast.recordings)
+- [x] 아바타 감정 표현 DB 스키마 (slideScripts에 emotion/emotionIntensity 필드 추가)
+- [x] 감정 태그 백엔드 (updateScript에 emotion 필드, analyzeEmotions AI 자동 분석)
+- [x] 감정 표현 프론트엔드 (EmotionSelector 컴포넌트 + AutoEmotionButton)
+- [x] 방송 분석 DB 스키마 (broadcastAnalytics - peakConcurrentViewers, avgWatchDurationSec, totalChatMessages)
+- [x] 방송 분석 백엔드 (analyticsList, getAnalytics, regenerateAnalytics 프로시저)
+- [x] 방송 분석 대시보드 프론트엔드 (BroadcastAnalytics 페이지 - 통계/녹화 탭)
+- [x] 테스트 작성 (22개 통과)
+- [x] 프로덕션 서버 배포 완료 (aispeaker.cc - v12.7)

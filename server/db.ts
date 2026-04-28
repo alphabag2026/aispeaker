@@ -84,6 +84,8 @@ import {
   systemSettings, InsertSystemSetting,
   projectCollaborators, InsertProjectCollaborator,
   voiceClones, InsertVoiceClone,
+  broadcastRecordings, InsertBroadcastRecording,
+  broadcastAnalytics, InsertBroadcastAnalytic,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3851,4 +3853,118 @@ export async function updateVoiceClone(id: number, data: Partial<{
 export async function deleteVoiceClone(id: number) {
   const db = await getDb(); if (!db) return;
   await db.delete(voiceClones).where(eq(voiceClones.id, id));
+}
+
+// ============ Broadcast Recordings ============
+export async function createBroadcastRecording(data: InsertBroadcastRecording) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(broadcastRecordings).values(data);
+  return result[0].insertId;
+}
+
+export async function getBroadcastRecording(broadcastId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(broadcastRecordings).where(eq(broadcastRecordings.broadcastId, broadcastId)).limit(1);
+  return rows[0] || null;
+}
+
+export async function updateBroadcastRecording(id: number, data: Partial<InsertBroadcastRecording>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(broadcastRecordings).set(data).where(eq(broadcastRecordings.id, id));
+}
+
+export async function listBroadcastRecordings(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(broadcastRecordings)
+    .innerJoin(liveBroadcasts, eq(broadcastRecordings.broadcastId, liveBroadcasts.id))
+    .where(eq(liveBroadcasts.instructorId, userId))
+    .orderBy(desc(broadcastRecordings.createdAt));
+}
+
+// ============ Broadcast Analytics ============
+export async function createBroadcastAnalytics(data: InsertBroadcastAnalytic) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(broadcastAnalytics).values(data);
+  return result[0].insertId;
+}
+
+export async function getBroadcastAnalytics(broadcastId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(broadcastAnalytics).where(eq(broadcastAnalytics.broadcastId, broadcastId)).limit(1);
+  return rows[0] || null;
+}
+
+export async function updateBroadcastAnalytics(id: number, data: Partial<InsertBroadcastAnalytic>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(broadcastAnalytics).set(data).where(eq(broadcastAnalytics.id, id));
+}
+
+export async function listBroadcastAnalytics(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(broadcastAnalytics)
+    .innerJoin(liveBroadcasts, eq(broadcastAnalytics.broadcastId, liveBroadcasts.id))
+    .where(eq(liveBroadcasts.instructorId, userId))
+    .orderBy(desc(broadcastAnalytics.createdAt));
+}
+
+export async function generateBroadcastAnalytics(broadcastId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  // Aggregate stats from viewers and chats
+  const viewers = await db.select().from(broadcastViewers).where(eq(broadcastViewers.broadcastId, broadcastId));
+  const chats = await db.select().from(broadcastChats).where(eq(broadcastChats.broadcastId, broadcastId));
+  const broadcast = await db.select().from(liveBroadcasts).where(eq(liveBroadcasts.id, broadcastId)).limit(1);
+  if (!broadcast[0]) return null;
+
+  const totalViewers = viewers.length;
+  const peakConcurrentViewers = broadcast[0].peakViewers || 0;
+  const totalChatMessages = chats.length;
+  const totalQuestions = chats.filter(c => c.messageType === "question").length;
+
+  // Calculate avg watch duration
+  let totalWatchSec = 0;
+  for (const v of viewers) {
+    const joinTime = v.joinedAt?.getTime() || 0;
+    const leftTime = v.leftAt?.getTime() || broadcast[0].endedAt?.getTime() || Date.now();
+    totalWatchSec += Math.floor((leftTime - joinTime) / 1000);
+  }
+  const avgWatchDurationSec = totalViewers > 0 ? Math.floor(totalWatchSec / totalViewers) : 0;
+
+  // Retention: viewers who stayed till end
+  const endTime = broadcast[0].endedAt?.getTime() || Date.now();
+  const stayedTillEnd = viewers.filter(v => !v.leftAt || v.leftAt.getTime() >= endTime - 60000).length;
+  const retentionRate = totalViewers > 0 ? Math.round((stayedTillEnd / totalViewers) * 100) : 0;
+
+  // Engagement score (0-100)
+  const chatRate = totalViewers > 0 ? totalChatMessages / totalViewers : 0;
+  const engagementScore = Math.min(100, Math.round(retentionRate * 0.5 + Math.min(chatRate * 10, 50)));
+
+  const analyticsData: InsertBroadcastAnalytic = {
+    broadcastId,
+    totalViewers,
+    peakConcurrentViewers,
+    avgWatchDurationSec,
+    totalChatMessages,
+    totalQuestions,
+    retentionRate,
+    engagementScore,
+  };
+
+  // Check if analytics already exist
+  const existing = await db.select().from(broadcastAnalytics).where(eq(broadcastAnalytics.broadcastId, broadcastId)).limit(1);
+  if (existing[0]) {
+    await db.update(broadcastAnalytics).set(analyticsData).where(eq(broadcastAnalytics.id, existing[0].id));
+    return { ...existing[0], ...analyticsData };
+  } else {
+    const result = await db.insert(broadcastAnalytics).values(analyticsData);
+    return { id: result[0].insertId, ...analyticsData };
+  }
 }
