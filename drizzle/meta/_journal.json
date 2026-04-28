@@ -295,6 +295,13 @@
       "when": 1777355109233,
       "tag": "0041_dazzling_zombie",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "5",
+      "when": 1777368691719,
+      "tag": "0042_first_pandemic",
+      "breakpoints": true
     }
   ]
 }

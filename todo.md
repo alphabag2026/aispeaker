@@ -1943,3 +1943,27 @@
 - [x] 5대 차별화 포인트 분석 보고서 작성
 - [x] 타겟 시장 우선순위 및 가격 전략 제안
 - [x] 위험 요소 분석
+
+## AI 실시간 강의 + 통역 시장 조사 및 기능 구현 (v12.0)
+
+### 시장 조사
+- [ ] 줌/온라인 강의에서 AI가 실제 강의하는 플랫폼 존재 여부 조사
+- [ ] 실시간 AI 통역 플랫폼 조사 (강의 중 다국어 통역)
+- [ ] 우리 플랫폼의 유일성 검증
+
+### 실시간 AI 통역 기능 구현
+- [x] DB 스키마 (interpretationSessions, translationSegments, supportedLanguages)
+- [x] DB 마이그레이션 (0042_first_pandemic.sql) 적용
+- [x] DB 헬퍼 함수 (createInterpretationSession, addTranslationSegment 등 9개)
+- [x] tRPC interpretation 라우터 (getSupportedLanguages, startSession, translate, batchTranslate, endSession, getHistory, mySessions, translateChat)
+- [x] LLM 기반 고품질 다국어 번역 (15개 언어 지원)
+- [x] 실시간 음성→텍스트 변환 (Web Speech API STT)
+- [x] 텍스트→다국어 번역 (LLM 기반)
+- [x] 번역→음성 합성 (Web Speech Synthesis TTS)
+- [x] 실시간 통역 UI 페이지 (LiveInterpretation.tsx)
+- [x] 언어 선택 (원본 + 대상 다중 선택)
+- [x] 번역 결과 그룹 표시 + 개별 TTS 재생
+- [x] 세션 관리 (시작/종료/이력)
+- [x] App.tsx 라우트 등록 (/live-interpretation)
+- [x] Navbar 데스크톱/모바일 메뉴에 실시간통역 링크 추가
+- [x] v12 테스트 작성 (53개 테스트 통과)

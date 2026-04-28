@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, float } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -2153,3 +2153,59 @@ export const recommendationCache = mysqlTable("recommendationCache", {
 });
 export type RecommendationCacheEntry = typeof recommendationCache.$inferSelect;
 export type InsertRecommendationCacheEntry = typeof recommendationCache.$inferInsert;
+
+
+/**
+ * Real-time interpretation sessions
+ */
+export const interpretationSessions = mysqlTable("interpretationSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  broadcastId: int("broadcastId"),
+  pipelineId: int("pipelineId"),
+  hostUserId: int("hostUserId").notNull(),
+  sourceLanguage: varchar("sourceLanguage", { length: 10 }).default("ko").notNull(),
+  targetLanguages: text("targetLanguages").notNull(), // JSON array of language codes
+  status: mysqlEnum("status", ["active", "paused", "ended"]).default("active").notNull(),
+  totalSegments: int("totalSegments").default(0),
+  totalDurationSec: int("totalDurationSec").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  endedAt: timestamp("endedAt"),
+});
+export type InterpretationSession = typeof interpretationSessions.$inferSelect;
+export type InsertInterpretationSession = typeof interpretationSessions.$inferInsert;
+
+/**
+ * Translation segments - individual translated chunks
+ */
+export const translationSegments = mysqlTable("translationSegments", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull(),
+  sourceText: text("sourceText").notNull(),
+  sourceLanguage: varchar("sourceLanguage", { length: 10 }).notNull(),
+  targetLanguage: varchar("targetLanguage", { length: 10 }).notNull(),
+  translatedText: text("translatedText").notNull(),
+  startTimeSec: int("startTimeSec"),
+  endTimeSec: int("endTimeSec"),
+  confidence: int("confidence"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TranslationSegment = typeof translationSegments.$inferSelect;
+export type InsertTranslationSegment = typeof translationSegments.$inferInsert;
+
+/**
+ * Supported languages configuration
+ */
+export const supportedLanguages = mysqlTable("supportedLanguages", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 10 }).unique().notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  nativeName: varchar("nativeName", { length: 100 }).notNull(),
+  flag: varchar("flag", { length: 10 }).notNull(), // emoji flag
+  ttsSupported: boolean("ttsSupported").default(true),
+  sttSupported: boolean("sttSupported").default(true),
+  sortOrder: int("sortOrder").default(0),
+  isActive: boolean("isActive").default(true),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type SupportedLanguage = typeof supportedLanguages.$inferSelect;
+export type InsertSupportedLanguage = typeof supportedLanguages.$inferInsert;

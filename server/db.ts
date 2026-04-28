@@ -78,6 +78,9 @@ import {
   userLearningHistory, InsertUserLearningHistory,
   userPreferences, InsertUserPreference,
   recommendationCache, InsertRecommendationCacheEntry,
+  interpretationSessions, InsertInterpretationSession,
+  translationSegments, InsertTranslationSegment,
+  supportedLanguages, InsertSupportedLanguage,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3632,4 +3635,56 @@ export async function getRecentListings(limit = 10) {
 export async function getListingsByCategory(category: string, limit = 10) {
   const db = await getDb(); if (!db) throw new Error("DB not available");
   return db.select().from(marketplaceListings).where(and(eq(marketplaceListings.status, "active"), eq(marketplaceListings.category, category as any))).orderBy(desc(marketplaceListings.totalPurchases)).limit(limit);
+}
+
+// ============ Real-time AI Interpretation (v12.0) ============
+export async function getSupportedLanguages() {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(supportedLanguages).where(eq(supportedLanguages.isActive, true)).orderBy(supportedLanguages.sortOrder);
+}
+
+export async function createInterpretationSession(data: InsertInterpretationSession) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(interpretationSessions).values(data).$returningId();
+  return result.id;
+}
+
+export async function getInterpretationSession(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(interpretationSessions).where(eq(interpretationSessions.id, id)).limit(1);
+  return rows[0];
+}
+
+export async function getUserInterpretationSessions(userId: number, limit = 20) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(interpretationSessions).where(eq(interpretationSessions.hostUserId, userId)).orderBy(desc(interpretationSessions.createdAt)).limit(limit);
+}
+
+export async function endInterpretationSession(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(interpretationSessions).set({ status: "ended", endedAt: new Date() }).where(eq(interpretationSessions.id, id));
+}
+
+export async function updateInterpretationSessionStats(id: number, totalSegments: number, totalDurationSec: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(interpretationSessions).set({ totalSegments, totalDurationSec }).where(eq(interpretationSessions.id, id));
+}
+
+export async function addTranslationSegment(data: InsertTranslationSegment) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(translationSegments).values(data).$returningId();
+  return result.id;
+}
+
+export async function getSessionSegments(sessionId: number, targetLang?: string, limit = 100) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const conditions = [eq(translationSegments.sessionId, sessionId)];
+  if (targetLang) conditions.push(eq(translationSegments.targetLanguage, targetLang));
+  return db.select().from(translationSegments).where(and(...conditions)).orderBy(translationSegments.createdAt).limit(limit);
+}
+
+export async function getSessionSegmentCount(sessionId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select({ count: sql<number>`count(*)` }).from(translationSegments).where(eq(translationSegments.sessionId, sessionId));
+  return rows[0]?.count ?? 0;
 }
