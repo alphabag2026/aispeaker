@@ -1790,3 +1790,83 @@
 - [x] AI 코스 생성 플랫폼 분석 (Coursebox, LearningStudioAI, Mindsmith)
 - [x] 차별화 포인트 식별 (올인원 파이프라인, 멀티 아바타 엔진, Web3 특화, 크립토 결제)
 - [x] 경쟁력 평가 보고서 작성 (research-findings.md)
+
+## SCORM/xAPI 내보내기 (v10.0)
+
+### DB 스키마
+- [x] scormPackages 테이블 (패키지 메타데이터, 파이프라인 연결)
+
+### 백엔드
+- [x] scorm.generate - SCORM 1.2/2004 패키지 생성 라우터
+- [x] scorm.list - 내 SCORM 패키지 목록
+- [x] scorm.download - 패키지 다운로드 (ZIP)
+- [x] xAPI 문장(statement) 생성 헬퍼
+- [x] SCORM manifest (imsmanifest.xml) 자동 생성
+- [x] SCO HTML 래퍼 (SCORM API 통신 + 콘텐츠 표시)
+
+### 프론트엔드
+- [x] SCORM 내보내기 버튼 (PipelineDashboard에 추가)
+- [x] SCORM 패키지 관리 페이지 (ScormExport)
+- [x] 내보내기 옵션 다이얼로그 (SCORM 버전, 완료 기준 등)
+- [x] 패키지 다운로드 UI
+
+### 테스트
+- [x] SCORM 패키지 생성 테스트
+- [x] xAPI 문장 생성 테스트
+- [x] 권한 검증 테스트
+
+## 모바일 반응형 최적화 (v10.1)
+
+### 핵심 페이지
+- [x] Home 페이지 모바일 최적화
+- [x] Navbar 모바일 햄버거 메뉴 개선 (마켓플레이스 링크 추가)
+- [x] ProductionStudio 모바일 레이아웃
+- [x] PipelineDashboard 모바일 레이아웃
+- [x] ScriptEditor 모바일 레이아웃
+- [x] BroadcastStudio/Viewer 모바일 레이아웃
+- [x] Pricing 페이지 모바일 최적화
+- [x] Login 페이지 모바일 최적화
+
+### 공통
+- [x] 터치 인터랙션 최적화 (버튼 크기, 간격)
+- [x] 모바일 네비게이션 플로우 개선
+- [x] 반응형 테이블/차트 처리
+- [x] 모바일 뷰포트 메타 태그 확인
+
+## 크리에이터 마켓플레이스 (v10.2)
+
+### DB 스키마
+- [x] marketplaceListings 테이블 (강의 판매 등록)
+- [x] marketplacePurchases 테이블 (구매 기록)
+- [x] marketplaceReviews 테이블 (리뷰/평점)
+- [x] creatorProfiles 테이블 (크리에이터 프로필)
+
+### 백엔드
+- [x] marketplace.list - 마켓플레이스 목록 (검색, 필터, 정렬)
+- [x] marketplace.get - 상품 상세
+- [x] marketplace.publish - 강의 판매 등록
+- [x] marketplace.purchase - Stripe 결제 연동 구매
+- [x] marketplace.review - 리뷰 작성
+- [x] marketplace.myListings - 내 판매 목록
+- [x] marketplace.myPurchases - 내 구매 목록
+- [x] marketplace.earnings - 수익 통계
+
+### 프론트엔드
+- [x] 마켓플레이스 메인 페이지 (Marketplace)
+- [x] 상품 상세 페이지 (MarketplaceDetail)
+- [x] 판매 등록 다이얼로그
+- [x] 크리에이터 대시보드 (수익, 판매 통계)
+- [x] 구매 내역 페이지
+- [x] 리뷰 시스템 UI
+- [x] Navbar에 마켓플레이스 메뉴 추가
+
+### 테스트
+- [x] 마켓플레이스 CRUD 테스트
+- [x] 구매 플로우 테스트
+- [x] 리뷰 시스템 테스트
+- [x] 권한 검증 테스트
+
+## v10 전체 결과
+- [x] 전체 60개 테스트 파일, 1001개 테스트 케이스 통과
+- [x] TypeScript 에러 0개
+- [x] 모바일 반응형 387개 클래스 적용

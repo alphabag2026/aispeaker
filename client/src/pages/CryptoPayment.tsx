@@ -241,7 +241,7 @@ export default function CryptoPayment() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container py-10 max-w-lg">
+      <div className="container py-10 max-w-[95vw] sm:max-w-lg">
         <Link href="/pricing" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
           <ArrowLeft className="w-4 h-4" /> {t("cp.returnToPricing")}
         </Link>

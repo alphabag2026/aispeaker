@@ -224,7 +224,7 @@ export default function BroadcastStudio() {
             {isLive && <Badge className="bg-red-500 text-white animate-pulse"><Radio className="w-3 h-3 mr-1" />LIVE</Badge>}
             {isPaused && <Badge className="bg-yellow-500 text-black"><Pause className="w-3 h-3 mr-1" />{t("bs.status.paused")}</Badge>}
             {!isLive && !isPaused && <Badge variant="outline" className="text-gray-400">{t("bs.status.waiting")}</Badge>}
-            <span className="font-semibold text-sm truncate max-w-[300px]">{broadcast.data.title}</span>
+            <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-[300px]">{broadcast.data.title}</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -243,15 +243,15 @@ export default function BroadcastStudio() {
       </div>
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-3.5rem)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)]">
         {/* Slide Area */}
         <div className="flex-1 flex flex-col">
           {/* Slide Display */}
-          <div ref={slideContainerRef} className="flex-1 flex items-center justify-center p-8 bg-gray-950 relative">
+          <div ref={slideContainerRef} className="flex-1 flex items-center justify-center p-3 sm:p-8 bg-gray-950 relative">
             {currentSection ? (
               <div className="w-full max-w-4xl">
                 {/* Slide Card */}
-                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-12 shadow-2xl border border-gray-700 min-h-[400px] flex flex-col">
+                <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-12 shadow-2xl border border-gray-700 min-h-[200px] sm:min-h-[400px] flex flex-col">
                   {/* Section Number */}
                   <div className="flex items-center justify-between mb-6">
                     <Badge variant="outline" className="text-violet-400 border-violet-400">
@@ -262,7 +262,7 @@ export default function BroadcastStudio() {
                     </span>
                   </div>
                   {/* Section Title */}
-                  <h2 className="text-3xl font-bold mb-6 text-white">{currentSection.title}</h2>
+                  <h2 className="text-xl sm:text-3xl font-bold mb-3 sm:mb-6 text-white">{currentSection.title}</h2>
                   {/* Section Content */}
                   <div className="flex-1 text-lg text-gray-300 leading-relaxed whitespace-pre-wrap">
                     {currentSection.content}
@@ -292,7 +292,7 @@ export default function BroadcastStudio() {
           </div>
 
           {/* Controls Bar */}
-          <div className="h-20 bg-gray-900 border-t border-gray-800 flex items-center justify-between px-6">
+          <div className="h-auto sm:h-20 bg-gray-900 border-t border-gray-800 flex flex-wrap items-center justify-center sm:justify-between gap-2 px-3 sm:px-6 py-2 sm:py-0">
             {/* Slide Navigation */}
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon" onClick={() => goToSlide(currentSlide - 1)} disabled={currentSlide === 0}>
@@ -378,7 +378,7 @@ export default function BroadcastStudio() {
         </div>
 
         {/* Chat Sidebar */}
-        <div className="w-80 bg-gray-900 border-l border-gray-800 flex flex-col">
+        <div className="w-full lg:w-80 bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-800 flex flex-col max-h-[35vh] lg:max-h-none">
           <div className="h-12 flex items-center px-4 border-b border-gray-800">
             <MessageSquare className="w-4 h-4 mr-2 text-gray-400" />
             <span className="text-sm font-medium">{t("bs.chat.title")}</span>
@@ -447,7 +447,7 @@ export default function BroadcastStudio() {
       </div>
 
       {/* Slide Thumbnails Bar */}
-      <div className="h-24 bg-gray-900 border-t border-gray-800 flex items-center px-4 gap-2 overflow-x-auto">
+      <div className="h-20 sm:h-24 bg-gray-900 border-t border-gray-800 flex items-center px-2 sm:px-4 gap-2 overflow-x-auto">
         {sections.map((sec, idx) => (
           <button
             key={idx}

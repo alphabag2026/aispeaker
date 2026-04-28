@@ -46,6 +46,7 @@ import {
   BarChart3,
   Settings,
   ExternalLink,
+  Store,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -290,6 +291,18 @@ export default function Navbar() {
             </Button>
           </Link>
 
+          {/* Marketplace */}
+          <Link href="/marketplace">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`gap-1.5 text-sm font-medium ${location === '/marketplace' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              마켓
+              <span className="badge-new">NEW</span>
+            </Button>
+          </Link>
+
           {/* Pricing with badge */}
           <Link href="/pricing">
             <Button
@@ -487,6 +500,11 @@ export default function Navbar() {
               <Link href="/features" onClick={() => setMobileOpen(false)}>
                 <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
                   <Layers className="h-4 w-4" /> 기능
+                </Button>
+              </Link>
+              <Link href="/marketplace" onClick={() => setMobileOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                  <Store className="h-4 w-4" /> 마켓플레이스 <span className="badge-new ml-auto">NEW</span>
                 </Button>
               </Link>
               <Link href="/pricing" onClick={() => setMobileOpen(false)}>
