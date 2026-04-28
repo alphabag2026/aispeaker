@@ -374,10 +374,10 @@ export default function LectureBuilder() {
                 onRefresh={() => fullProjectQuery.refetch()}
               />
             )}
-            {currentStep === 5 && (
+            {currentStep === 5 && project && (
               <Step5Preview
                 projectId={projectId}
-                project={project!}
+                project={project}
                 slides={slides}
                 scripts={scripts}
                 avatars={avatars}
@@ -2439,7 +2439,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
       <h2 className="text-2xl font-bold">매칭 에디터</h2>
       <p className="text-muted-foreground">각 슬라이드에 스크립트를 배치하고, 캔버스에 직접 펜으로 그리세요</p>
 
-      <div className="grid grid-cols-12 gap-4" style={{ minHeight: "60vh" }}>
+      <div className="grid grid-cols-12 gap-4 overflow-hidden" style={{ minHeight: "60vh" }}>
         {/* Left: Slide Thumbnails */}
         <div className="col-span-2">
           <ScrollArea className="h-[60vh]">
@@ -2478,7 +2478,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
         </div>
 
         {/* Center: Slide Preview + Canvas Drawing */}
-        <div className="col-span-6">
+        <div className="col-span-6 min-w-0 overflow-hidden">
           {currentSlide ? (
             <div className="space-y-3">
               <div ref={containerRef} className="relative bg-black rounded-xl overflow-hidden">
@@ -3221,7 +3221,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   const [bgmVolume, setBgmVolume] = useState(30);
   const [bgmUploading, setBgmUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [generatedVideoUrl, setGeneratedVideoUrl] = useState(project.finalVideoUrl || "");
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState(project?.finalVideoUrl || "");
   const [genProgress, setGenProgress] = useState(0);
   const [genStep, setGenStep] = useState("");
   const bgmInputRef = useRef<HTMLInputElement>(null);
@@ -3522,10 +3522,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
     try {
       const result = await generateVideoMut.mutateAsync({
         projectId,
-        avatarPosition: project.avatarPosition,
-        avatarSize: project.avatarSize === "small" ? 15 : project.avatarSize === "large" ? 35 : 25,
-        avatarShape: project.avatarShape,
-        avatarOpacity: project.avatarOpacity,
+        avatarPosition: project?.avatarPosition,
+        avatarSize: project?.avatarSize === "small" ? 15 : project?.avatarSize === "large" ? 35 : 25,
+        avatarShape: project?.avatarShape,
+        avatarOpacity: project?.avatarOpacity,
         bgmUrl: bgmUrl || undefined,
         bgmVolume,
         noiseReduction: false,
@@ -3548,9 +3548,9 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">미리보기 & 최종 설정</h2>
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-12 gap-6 overflow-hidden">
         {/* Preview Area */}
-        <div className="col-span-8">
+        <div className="col-span-8 min-w-0">
           <Card>
             <CardContent className="pt-6">
               <div className="relative bg-black rounded-xl overflow-hidden aspect-video">
@@ -3584,23 +3584,23 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                       })() : undefined}
                     />
                     {/* Avatar PIP overlay */}
-                    {project.avatarPosition !== "none" && currentAvatar && (
+                    {project?.avatarPosition !== "none" && currentAvatar && (
                       <div className={`absolute ${
-                        project.avatarPosition === "bottom-right" ? "bottom-4 right-4" :
-                        project.avatarPosition === "bottom-left" ? "bottom-4 left-4" :
-                        project.avatarPosition === "top-right" ? "top-4 right-4" :
+                        project?.avatarPosition === "bottom-right" ? "bottom-4 right-4" :
+                        project?.avatarPosition === "bottom-left" ? "bottom-4 left-4" :
+                        project?.avatarPosition === "top-right" ? "top-4 right-4" :
                         "top-4 left-4"
                       }`}>
                         <div className={`${
-                          project.avatarSize === "small" ? "w-20 h-20" :
-                          project.avatarSize === "medium" ? "w-28 h-28" :
+                          project?.avatarSize === "small" ? "w-20 h-20" :
+                          project?.avatarSize === "medium" ? "w-28 h-28" :
                           "w-36 h-36"
                         } ${
-                          project.avatarShape === "circle" ? "rounded-full" :
-                          project.avatarShape === "rounded" ? "rounded-xl" :
+                          project?.avatarShape === "circle" ? "rounded-full" :
+                          project?.avatarShape === "rounded" ? "rounded-xl" :
                           "rounded-none"
                         } overflow-hidden border-2 border-white/30 shadow-lg`}
-                          style={{ opacity: (project.avatarOpacity || 100) / 100 }}
+                          style={{ opacity: (project?.avatarOpacity || 100) / 100 }}
                         >
                           <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                             <Users className="w-8 h-8 text-white/70" />

@@ -2059,3 +2059,6 @@
 - [x] 프로덕션 서버 배포 완료 (aispeaker.cc - v12.7)
 
 - [x] BUG FIX: KLING API 키 저장 후 새로고침 시 "설정되지 않음"으로 초기화되는 버그 수정
+
+- [x] BUG FIX: 강의 미리보기 에러 - TypeError: Cannot read properties of undefined (reading 'finalVideoUrl')
+- [x] BUG FIX: 슬라이드 미리보기에서 이미지가 오른쪽으로 잘리는 문제
