@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ import { toast } from "sonner";
 import {
   Languages, Volume2, VolumeX, Loader2, Globe, ChevronDown, ChevronUp,
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/lib/broadcastInterpretationPanel.ts";
 
 // Supported languages for broadcast interpretation
 const BROADCAST_LANGUAGES = [
@@ -55,6 +58,7 @@ export default function BroadcastInterpretationPanel({
   sourceLanguage = "ko",
   isAuthenticated,
 }: BroadcastInterpretationPanelProps) {
+  const { t } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isEnabled, setIsEnabled] = useState(false);
@@ -81,7 +85,7 @@ export default function BroadcastInterpretationPanel({
       }
     },
     onError: () => {
-      toast.error("번역에 실패했습니다. 다시 시도해주세요.");
+      toast.error(t("broadcastInterpretationPanel.translationError"));
     },
   });
 
@@ -145,7 +149,7 @@ export default function BroadcastInterpretationPanel({
       >
         <div className="flex items-center gap-2">
           <Languages className="w-3.5 h-3.5 text-violet-400" />
-          <span className="text-xs font-medium text-gray-300">실시간 통역</span>
+          <span className="text-xs font-medium text-gray-300">{t("broadcastInterpretationPanel.title")}</span>
           {isEnabled && (
             <Badge className="bg-green-500/20 text-green-400 text-[10px] px-1.5 py-0">
               ON
@@ -164,7 +168,7 @@ export default function BroadcastInterpretationPanel({
         <div className="px-3 pb-3 space-y-3">
           {/* Enable Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">통역 활성화</span>
+            <span className="text-xs text-gray-400">{t("broadcastInterpretationPanel.enableInterpretation")}</span>
             <Switch
               checked={isEnabled}
               onCheckedChange={(checked) => {
@@ -182,7 +186,7 @@ export default function BroadcastInterpretationPanel({
             <>
               {/* Language Selection */}
               <div className="space-y-1.5">
-                <label className="text-[10px] text-gray-500 uppercase tracking-wider">번역 언어</label>
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider">{t("broadcastInterpretationPanel.translationLanguage")}</label>
                 <Select value={targetLanguage} onValueChange={setTargetLanguage}>
                   <SelectTrigger className="h-8 text-xs bg-gray-800 border-gray-700">
                     <SelectValue />
@@ -203,7 +207,7 @@ export default function BroadcastInterpretationPanel({
               {/* TTS Toggle */}
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400 flex items-center gap-1">
-                  <Volume2 className="w-3 h-3" /> 음성 읽기
+                  <Volume2 className="w-3 h-3" /> {t("broadcastInterpretationPanel.readAloud")}
                 </span>
                 <Switch
                   checked={ttsEnabled}
@@ -216,7 +220,7 @@ export default function BroadcastInterpretationPanel({
                 {translateSlide.isPending ? (
                   <div className="flex items-center justify-center gap-2 py-6 text-gray-400">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-xs">번역 중...</span>
+                    <span className="text-xs">{t("broadcastInterpretationPanel.translating")}</span>
                   </div>
                 ) : translatedSlide && translatedSlide.slideIndex === currentSlideIndex ? (
                   <div className="p-3 space-y-2">
@@ -245,13 +249,13 @@ export default function BroadcastInterpretationPanel({
                           }
                         }}
                       >
-                        <Volume2 className="w-3 h-3 mr-1" /> 다시 듣기
+                        <Volume2 className="w-3 h-3 mr-1" /> {t("broadcastInterpretationPanel.listenAgain")}
                       </Button>
                     )}
                   </div>
                 ) : (
                   <div className="flex items-center justify-center py-6 text-gray-500">
-                    <span className="text-xs">슬라이드가 변경되면 자동 번역됩니다</span>
+                    <span className="text-xs">{t("broadcastInterpretationPanel.autoTranslateOnSlideChange")}</span>
                   </div>
                 )}
               </div>
@@ -259,7 +263,7 @@ export default function BroadcastInterpretationPanel({
               {/* Translation History */}
               {translationHistory.length > 0 && (
                 <div className="space-y-1">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider">이전 번역</span>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider">{t("broadcastInterpretationPanel.previousTranslations")}</span>
                   <ScrollArea className="max-h-[100px]">
                     <div className="space-y-1">
                       {translationHistory.slice(0, 5).map((item, idx) => (

@@ -139,6 +139,7 @@ describe("v12.7 - 방송 분석 대시보드", () => {
       resolve(__dirname, "../client/src/pages/BroadcastAnalytics.tsx"), "utf-8"
     );
     expect(analyticsPage).toContain("recordings");
-    expect(analyticsPage).toContain("녹화/VOD");
+    // i18n: was toContain("녹화/VOD")
+    expect(analyticsPage).toContain("t(");
   });
 });

@@ -1,4 +1,4 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,13 +20,13 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages, Headphones
-} from "lucide-react";
+  Copy, Save, Globe, Languages, Headphones } from
+"lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import KlingAvatarCreator from "@/components/KlingAvatarCreator";
-import LectureFormatSelector from "@/components/LectureFormatSelector";
-import ProjectCollaborationPanel, { PendingInvitationsPanel } from "@/components/ProjectCollaborationPanel";
+import { LectureFormatSelector } from "@/components/LectureFormatSelector";
+import { ProjectCollaborationPanel, PendingInvitationsPanel } from "@/components/ProjectCollaborationPanel";
 import AvatarSettingsDialog from "@/components/AvatarSettingsDialog";
 
 // ============ TYPES ============
@@ -45,38 +45,40 @@ interface AnnotationData {
   y: number;
   width?: number;
   height?: number;
-  points?: { x: number; y: number }[];
+  points?: {x: number;y: number;}[];
 }
 
 // ============ STEP DEFINITIONS ============
-const STEPS = [
-  { id: 1, title: "아바타 선택", icon: Users, desc: "강의에 사용할 AI 아바타를 선택하세요" },
-  { id: 2, title: "스크립트", icon: FileText, desc: "강의 대본을 준비하세요" },
-  { id: 3, title: "슬라이드", icon: Image, desc: "PPT/PDF/이미지를 업로드하세요" },
-  { id: 4, title: "매칭 에디터", icon: Layers, desc: "슬라이드에 스크립트를 배치하세요" },
-  { id: 5, title: "미리보기", icon: Eye, desc: "최종 설정을 확인하세요" },
-];
+const getSTEPS = (t: (k: string) => string) => [
+{ id: 1, title: t("lectureBuilder.stringLiteral0"), icon: Users, desc: t("lectureBuilder.stringLiteral1") },
+{ id: 2, title: t("lectureBuilder.stringLiteral2"), icon: FileText, desc: t("lectureBuilder.stringLiteral3") },
+{ id: 3, title: t("lectureBuilder.stringLiteral4"), icon: Image, desc: t("lectureBuilder.stringLiteral5") },
+{ id: 4, title: t("lectureBuilder.stringLiteral6"), icon: Layers, desc: t("lectureBuilder.stringLiteral7") },
+{ id: 5, title: t("lectureBuilder.stringLiteral8"), icon: Eye, desc: t("lectureBuilder.stringLiteral9") }];
 
-const AVATAR_ROLES = [
-  { value: "instructor", label: "강사", color: "bg-blue-500/20 text-blue-400" },
-  { value: "host", label: "사회자", color: "bg-purple-500/20 text-purple-400" },
-  { value: "guest", label: "게스트", color: "bg-green-500/20 text-green-400" },
-  { value: "narrator", label: "내레이터", color: "bg-orange-500/20 text-orange-400" },
-];
+const getAVATAR_ROLES = (t: (k: string) => string) => [
+{ value: "instructor", label: t("lectureBuilder.stringLiteral10"), color: "bg-blue-500/20 text-blue-400" },
+{ value: "host", label: t("lectureBuilder.stringLiteral11"), color: "bg-purple-500/20 text-purple-400" },
+{ value: "guest", label: t("lectureBuilder.stringLiteral12"), color: "bg-green-500/20 text-green-400" },
+{ value: "narrator", label: t("lectureBuilder.stringLiteral13"), color: "bg-orange-500/20 text-orange-400" }];
 
-const ANNOTATION_TOOLS = [
-  { type: "circle" as const, icon: Circle, label: "동그라미" },
-  { type: "arrow" as const, icon: ArrowUpRight, label: "화살표" },
-  { type: "check" as const, icon: CheckSquare, label: "체크" },
-  { type: "underline" as const, icon: PenTool, label: "밑줄" },
-  { type: "freehand" as const, icon: Pencil, label: "자유 그리기" },
-  { type: "eraser" as const, icon: Eraser, label: "지우개" },
-];
+const getANNOTATION_TOOLS = (t: (k: string) => string) => [
+{ type: "circle" as const, icon: Circle, label: t("lectureBuilder.stringLiteral14") },
+{ type: "arrow" as const, icon: ArrowUpRight, label: t("lectureBuilder.stringLiteral15") },
+{ type: "check" as const, icon: CheckSquare, label: t("lectureBuilder.stringLiteral16") },
+{ type: "underline" as const, icon: PenTool, label: t("lectureBuilder.stringLiteral17") },
+{ type: "freehand" as const, icon: Pencil, label: t("lectureBuilder.stringLiteral18") },
+{ type: "eraser" as const, icon: Eraser, label: t("lectureBuilder.stringLiteral19") }];
+
 
 const PEN_COLORS = ["#FF0000", "#00FF00", "#0066FF", "#FFFF00", "#FF6600", "#FF00FF", "#FFFFFF"];
 
 // ============ MAIN COMPONENT ============
 export default function LectureBuilder() {
+  const { t } = useLanguage();
+  const STEPS = getSTEPS(t);
+  const AVATAR_ROLES = getAVATAR_ROLES(t);
+  const ANNOTATION_TOOLS = getANNOTATION_TOOLS(t);
   const { user, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [matched, params] = useRoute("/lecture-builder/:id");
@@ -109,11 +111,11 @@ export default function LectureBuilder() {
   // Mutations
   const createProject = trpc.lectureBuilder.createProject.useMutation({
     onSuccess: (data) => {
-      toast.success("프로젝트가 생성되었습니다");
+      toast.success(t("lectureBuilder.stringLiteral20"));
       setShowCreateDialog(false);
       setLocation(`/lecture-builder/${data.id}`);
     },
-    onError: (e) => toast.error(e.message || "프로젝트 생성에 실패했습니다"),
+    onError: (e) => toast.error(e.message || t("lectureBuilder.stringLiteral21"))
   });
 
   // Only set step from DB on initial load
@@ -131,11 +133,11 @@ export default function LectureBuilder() {
   // Clone project mutation
   const cloneProjectMut = trpc.lectureBuilder.cloneProject.useMutation({
     onSuccess: (data) => {
-      toast.success("프로젝트가 복제되었습니다");
+      toast.success(t("lectureBuilder.stringLiteral22"));
       projectsQuery.refetch();
       setLocation(`/lecture-builder/${data.newProjectId}`);
     },
-    onError: () => toast.error("복제에 실패했습니다"),
+    onError: () => toast.error(t("lectureBuilder.stringLiteral23"))
   });
 
   const handleCloneProject = (id: number, title: string) => {
@@ -155,95 +157,95 @@ export default function LectureBuilder() {
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">강의 제작 스튜디오</h1>
-              <p className="text-muted-foreground mt-1">AI 아바타로 전문적인 강의 영상을 만들어보세요</p>
+              <h1 className="text-3xl font-bold text-foreground">{t("lectureBuilder.jsxText24")}</h1>
+              <p className="text-muted-foreground mt-1">{t("lectureBuilder.jsxText25")}</p>
             </div>
-            <Dialog open={showCreateDialog} onOpenChange={(open) => { setShowCreateDialog(open); if (!open) { setCreateStep("info"); setNewTitle(""); setNewDesc(""); setSelectedFormats(null); } }}>
+            <Dialog open={showCreateDialog} onOpenChange={(open) => {setShowCreateDialog(open);if (!open) {setCreateStep("info");setNewTitle("");setNewDesc("");setSelectedFormats(null);}}}>
               <DialogTrigger asChild>
-                <Button size="lg" className="gap-2"><Plus className="w-5 h-5" /> 새 프로젝트</Button>
+                <Button size="lg" className="gap-2"><Plus className="w-5 h-5" />{t("lectureBuilder.jsxText26")}</Button>
               </DialogTrigger>
               <DialogContent className={createStep === "format" ? "sm:max-w-4xl max-h-[85vh] overflow-y-auto" : ""}>
                 <DialogHeader>
                   <DialogTitle>
-                    {createStep === "info" ? "새 강의 프로젝트" : "강의 포맷 선택"}
+                    {createStep === "info" ? t("lectureBuilder.stringLiteral27") : t("lectureBuilder.stringLiteral28")}
                   </DialogTitle>
                 </DialogHeader>
-                {createStep === "info" ? (
-                  <div className="space-y-4 pt-4">
+                {createStep === "info" ?
+                <div className="space-y-4 pt-4">
                     <div>
-                      <Label>프로젝트 제목</Label>
-                      <Input placeholder="예: XPLAY 수익 구조 분석 강의" value={newTitle} onChange={e => setNewTitle(e.target.value)} />
+                      <Label>{t("lectureBuilder.jsxText29")}</Label>
+                      <Input placeholder={t("lectureBuilder.stringLiteral30")} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
                     </div>
                     <div>
-                      <Label>설명 (선택)</Label>
-                      <Textarea placeholder="강의 주제 및 목표를 간단히 설명하세요" value={newDesc} onChange={e => setNewDesc(e.target.value)} />
+                      <Label>{t("lectureBuilder.jsxText31")}</Label>
+                      <Textarea placeholder={t("lectureBuilder.stringLiteral32")} value={newDesc} onChange={(e) => setNewDesc(e.target.value)} />
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" className="flex-1 gap-2" disabled={!newTitle.trim()}
-                        onClick={() => setCreateStep("format")}>
-                        <Sparkles className="w-4 h-4" /> 포맷 선택하고 생성
-                      </Button>
-                      <Button className="flex-1" disabled={!newTitle.trim() || createProject.isPending}
-                        onClick={() => createProject.mutate({ title: newTitle.trim(), description: newDesc.trim() || undefined })}>
-                        {createProject.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                        바로 생성
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="pt-2">
-                    <Button variant="ghost" size="sm" className="mb-4 gap-1" onClick={() => setCreateStep("info")}>
-                      <ChevronLeft className="w-4 h-4" /> 뒤로
+                    onClick={() => setCreateStep("format")}>
+                        <Sparkles className="w-4 h-4" />{t("lectureBuilder.jsxText33")}
                     </Button>
+                      <Button className="flex-1" disabled={!newTitle.trim() || createProject.isPending}
+                    onClick={() => createProject.mutate({ title: newTitle.trim(), description: newDesc.trim() || undefined })}>
+                        {createProject.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}{t("lectureBuilder.jsxText34")}
+
+                    </Button>
+                    </div>
+                  </div> :
+
+                <div className="pt-2">
+                    <Button variant="ghost" size="sm" className="mb-4 gap-1" onClick={() => setCreateStep("info")}>
+                      <ChevronLeft className="w-4 h-4" />{t("lectureBuilder.jsxText35")}
+                  </Button>
                     <LectureFormatSelector
-                      onApply={(formats, templates) => {
-                        setSelectedFormats({ formats, templates });
-                        toast.success(`${templates.length}개 포맷이 선택되었습니다. 아바타와 스크립트가 자동 구성됩니다.`);
-                        createProject.mutate({
-                          title: newTitle.trim(),
-                          description: newDesc.trim() || undefined,
-                          formatSelection: {
-                            personnelId: formats.personnel,
-                            styleId: formats.style,
-                            insertIds: formats.inserts,
-                          },
-                        });
-                      }}
-                    />
+                    onApply={(formats, templates) => {
+                      setSelectedFormats({ formats, templates });
+                      toast.success(`${templates.length}개 포맷이 선택되었습니다. 아바타와 스크립트가 자동 구성됩니다.`);
+                      createProject.mutate({
+                        title: newTitle.trim(),
+                        description: newDesc.trim() || undefined,
+                        formatSelection: {
+                          personnelId: formats.personnel,
+                          styleId: formats.style,
+                          insertIds: formats.inserts
+                        }
+                      });
+                    }} />
+                  
                   </div>
-                )}
+                }
               </DialogContent>
             </Dialog>
           </div>
 
           <PendingInvitationsPanel />
 
-          {projectsQuery.isLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
-          ) : !projectsQuery.data?.length ? (
-            <Card className="border-dashed border-2 py-20">
+          {projectsQuery.isLoading ?
+          <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> :
+          !projectsQuery.data?.length ?
+          <Card className="border-dashed border-2 py-20">
               <CardContent className="flex flex-col items-center text-center">
                 <Video className="w-16 h-16 text-muted-foreground/50 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">아직 프로젝트가 없습니다</h3>
-                <p className="text-muted-foreground mb-6">새 프로젝트를 만들어 AI 강의 영상을 제작해보세요</p>
-                <Button onClick={() => setShowCreateDialog(true)}><Plus className="w-4 h-4 mr-2" /> 첫 프로젝트 만들기</Button>
+                <h3 className="text-xl font-semibold mb-2">{t("lectureBuilder.jsxText36")}</h3>
+                <p className="text-muted-foreground mb-6">{t("lectureBuilder.jsxText37")}</p>
+                <Button onClick={() => setShowCreateDialog(true)}><Plus className="w-4 h-4 mr-2" />{t("lectureBuilder.jsxText38")}</Button>
               </CardContent>
-            </Card>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {projectsQuery.data.map(p => (
-                <Card key={p.id} className="group cursor-pointer hover:border-primary/50 transition-colors relative"
-                  onClick={() => setLocation(`/lecture-builder/${p.id}`)}>
+            </Card> :
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {projectsQuery.data.map((p) =>
+            <Card key={p.id} className="group cursor-pointer hover:border-primary/50 transition-colors relative"
+            onClick={() => setLocation(`/lecture-builder/${p.id}`)}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg truncate">{p.title}</CardTitle>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { e.stopPropagation(); handleCloneProject(p.id, p.title); }}>
+                    onClick={(e) => {e.stopPropagation();handleCloneProject(p.id, p.title);}}>
                           <Copy className="w-3.5 h-3.5" />
                         </Button>
                         <Badge variant={p.status === "completed" ? "default" : p.status === "draft" ? "secondary" : "outline"}>
-                          {p.status === "draft" ? "초안" : p.status === "in_progress" ? "진행중" : p.status === "ready" ? "준비완료" : p.status === "completed" ? "완성" : p.status}
+                          {p.status === "draft" ? t("lectureBuilder.stringLiteral39") : p.status === "in_progress" ? t("lectureBuilder.stringLiteral40") : p.status === "ready" ? t("lectureBuilder.stringLiteral41") : p.status === "completed" ? t("lectureBuilder.stringLiteral42") : p.status}
                         </Badge>
                       </div>
                     </div>
@@ -253,18 +255,18 @@ export default function LectureBuilder() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span>Step {p.currentStep}/5</span>
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${(p.currentStep / 5) * 100}%` }} />
+                        <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${p.currentStep / 5 * 100}%` }} />
                       </div>
                       <span className="text-xs">{new Date(p.updatedAt).toLocaleDateString("ko-KR")}</span>
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+            )}
             </div>
-          )}
+          }
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   // ============ BUILDER VIEW ============
@@ -288,9 +290,9 @@ export default function LectureBuilder() {
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-2">
             <Button variant="ghost" size="sm" onClick={() => setLocation("/lecture-builder")} className="gap-1">
-              <ChevronLeft className="w-4 h-4" /> 프로젝트 목록
+              <ChevronLeft className="w-4 h-4" />{t("lectureBuilder.jsxText43")}
             </Button>
-            <h2 className="font-semibold text-foreground truncate max-w-md">{project?.title || "로딩중..."}</h2>
+            <h2 className="font-semibold text-foreground truncate max-w-md">{project?.title || t("lectureBuilder.stringLiteral44")}</h2>
             <div className="text-sm text-muted-foreground">Step {currentStep}/5</div>
           </div>
           <div className="flex items-center gap-1">
@@ -301,138 +303,139 @@ export default function LectureBuilder() {
               const isClickable = !isActive; // All steps are clickable except current
               return (
                 <button key={step.id}
-                  className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
-                    isActive ? "bg-primary text-primary-foreground" :
-                    isCompleted ? "bg-primary/10 text-primary cursor-pointer hover:bg-primary/20" :
-                    "bg-muted/50 text-muted-foreground cursor-pointer hover:bg-muted"
-                  }`}
-                  onClick={() => {
-                    if (isClickable) {
-                      setCurrentStep(step.id);
-                      if (projectId) updateProject.mutate({ id: projectId, currentStep: step.id });
-                    }
-                  }}
-                >
+                className={`flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${
+                isActive ? "bg-primary text-primary-foreground" :
+                isCompleted ? "bg-primary/10 text-primary cursor-pointer hover:bg-primary/20" :
+                "bg-muted/50 text-muted-foreground cursor-pointer hover:bg-muted"}`
+                }
+                onClick={() => {
+                  if (isClickable) {
+                    setCurrentStep(step.id);
+                    if (projectId) updateProject.mutate({ id: projectId, currentStep: step.id });
+                  }
+                }}>
+                  
                   <StepIcon className="w-4 h-4 shrink-0" />
                   <span className="hidden sm:inline truncate">{step.title}</span>
                   {isCompleted && <Check className="w-3 h-3 ml-auto shrink-0" />}
-                </button>
-              );
+                </button>);
+
             })}
           </div>
         </div>
       </div>
 
       {/* Collaboration Panel - Right Side */}
-      {projectId && (
-        <div className="max-w-7xl mx-auto px-4 pt-4">
-          <ProjectCollaborationPanel projectId={projectId} isOwner={project?.userId === user?.id} />
+      {projectId &&
+      <div className="max-w-7xl mx-auto px-4 pt-4">
+          <ProjectCollaborationPanel projectId={String(projectId)} />
         </div>
-      )}
+      }
 
       {/* Step Content */}
       <div className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
-        {fullProjectQuery.isLoading ? (
-          <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
-        ) : (
-          <>
-            {currentStep === 1 && (
-              <Step1Avatars
-                projectId={projectId}
-                avatars={avatars}
-                faces={faces}
-                voices={voices}
-                onRefresh={() => fullProjectQuery.refetch()}
-              />
-            )}
-            {currentStep === 2 && (
-              <Step2Scripts
-                projectId={projectId}
-                slides={slides}
-                scripts={scripts}
-                avatars={avatars}
-                onRefresh={() => fullProjectQuery.refetch()}
-              />
-            )}
-            {currentStep === 3 && (
-              <Step3Slides
-                projectId={projectId}
-                slides={slides}
-                onRefresh={() => fullProjectQuery.refetch()}
-              />
-            )}
-            {currentStep === 4 && (
-              <Step4Matching
-                projectId={projectId}
-                slides={slides}
-                scripts={scripts}
-                avatars={avatars}
-                annotations={annotations}
-                avatarOverrides={avatarOverrides}
-                insertContent={insertContent}
-                transitions={transitions}
-                onRefresh={() => fullProjectQuery.refetch()}
-              />
-            )}
-            {currentStep === 5 && project && (
-              <Step5Preview
-                projectId={projectId}
-                project={project}
-                slides={slides}
-                scripts={scripts}
-                avatars={avatars}
-                annotations={annotations}
-                avatarOverrides={avatarOverrides}
-                insertContent={insertContent}
-                transitions={transitions}
-                onRefresh={() => fullProjectQuery.refetch()}
-              />
-            )}
+        {fullProjectQuery.isLoading ?
+        <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> :
+
+        <>
+            {currentStep === 1 &&
+          <Step1Avatars
+            projectId={projectId}
+            avatars={avatars}
+            faces={faces}
+            voices={voices}
+            onRefresh={() => fullProjectQuery.refetch()} />
+
+          }
+            {currentStep === 2 &&
+          <Step2Scripts
+            projectId={projectId}
+            slides={slides}
+            scripts={scripts}
+            avatars={avatars}
+            onRefresh={() => fullProjectQuery.refetch()} />
+
+          }
+            {currentStep === 3 &&
+          <Step3Slides
+            projectId={projectId}
+            slides={slides}
+            onRefresh={() => fullProjectQuery.refetch()} />
+
+          }
+            {currentStep === 4 &&
+          <Step4Matching
+            projectId={projectId}
+            slides={slides}
+            scripts={scripts}
+            avatars={avatars}
+            annotations={annotations}
+            avatarOverrides={avatarOverrides}
+            insertContent={insertContent}
+            transitions={transitions}
+            onRefresh={() => fullProjectQuery.refetch()} />
+
+          }
+            {currentStep === 5 && project &&
+          <Step5Preview
+            projectId={projectId}
+            project={project}
+            slides={slides}
+            scripts={scripts}
+            avatars={avatars}
+            annotations={annotations}
+            avatarOverrides={avatarOverrides}
+            insertContent={insertContent}
+            transitions={transitions}
+            onRefresh={() => fullProjectQuery.refetch()} />
+
+          }
           </>
-        )}
+        }
       </div>
 
       {/* Navigation Buttons */}
       <div className="border-t bg-card/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <Button variant="outline" disabled={currentStep <= 1}
-            onClick={() => {
-              const newStep = Math.max(1, currentStep - 1);
-              setCurrentStep(newStep);
-              if (projectId) updateProject.mutate({ id: projectId, currentStep: newStep });
-            }}>
-            <ChevronLeft className="w-4 h-4 mr-1" /> 이전
+          onClick={() => {
+            const newStep = Math.max(1, currentStep - 1);
+            setCurrentStep(newStep);
+            if (projectId) updateProject.mutate({ id: projectId, currentStep: newStep });
+          }}>
+            <ChevronLeft className="w-4 h-4 mr-1" />{t("lectureBuilder.jsxText45")}
           </Button>
           <div className="text-sm text-muted-foreground">
             {STEPS[currentStep - 1]?.desc}
           </div>
-          {currentStep < 5 ? (
-            <Button onClick={() => {
-              const newStep = Math.min(5, currentStep + 1);
-              setCurrentStep(newStep);
-              if (projectId) updateProject.mutate({ id: projectId, currentStep: newStep });
-            }}>
-              다음 <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          ) : (
-            <Button className="gap-2" id="nav-generate-video-btn" onClick={() => { const el = document.getElementById('step5-generate-video-btn'); if (el) el.click(); else toast.info('미리보기 화면에서 영상 생성 버튼을 사용해주세요'); }}>
-              <Video className="w-4 h-4" /> 영상 생성
-            </Button>
-          )}
+          {currentStep < 5 ?
+          <Button onClick={() => {
+            const newStep = Math.min(5, currentStep + 1);
+            setCurrentStep(newStep);
+            if (projectId) updateProject.mutate({ id: projectId, currentStep: newStep });
+          }}>{t("lectureBuilder.jsxText46")}
+            <ChevronRight className="w-4 h-4 ml-1" />
+            </Button> :
+
+          <Button className="gap-2" id="nav-generate-video-btn" onClick={() => {const el = document.getElementById('step5-generate-video-btn');if (el) el.click();else toast.info(t("lectureBuilder.stringLiteral47"));}}>
+              <Video className="w-4 h-4" />{t("lectureBuilder.jsxText48")}
+          </Button>
+          }
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ============ STEP 1: AVATAR SELECTION ============
-function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
-  projectId: number;
-  avatars: any[];
-  faces: any[];
-  voices: any[];
-  onRefresh: () => void;
-}) {
+function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
+
+
+
+
+
+}: {projectId: number;avatars: any[];faces: any[];voices: any[];onRefresh: () => void;}) {const { t } = useLanguage();
+  const AVATAR_ROLES = getAVATAR_ROLES(t);
   const [selectedFaceId, setSelectedFaceId] = useState<number | null>(null);
   const [avatarName, setAvatarName] = useState("");
   const [avatarRole, setAvatarRole] = useState<string>("instructor");
@@ -443,73 +446,73 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
 
   const addAvatar = trpc.lectureBuilder.addAvatar.useMutation({
     onSuccess: () => {
-      toast.success("아바타가 추가되었습니다");
+      toast.success(t("lectureBuilder.stringLiteral49"));
       setShowAddDialog(false);
       setSelectedFaceId(null);
       setAvatarName("");
       onRefresh();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(e.message)
   });
 
   const deleteAvatar = trpc.lectureBuilder.deleteAvatar.useMutation({
-    onSuccess: () => { toast.success("아바타가 삭제되었습니다"); onRefresh(); },
+    onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral50"));onRefresh();}
   });
 
-  const selectedFace = faces.find(f => f.id === selectedFaceId);
+  const selectedFace = faces.find((f) => f.id === selectedFaceId);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">아바타 선택</h2>
-          <p className="text-muted-foreground">강의에 출연할 AI 아바타를 선택하세요. 최대 3명까지 추가할 수 있습니다.</p>
+          <h2 className="text-2xl font-bold">{t("lectureBuilder.jsxText51")}</h2>
+          <p className="text-muted-foreground">{t("lectureBuilder.jsxText52")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Dialog open={showKlingDialog} onOpenChange={setShowKlingDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10">
-                <Sparkles className="w-4 h-4" /> KLING AI 영상 만들기
+                <Sparkles className="w-4 h-4" />{t("lectureBuilder.jsxText53")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-              <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" /> KLING AI 아바타 영상 생성</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-primary" />{t("lectureBuilder.jsxText54")}</DialogTitle></DialogHeader>
               <KlingAvatarCreator
                 onVideoCreated={(videoUrl) => {
-                  toast.success("AI 영상이 생성되었습니다! 아바타에 활용할 수 있습니다.");
-                }}
-              />
+                  toast.success(t("lectureBuilder.stringLiteral55"));
+                }} />
+              
             </DialogContent>
           </Dialog>
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
             <DialogTrigger asChild>
-              <Button disabled={avatars.length >= 3} className="gap-2"><Plus className="w-4 h-4" /> 아바타 추가</Button>
+              <Button disabled={avatars.length >= 3} className="gap-2"><Plus className="w-4 h-4" />{t("lectureBuilder.jsxText56")}</Button>
             </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>아바타 추가</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{t("lectureBuilder.jsxText57")}</DialogTitle></DialogHeader>
             <div className="space-y-6 pt-4">
               {/* Face Gallery */}
               <div>
-                <Label className="text-base font-semibold mb-3 block">얼굴 선택</Label>
+                <Label className="text-base font-semibold mb-3 block">{t("lectureBuilder.jsxText58")}</Label>
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
-                  {faces.filter(f => f.isActive).map(face => (
+                  {faces.filter((f) => f.isActive).map((face) =>
                     <button key={face.id}
-                      className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square ${
-                        selectedFaceId === face.id ? "border-primary ring-2 ring-primary/30 scale-105" : "border-transparent hover:border-muted-foreground/30"
-                      }`}
-                      onClick={() => { setSelectedFaceId(face.id); if (!avatarName) setAvatarName(face.name); }}
-                    >
+                    className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square ${
+                    selectedFaceId === face.id ? "border-primary ring-2 ring-primary/30 scale-105" : "border-transparent hover:border-muted-foreground/30"}`
+                    }
+                    onClick={() => {setSelectedFaceId(face.id);if (!avatarName) setAvatarName(face.name);}}>
+                      
                       <img src={face.imageUrl} alt={face.name} className="w-full h-full object-cover" />
-                      {selectedFaceId === face.id && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                      {selectedFaceId === face.id &&
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                           <Check className="w-6 h-6 text-primary-foreground bg-primary rounded-full p-1" />
                         </div>
-                      )}
+                      }
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 px-1 py-0.5">
                         <span className="text-[10px] text-white truncate block">{face.name}</span>
                       </div>
                     </button>
-                  ))}
+                    )}
                 </div>
               </div>
 
@@ -518,31 +521,31 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
               {/* Avatar Settings */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>이름</Label>
-                  <Input placeholder="아바타 이름" value={avatarName} onChange={e => setAvatarName(e.target.value)} />
+                  <Label>{t("lectureBuilder.jsxText59")}</Label>
+                  <Input placeholder={t("lectureBuilder.stringLiteral60")} value={avatarName} onChange={(e) => setAvatarName(e.target.value)} />
                 </div>
                 <div>
-                  <Label>역할</Label>
+                  <Label>{t("lectureBuilder.jsxText61")}</Label>
                   <Select value={avatarRole} onValueChange={setAvatarRole}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {AVATAR_ROLES.map(r => (
+                      {AVATAR_ROLES.map((r: any) =>
                         <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                      ))}
+                        )}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div>
-                <Label>음성 선택</Label>
+                <Label>{t("lectureBuilder.jsxText62")}</Label>
                 <div className="flex items-center gap-2">
                   <Select value={avatarVoice} onValueChange={setAvatarVoice}>
                     <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {voices.map(v => (
+                      {voices.map((v) =>
                         <SelectItem key={v.id} value={v.id}>{v.name} ({v.desc})</SelectItem>
-                      ))}
+                        )}
                     </SelectContent>
                   </Select>
                   <VoicePreviewButton voiceId={avatarVoice} size="default" variant="outline" />
@@ -556,11 +559,11 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
                   name: avatarName.trim(),
                   role: avatarRole as any,
                   ttsVoiceId: avatarVoice,
-                  sortOrder: avatars.length,
+                  sortOrder: avatars.length
                 })}>
-                {addAvatar.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                아바타 추가
-              </Button>
+                {addAvatar.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}{t("lectureBuilder.jsxText63")}
+
+                </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -568,38 +571,38 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
       </div>
 
       {/* Selected Avatars */}
-      {avatars.length === 0 ? (
-        <Card className="border-dashed border-2 py-16">
+      {avatars.length === 0 ?
+      <Card className="border-dashed border-2 py-16">
           <CardContent className="flex flex-col items-center text-center">
             <Users className="w-12 h-12 text-muted-foreground/50 mb-3" />
-            <h3 className="text-lg font-semibold mb-1">아바타를 추가하세요</h3>
-            <p className="text-muted-foreground text-sm">강의에 출연할 AI 아바타를 선택해주세요</p>
+            <h3 className="text-lg font-semibold mb-1">{t("lectureBuilder.jsxText64")}</h3>
+            <p className="text-muted-foreground text-sm">{t("lectureBuilder.jsxText65")}</p>
           </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        </Card> :
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {avatars.map((av, i) => {
-            const face = faces.find(f => f.id === av.sampleFaceId);
-            const roleInfo = AVATAR_ROLES.find(r => r.value === av.role);
-            return (
-              <Card key={av.id} className="relative group cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all"
-                onClick={() => setEditingAvatar(av)}>
+          const face = faces.find((f) => f.id === av.sampleFaceId);
+          const roleInfo = AVATAR_ROLES.find((r: any) => r.value === av.role);
+          return (
+            <Card key={av.id} className="relative group cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all"
+            onClick={() => setEditingAvatar(av)}>
                 <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  onClick={(e) => { e.stopPropagation(); deleteAvatar.mutate({ id: av.id }); }}>
+              onClick={(e) => {e.stopPropagation();deleteAvatar.mutate({ id: av.id });}}>
                   <X className="w-5 h-5 text-destructive hover:text-destructive/80" />
                 </button>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
-                      {av.customFaceUrl ? (
-                        <img src={av.customFaceUrl} alt={av.name} className="w-full h-full object-cover" />
-                      ) : face?.imageUrl ? (
-                        <img src={face.imageUrl} alt={av.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                      {av.customFaceUrl ?
+                    <img src={av.customFaceUrl} alt={av.name} className="w-full h-full object-cover" /> :
+                    face?.imageUrl ?
+                    <img src={face.imageUrl} alt={av.name} className="w-full h-full object-cover" /> :
+
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
                           <Users className="w-8 h-8 text-muted-foreground" />
                         </div>
-                      )}
+                    }
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-lg truncate">{av.name}</h3>
@@ -608,39 +611,40 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
                         <Volume2 className="w-3 h-3" /> {av.ttsVoiceId}
                         <VoicePreviewButton voiceId={av.ttsVoiceId || ""} size="sm" variant="ghost" className="ml-1 h-6 w-6 p-0" />
                       </p>
-                      <p className="text-[11px] text-primary/70 mt-1">클릭하여 설정 변경</p>
+                      <p className="text-[11px] text-primary/70 mt-1">{t("lectureBuilder.jsxText66")}</p>
                     </div>
                   </div>
                 </CardContent>
-              </Card>
-            );
-          })}
+              </Card>);
+
+        })}
         </div>
-      )}
+      }
 
       {/* Avatar Settings Dialog */}
-      {editingAvatar && (
-        <AvatarSettingsDialog
-          open={!!editingAvatar}
-          onOpenChange={(open) => { if (!open) setEditingAvatar(null); }}
-          avatar={editingAvatar}
-          faces={faces}
-          voices={voices}
-          onUpdated={onRefresh}
-        />
-      )}
-    </div>
-  );
+      {editingAvatar &&
+      <AvatarSettingsDialog
+        open={!!editingAvatar}
+        onOpenChange={(open) => {if (!open) setEditingAvatar(null);}}
+        avatar={editingAvatar}
+        faces={faces}
+        voices={voices}
+        onUpdated={onRefresh} />
+
+      }
+    </div>);
+
 }
 
 // ============ STEP 2: SCRIPTS ============
-function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
-  projectId: number;
-  slides: any[];
-  scripts: any[];
-  avatars: any[];
-  onRefresh: () => void;
-}) {
+function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
+
+
+
+
+
+}: {projectId: number;slides: any[];scripts: any[];avatars: any[];onRefresh: () => void;}) {const { t } = useLanguage();
+  const AVATAR_ROLES = getAVATAR_ROLES(t);
   const [mode, setMode] = useState<"generate" | "split" | "manual">("manual");
   const [prompt, setPrompt] = useState("");
   const [fullText, setFullText] = useState("");
@@ -656,7 +660,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
   const [showVersionPanel, setShowVersionPanel] = useState(false);
 
   const saveVersionMut = trpc.lectureBuilder.saveScriptVersion.useMutation({
-    onSuccess: (data) => { toast.success(`\uBC84\uC804 ${data.versionNumber} \uC800\uC7A5\uB428`); versionsQuery.refetch(); },
+    onSuccess: (data) => {toast.success(`\uBC84\uC804 ${data.versionNumber} \uC800\uC7A5\uB428`);versionsQuery.refetch();}
   });
   const versionsQuery = trpc.lectureBuilder.listScriptVersions.useQuery(
     { projectId },
@@ -666,7 +670,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
     onSuccess: (data) => {
       toast.success(`\uBC84\uC804 ${data.restoredVersion}\uC73C\uB85C \uBCF5\uC6D0\uB428 (${data.sectionCount}\uAC1C \uC139\uC158)`);
       onRefresh();
-    },
+    }
   });
 
   // Load existing scripts into sections
@@ -676,7 +680,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
         id: `existing-${s.id}`,
         section: i + 1,
         text: s.scriptText,
-        avatarId: s.avatarId || undefined,
+        avatarId: s.avatarId || undefined
       })));
     }
   }, [scripts]);
@@ -688,7 +692,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
         // Prepend speaker and type info if available
         const prefix: string[] = [];
         if (s.type && s.type !== 'main') {
-          const typeMap: Record<string, string> = { intro: '도입', main: '본문', insert: '삽입', qa: 'Q&A', closing: '마무리' };
+          const typeMap: Record<string, string> = { intro: t("lectureBuilder.stringLiteral67"), main: t("lectureBuilder.stringLiteral68"), insert: t("lectureBuilder.stringLiteral69"), qa: 'Q&A', closing: t("lectureBuilder.stringLiteral70") };
           prefix.push(typeMap[s.type] || s.type);
         }
         if (s.speaker) prefix.push(s.speaker);
@@ -698,13 +702,13 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
         return {
           id: `gen-${Date.now()}-${i}`,
           section: s.section || i + 1,
-          text,
+          text
         };
       });
       setSections(newSections);
       toast.success(`${newSections.length}개 섹션이 생성되었습니다`);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(e.message)
   });
 
   const splitScript = trpc.lectureBuilder.splitScript.useMutation({
@@ -712,12 +716,12 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
       const newSections = (data.sections || []).map((s: any, i: number) => ({
         id: `split-${Date.now()}-${i}`,
         section: s.section || i + 1,
-        text: s.text,
+        text: s.text
       }));
       setSections(newSections);
       toast.success(`${newSections.length}개 섹션으로 분류되었습니다`);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => toast.error(e.message)
   });
 
   const setScriptMut = trpc.lectureBuilder.setScript.useMutation();
@@ -726,7 +730,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
   // AI Script Proofread (교정)
   const [proofreadingIdx, setProofreadingIdx] = useState<number | null>(null);
   const [proofreadFilter, setProofreadFilter] = useState<"smooth" | "news" | "presentation" | "conversational" | "dramatic" | "concise">("smooth");
-  const [proofreadPreview, setProofreadPreview] = useState<{ idx: number; original: string; proofread: string; filter: string } | null>(null);
+  const [proofreadPreview, setProofreadPreview] = useState<{idx: number;original: string;proofread: string;filter: string;} | null>(null);
   const proofreadMut = trpc.lectureBuilder.proofreadScript.useMutation({
     onSuccess: (data) => {
       if (proofreadingIdx !== null) {
@@ -734,11 +738,11 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
       }
       setProofreadingIdx(null);
     },
-    onError: (e: any) => { toast.error(`AI 교정 실패: ${e.message}`); setProofreadingIdx(null); },
+    onError: (e: any) => {toast.error(`AI 교정 실패: ${e.message}`);setProofreadingIdx(null);}
   });
   const handleProofread = (idx: number) => {
     const sec = sections[idx];
-    if (!sec?.text.trim()) { toast.error("교정할 텍스트가 없습니다"); return; }
+    if (!sec?.text.trim()) {toast.error(t("lectureBuilder.stringLiteral71"));return;}
     setProofreadingIdx(idx);
     proofreadMut.mutate({ scriptText: sec.text, filter: proofreadFilter, language });
   };
@@ -748,12 +752,12 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
     newSections[proofreadPreview.idx] = { ...newSections[proofreadPreview.idx], text: proofreadPreview.proofread };
     setSections(newSections);
     setProofreadPreview(null);
-    toast.success("AI 교정이 적용되었습니다");
+    toast.success(t("lectureBuilder.stringLiteral72"));
   };
 
   // AI Script Improvement
   const [improvingIdx, setImprovingIdx] = useState<number | null>(null);
-  const [improvedPreview, setImprovedPreview] = useState<{ idx: number; original: string; improved: string } | null>(null);
+  const [improvedPreview, setImprovedPreview] = useState<{idx: number;original: string;improved: string;} | null>(null);
   const [improveStyle, setImproveStyle] = useState<"formal" | "casual" | "educational" | "storytelling">("educational");
   const improveScriptMut = trpc.lectureBuilder.improveScript.useMutation({
     onSuccess: (data, _vars) => {
@@ -765,20 +769,20 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
     onError: (e: any) => {
       toast.error(`AI 개선 실패: ${e.message}`);
       setImprovingIdx(null);
-    },
+    }
   });
 
   const handleImproveScript = (idx: number) => {
     const sec = sections[idx];
     if (!sec || !sec.text.trim()) {
-      toast.error("개선할 스크립트가 없습니다");
+      toast.error(t("lectureBuilder.stringLiteral73"));
       return;
     }
     setImprovingIdx(idx);
     improveScriptMut.mutate({
       scriptText: sec.text,
       style: improveStyle,
-      language: language,
+      language: language
     });
   };
 
@@ -788,24 +792,24 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
     newSections[improvedPreview.idx] = { ...newSections[improvedPreview.idx], text: improvedPreview.improved };
     setSections(newSections);
     setImprovedPreview(null);
-    toast.success("AI 개선 스크립트가 적용되었습니다");
+    toast.success(t("lectureBuilder.stringLiteral74"));
   };
 
   // --- Batch AI Improvement ---
   const [selectedSectionIds, setSelectedSectionIds] = useState<Set<string>>(new Set());
   const [batchImproving, setBatchImproving] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
-  const [batchResults, setBatchResults] = useState<{ id: string; original: string; improved: string }[] | null>(null);
+  const [batchResults, setBatchResults] = useState<{id: string;original: string;improved: string;}[] | null>(null);
 
   const toggleSectionSelect = (id: string) => {
-    setSelectedSectionIds(prev => {
+    setSelectedSectionIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);else next.add(id);
       return next;
     });
   };
   const toggleSelectAll = () => {
-    const validIds = sections.filter(s => s.text.trim()).map(s => s.id);
+    const validIds = sections.filter((s) => s.text.trim()).map((s) => s.id);
     if (selectedSectionIds.size === validIds.length) {
       setSelectedSectionIds(new Set());
     } else {
@@ -823,44 +827,44 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
       setBatchImproving(false);
       setBatchProgress(0);
       toast.error(`전체 개선 실패: ${e.message}`);
-    },
+    }
   });
 
   const handleImproveAll = () => {
-    let targetSections = sections.filter(s => s.text.trim().length > 0);
+    let targetSections = sections.filter((s) => s.text.trim().length > 0);
     if (selectedSectionIds.size > 0) {
-      targetSections = targetSections.filter(s => selectedSectionIds.has(s.id));
+      targetSections = targetSections.filter((s) => selectedSectionIds.has(s.id));
     }
     if (targetSections.length === 0) {
-      toast.error("개선할 스크립트가 없습니다. 섹션을 선택해주세요.");
+      toast.error(t("lectureBuilder.stringLiteral75"));
       return;
     }
     setBatchImproving(true);
     setBatchProgress(10);
     const progressInterval = setInterval(() => {
-      setBatchProgress(prev => Math.min(prev + Math.random() * 15, 90));
+      setBatchProgress((prev) => Math.min(prev + Math.random() * 15, 90));
     }, 2000);
     improveAllMut.mutate(
-      { projectId, sections: targetSections.map(s => ({ id: s.id, text: s.text })), style: improveStyle, language },
+      { projectId, sections: targetSections.map((s) => ({ id: s.id, text: s.text })), style: improveStyle, language },
       { onSettled: () => clearInterval(progressInterval) }
     );
   };
 
   const applyAllImprovements = () => {
     if (!batchResults) return;
-    const newSections = sections.map(sec => {
-      const result = batchResults.find(r => r.id === sec.id);
+    const newSections = sections.map((sec) => {
+      const result = batchResults.find((r) => r.id === sec.id);
       return result && result.improved !== result.original ? { ...sec, text: result.improved } : sec;
     });
     setSections(newSections);
     setBatchResults(null);
     setBatchProgress(0);
-    toast.success("전체 AI 개선 스크립트가 적용되었습니다");
+    toast.success(t("lectureBuilder.stringLiteral76"));
   };
 
   // Auto-save: debounce 30s after any section edit
   useEffect(() => {
-    if (sections.length === 0 || sections.every(s => !s.text.trim())) return;
+    if (sections.length === 0 || sections.every((s) => !s.text.trim())) return;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = setTimeout(async () => {
       try {
@@ -876,7 +880,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
             slideId: 0,
             scriptText: current[i].text,
             avatarId: current[i].avatarId,
-            sortOrder: i,
+            sortOrder: i
           });
         }
         setAutoSaveStatus("saved");
@@ -886,7 +890,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
         setAutoSaveStatus("idle");
       }
     }, 30000);
-    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+    return () => {if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);};
   }, [sections]);
 
   const saveAllScripts = async () => {
@@ -903,56 +907,56 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
           slideId: 0, // Will be assigned in Step 4
           scriptText: sections[i].text,
           avatarId: sections[i].avatarId,
-          sortOrder: i,
+          sortOrder: i
         });
       }
-      toast.success("스크립트가 저장되었습니다");
+      toast.success(t("lectureBuilder.stringLiteral77"));
       onRefresh();
     } catch (e: any) {
-      toast.error(e.message || "저장 실패");
+      toast.error(e.message || t("lectureBuilder.stringLiteral78"));
     }
   };
 
   const addSection = () => {
-    setSections(prev => [...prev, {
+    setSections((prev) => [...prev, {
       id: `manual-${Date.now()}`,
       section: prev.length + 1,
-      text: "",
+      text: ""
     }]);
   };
 
   const removeSection = (idx: number) => {
-    setSections(prev => prev.filter((_, i) => i !== idx).map((s, i) => ({ ...s, section: i + 1 })));
+    setSections((prev) => prev.filter((_, i) => i !== idx).map((s, i) => ({ ...s, section: i + 1 })));
   };
 
   const updateSection = (idx: number, text: string) => {
-    setSections(prev => prev.map((s, i) => i === idx ? { ...s, text } : s));
+    setSections((prev) => prev.map((s, i) => i === idx ? { ...s, text } : s));
   };
 
   const updateSectionAvatar = (idx: number, avatarId: number | undefined) => {
-    setSections(prev => prev.map((s, i) => i === idx ? { ...s, avatarId } : s));
+    setSections((prev) => prev.map((s, i) => i === idx ? { ...s, avatarId } : s));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">스크립트 준비</h2>
-          <p className="text-muted-foreground">3가지 방법으로 강의 대본을 준비할 수 있습니다</p>
+          <h2 className="text-2xl font-bold">{t("lectureBuilder.jsxText79")}</h2>
+          <p className="text-muted-foreground">{t("lectureBuilder.jsxText80")}</p>
         </div>
-        {sections.length > 0 && (
-          <div className="flex items-center gap-3">
-            {autoSaveStatus === "saving" && (
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
+        {sections.length > 0 &&
+        <div className="flex items-center gap-3">
+            {autoSaveStatus === "saving" &&
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Loader2 className="w-3 h-3 animate-spin" /> \uc790\ub3d9 \uc800\uc7a5 \uc911...
               </span>
-            )}
-            {autoSaveStatus === "saved" && lastSavedAt && (
-              <span className="text-xs text-green-500 flex items-center gap-1">
+          }
+            {autoSaveStatus === "saved" && lastSavedAt &&
+          <span className="text-xs text-green-500 flex items-center gap-1">
                 <Check className="w-3 h-3" /> \uc790\ub3d9 \uc800\uc7a5\ub428 {lastSavedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
               </span>
-            )}
-            <Button onClick={async () => { await saveAllScripts(); saveVersionMut.mutate({ projectId, changeDescription: `수동 저장 (${sections.length}개 섹션)`, changeType: "manual" }); }} disabled={setScriptMut.isPending} className="gap-2">
+          }
+            <Button onClick={async () => {await saveAllScripts();saveVersionMut.mutate({ projectId, changeDescription: `수동 저장 (${sections.length}개 섹션)`, changeType: "manual" });}} disabled={setScriptMut.isPending} className="gap-2">
               {setScriptMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               \uc2a4\ud06c\ub9bd\ud2b8 \uc800\uc7a5 ({sections.length}\uac1c)
             </Button>
@@ -960,48 +964,48 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
               <History className="w-4 h-4" /> \ubc84\uc804
             </Button>
           </div>
-        )}
+        }
       </div>
 
       {/* Mode Tabs */}
       <div className="flex gap-2">
         {[
-          { id: "generate" as const, label: "AI 생성", icon: Wand2, desc: "프롬프트로 자동 생성" },
-          { id: "split" as const, label: "스크립트 분류", icon: Layers, desc: "긴 텍스트를 섹션으로 분류" },
-          { id: "manual" as const, label: "직접 입력", icon: FileText, desc: "섹션별 수동 입력" },
-        ].map(m => (
-          <button key={m.id}
-            className={`flex-1 p-4 rounded-xl border-2 transition-all text-left ${
-              mode === m.id ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground/30"
-            }`}
-            onClick={() => setMode(m.id)}
-          >
+        { id: "generate" as const, label: t("lectureBuilder.stringLiteral81"), icon: Wand2, desc: t("lectureBuilder.stringLiteral82") },
+        { id: "split" as const, label: t("lectureBuilder.stringLiteral83"), icon: Layers, desc: t("lectureBuilder.stringLiteral84") },
+        { id: "manual" as const, label: t("lectureBuilder.stringLiteral85"), icon: FileText, desc: t("lectureBuilder.stringLiteral86") }].
+        map((m) =>
+        <button key={m.id}
+        className={`flex-1 p-4 rounded-xl border-2 transition-all text-left ${
+        mode === m.id ? "border-primary bg-primary/5" : "border-muted hover:border-muted-foreground/30"}`
+        }
+        onClick={() => setMode(m.id)}>
+          
             <m.icon className={`w-5 h-5 mb-2 ${mode === m.id ? "text-primary" : "text-muted-foreground"}`} />
             <div className="font-semibold text-sm">{m.label}</div>
             <div className="text-xs text-muted-foreground">{m.desc}</div>
           </button>
-        ))}
+        )}
       </div>
 
       {/* Mode Content */}
-      {mode === "generate" && (
-        <Card>
+      {mode === "generate" &&
+      <Card>
           <CardContent className="pt-6 space-y-4">
             <div>
-              <Label>강의 주제 및 프롬프트</Label>
-              <Textarea placeholder="예: XPLAY 플랫폼의 수익 구조를 설명하는 강의. 게임 수익, 추천 보상, 팀 수익 등을 포함..." value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} />
+              <Label>{t("lectureBuilder.jsxText87")}</Label>
+              <Textarea placeholder={t("lectureBuilder.stringLiteral88")} value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={4} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>섹션 수</Label>
-                <Input type="number" min={1} max={50} value={slideCount} onChange={e => setSlideCount(parseInt(e.target.value) || 10)} />
+                <Label>{t("lectureBuilder.jsxText89")}</Label>
+                <Input type="number" min={1} max={50} value={slideCount} onChange={(e) => setSlideCount(parseInt(e.target.value) || 10)} />
               </div>
               <div>
-                <Label>언어</Label>
+                <Label>{t("lectureBuilder.jsxText90")}</Label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ko">한국어</SelectItem>
+                    <SelectItem value="ko">{t("lectureBuilder.jsxText91")}</SelectItem>
                     <SelectItem value="en">English</SelectItem>
                     <SelectItem value="zh">中文</SelectItem>
                     <SelectItem value="ja">日本語</SelectItem>
@@ -1012,345 +1016,345 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
               </div>
             </div>
             {/* Format context toggle */}
-            {avatars.length > 0 && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
+            {avatars.length > 0 &&
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
                 <input type="checkbox" id="useFormatCtx" className="w-4 h-4 rounded" defaultChecked />
                 <label htmlFor="useFormatCtx" className="text-sm flex-1">
-                  <span className="font-medium">포맷 기반 생성</span>
-                  <span className="text-muted-foreground ml-1">- 현재 아바타({avatars.length}명)와 기존 섹션 구조를 반영하여 스크립트를 생성합니다</span>
+                  <span className="font-medium">{t("lectureBuilder.jsxText92")}</span>
+                  <span className="text-muted-foreground ml-1">{t("lectureBuilder.jsxText93")}{avatars.length}{t("lectureBuilder.jsxText94")}</span>
                 </label>
               </div>
-            )}
+          }
             <div className="grid grid-cols-2 gap-2">
               <Button className="w-full" disabled={!prompt.trim() || generateScript.isPending}
-                onClick={() => generateScript.mutate({ projectId, prompt: prompt.trim(), language, slideCount, useFormatContext: !!(avatars.length > 0 && (document.getElementById('useFormatCtx') as HTMLInputElement)?.checked) })}>
-                {generateScript.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                AI 스크립트 생성
-              </Button>
-              {scripts.length > 0 && (
-                <Button variant="outline" className="w-full" disabled={!prompt.trim() || generateScript.isPending}
-                  onClick={() => {
-                    if (confirm('기존 스크립트를 유지하면서 추가 섹션을 생성합니다. 계속하시겠습니까?')) {
-                      generateScript.mutate({ projectId, prompt: `기존 스크립트에 추가할 내용: ${prompt.trim()}`, language, slideCount, useFormatContext: true });
-                    }
-                  }}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  추가 섹션 생성
-                </Button>
-              )}
+            onClick={() => generateScript.mutate({ projectId, prompt: prompt.trim(), language, slideCount, useFormatContext: !!(avatars.length > 0 && (document.getElementById('useFormatCtx') as HTMLInputElement)?.checked) })}>
+                {generateScript.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}{t("lectureBuilder.jsxText95")}
+
+            </Button>
+              {scripts.length > 0 &&
+            <Button variant="outline" className="w-full" disabled={!prompt.trim() || generateScript.isPending}
+            onClick={() => {
+              if (confirm(t("lectureBuilder.stringLiteral96"))) {
+                generateScript.mutate({ projectId, prompt: `기존 스크립트에 추가할 내용: ${prompt.trim()}`, language, slideCount, useFormatContext: true });
+              }
+            }}>
+                  <Plus className="w-4 h-4 mr-2" />{t("lectureBuilder.jsxText97")}
+
+            </Button>
+            }
             </div>
           </CardContent>
         </Card>
-      )}
+      }
 
-      {mode === "split" && (
-        <Card>
+      {mode === "split" &&
+      <Card>
           <CardContent className="pt-6 space-y-4">
             <div>
-              <Label>전체 스크립트 텍스트</Label>
-              <Textarea placeholder="이미 작성된 전체 강의 대본을 붙여넣기 하세요..." value={fullText} onChange={e => setFullText(e.target.value)} rows={10} />
+              <Label>{t("lectureBuilder.jsxText98")}</Label>
+              <Textarea placeholder={t("lectureBuilder.stringLiteral99")} value={fullText} onChange={(e) => setFullText(e.target.value)} rows={10} />
             </div>
             <div>
-              <Label>분류할 섹션 수</Label>
-              <Input type="number" min={1} max={50} value={slideCount} onChange={e => setSlideCount(parseInt(e.target.value) || 10)} />
+              <Label>{t("lectureBuilder.jsxText100")}</Label>
+              <Input type="number" min={1} max={50} value={slideCount} onChange={(e) => setSlideCount(parseInt(e.target.value) || 10)} />
             </div>
             <Button className="w-full" disabled={!fullText.trim() || splitScript.isPending}
-              onClick={() => splitScript.mutate({ projectId, fullText: fullText.trim(), slideCount, language })}>
-              {splitScript.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}
-              AI 자동 분류
-            </Button>
+          onClick={() => splitScript.mutate({ projectId, fullText: fullText.trim(), slideCount, language })}>
+              {splitScript.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}{t("lectureBuilder.jsxText101")}
+
+          </Button>
           </CardContent>
         </Card>
-      )}
+      }
 
-      {mode === "manual" && (
-        <Button variant="outline" onClick={addSection} className="gap-2">
-          <Plus className="w-4 h-4" /> 섹션 추가
-        </Button>
-      )}
+      {mode === "manual" &&
+      <Button variant="outline" onClick={addSection} className="gap-2">
+          <Plus className="w-4 h-4" />{t("lectureBuilder.jsxText102")}
+      </Button>
+      }
 
       {/* Script Sections List */}
-      {sections.length > 0 && (
-        <div className="space-y-3">
+      {sections.length > 0 &&
+      <div className="space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-1.5 cursor-pointer text-sm text-muted-foreground hover:text-foreground">
                 <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-border accent-primary"
-                  checked={selectedSectionIds.size > 0 && selectedSectionIds.size === sections.filter(s => s.text.trim()).length}
-                  onChange={toggleSelectAll}
-                />
-                전체선택
-              </label>
-              <h3 className="font-semibold text-lg">스크립트 섹션 ({sections.length}개){selectedSectionIds.size > 0 && <span className="text-sm text-primary font-normal ml-1">({selectedSectionIds.size}개 선택)</span>}</h3>
+                type="checkbox"
+                className="w-4 h-4 rounded border-border accent-primary"
+                checked={selectedSectionIds.size > 0 && selectedSectionIds.size === sections.filter((s) => s.text.trim()).length}
+                onChange={toggleSelectAll} />{t("lectureBuilder.jsxText103")}
+
+
+            </label>
+              <h3 className="font-semibold text-lg">{t("lectureBuilder.jsxText104")}{sections.length}{t("lectureBuilder.jsxText105")}{selectedSectionIds.size > 0 && <span className="text-sm text-primary font-normal ml-1">({selectedSectionIds.size}{t("lectureBuilder.jsxText106")}</span>}</h3>
             </div>
             <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
-              onClick={handleImproveAll}
-              disabled={batchImproving || sections.filter(s => s.text.trim()).length === 0}
-            >
-              {batchImproving ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> 개선 중... ({Math.round(batchProgress)}%)</>
-              ) : selectedSectionIds.size > 0 ? (
-                <><Wand2 className="w-4 h-4" /> 선택 {selectedSectionIds.size}개 AI 개선</>
-              ) : (
-                <><Wand2 className="w-4 h-4" /> 전체 AI 스크립트 개선</>
-              )}
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
+            onClick={handleImproveAll}
+            disabled={batchImproving || sections.filter((s) => s.text.trim()).length === 0}>
+            
+              {batchImproving ?
+            <><Loader2 className="w-4 h-4 animate-spin" />{t("lectureBuilder.jsxText107")}{Math.round(batchProgress)}%)</> :
+            selectedSectionIds.size > 0 ?
+            <><Wand2 className="w-4 h-4" />{t("lectureBuilder.jsxText108")}{selectedSectionIds.size}{t("lectureBuilder.jsxText109")}</> :
+
+            <><Wand2 className="w-4 h-4" />{t("lectureBuilder.jsxText110")}</>
+            }
             </Button>
           </div>
-          {batchImproving && (
-            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+          {batchImproving &&
+        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
               <div className="h-full bg-gradient-to-r from-primary to-blue-400 transition-all duration-500" style={{ width: `${batchProgress}%` }} />
             </div>
-          )}
-          {sections.map((sec, idx) => (
-            <Card key={sec.id} className={`group transition-colors ${selectedSectionIds.has(sec.id) ? "border-primary/40 bg-primary/5" : ""}`}>
+        }
+          {sections.map((sec, idx) =>
+        <Card key={sec.id} className={`group transition-colors ${selectedSectionIds.has(sec.id) ? "border-primary/40 bg-primary/5" : ""}`}>
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3">
                   <div className="flex flex-col items-center gap-1 pt-1">
                     <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
-                      checked={selectedSectionIds.has(sec.id)}
-                      onChange={() => toggleSectionSelect(sec.id)}
-                    />
+                  type="checkbox"
+                  className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                  checked={selectedSectionIds.has(sec.id)}
+                  onChange={() => toggleSectionSelect(sec.id)} />
+                
                     <Badge variant="outline" className="text-xs">{idx + 1}</Badge>
                   </div>
                   <div className="flex-1 space-y-2">
                     <Textarea
-                      value={sec.text}
-                      onChange={e => updateSection(idx, e.target.value)}
-                      placeholder={`섹션 ${idx + 1} 스크립트를 입력하세요...`}
-                      rows={3}
-                      className="resize-none"
-                    />
+                  value={sec.text}
+                  onChange={(e) => updateSection(idx, e.target.value)}
+                  placeholder={`섹션 ${idx + 1} 스크립트를 입력하세요...`}
+                  rows={3}
+                  className="resize-none" />
+                
                     <div className="flex items-center gap-2 flex-wrap">
-                      {avatars.length > 0 && (
-                        <Select value={sec.avatarId?.toString() || "default"} onValueChange={v => updateSectionAvatar(idx, v === "default" ? undefined : parseInt(v))}>
+                      {avatars.length > 0 &&
+                  <Select value={sec.avatarId?.toString() || "default"} onValueChange={(v) => updateSectionAvatar(idx, v === "default" ? undefined : parseInt(v))}>
                           <SelectTrigger className="w-40 h-8 text-xs">
-                            <SelectValue placeholder="화자 선택" />
+                            <SelectValue placeholder={t("lectureBuilder.stringLiteral111")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="default">기본 화자</SelectItem>
-                            {avatars.map(av => (
-                              <SelectItem key={av.id} value={av.id.toString()}>{av.name} ({AVATAR_ROLES.find(r => r.value === av.role)?.label})</SelectItem>
-                            ))}
+                            <SelectItem value="default">{t("lectureBuilder.jsxText112")}</SelectItem>
+                            {avatars.map((av) =>
+                      <SelectItem key={av.id} value={av.id.toString()}>{av.name} ({AVATAR_ROLES.find((r: any) => r.value === av.role)?.label})</SelectItem>
+                      )}
                           </SelectContent>
                         </Select>
-                      )}
+                  }
                       <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1 text-cyan-500 border-cyan-500/30 hover:bg-cyan-500/10"
-                        onClick={() => handleProofread(idx)}
-                        disabled={proofreadingIdx === idx || !sec.text.trim()}
-                      >
-                        {proofreadingIdx === idx ? (
-                          <><Loader2 className="w-3 h-3 animate-spin" /> 교정 중...</>
-                        ) : (
-                          <><Sparkles className="w-3 h-3" /> AI 교정</>
-                        )}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1 text-cyan-500 border-cyan-500/30 hover:bg-cyan-500/10"
+                    onClick={() => handleProofread(idx)}
+                    disabled={proofreadingIdx === idx || !sec.text.trim()}>
+                    
+                        {proofreadingIdx === idx ?
+                    <><Loader2 className="w-3 h-3 animate-spin" />{t("lectureBuilder.jsxText113")}</> :
+
+                    <><Sparkles className="w-3 h-3" />{t("lectureBuilder.jsxText114")}</>
+                    }
                       </Button>
                       <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1 text-primary border-primary/30 hover:bg-primary/10"
-                        onClick={() => handleImproveScript(idx)}
-                        disabled={improvingIdx === idx || !sec.text.trim()}
-                      >
-                        {improvingIdx === idx ? (
-                          <><Loader2 className="w-3 h-3 animate-spin" /> AI 개선 중...</>
-                        ) : (
-                          <><Wand2 className="w-3 h-3" /> AI 개선</>
-                        )}
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                    onClick={() => handleImproveScript(idx)}
+                    disabled={improvingIdx === idx || !sec.text.trim()}>
+                    
+                        {improvingIdx === idx ?
+                    <><Loader2 className="w-3 h-3 animate-spin" />{t("lectureBuilder.jsxText115")}</> :
+
+                    <><Wand2 className="w-3 h-3" />{t("lectureBuilder.jsxText116")}</>
+                    }
                       </Button>
-                      <span className="text-xs text-muted-foreground ml-auto">{sec.text.length}자 / ~{Math.ceil(sec.text.length / 5)}초</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{sec.text.length}{t("lectureBuilder.jsxText117")}{Math.ceil(sec.text.length / 5)}{t("lectureBuilder.jsxText118")}</span>
                     </div>
                   </div>
                   <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 shrink-0"
-                    onClick={() => removeSection(idx)}>
+              onClick={() => removeSection(idx)}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
-          {mode === "manual" && (
-            <Button variant="outline" onClick={addSection} className="w-full gap-2">
-              <Plus className="w-4 h-4" /> 섹션 추가
-            </Button>
-          )}
+        )}
+          {mode === "manual" &&
+        <Button variant="outline" onClick={addSection} className="w-full gap-2">
+              <Plus className="w-4 h-4" />{t("lectureBuilder.jsxText119")}
+        </Button>
+        }
 
           {/* AI Proofread Filter Selector */}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="text-xs text-muted-foreground">AI 교정 필터:</span>
-            {(["smooth", "news", "presentation", "conversational", "dramatic", "concise"] as const).map(f => (
-              <button key={f}
-                className={`px-2 py-0.5 rounded text-xs transition-colors ${
-                  proofreadFilter === f ? "bg-cyan-500 text-white" : "bg-muted hover:bg-muted/80 text-muted-foreground"
-                }`}
-                onClick={() => setProofreadFilter(f)}
-              >
-                {f === "smooth" ? "부드럽게" : f === "news" ? "뉴스체" : f === "presentation" ? "발표체" : f === "conversational" ? "대화체" : f === "dramatic" ? "극적" : "간결"}
+            <span className="text-xs text-muted-foreground">{t("lectureBuilder.jsxText120")}</span>
+            {(["smooth", "news", "presentation", "conversational", "dramatic", "concise"] as const).map((f) =>
+          <button key={f}
+          className={`px-2 py-0.5 rounded text-xs transition-colors ${
+          proofreadFilter === f ? "bg-cyan-500 text-white" : "bg-muted hover:bg-muted/80 text-muted-foreground"}`
+          }
+          onClick={() => setProofreadFilter(f)}>
+            
+                {f === "smooth" ? t("lectureBuilder.stringLiteral121") : f === "news" ? t("lectureBuilder.stringLiteral122") : f === "presentation" ? t("lectureBuilder.stringLiteral123") : f === "conversational" ? t("lectureBuilder.stringLiteral124") : f === "dramatic" ? t("lectureBuilder.stringLiteral125") : t("lectureBuilder.stringLiteral126")}
               </button>
-            ))}
+          )}
           </div>
           {/* AI Improvement Style Selector */}
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-muted-foreground">AI 개선 스타일:</span>
-            {(["educational", "formal", "casual", "storytelling"] as const).map(s => (
-              <button key={s}
-                className={`px-2 py-0.5 rounded text-xs transition-colors ${
-                  improveStyle === s ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80 text-muted-foreground"
-                }`}
-                onClick={() => setImproveStyle(s)}
-              >
-                {s === "educational" ? "교육적" : s === "formal" ? "격식적" : s === "casual" ? "친근" : "스토리"}
+            <span className="text-xs text-muted-foreground">{t("lectureBuilder.jsxText127")}</span>
+            {(["educational", "formal", "casual", "storytelling"] as const).map((s) =>
+          <button key={s}
+          className={`px-2 py-0.5 rounded text-xs transition-colors ${
+          improveStyle === s ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80 text-muted-foreground"}`
+          }
+          onClick={() => setImproveStyle(s)}>
+            
+                {s === "educational" ? t("lectureBuilder.stringLiteral128") : s === "formal" ? t("lectureBuilder.stringLiteral129") : s === "casual" ? t("lectureBuilder.stringLiteral130") : t("lectureBuilder.stringLiteral131")}
               </button>
-            ))}
+          )}
           </div>
         </div>
-      )}
+      }
 
       {/* AI Proofread Preview Dialog */}
-      {proofreadPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      {proofreadPreview &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <Card className="w-full max-w-3xl max-h-[80vh] overflow-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-cyan-500" />
-                AI 교정 결과
-                <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
-                  {proofreadPreview.filter === "smooth" ? "부드럽게" : proofreadPreview.filter === "news" ? "뉴스체" : proofreadPreview.filter === "presentation" ? "발표체" : proofreadPreview.filter === "conversational" ? "대화체" : proofreadPreview.filter === "dramatic" ? "극적" : "간결"}
+                <Sparkles className="w-5 h-5 text-cyan-500" />{t("lectureBuilder.jsxText132")}
+
+              <Badge className="bg-cyan-500/20 text-cyan-400 text-xs">
+                  {proofreadPreview.filter === "smooth" ? t("lectureBuilder.stringLiteral133") : proofreadPreview.filter === "news" ? t("lectureBuilder.stringLiteral134") : proofreadPreview.filter === "presentation" ? t("lectureBuilder.stringLiteral135") : proofreadPreview.filter === "conversational" ? t("lectureBuilder.stringLiteral136") : proofreadPreview.filter === "dramatic" ? t("lectureBuilder.stringLiteral137") : t("lectureBuilder.stringLiteral138")}
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">원본</h4>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">{t("lectureBuilder.jsxText139")}</h4>
                   <div className="p-3 bg-muted/50 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-auto">
                     {proofreadPreview.original}
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-cyan-500 mb-2">교정된 버전</h4>
+                  <h4 className="text-sm font-semibold text-cyan-500 mb-2">{t("lectureBuilder.jsxText140")}</h4>
                   <div className="p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-auto">
                     {proofreadPreview.proofread}
                   </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setProofreadPreview(null)}>
-                  취소
-                </Button>
+                <Button variant="outline" onClick={() => setProofreadPreview(null)}>{t("lectureBuilder.jsxText141")}
+
+              </Button>
                 <Button onClick={applyProofread} className="gap-1 bg-cyan-600 hover:bg-cyan-700">
-                  <Check className="w-4 h-4" /> 교정 적용
-                </Button>
+                  <Check className="w-4 h-4" />{t("lectureBuilder.jsxText142")}
+              </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
+      }
 
       {/* AI Improvement Preview Dialog */}
-      {improvedPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      {improvedPreview &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <Card className="w-full max-w-3xl max-h-[80vh] overflow-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Wand2 className="w-5 h-5 text-primary" />
-                AI 스크립트 개선 결과
-              </CardTitle>
+                <Wand2 className="w-5 h-5 text-primary" />{t("lectureBuilder.jsxText143")}
+
+            </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">원본</h4>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2">{t("lectureBuilder.jsxText144")}</h4>
                   <div className="p-3 bg-muted/50 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-auto">
                     {improvedPreview.original}
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-primary mb-2">개선된 버전</h4>
+                  <h4 className="text-sm font-semibold text-primary mb-2">{t("lectureBuilder.jsxText145")}</h4>
                   <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm whitespace-pre-wrap max-h-60 overflow-auto">
                     {improvedPreview.improved}
                   </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setImprovedPreview(null)}>
-                  취소
-                </Button>
+                <Button variant="outline" onClick={() => setImprovedPreview(null)}>{t("lectureBuilder.jsxText146")}
+
+              </Button>
                 <Button onClick={applyImprovement} className="gap-1">
-                  <Check className="w-4 h-4" /> 개선된 버전 적용
-                </Button>
+                  <Check className="w-4 h-4" />{t("lectureBuilder.jsxText147")}
+              </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
+      }
 
       {/* Batch AI Improvement Results Dialog */}
-      {batchResults && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      {batchResults &&
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <Card className="w-full max-w-4xl max-h-[85vh] overflow-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Wand2 className="w-5 h-5 text-primary" />
-                전체 AI 스크립트 개선 결과
-                <Badge variant="outline" className="ml-2">
-                  {batchResults.filter(r => r.improved !== r.original).length}/{batchResults.length}개 개선됨
-                </Badge>
+                <Wand2 className="w-5 h-5 text-primary" />{t("lectureBuilder.jsxText148")}
+
+              <Badge variant="outline" className="ml-2">
+                  {batchResults.filter((r) => r.improved !== r.original).length}/{batchResults.length}{t("lectureBuilder.jsxText149")}
+              </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3 max-h-[55vh] overflow-auto pr-1">
                 {batchResults.map((result, idx) => {
-                  const changed = result.improved !== result.original;
-                  return (
-                    <div key={result.id} className={`p-3 rounded-lg border ${changed ? "border-primary/30 bg-primary/5" : "border-muted bg-muted/30"}`}>
+                const changed = result.improved !== result.original;
+                return (
+                  <div key={result.id} className={`p-3 rounded-lg border ${changed ? "border-primary/30 bg-primary/5" : "border-muted bg-muted/30"}`}>
                       <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className="text-xs">섹션 {idx + 1}</Badge>
-                        {changed ? (
-                          <Badge className="bg-green-500/20 text-green-400 text-xs">개선됨</Badge>
-                        ) : (
-                          <Badge className="bg-muted text-muted-foreground text-xs">변경 없음</Badge>
-                        )}
+                        <Badge variant="outline" className="text-xs">{t("lectureBuilder.jsxText150")}{idx + 1}</Badge>
+                        {changed ?
+                      <Badge className="bg-green-500/20 text-green-400 text-xs">{t("lectureBuilder.jsxText151")}</Badge> :
+
+                      <Badge className="bg-muted text-muted-foreground text-xs">{t("lectureBuilder.jsxText152")}</Badge>
+                      }
                       </div>
-                      {changed ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {changed ?
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
-                            <span className="text-xs text-muted-foreground mb-1 block">원본</span>
+                            <span className="text-xs text-muted-foreground mb-1 block">{t("lectureBuilder.jsxText153")}</span>
                             <div className="p-2 bg-muted/50 rounded text-xs whitespace-pre-wrap max-h-32 overflow-auto">{result.original}</div>
                           </div>
                           <div>
-                            <span className="text-xs text-primary mb-1 block">개선</span>
+                            <span className="text-xs text-primary mb-1 block">{t("lectureBuilder.jsxText154")}</span>
                             <div className="p-2 bg-primary/5 border border-primary/20 rounded text-xs whitespace-pre-wrap max-h-32 overflow-auto">{result.improved}</div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-muted-foreground line-clamp-2">{result.original}</div>
-                      )}
-                    </div>
-                  );
-                })}
+                        </div> :
+
+                    <div className="text-xs text-muted-foreground line-clamp-2">{result.original}</div>
+                    }
+                    </div>);
+
+              })}
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t">
-                <Button variant="outline" onClick={() => { setBatchResults(null); setBatchProgress(0); }}>
-                  취소
-                </Button>
+                <Button variant="outline" onClick={() => {setBatchResults(null);setBatchProgress(0);}}>{t("lectureBuilder.jsxText155")}
+
+              </Button>
                 <Button onClick={applyAllImprovements} className="gap-1">
-                  <Check className="w-4 h-4" /> 전체 적용 ({batchResults.filter(r => r.improved !== r.original).length}개)
-                </Button>
+                  <Check className="w-4 h-4" />{t("lectureBuilder.jsxText156")}{batchResults.filter((r) => r.improved !== r.original).length}{t("lectureBuilder.jsxText157")}
+              </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-      )}
+      }
 
       {/* AI Improvement History */}
       <Card className="border-dashed border-muted-foreground/30">
@@ -1360,8 +1364,8 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
       </Card>
 
       {/* Script Version History Panel */}
-      {showVersionPanel && (
-        <Card className="border-blue-500/30 bg-blue-500/5">
+      {showVersionPanel &&
+      <Card className="border-blue-500/30 bg-blue-500/5">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -1375,19 +1379,19 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
             <CardDescription>\uc218\ub3d9 \uc800\uc7a5 \uc2dc \uc790\ub3d9\uc73c\ub85c \ubc84\uc804\uc774 \uc0dd\uc131\ub429\ub2c8\ub2e4. \uc774\uc804 \ubc84\uc804\uc73c\ub85c \ub3cc\uc544\uac08 \uc218 \uc788\uc2b5\ub2c8\ub2e4.</CardDescription>
           </CardHeader>
           <CardContent>
-            {versionsQuery.isLoading ? (
-              <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
-            ) : !versionsQuery.data?.length ? (
-              <p className="text-center text-muted-foreground py-6">\uc800\uc7a5\ub41c \ubc84\uc804\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \uc2a4\ud06c\ub9bd\ud2b8\ub97c \uc800\uc7a5\ud558\uba74 \uc790\ub3d9\uc73c\ub85c \ubc84\uc804\uc774 \uc0dd\uc131\ub429\ub2c8\ub2e4.</p>
-            ) : (
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {versionsQuery.data.map((v: any) => (
-                  <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+            {versionsQuery.isLoading ?
+          <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div> :
+          !versionsQuery.data?.length ?
+          <p className="text-center text-muted-foreground py-6">\uc800\uc7a5\ub41c \ubc84\uc804\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \uc2a4\ud06c\ub9bd\ud2b8\ub97c \uc800\uc7a5\ud558\uba74 \uc790\ub3d9\uc73c\ub85c \ubc84\uc804\uc774 \uc0dd\uc131\ub429\ub2c8\ub2e4.</p> :
+
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {versionsQuery.data.map((v: any) =>
+            <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm font-bold text-blue-500">v{v.versionNumber}</span>
                         <span className={`text-xs px-1.5 py-0.5 rounded ${v.changeType === "manual" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}>
-                          {v.changeType === "manual" ? "\uc218\ub3d9" : "\uc790\ub3d9"}
+                          {v.changeType === "manual" ? t("lectureBuilder.stringLiteral158") : t("lectureBuilder.stringLiteral159")}
                         </span>
                         <span className="text-xs text-muted-foreground">{v.sectionCount}\uac1c \uc139\uc158</span>
                       </div>
@@ -1397,44 +1401,44 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh }: {
                       </p>
                     </div>
                     <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
-                      disabled={restoreVersionMut.isPending}
-                      onClick={() => {
-                        if (confirm(`\uBC84\uC804 ${v.versionNumber}\uC73C\uB85C \uBCF5\uC6D0\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? \uD604\uC7AC \uC2A4\uD06C\uB9BD\uD2B8\uAC00 \uB300\uCCB4\uB429\uB2C8\uB2E4.`)) {
-                          restoreVersionMut.mutate({ projectId, versionId: v.id });
-                        }
-                      }}
-                    >
+                variant="outline"
+                size="sm"
+                className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
+                disabled={restoreVersionMut.isPending}
+                onClick={() => {
+                  if (confirm(`\uBC84\uC804 ${v.versionNumber}\uC73C\uB85C \uBCF5\uC6D0\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? \uD604\uC7AC \uC2A4\uD06C\uB9BD\uD2B8\uAC00 \uB300\uCCB4\uB429\uB2C8\uB2E4.`)) {
+                    restoreVersionMut.mutate({ projectId, versionId: v.id });
+                  }
+                }}>
+                
                       <Undo2 className="w-3.5 h-3.5" /> \ubcf5\uc6d0
                     </Button>
                   </div>
-                ))}
-              </div>
             )}
+              </div>
+          }
           </CardContent>
         </Card>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 // --- Improvement History Sub-component ---
-function ImprovementHistoryPanel({ projectId, sections, setSections }: {
-  projectId: number;
-  sections: any[];
-  setSections: (s: any[]) => void;
-}) {
+function ImprovementHistoryPanel({ projectId, sections, setSections
+
+
+
+}: {projectId: number;sections: any[];setSections: (s: any[]) => void;}) {const { t } = useLanguage();
   const [showHistory, setShowHistory] = useState(false);
-  const [detailGroup, setDetailGroup] = useState<{ batchId: string; style: string; count: number; createdAt: Date; sections: any[] } | null>(null);
+  const [detailGroup, setDetailGroup] = useState<{batchId: string;style: string;count: number;createdAt: Date;sections: any[];} | null>(null);
   const historyQuery = trpc.lectureBuilder.getImprovementHistory.useQuery(
     { projectId },
     { enabled: showHistory }
   );
   const revertMut = trpc.lectureBuilder.revertImprovement.useMutation({
     onSuccess: (data) => {
-      const newSections = sections.map(sec => {
+      const newSections = sections.map((sec) => {
         const reverted = data.sections.find((s: any) => s.sectionId === sec.id);
         return reverted ? { ...sec, text: reverted.originalText } : sec;
       });
@@ -1443,12 +1447,12 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
       historyQuery.refetch();
       setDetailGroup(null);
     },
-    onError: (e: any) => toast.error(`\ub418\ub3cc\ub9ac\uae30 \uc2e4\ud328: ${e.message}`),
+    onError: (e: any) => toast.error(`\ub418\ub3cc\ub9ac\uae30 \uc2e4\ud328: ${e.message}`)
   });
 
   const groupedHistory = useMemo(() => {
     if (!historyQuery.data) return [];
-    const groups = new Map<string, { batchId: string; style: string; count: number; createdAt: Date; sections: typeof historyQuery.data }>(); 
+    const groups = new Map<string, {batchId: string;style: string;count: number;createdAt: Date;sections: typeof historyQuery.data;}>();
     for (const item of historyQuery.data) {
       const key = item.batchId || `single-${item.id}`;
       if (!groups.has(key)) {
@@ -1461,29 +1465,29 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
     return Array.from(groups.values());
   }, [historyQuery.data]);
 
-  const styleLabels: Record<string, string> = { formal: "\uaca9\uc2dd\uc801", casual: "\uce5c\uadfc", educational: "\uad50\uc721\uc801", storytelling: "\uc2a4\ud1a0\ub9ac" };
+  const styleLabels: Record<string, string> = { formal: t("lectureBuilder.stringLiteral160"), casual: t("lectureBuilder.stringLiteral161"), educational: t("lectureBuilder.stringLiteral162"), storytelling: t("lectureBuilder.stringLiteral163") };
 
   return (
     <div className="space-y-3">
       <button
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
-        onClick={() => setShowHistory(!showHistory)}
-      >
+        onClick={() => setShowHistory(!showHistory)}>
+        
         <History className="w-4 h-4" />
         AI \uac1c\uc120 \uc774\ub825 {showHistory ? "\u25b2" : "\u25bc"}
       </button>
-      {showHistory && (
-        <div className="space-y-2">
+      {showHistory &&
+      <div className="space-y-2">
           {historyQuery.isLoading && <p className="text-sm text-muted-foreground">\ub85c\ub529 \uc911...</p>}
-          {groupedHistory.length === 0 && !historyQuery.isLoading && (
-            <p className="text-sm text-muted-foreground">\uc544\uc9c1 AI \uac1c\uc120 \uc774\ub825\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.</p>
-          )}
-          {groupedHistory.map((group) => (
-            <div
-              key={group.batchId}
-              className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:bg-muted/80 transition-colors"
-              onClick={() => setDetailGroup(group)}
-            >
+          {groupedHistory.length === 0 && !historyQuery.isLoading &&
+        <p className="text-sm text-muted-foreground">\uc544\uc9c1 AI \uac1c\uc120 \uc774\ub825\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.</p>
+        }
+          {groupedHistory.map((group) =>
+        <div
+          key={group.batchId}
+          className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50 cursor-pointer hover:bg-muted/80 transition-colors"
+          onClick={() => setDetailGroup(group)}>
+          
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">{styleLabels[group.style] || group.style}</Badge>
@@ -1495,39 +1499,39 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
               </div>
               <div className="flex items-center gap-2">
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-1 text-muted-foreground"
-                  onClick={(e) => { e.stopPropagation(); setDetailGroup(group); }}
-                >
+              variant="ghost"
+              size="sm"
+              className="gap-1 text-muted-foreground"
+              onClick={(e) => {e.stopPropagation();setDetailGroup(group);}}>
+              
                   <Eye className="w-3.5 h-3.5" /> \uc0c1\uc138
                 </Button>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (group.batchId.startsWith("single-")) {
-                      toast.error("\ub2e8\uc77c \uac1c\uc120\uc740 \ub418\ub3cc\ub9ac\uae30\ub97c \uc9c0\uc6d0\ud558\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4");
-                      return;
-                    }
-                    revertMut.mutate({ batchId: group.batchId });
-                  }}
-                  disabled={revertMut.isPending}
-                >
+              variant="outline"
+              size="sm"
+              className="gap-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (group.batchId.startsWith("single-")) {
+                  toast.error(t("lectureBuilder.stringLiteral164"));
+                  return;
+                }
+                revertMut.mutate({ batchId: group.batchId });
+              }}
+              disabled={revertMut.isPending}>
+              
                   <Undo2 className="w-3.5 h-3.5" /> \ub418\ub3cc\ub9ac\uae30
                 </Button>
               </div>
             </div>
-          ))}
+        )}
         </div>
-      )}
+      }
 
       {/* Detail Comparison Modal */}
-      {detailGroup && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setDetailGroup(null)}>
-          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+      {detailGroup &&
+      <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setDetailGroup(null)}>
+          <div className="bg-card rounded-xl border shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-3">
                 <History className="w-5 h-5 text-primary" />
@@ -1540,17 +1544,17 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {!detailGroup.batchId.startsWith("single-") && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
-                    onClick={() => revertMut.mutate({ batchId: detailGroup.batchId })}
-                    disabled={revertMut.isPending}
-                  >
+                {!detailGroup.batchId.startsWith("single-") &&
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 text-orange-500 border-orange-500/30 hover:bg-orange-500/10"
+                onClick={() => revertMut.mutate({ batchId: detailGroup.batchId })}
+                disabled={revertMut.isPending}>
+                
                     <Undo2 className="w-3.5 h-3.5" /> \ub418\ub3cc\ub9ac\uae30
                   </Button>
-                )}
+              }
                 <Button variant="ghost" size="sm" onClick={() => setDetailGroup(null)}>
                   <X className="w-4 h-4" />
                 </Button>
@@ -1558,56 +1562,56 @@ function ImprovementHistoryPanel({ projectId, sections, setSections }: {
             </div>
             <div className="overflow-y-auto max-h-[calc(85vh-80px)] p-4 space-y-4">
               {detailGroup.sections.map((item: any, idx: number) => {
-                const hasChange = item.originalText !== item.improvedText;
-                return (
-                  <div key={item.id || idx} className="border rounded-lg overflow-hidden">
+              const hasChange = item.originalText !== item.improvedText;
+              return (
+                <div key={item.id || idx} className="border rounded-lg overflow-hidden">
                     <div className="bg-muted/30 px-4 py-2 border-b flex items-center gap-2">
                       <span className="text-sm font-medium">\uc139\uc158 {idx + 1}</span>
-                      {hasChange ? (
-                        <Badge className="bg-green-500/10 text-green-500 text-xs">\uac1c\uc120\ub428</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs text-muted-foreground">\ubcc0\uacbd\uc5c6\uc74c</Badge>
-                      )}
+                      {hasChange ?
+                    <Badge className="bg-green-500/10 text-green-500 text-xs">\uac1c\uc120\ub428</Badge> :
+
+                    <Badge variant="outline" className="text-xs text-muted-foreground">\ubcc0\uacbd\uc5c6\uc74c</Badge>
+                    }
                     </div>
                     <div className="grid grid-cols-2 divide-x">
                       <div className="p-4">
                         <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">\uc6d0\ubcf8</p>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">{item.originalText || "(\ube44\uc5b4\uc788\uc74c)"}</p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">{item.originalText || t("lectureBuilder.stringLiteral165")}</p>
                       </div>
                       <div className="p-4">
                         <p className="text-xs font-medium text-primary mb-2 uppercase tracking-wider">\uac1c\uc120</p>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.improvedText || "(\ube44\uc5b4\uc788\uc74c)"}</p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.improvedText || t("lectureBuilder.stringLiteral166")}</p>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  </div>);
+
+            })}
             </div>
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 // ============ STEP 3: SLIDES ============
-function Step3Slides({ projectId, slides, onRefresh }: {
-  projectId: number;
-  slides: any[];
-  onRefresh: () => void;
-}) {
+function Step3Slides({ projectId, slides, onRefresh
+
+
+
+}: {projectId: number;slides: any[];onRefresh: () => void;}) {const { t } = useLanguage();
   const [uploading, setUploading] = useState(false);
   const [converting, setConverting] = useState(false);
   const [conversionStatus, setConversionStatus] = useState("");
-  const [extractedTexts, setExtractedTexts] = useState<{ pageIndex: number; text: string }[]>([]);
+  const [extractedTexts, setExtractedTexts] = useState<{pageIndex: number;text: string;}[]>([]);
   const [applyingScripts, setApplyingScripts] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const deleteSlide = trpc.lectureBuilder.deleteSlide.useMutation({
-    onSuccess: () => { toast.success("슬라이드가 삭제되었습니다"); onRefresh(); },
+    onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral167"));onRefresh();}
   });
   const reorderSlides = trpc.lectureBuilder.reorderSlides.useMutation({
-    onSuccess: () => onRefresh(),
+    onSuccess: () => onRefresh()
   });
   const uploadImageSlide = trpc.lectureBuilder.uploadImageSlide.useMutation();
   const convertFileMut = trpc.lectureBuilder.convertFile.useMutation();
@@ -1654,13 +1658,13 @@ function Step3Slides({ projectId, slides, onRefresh }: {
               projectId,
               fileData: base64,
               fileName: file.name,
-              mimeType: file.type || "application/octet-stream",
+              mimeType: file.type || "application/octet-stream"
             });
             // Store extracted texts for script draft creation
             if (result.extractedTexts && result.extractedTexts.length > 0) {
               setExtractedTexts(result.extractedTexts);
             }
-            toast.success(`${file.name}: ${result.count}개 슬라이드로 변환 완료${result.extractedTexts?.length ? " (텍스트 추출 완료)" : ""}`);
+            toast.success(`${file.name}: ${result.count}개 슬라이드로 변환 완료${result.extractedTexts?.length ? t("lectureBuilder.stringLiteral168") : ""}`);
           } catch (err: any) {
             toast.error(`${file.name} 변환 실패: ${err.message}`);
           } finally {
@@ -1674,14 +1678,14 @@ function Step3Slides({ projectId, slides, onRefresh }: {
             fileData: base64,
             fileName: file.name,
             mimeType: file.type || "image/png",
-            slideOrder: currentOrder++,
+            slideOrder: currentOrder++
           });
           toast.success(`${file.name} 업로드 완료`);
         }
       }
       onRefresh();
     } catch (err: any) {
-      toast.error(err.message || "업로드 실패");
+      toast.error(err.message || t("lectureBuilder.stringLiteral169"));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -1702,107 +1706,107 @@ function Step3Slides({ projectId, slides, onRefresh }: {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">슬라이드 업로드</h2>
-          <p className="text-muted-foreground">PPT, PDF, 또는 이미지 파일을 업로드하세요. PPT/PDF는 자동으로 개별 슬라이드 이미지로 변환됩니다.</p>
+          <h2 className="text-2xl font-bold">{t("lectureBuilder.jsxText170")}</h2>
+          <p className="text-muted-foreground">{t("lectureBuilder.jsxText171")}</p>
         </div>
         <div className="flex gap-2">
           <input ref={fileInputRef} type="file" multiple accept=".pptx,.ppt,.pdf,.png,.jpg,.jpeg,.webp" className="hidden"
-            onChange={handleFileUpload} />
+          onChange={handleFileUpload} />
           <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="gap-2">
             {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            {converting ? "변환 중..." : "파일 업로드"}
+            {converting ? t("lectureBuilder.stringLiteral172") : t("lectureBuilder.stringLiteral173")}
           </Button>
         </div>
       </div>
 
       {/* Conversion Status */}
-      {converting && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
+      {converting &&
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
           <Loader2 className="w-5 h-5 animate-spin text-blue-400" />
           <div>
             <p className="text-sm font-medium">{conversionStatus}</p>
-            <p className="text-xs text-muted-foreground">PPT/PDF를 슬라이드 이미지로 변환하고 있습니다. 파일 크기에 따라 시간이 걸릴 수 있습니다.</p>
+            <p className="text-xs text-muted-foreground">{t("lectureBuilder.jsxText174")}</p>
           </div>
         </div>
-      )}
+      }
 
       {/* Drop Zone */}
-      {slides.length === 0 && !converting && (
-        <div className="border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer hover:border-primary/50 transition-colors"
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add("border-primary"); }}
-          onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove("border-primary"); }}
-          onDrop={e => {
-            e.preventDefault();
-            e.currentTarget.classList.remove("border-primary");
-            if (e.dataTransfer.files.length > 0 && fileInputRef.current) {
-              const dt = new DataTransfer();
-              for (const f of Array.from(e.dataTransfer.files)) dt.items.add(f);
-              fileInputRef.current.files = dt.files;
-              fileInputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
-            }
-          }}
-        >
+      {slides.length === 0 && !converting &&
+      <div className="border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer hover:border-primary/50 transition-colors"
+      onClick={() => fileInputRef.current?.click()}
+      onDragOver={(e) => {e.preventDefault();e.currentTarget.classList.add("border-primary");}}
+      onDragLeave={(e) => {e.preventDefault();e.currentTarget.classList.remove("border-primary");}}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove("border-primary");
+        if (e.dataTransfer.files.length > 0 && fileInputRef.current) {
+          const dt = new DataTransfer();
+          for (const f of Array.from(e.dataTransfer.files)) dt.items.add(f);
+          fileInputRef.current.files = dt.files;
+          fileInputRef.current.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }}>
+        
           <Image className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold mb-2">파일을 드래그하거나 클릭하세요</h3>
-          <p className="text-muted-foreground">PPT (.pptx), PDF, 이미지 (.png, .jpg) 지원</p>
-          <p className="text-xs text-muted-foreground mt-2">PPT/PDF 파일은 서버에서 자동으로 슬라이드별 이미지로 변환됩니다</p>
+          <h3 className="text-xl font-semibold mb-2">{t("lectureBuilder.jsxText175")}</h3>
+          <p className="text-muted-foreground">{t("lectureBuilder.jsxText176")}</p>
+          <p className="text-xs text-muted-foreground mt-2">{t("lectureBuilder.jsxText177")}</p>
         </div>
-      )}
+      }
 
       {/* Extracted Text → Script Draft Banner */}
-      {extractedTexts.length > 0 && slides.length > 0 && (
-        <Card className="border-green-500/30 bg-green-500/5">
+      {extractedTexts.length > 0 && slides.length > 0 &&
+      <Card className="border-green-500/30 bg-green-500/5">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-sm text-green-400 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  PPT/PDF 텍스트 추출 완료 ({extractedTexts.filter(t => t.text && !t.text.startsWith("[Page")).length}개 슬라이드)
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  추출된 텍스트를 스크립트 초안으로 자동 적용할 수 있습니다. Step 2에서 편집 가능합니다.
-                </CardDescription>
+                  <FileText className="w-4 h-4" />{t("lectureBuilder.jsxText178")}
+                {extractedTexts.filter((t) => t.text && !t.text.startsWith("[Page")).length}{t("lectureBuilder.jsxText179")}
+              </CardTitle>
+                <CardDescription className="text-xs">{t("lectureBuilder.jsxText180")}
+
+              </CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs gap-1 border-green-500/30 hover:bg-green-500/10"
-                  disabled={applyingScripts}
-                  onClick={async () => {
-                    setApplyingScripts(true);
-                    try {
-                      const pairs = extractedTexts
-                        .filter(t => t.text && !t.text.startsWith("[Page"))
-                        .map((t, idx) => ({
-                          slideId: slides[t.pageIndex]?.id || slides[idx]?.id,
-                          text: t.text,
-                        }))
-                        .filter(p => p.slideId);
-                      const result = await applyTextsMut.mutateAsync({
-                        projectId,
-                        slideTextPairs: pairs,
-                      });
-                      toast.success(`${result.created}개 스크립트 초안이 생성되었습니다`);
-                      setExtractedTexts([]);
-                      onRefresh();
-                    } catch (err: any) {
-                      toast.error(err.message || "스크립트 적용 실패");
-                    } finally {
-                      setApplyingScripts(false);
-                    }
-                  }}
-                >
-                  {applyingScripts ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}
-                  스크립트 초안 적용
-                </Button>
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1 border-green-500/30 hover:bg-green-500/10"
+                disabled={applyingScripts}
+                onClick={async () => {
+                  setApplyingScripts(true);
+                  try {
+                    const pairs = extractedTexts.
+                    filter((t) => t.text && !t.text.startsWith("[Page")).
+                    map((t, idx) => ({
+                      slideId: slides[t.pageIndex]?.id || slides[idx]?.id,
+                      text: t.text
+                    })).
+                    filter((p) => p.slideId);
+                    const result = await applyTextsMut.mutateAsync({
+                      projectId,
+                      slideTextPairs: pairs
+                    });
+                    toast.success(`${result.created}개 스크립트 초안이 생성되었습니다`);
+                    setExtractedTexts([]);
+                    onRefresh();
+                  } catch (err: any) {
+                    toast.error(err.message || t("lectureBuilder.stringLiteral181"));
+                  } finally {
+                    setApplyingScripts(false);
+                  }
+                }}>
+                
+                  {applyingScripts ? <Loader2 className="w-3 h-3 animate-spin" /> : <FileText className="w-3 h-3" />}{t("lectureBuilder.jsxText182")}
+
+              </Button>
                 <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs text-muted-foreground"
-                  onClick={() => setExtractedTexts([])}
-                >
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground"
+                onClick={() => setExtractedTexts([])}>
+                
                   <X className="w-3 h-3" />
                 </Button>
               </div>
@@ -1811,78 +1815,80 @@ function Step3Slides({ projectId, slides, onRefresh }: {
           <CardContent>
             <ScrollArea className="max-h-40">
               <div className="space-y-1">
-                {extractedTexts.slice(0, 10).map((t, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs">
-                    <Badge variant="outline" className="shrink-0 text-[10px]">{t.pageIndex + 1}</Badge>
-                    <span className="text-muted-foreground line-clamp-2">{t.text || "(텍스트 없음)"}</span>
+               {extractedTexts.slice(0, 10).map((txt, i) =>
+              <div key={i} className="flex items-start gap-2 text-xs">
+                    <Badge variant="outline" className="shrink-0 text-[10px]">{txt.pageIndex + 1}</Badge>
+                    <span className="text-muted-foreground line-clamp-2">{txt.text || t("lectureBuilder.stringLiteral183")}</span>
                   </div>
-                ))}
-                {extractedTexts.length > 10 && (
-                  <p className="text-[10px] text-muted-foreground">... 외 {extractedTexts.length - 10}개 슬라이드</p>
-                )}
+              )}
+                {extractedTexts.length > 10 &&
+              <p className="text-[10px] text-muted-foreground">{t("lectureBuilder.jsxText184")}{extractedTexts.length - 10}{t("lectureBuilder.jsxText185")}</p>
+              }
               </div>
             </ScrollArea>
           </CardContent>
         </Card>
-      )}
+      }
 
       {/* Slide Grid */}
-      {slides.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {slides.map((slide: any, idx: number) => (
-            <div key={slide.id} className="group relative">
+      {slides.length > 0 &&
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {slides.map((slide: any, idx: number) =>
+        <div key={slide.id} className="group relative">
               <div className="aspect-video rounded-lg overflow-hidden border bg-muted">
                 <img src={slide.imageUrl} alt={`슬라이드 ${idx + 1}`} className="w-full h-full object-contain" />
               </div>
               <div className="absolute top-1 left-1">
                 <Badge className="text-xs bg-black/60 text-white">{idx + 1}</Badge>
               </div>
-              {slide.originalFileName && (
-                <div className="absolute bottom-1 left-1">
+              {slide.originalFileName &&
+          <div className="absolute bottom-1 left-1">
                   <Badge variant="outline" className="text-[9px] bg-black/40 text-white border-white/20 max-w-[100px] truncate">
                     {slide.originalFileName}
                   </Badge>
                 </div>
-              )}
+          }
               <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                {idx > 0 && (
-                  <button className="w-6 h-6 rounded bg-black/60 text-white flex items-center justify-center text-xs"
-                    onClick={() => moveSlide(idx, idx - 1)}>&#8592;</button>
-                )}
-                {idx < slides.length - 1 && (
-                  <button className="w-6 h-6 rounded bg-black/60 text-white flex items-center justify-center text-xs"
-                    onClick={() => moveSlide(idx, idx + 1)}>&#8594;</button>
-                )}
+                {idx > 0 &&
+            <button className="w-6 h-6 rounded bg-black/60 text-white flex items-center justify-center text-xs"
+            onClick={() => moveSlide(idx, idx - 1)}>&#8592;</button>
+            }
+                {idx < slides.length - 1 &&
+            <button className="w-6 h-6 rounded bg-black/60 text-white flex items-center justify-center text-xs"
+            onClick={() => moveSlide(idx, idx + 1)}>&#8594;</button>
+            }
                 <button className="w-6 h-6 rounded bg-red-500/80 text-white flex items-center justify-center"
-                  onClick={() => deleteSlide.mutate({ id: slide.id })}>
+            onClick={() => deleteSlide.mutate({ id: slide.id })}>
                   <X className="w-3 h-3" />
                 </button>
               </div>
             </div>
-          ))}
+        )}
           {/* Add more button */}
           <div className="aspect-video rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
-            onClick={() => fileInputRef.current?.click()}>
+        onClick={() => fileInputRef.current?.click()}>
             <Plus className="w-8 h-8 text-muted-foreground" />
           </div>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 // ============ STEP 4: MATCHING EDITOR ============
-function Step4Matching({ projectId, slides, scripts, avatars, annotations, avatarOverrides, insertContent, transitions, onRefresh }: {
-  projectId: number;
-  slides: any[];
-  scripts: any[];
-  avatars: any[];
-  annotations: any[];
-  avatarOverrides: any[];
-  insertContent: any[];
-  transitions: any[];
-  onRefresh: () => void;
-}) {
+function Step4Matching({ projectId, slides, scripts, avatars, annotations, avatarOverrides, insertContent, transitions, onRefresh
+
+
+
+
+
+
+
+
+
+}: {projectId: number;slides: any[];scripts: any[];avatars: any[];annotations: any[];avatarOverrides: any[];insertContent: any[];transitions: any[];onRefresh: () => void;}) {const { t } = useLanguage();
+  const ANNOTATION_TOOLS = getANNOTATION_TOOLS(t);
+  const AVATAR_ROLES = getAVATAR_ROLES(t);
   const [selectedSlideIdx, setSelectedSlideIdx] = useState(0);
   const [annotationTool, setAnnotationTool] = useState<string | null>(null);
   const [penColor, setPenColor] = useState("#FF0000");
@@ -1890,13 +1896,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentPath, setCurrentPath] = useState<{ x: number; y: number }[]>([]);
+  const [currentPath, setCurrentPath] = useState<{x: number;y: number;}[]>([]);
   // Undo/Redo stacks (store annotation IDs)
   const [undoStack, setUndoStack] = useState<number[]>([]);
   const [redoStack, setRedoStack] = useState<number[]>([]);
 
   // Script assignments per slide
-  const [slideScriptMap, setSlideScriptMap] = useState<Record<number, { text: string; avatarId?: number }>>({});
+  const [slideScriptMap, setSlideScriptMap] = useState<Record<number, {text: string;avatarId?: number;}>>({});
 
   // ── Interpreter state ──
   const [interpreterEnabled, setInterpreterEnabled] = useState(false);
@@ -1907,7 +1913,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
 
   // Initialize from existing data
   useEffect(() => {
-    const map: Record<number, { text: string; avatarId?: number }> = {};
+    const map: Record<number, {text: string;avatarId?: number;}> = {};
     const iTexts: Record<number, string> = {};
     scripts.forEach((s: any) => {
       if (s.slideId && s.slideId > 0) {
@@ -1940,48 +1946,48 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
 
   // Interpreter mutations
   const updateInterpreterSettingsMut = trpc.lectureBuilder.updateInterpreterSettings.useMutation({
-    onSuccess: () => { toast.success("통역 설정 저장됨"); projectQuery.refetch(); },
-    onError: (e: any) => toast.error(e.message),
+    onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral186"));projectQuery.refetch();},
+    onError: (e: any) => toast.error(e.message)
   });
   const autoTranslateSlidesMut = trpc.lectureBuilder.autoTranslateSlides.useMutation({
     onSuccess: (data) => {
       toast.success(`${data.count}개 슬라이드 번역 완료`);
       const newTexts: Record<number, string> = {};
-      data.translations.forEach((t: any) => { newTexts[t.slideId] = t.text; });
-      setInterpreterTexts(prev => ({ ...prev, ...newTexts }));
+      data.translations.forEach((t: any) => {newTexts[t.slideId] = t.text;});
+      setInterpreterTexts((prev) => ({ ...prev, ...newTexts }));
       onRefresh();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message)
   });
   const updateSlideInterpreterTextMut = trpc.lectureBuilder.updateSlideInterpreterText.useMutation({
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message)
   });
 
   const voicesQuery = trpc.tts.voices.useQuery();
   const generateAllTtsMut = trpc.lectureBuilder.generateAllInterpreterTts.useMutation({
     onSuccess: (data) => toast.success(`${data.generated}/${data.total}개 통역 오디오 생성 완료`),
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message)
   });
   const exportSrtMut = trpc.lectureBuilder.exportInterpreterSrt.useMutation({
     onSuccess: (data) => {
       window.open(data.srtUrl, "_blank");
       toast.success(`SRT 파일 다운로드 (${data.subtitleCount}개 자막)`);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message)
   });
 
   const INTERPRETER_LANGUAGES = [
-    { code: "ko", name: "한국어", flag: "🇰🇷" }, { code: "en", name: "English", flag: "🇺🇸" },
-    { code: "zh", name: "中文", flag: "🇨🇳" }, { code: "ja", name: "日本語", flag: "🇯🇵" },
-    { code: "es", name: "Español", flag: "🇪🇸" }, { code: "fr", name: "Français", flag: "🇫🇷" },
-    { code: "de", name: "Deutsch", flag: "🇩🇪" }, { code: "pt", name: "Português", flag: "🇧🇷" },
-    { code: "ru", name: "Русский", flag: "🇷🇺" }, { code: "ar", name: "العربية", flag: "🇸🇦" },
-    { code: "hi", name: "हिन्दी", flag: "🇮🇳" }, { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
-    { code: "th", name: "ไทย", flag: "🇹🇭" }, { code: "id", name: "Indonesia", flag: "🇮🇩" },
-    { code: "tr", name: "Türkçe", flag: "🇹🇷" }, { code: "pl", name: "Polski", flag: "🇵🇱" },
-    { code: "nl", name: "Nederlands", flag: "🇳🇱" }, { code: "sv", name: "Svenska", flag: "🇸🇪" },
-    { code: "it", name: "Italiano", flag: "🇮🇹" }, { code: "ms", name: "Melayu", flag: "🇲🇾" },
-  ];
+  { code: "ko", name: t("lectureBuilder.stringLiteral187"), flag: "🇰🇷" }, { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "zh", name: "中文", flag: "🇨🇳" }, { code: "ja", name: "日本語", flag: "🇯🇵" },
+  { code: "es", name: "Español", flag: "🇪🇸" }, { code: "fr", name: "Français", flag: "🇫🇷" },
+  { code: "de", name: "Deutsch", flag: "🇩🇪" }, { code: "pt", name: "Português", flag: "🇧🇷" },
+  { code: "ru", name: "Русский", flag: "🇷🇺" }, { code: "ar", name: "العربية", flag: "🇸🇦" },
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳" }, { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "th", name: "ไทย", flag: "🇹🇭" }, { code: "id", name: "Indonesia", flag: "🇮🇩" },
+  { code: "tr", name: "Türkçe", flag: "🇹🇷" }, { code: "pl", name: "Polski", flag: "🇵🇱" },
+  { code: "nl", name: "Nederlands", flag: "🇳🇱" }, { code: "sv", name: "Svenska", flag: "🇸🇪" },
+  { code: "it", name: "Italiano", flag: "🇮🇹" }, { code: "ms", name: "Melayu", flag: "🇲🇾" }];
+
 
   // Avatar overlay per-slide
   const [showAvatarPanel, setShowAvatarPanel] = useState(false);
@@ -1991,8 +1997,8 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const [avatarShape, setAvatarShape] = useState<"circle" | "rounded" | "rectangle">("circle");
   const [avatarOpacity, setAvatarOpacity] = useState(100);
   const saveAvatarOverrideMut = trpc.lectureBuilder.upsertAvatarOverride.useMutation({
-    onSuccess: () => { toast.success("아바타 설정 저장됨"); onRefresh(); },
-    onError: (e: any) => toast.error(e.message),
+    onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral188"));onRefresh();},
+    onError: (e: any) => toast.error(e.message)
   });
 
   // Load avatar override for current slide
@@ -2006,7 +2012,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
       setAvatarShape(override.avatarShape || "circle");
       setAvatarOpacity(override.avatarOpacity ?? 100);
     } else {
-      setAvatarSize(25); setAvatarPosX(75); setAvatarPosY(75); setAvatarShape("circle"); setAvatarOpacity(100);
+      setAvatarSize(25);setAvatarPosX(75);setAvatarPosY(75);setAvatarShape("circle");setAvatarOpacity(100);
     }
   }, [currentSlide?.id, avatarOverrides]);
 
@@ -2019,7 +2025,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
       offsetX: avatarPosX,
       offsetY: avatarPosY,
       avatarShape: avatarShape,
-      avatarOpacity: avatarOpacity,
+      avatarOpacity: avatarOpacity
     });
   };
 
@@ -2028,11 +2034,11 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const [insertType, setInsertType] = useState<"whiteboard" | "video" | "image" | "design">("whiteboard");
   const [insertAfterSlideId, setInsertAfterSlideId] = useState<number | null>(null);
   const saveInsertMut = trpc.lectureBuilder.createInsertContent.useMutation({
-    onSuccess: () => { toast.success("삽입 콘텐츠 저장됨"); onRefresh(); setShowInsertPanel(false); },
-    onError: (e: any) => toast.error(e.message),
+    onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral189"));onRefresh();setShowInsertPanel(false);},
+    onError: (e: any) => toast.error(e.message)
   });
   const deleteInsertMut = trpc.lectureBuilder.deleteInsertContent.useMutation({
-    onSuccess: () => { toast.success("삽입 콘텐츠 삭제됨"); onRefresh(); },
+    onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral190"));onRefresh();}
   });
 
   // Slide transitions
@@ -2042,12 +2048,12 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const [transitionEasing, setTransitionEasing] = useState<string>("ease_in_out");
 
   const upsertTransitionMut = trpc.lectureBuilder.upsertSlideTransition.useMutation({
-    onSuccess: () => { toast.success("전환 효과 저장됨"); onRefresh(); },
-    onError: (e: any) => toast.error(e.message),
+    onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral191"));onRefresh();},
+    onError: (e: any) => toast.error(e.message)
   });
   const setAllTransitionsMut = trpc.lectureBuilder.setAllTransitions.useMutation({
-    onSuccess: (data) => { toast.success(`전체 ${data.count}개 슬라이드에 전환 효과 적용`); onRefresh(); },
-    onError: (e: any) => toast.error(e.message),
+    onSuccess: (data) => {toast.success(`전체 ${data.count}개 슬라이드에 전환 효과 적용`);onRefresh();},
+    onError: (e: any) => toast.error(e.message)
   });
 
   // Load transition for current slide
@@ -2059,7 +2065,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
       setTransitionDuration(tr.durationMs || 500);
       setTransitionEasing(tr.easing || "ease_in_out");
     } else {
-      setTransitionType("none"); setTransitionDuration(500); setTransitionEasing("ease_in_out");
+      setTransitionType("none");setTransitionDuration(500);setTransitionEasing("ease_in_out");
     }
   }, [currentSlide?.id, transitions]);
 
@@ -2069,13 +2075,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const generateWhiteboardMut = trpc.lectureBuilder.generateWhiteboardContent.useMutation({
     onSuccess: (data) => {
       setWbGenerating(false);
-      toast.success("AI 화이트보드 콘텐츠 생성 완료");
+      toast.success(t("lectureBuilder.stringLiteral192"));
     },
-    onError: (e: any) => { setWbGenerating(false); toast.error(e.message); },
+    onError: (e: any) => {setWbGenerating(false);toast.error(e.message);}
   });
 
   const assignScript = async (slideId: number, text: string, avatarId?: number) => {
-    setSlideScriptMap(prev => ({ ...prev, [slideId]: { text, avatarId } }));
+    setSlideScriptMap((prev) => ({ ...prev, [slideId]: { text, avatarId } }));
     try {
       await setScriptMut.mutateAsync({ projectId, slideId, scriptText: text, avatarId, sortOrder: 0 });
     } catch (e: any) {
@@ -2087,8 +2093,8 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const getRelativePos = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     return {
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
+      x: (e.clientX - rect.left) / rect.width * 100,
+      y: (e.clientY - rect.top) / rect.height * 100
     };
   };
 
@@ -2096,8 +2102,8 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
     const rect = e.currentTarget.getBoundingClientRect();
     const touch = e.touches[0] || e.changedTouches[0];
     return {
-      x: ((touch.clientX - rect.left) / rect.width) * 100,
-      y: ((touch.clientY - rect.top) / rect.height) * 100,
+      x: (touch.clientX - rect.left) / rect.width * 100,
+      y: (touch.clientY - rect.top) / rect.height * 100
     };
   };
 
@@ -2129,24 +2135,24 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
       if (ann.annotationType === "freehand" && pd.points) {
         ctx.beginPath();
         pd.points.forEach((pt: any, i: number) => {
-          const px = (pt.x / 100) * w;
-          const py = (pt.y / 100) * h;
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
+          const px = pt.x / 100 * w;
+          const py = pt.y / 100 * h;
+          if (i === 0) ctx.moveTo(px, py);else
+          ctx.lineTo(px, py);
         });
         ctx.stroke();
       } else if (ann.annotationType === "circle") {
-        const cx = (pd.x / 100) * w;
-        const cy = (pd.y / 100) * h;
-        const r = ((pd.width || 8) / 100) * Math.min(w, h);
+        const cx = pd.x / 100 * w;
+        const cy = pd.y / 100 * h;
+        const r = (pd.width || 8) / 100 * Math.min(w, h);
         ctx.beginPath();
         ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.stroke();
       } else if (ann.annotationType === "arrow") {
-        const sx = (pd.x / 100) * w;
-        const sy = (pd.y / 100) * h;
-        const ex = ((pd.endX ?? pd.x + 8) / 100) * w;
-        const ey = ((pd.endY ?? pd.y - 8) / 100) * h;
+        const sx = pd.x / 100 * w;
+        const sy = pd.y / 100 * h;
+        const ex = (pd.endX ?? pd.x + 8) / 100 * w;
+        const ey = (pd.endY ?? pd.y - 8) / 100 * h;
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(ex, ey);
@@ -2161,15 +2167,15 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
         ctx.lineTo(ex - headLen * Math.cos(angle + Math.PI / 6), ey - headLen * Math.sin(angle + Math.PI / 6));
         ctx.stroke();
       } else if (ann.annotationType === "check") {
-        const cx = (pd.x / 100) * w;
-        const cy = (pd.y / 100) * h;
+        const cx = pd.x / 100 * w;
+        const cy = pd.y / 100 * h;
         ctx.fillStyle = color;
         ctx.font = `${thickness * 6}px sans-serif`;
         ctx.fillText("\u2713", cx - thickness * 2, cy + thickness * 2);
       } else if (ann.annotationType === "underline") {
-        const sx = (pd.x / 100) * w;
-        const sy = (pd.y / 100) * h;
-        const lineW = ((pd.width || 15) / 100) * w;
+        const sx = pd.x / 100 * w;
+        const sy = pd.y / 100 * h;
+        const lineW = (pd.width || 15) / 100 * w;
         ctx.beginPath();
         ctx.moveTo(sx, sy);
         ctx.lineTo(sx + lineW, sy);
@@ -2185,16 +2191,16 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
       ctx.lineJoin = "round";
       ctx.beginPath();
       currentPath.forEach((pt, i) => {
-        const px = (pt.x / 100) * w;
-        const py = (pt.y / 100) * h;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
+        const px = pt.x / 100 * w;
+        const py = pt.y / 100 * h;
+        if (i === 0) ctx.moveTo(px, py);else
+        ctx.lineTo(px, py);
       });
       ctx.stroke();
     }
   }, [currentAnnotations, currentPath, penColor, penThickness]);
 
-  useEffect(() => { renderCanvas(); }, [renderCanvas]);
+  useEffect(() => {renderCanvas();}, [renderCanvas]);
 
   // --- Touch handlers for mobile/tablet ---
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -2207,17 +2213,17 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
       if (!canvas || !touch) return;
       const rect = canvas.getBoundingClientRect();
       const pos = {
-        x: ((touch.clientX - rect.left) / rect.width) * 100,
-        y: ((touch.clientY - rect.top) / rect.height) * 100,
+        x: (touch.clientX - rect.left) / rect.width * 100,
+        y: (touch.clientY - rect.top) / rect.height * 100
       };
       const target = findNearestAnnotation(pos);
       if (target) {
         deleteAnnotationMut.mutate({ id: target.id }, {
           onSuccess: () => {
-            setUndoStack(prev => prev.filter(id => id !== target.id));
+            setUndoStack((prev) => prev.filter((id) => id !== target.id));
             onRefresh();
-            toast.success("어노테이션이 삭제되었습니다");
-          },
+            toast.success(t("lectureBuilder.stringLiteral193"));
+          }
         });
       }
       return;
@@ -2234,13 +2240,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
         type: annotationTool as any,
         color: penColor,
         strokeWidth: penThickness,
-        pathData: { x: pos.x, y: pos.y, width: 8, height: 8 },
+        pathData: { x: pos.x, y: pos.y, width: 8, height: 8 }
       }, {
         onSuccess: (data) => {
-          setUndoStack(prev => [...prev, data.id]);
+          setUndoStack((prev) => [...prev, data.id]);
           setRedoStack([]);
           onRefresh();
-        },
+        }
       });
     }
   };
@@ -2249,7 +2255,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
     if (!isDrawing) return;
     e.preventDefault();
     const pos = getTouchRelativePos(e);
-    setCurrentPath(prev => [...prev, pos]);
+    setCurrentPath((prev) => [...prev, pos]);
   };
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -2264,13 +2270,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
         type: "freehand",
         color: penColor,
         strokeWidth: penThickness,
-        pathData: { points: currentPath },
+        pathData: { points: currentPath }
       }, {
         onSuccess: (data) => {
-          setUndoStack(prev => [...prev, data.id]);
+          setUndoStack((prev) => [...prev, data.id]);
           setRedoStack([]);
           onRefresh();
-        },
+        }
       });
     } else if (annotationTool === "arrow" && currentPath.length >= 2) {
       const start = currentPath[0];
@@ -2281,20 +2287,20 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
         type: "arrow",
         color: penColor,
         strokeWidth: penThickness,
-        pathData: { x: start.x, y: start.y, endX: end.x, endY: end.y },
+        pathData: { x: start.x, y: start.y, endX: end.x, endY: end.y }
       }, {
         onSuccess: (data) => {
-          setUndoStack(prev => [...prev, data.id]);
+          setUndoStack((prev) => [...prev, data.id]);
           setRedoStack([]);
           onRefresh();
-        },
+        }
       });
     }
     setCurrentPath([]);
   };
 
   // Find nearest annotation to a point (for eraser)
-  const findNearestAnnotation = (pos: { x: number; y: number }, threshold = 5) => {
+  const findNearestAnnotation = (pos: {x: number;y: number;}, threshold = 5) => {
     let nearest: any = null;
     let minDist = threshold;
     for (const ann of currentAnnotations) {
@@ -2328,10 +2334,10 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
       if (target) {
         deleteAnnotationMut.mutate({ id: target.id }, {
           onSuccess: () => {
-            setUndoStack(prev => prev.filter(id => id !== target.id));
+            setUndoStack((prev) => prev.filter((id) => id !== target.id));
             onRefresh();
-            toast.success("어노테이션이 삭제되었습니다");
-          },
+            toast.success(t("lectureBuilder.stringLiteral194"));
+          }
         });
       }
       return;
@@ -2351,13 +2357,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
         type: annotationTool as any,
         color: penColor,
         strokeWidth: penThickness,
-        pathData: { x: pos.x, y: pos.y, width: 8, height: 8 },
+        pathData: { x: pos.x, y: pos.y, width: 8, height: 8 }
       }, {
         onSuccess: (data) => {
-          setUndoStack(prev => [...prev, data.id]);
+          setUndoStack((prev) => [...prev, data.id]);
           setRedoStack([]);
           onRefresh();
-        },
+        }
       });
     }
   };
@@ -2365,7 +2371,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const pos = getRelativePos(e);
-    setCurrentPath(prev => [...prev, pos]);
+    setCurrentPath((prev) => [...prev, pos]);
   };
 
   const handleMouseUp = () => {
@@ -2379,13 +2385,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
         type: "freehand",
         color: penColor,
         strokeWidth: penThickness,
-        pathData: { points: currentPath },
+        pathData: { points: currentPath }
       }, {
         onSuccess: (data) => {
-          setUndoStack(prev => [...prev, data.id]);
+          setUndoStack((prev) => [...prev, data.id]);
           setRedoStack([]);
           onRefresh();
-        },
+        }
       });
     } else if (annotationTool === "arrow" && currentPath.length >= 2) {
       const start = currentPath[0];
@@ -2396,13 +2402,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
         type: "arrow",
         color: penColor,
         strokeWidth: penThickness,
-        pathData: { x: start.x, y: start.y, endX: end.x, endY: end.y },
+        pathData: { x: start.x, y: start.y, endX: end.x, endY: end.y }
       }, {
         onSuccess: (data) => {
-          setUndoStack(prev => [...prev, data.id]);
+          setUndoStack((prev) => [...prev, data.id]);
           setRedoStack([]);
           onRefresh();
-        },
+        }
       });
     }
     setCurrentPath([]);
@@ -2415,10 +2421,10 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
     if (!lastId) return;
     deleteAnnotationMut.mutate({ id: lastId }, {
       onSuccess: () => {
-        setUndoStack(prev => prev.slice(0, -1));
-        setRedoStack(prev => [...prev, lastId]);
+        setUndoStack((prev) => prev.slice(0, -1));
+        setRedoStack((prev) => [...prev, lastId]);
         onRefresh();
-      },
+      }
     });
   };
 
@@ -2431,13 +2437,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
     setUndoStack([]);
     setRedoStack([]);
     setTimeout(() => onRefresh(), 500);
-    toast.success("모든 펜 그리기가 삭제되었습니다");
+    toast.success(t("lectureBuilder.stringLiteral195"));
   };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">매칭 에디터</h2>
-      <p className="text-muted-foreground">각 슬라이드에 스크립트를 배치하고, 캔버스에 직접 펜으로 그리세요</p>
+      <h2 className="text-2xl font-bold">{t("lectureBuilder.jsxText196")}</h2>
+      <p className="text-muted-foreground">{t("lectureBuilder.jsxText197")}</p>
 
       <div className="grid grid-cols-12 gap-4 overflow-hidden" style={{ minHeight: "60vh" }}>
         {/* Left: Slide Thumbnails */}
@@ -2449,29 +2455,29 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                 const annCount = annotations.filter((a: any) => a.slideId === slide.id).length;
                 return (
                   <button key={slide.id}
-                    className={`w-full rounded-lg overflow-hidden border-2 transition-all relative ${
-                      selectedSlideIdx === idx ? "border-primary ring-2 ring-primary/30" : hasScript ? "border-green-500/50" : "border-muted"
-                    }`}
-                    onClick={() => { setSelectedSlideIdx(idx); setUndoStack([]); setRedoStack([]); }}
-                  >
+                  className={`w-full rounded-lg overflow-hidden border-2 transition-all relative ${
+                  selectedSlideIdx === idx ? "border-primary ring-2 ring-primary/30" : hasScript ? "border-green-500/50" : "border-muted"}`
+                  }
+                  onClick={() => {setSelectedSlideIdx(idx);setUndoStack([]);setRedoStack([]);}}>
+                    
                     <div className="aspect-video">
                       <img src={slide.imageUrl} alt={`${idx + 1}`} className="w-full h-full object-contain" />
                     </div>
                     <div className="absolute top-0.5 left-0.5">
                       <Badge className="text-[10px] px-1 py-0 bg-black/60 text-white">{idx + 1}</Badge>
                     </div>
-                    {hasScript && (
-                      <div className="absolute bottom-0.5 right-0.5">
+                    {hasScript &&
+                    <div className="absolute bottom-0.5 right-0.5">
                         <Check className="w-3 h-3 text-green-400 bg-green-900/60 rounded-full p-0.5" />
                       </div>
-                    )}
-                    {annCount > 0 && (
-                      <div className="absolute bottom-0.5 left-0.5">
+                    }
+                    {annCount > 0 &&
+                    <div className="absolute bottom-0.5 left-0.5">
                         <Badge className="text-[9px] px-1 py-0 bg-orange-500/80 text-white">{annCount}</Badge>
                       </div>
-                    )}
-                  </button>
-                );
+                    }
+                  </button>);
+
               })}
             </div>
           </ScrollArea>
@@ -2479,460 +2485,460 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
 
         {/* Center: Slide Preview + Canvas Drawing */}
         <div className="col-span-6 min-w-0 overflow-hidden">
-          {currentSlide ? (
-            <div className="space-y-3">
+          {currentSlide ?
+          <div className="space-y-3">
               <div ref={containerRef} className="relative bg-black rounded-xl overflow-hidden">
-                <img src={currentSlide.imageUrl} alt="현재 슬라이드" className="w-full aspect-video object-contain" />
+                <img src={currentSlide.imageUrl} alt={t("lectureBuilder.stringLiteral198")} className="w-full aspect-video object-contain" />
                 {/* Avatar overlay preview */}
-                {showAvatarPanel && avatars.length > 0 && (
-                  <div
-                    className={`absolute pointer-events-none border-2 border-cyan-400/60 ${
-                      avatarShape === "circle" ? "rounded-full" : avatarShape === "rounded" ? "rounded-xl" : ""
-                    }`}
-                    style={{
-                      width: `${avatarSize}%`,
-                      height: `${avatarSize * 0.75}%`,
-                      left: `${avatarPosX - avatarSize / 2}%`,
-                      top: `${avatarPosY - (avatarSize * 0.75) / 2}%`,
-                      opacity: avatarOpacity / 100,
-                      background: "rgba(0,180,255,0.15)",
-                      backdropFilter: "blur(1px)",
-                    }}
-                  >
+                {showAvatarPanel && avatars.length > 0 &&
+              <div
+                className={`absolute pointer-events-none border-2 border-cyan-400/60 ${
+                avatarShape === "circle" ? "rounded-full" : avatarShape === "rounded" ? "rounded-xl" : ""}`
+                }
+                style={{
+                  width: `${avatarSize}%`,
+                  height: `${avatarSize * 0.75}%`,
+                  left: `${avatarPosX - avatarSize / 2}%`,
+                  top: `${avatarPosY - avatarSize * 0.75 / 2}%`,
+                  opacity: avatarOpacity / 100,
+                  background: "rgba(0,180,255,0.15)",
+                  backdropFilter: "blur(1px)"
+                }}>
+                
                     <div className="flex items-center justify-center h-full text-cyan-300 text-xs font-medium">
-                      <Users className="w-4 h-4 mr-1" /> 아바타
-                    </div>
+                      <Users className="w-4 h-4 mr-1" />{t("lectureBuilder.jsxText199")}
+                </div>
                   </div>
-                )}
+              }
                 {/* Real HTML5 Canvas overlay for drawing */}
                 <canvas
-                  ref={canvasRef}
-                  className={`absolute inset-0 w-full h-full ${annotationTool ? "cursor-crosshair" : "cursor-default"}`}
-                  style={{ touchAction: annotationTool ? "none" : "auto" }}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  onTouchCancel={handleTouchEnd}
-                />
+                ref={canvasRef}
+                className={`absolute inset-0 w-full h-full ${annotationTool ? "cursor-crosshair" : "cursor-default"}`}
+                style={{ touchAction: annotationTool ? "none" : "auto" }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd} />
+              
               </div>
 
               {/* Annotation Toolbar */}
               <div className="flex items-center gap-2 p-2 bg-card rounded-lg border flex-wrap">
-                <span className="text-xs text-muted-foreground mr-1">펜 도구:</span>
-                {ANNOTATION_TOOLS.map(tool => (
-                  <button key={tool.type}
-                    className={`p-2 rounded-lg transition-colors ${annotationTool === tool.type ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-                    onClick={() => setAnnotationTool(annotationTool === tool.type ? null : tool.type)}
-                    title={tool.label}
-                  >
+                <span className="text-xs text-muted-foreground mr-1">{t("lectureBuilder.jsxText200")}</span>
+                {ANNOTATION_TOOLS.map((tool: any) =>
+              <button key={tool.type}
+              className={`p-2 rounded-lg transition-colors ${annotationTool === tool.type ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              onClick={() => setAnnotationTool(annotationTool === tool.type ? null : tool.type)}
+              title={tool.label}>
+                
                     <tool.icon className="w-4 h-4" />
                   </button>
-                ))}
+              )}
                 <Separator orientation="vertical" className="h-6 mx-1" />
-                <span className="text-xs text-muted-foreground mr-1">색상:</span>
-                {PEN_COLORS.map(color => (
-                  <button key={color}
-                    className={`w-5 h-5 rounded-full border-2 transition-all ${penColor === color ? "border-foreground scale-125" : "border-transparent"}`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setPenColor(color)}
-                  />
-                ))}
+                <span className="text-xs text-muted-foreground mr-1">{t("lectureBuilder.jsxText201")}</span>
+                {PEN_COLORS.map((color) =>
+              <button key={color}
+              className={`w-5 h-5 rounded-full border-2 transition-all ${penColor === color ? "border-foreground scale-125" : "border-transparent"}`}
+              style={{ backgroundColor: color }}
+              onClick={() => setPenColor(color)} />
+
+              )}
                 <div className="relative">
                   <button
-                    className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${!PEN_COLORS.includes(penColor) ? "border-foreground scale-125" : "border-muted-foreground/30"}`}
-                    style={{ background: !PEN_COLORS.includes(penColor) ? penColor : "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }}
-                    title="커스텀 색상 선택"
-                    onClick={() => {
-                      const input = document.getElementById("custom-color-picker") as HTMLInputElement;
-                      input?.click();
-                    }}
-                  />
+                  className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${!PEN_COLORS.includes(penColor) ? "border-foreground scale-125" : "border-muted-foreground/30"}`}
+                  style={{ background: !PEN_COLORS.includes(penColor) ? penColor : "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)" }}
+                  title={t("lectureBuilder.stringLiteral202")}
+                  onClick={() => {
+                    const input = document.getElementById("custom-color-picker") as HTMLInputElement;
+                    input?.click();
+                  }} />
+                
                   <input
-                    id="custom-color-picker"
-                    type="color"
-                    value={penColor}
-                    onChange={(e) => setPenColor(e.target.value)}
-                    className="absolute opacity-0 w-0 h-0 pointer-events-none"
-                  />
+                  id="custom-color-picker"
+                  type="color"
+                  value={penColor}
+                  onChange={(e) => setPenColor(e.target.value)}
+                  className="absolute opacity-0 w-0 h-0 pointer-events-none" />
+                
                 </div>
                 <Separator orientation="vertical" className="h-6 mx-1" />
-                <span className="text-xs text-muted-foreground mr-1">두께:</span>
+                <span className="text-xs text-muted-foreground mr-1">{t("lectureBuilder.jsxText203")}</span>
                 <div className="w-20">
-                  <Slider value={[penThickness]} min={1} max={10} step={1} onValueChange={v => setPenThickness(v[0])} />
+                  <Slider value={[penThickness]} min={1} max={10} step={1} onValueChange={(v) => setPenThickness(v[0])} />
                 </div>
                 <Separator orientation="vertical" className="h-6 mx-1" />
                 {/* Undo / Clear */}
-                <Button variant="ghost" size="sm" onClick={handleUndo} disabled={undoStack.length === 0 && currentAnnotations.length === 0} className="text-xs gap-1" title="실행 취소">
+                <Button variant="ghost" size="sm" onClick={handleUndo} disabled={undoStack.length === 0 && currentAnnotations.length === 0} className="text-xs gap-1" title={t("lectureBuilder.stringLiteral204")}>
                   ↩ Undo
                 </Button>
-                <Button variant="ghost" size="sm" onClick={handleClearAll} disabled={currentAnnotations.length === 0} className="text-xs gap-1 text-red-400" title="모두 지우기">
-                  <Trash2 className="w-3 h-3" /> 전체 삭제
-                </Button>
-                {annotationTool && (
-                  <Button variant="ghost" size="sm" onClick={() => setAnnotationTool(null)} className="ml-auto text-xs">
-                    <MousePointer className="w-3 h-3 mr-1" /> 선택 모드
-                  </Button>
-                )}
+                <Button variant="ghost" size="sm" onClick={handleClearAll} disabled={currentAnnotations.length === 0} className="text-xs gap-1 text-red-400" title={t("lectureBuilder.stringLiteral205")}>
+                  <Trash2 className="w-3 h-3" />{t("lectureBuilder.jsxText206")}
+              </Button>
+                {annotationTool &&
+              <Button variant="ghost" size="sm" onClick={() => setAnnotationTool(null)} className="ml-auto text-xs">
+                    <MousePointer className="w-3 h-3 mr-1" />{t("lectureBuilder.jsxText207")}
+              </Button>
+              }
               </div>
 
               {/* Extra tools: Avatar overlay + Insert content */}
               <div className="flex items-center gap-2 mt-2">
                 <Button
-                  variant={showAvatarPanel ? "default" : "outline"}
-                  size="sm"
-                  className="text-xs gap-1"
-                  onClick={() => { setShowAvatarPanel(!showAvatarPanel); setShowInsertPanel(false); }}
-                >
-                  <Users className="w-3.5 h-3.5" /> 아바타 크기/위치
-                </Button>
+                variant={showAvatarPanel ? "default" : "outline"}
+                size="sm"
+                className="text-xs gap-1"
+                onClick={() => {setShowAvatarPanel(!showAvatarPanel);setShowInsertPanel(false);}}>
+                
+                  <Users className="w-3.5 h-3.5" />{t("lectureBuilder.jsxText208")}
+              </Button>
                 <Button
-                  variant={showInsertPanel ? "default" : "outline"}
-                  size="sm"
-                  className="text-xs gap-1"
-                  onClick={() => { setShowInsertPanel(!showInsertPanel); setShowAvatarPanel(false); setShowTransitionPanel(false); setInsertAfterSlideId(currentSlide?.id || null); }}
-                >
-                  <Plus className="w-3.5 h-3.5" /> 중간 삽입
-                </Button>
+                variant={showInsertPanel ? "default" : "outline"}
+                size="sm"
+                className="text-xs gap-1"
+                onClick={() => {setShowInsertPanel(!showInsertPanel);setShowAvatarPanel(false);setShowTransitionPanel(false);setInsertAfterSlideId(currentSlide?.id || null);}}>
+                
+                  <Plus className="w-3.5 h-3.5" />{t("lectureBuilder.jsxText209")}
+              </Button>
                 <Button
-                  variant={showTransitionPanel ? "default" : "outline"}
-                  size="sm"
-                  className="text-xs gap-1"
-                  onClick={() => { setShowTransitionPanel(!showTransitionPanel); setShowAvatarPanel(false); setShowInsertPanel(false); }}
-                >
-                  <Sparkles className="w-3.5 h-3.5" /> 전환 효과
-                </Button>
+                variant={showTransitionPanel ? "default" : "outline"}
+                size="sm"
+                className="text-xs gap-1"
+                onClick={() => {setShowTransitionPanel(!showTransitionPanel);setShowAvatarPanel(false);setShowInsertPanel(false);}}>
+                
+                  <Sparkles className="w-3.5 h-3.5" />{t("lectureBuilder.jsxText210")}
+              </Button>
                 {/* Show insert indicators */}
-                {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length > 0 && (
-                  <Badge className="bg-purple-500/20 text-purple-400 text-xs">
-                    삽입 {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length}개
-                  </Badge>
-                )}
-                {transitionType !== "none" && (
-                  <Badge className="bg-amber-500/20 text-amber-400 text-xs">
+                {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length > 0 &&
+              <Badge className="bg-purple-500/20 text-purple-400 text-xs">{t("lectureBuilder.jsxText211")}
+                {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length}{t("lectureBuilder.jsxText212")}
+              </Badge>
+              }
+                {transitionType !== "none" &&
+              <Badge className="bg-amber-500/20 text-amber-400 text-xs">
                     {transitionType.replace("_", " ")}
                   </Badge>
-                )}
+              }
               </div>
 
               {/* Avatar Overlay Panel */}
-              {showAvatarPanel && (
-                <Card className="mt-2 border-cyan-500/30 bg-cyan-500/5">
+              {showAvatarPanel &&
+            <Card className="mt-2 border-cyan-500/30 bg-cyan-500/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Users className="w-4 h-4 text-cyan-500" /> 슬라이드 {selectedSlideIdx + 1} 아바타 설정
-                    </CardTitle>
-                    <CardDescription className="text-xs">이 슬라이드에서 아바타의 크기와 위치를 조정하세요</CardDescription>
+                      <Users className="w-4 h-4 text-cyan-500" />{t("lectureBuilder.jsxText213")}{selectedSlideIdx + 1}{t("lectureBuilder.jsxText214")}
+                </CardTitle>
+                    <CardDescription className="text-xs">{t("lectureBuilder.jsxText215")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div>
-                      <Label className="text-xs">크기 ({avatarSize}%)</Label>
-                      <Slider value={[avatarSize]} min={10} max={60} step={1} onValueChange={v => setAvatarSize(v[0])} />
+                      <Label className="text-xs">{t("lectureBuilder.jsxText216")}{avatarSize}%)</Label>
+                      <Slider value={[avatarSize]} min={10} max={60} step={1} onValueChange={(v) => setAvatarSize(v[0])} />
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-xs">수평 위치 ({avatarPosX}%)</Label>
-                        <Slider value={[avatarPosX]} min={10} max={90} step={1} onValueChange={v => setAvatarPosX(v[0])} />
+                        <Label className="text-xs">{t("lectureBuilder.jsxText217")}{avatarPosX}%)</Label>
+                        <Slider value={[avatarPosX]} min={10} max={90} step={1} onValueChange={(v) => setAvatarPosX(v[0])} />
                       </div>
                       <div>
-                        <Label className="text-xs">수직 위치 ({avatarPosY}%)</Label>
-                        <Slider value={[avatarPosY]} min={10} max={90} step={1} onValueChange={v => setAvatarPosY(v[0])} />
+                        <Label className="text-xs">{t("lectureBuilder.jsxText218")}{avatarPosY}%)</Label>
+                        <Slider value={[avatarPosY]} min={10} max={90} step={1} onValueChange={(v) => setAvatarPosY(v[0])} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <Label className="text-xs">모양</Label>
+                        <Label className="text-xs">{t("lectureBuilder.jsxText219")}</Label>
                         <Select value={avatarShape} onValueChange={(v: any) => setAvatarShape(v)}>
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="circle">원형</SelectItem>
-                            <SelectItem value="rounded">둥근 사각형</SelectItem>
-                            <SelectItem value="rectangle">사각형</SelectItem>
+                            <SelectItem value="circle">{t("lectureBuilder.jsxText220")}</SelectItem>
+                            <SelectItem value="rounded">{t("lectureBuilder.jsxText221")}</SelectItem>
+                            <SelectItem value="rectangle">{t("lectureBuilder.jsxText222")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-xs">투명도 ({avatarOpacity}%)</Label>
-                        <Slider value={[avatarOpacity]} min={20} max={100} step={5} onValueChange={v => setAvatarOpacity(v[0])} />
+                        <Label className="text-xs">{t("lectureBuilder.jsxText223")}{avatarOpacity}%)</Label>
+                        <Slider value={[avatarOpacity]} min={20} max={100} step={5} onValueChange={(v) => setAvatarOpacity(v[0])} />
                       </div>
                     </div>
                     <Button size="sm" className="w-full gap-1" onClick={saveAvatarOverride} disabled={saveAvatarOverrideMut.isPending}>
-                      {saveAvatarOverrideMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                      이 슬라이드 아바타 설정 저장
-                    </Button>
+                      {saveAvatarOverrideMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}{t("lectureBuilder.jsxText224")}
+
+                </Button>
                   </CardContent>
                 </Card>
-              )}
+            }
 
               {/* Insert Content Panel */}
-              {showInsertPanel && (
-                <Card className="mt-2 border-purple-500/30 bg-purple-500/5">
+              {showInsertPanel &&
+            <Card className="mt-2 border-purple-500/30 bg-purple-500/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Plus className="w-4 h-4 text-purple-500" /> 슬라이드 {selectedSlideIdx + 1} 뒤에 콘텐츠 삽입
-                    </CardTitle>
-                    <CardDescription className="text-xs">화이트보드, 영상, 이미지, 디자인 요소를 삽입하세요</CardDescription>
+                      <Plus className="w-4 h-4 text-purple-500" />{t("lectureBuilder.jsxText225")}{selectedSlideIdx + 1}{t("lectureBuilder.jsxText226")}
+                </CardTitle>
+                    <CardDescription className="text-xs">{t("lectureBuilder.jsxText227")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex gap-2">
-                      {(["whiteboard", "video", "image", "design"] as const).map(t => (
-                        <button key={t}
-                          className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
-                            insertType === t ? "bg-purple-500 text-white" : "bg-muted hover:bg-muted/80 text-muted-foreground"
-                          }`}
-                          onClick={() => setInsertType(t)}
-                        >
-                          {t === "whiteboard" ? "📝 화이트보드" : t === "video" ? "🎬 영상" : t === "image" ? "🖼️ 이미지" : "🎨 디자인"}
+                      {(["whiteboard", "video", "image", "design"] as const).map((iType) =>
+                  <button key={iType}
+                  className={`flex-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+                  insertType === iType ? "bg-purple-500 text-white" : "bg-muted hover:bg-muted/80 text-muted-foreground"}`
+                  }
+                  onClick={() => setInsertType(iType)}>
+                    
+                          {iType === "whiteboard" ? t("lectureBuilder.stringLiteral228") : iType === "video" ? t("lectureBuilder.stringLiteral229") : iType === "image" ? t("lectureBuilder.stringLiteral230") : t("lectureBuilder.stringLiteral231")}
                         </button>
-                      ))}
+                  )}
                     </div>
 
-                    {insertType === "whiteboard" && (
-                      <div className="space-y-2">
-                        <Label className="text-xs">AI 화이트보드 프롬프트</Label>
+                    {insertType === "whiteboard" &&
+                <div className="space-y-2">
+                        <Label className="text-xs">{t("lectureBuilder.jsxText232")}</Label>
                         <Textarea
-                          value={wbPrompt}
-                          onChange={e => setWbPrompt(e.target.value)}
-                          placeholder="예: '블록체인 구조를 그림으로 설명해주세요' 또는 '수익 구조 다이어그램'"
-                          rows={2}
-                          className="text-xs"
-                        />
+                    value={wbPrompt}
+                    onChange={(e) => setWbPrompt(e.target.value)}
+                    placeholder={t("lectureBuilder.stringLiteral233")}
+                    rows={2}
+                    className="text-xs" />
+                  
                         <div className="flex gap-2">
                           <Button
-                            size="sm"
-                            className="flex-1 gap-1 bg-purple-600 hover:bg-purple-700"
-                            onClick={() => {
-                              if (!wbPrompt.trim() || !currentSlide) return;
-                              setWbGenerating(true);
-                              generateWhiteboardMut.mutate({
-                                prompt: wbPrompt,
-                                contentType: "text",
-                              });
-                            }}
-                            disabled={wbGenerating || !wbPrompt.trim()}
-                          >
-                            {wbGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                            AI 화이트보드 생성
-                          </Button>
+                      size="sm"
+                      className="flex-1 gap-1 bg-purple-600 hover:bg-purple-700"
+                      onClick={() => {
+                        if (!wbPrompt.trim() || !currentSlide) return;
+                        setWbGenerating(true);
+                        generateWhiteboardMut.mutate({
+                          prompt: wbPrompt,
+                          contentType: "text"
+                        });
+                      }}
+                      disabled={wbGenerating || !wbPrompt.trim()}>
+                      
+                            {wbGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}{t("lectureBuilder.jsxText234")}
+
+                    </Button>
                           <Button
-                            size="sm"
-                            variant="outline"
-                            className="gap-1"
-                            onClick={() => {
-                              if (!currentSlide) return;
-                              saveInsertMut.mutate({
-                                projectId,
-                                afterSlideId: currentSlide.id,
-                                contentType: "whiteboard",
-                                title: "빈 화이트보드",
-                                drawingData: { elements: [], background: "#ffffff" },
-                              });
-                            }}
-                          >
-                            <Pencil className="w-3 h-3" /> 빈 화이트보드
-                          </Button>
+                      size="sm"
+                      variant="outline"
+                      className="gap-1"
+                      onClick={() => {
+                        if (!currentSlide) return;
+                        saveInsertMut.mutate({
+                          projectId,
+                          afterSlideId: currentSlide.id,
+                          contentType: "whiteboard",
+                          title: t("lectureBuilder.stringLiteral235"),
+                          drawingData: { elements: [], background: "#ffffff" }
+                        });
+                      }}>
+                      
+                            <Pencil className="w-3 h-3" />{t("lectureBuilder.jsxText236")}
+                    </Button>
                         </div>
                       </div>
-                    )}
+                }
 
-                    {insertType === "video" && (
-                      <div className="space-y-2">
-                        <Label className="text-xs">영상 URL 또는 업로드</Label>
+                    {insertType === "video" &&
+                <div className="space-y-2">
+                        <Label className="text-xs">{t("lectureBuilder.jsxText237")}</Label>
                         <Input
-                          placeholder="YouTube URL 또는 영상 URL 입력..."
-                          className="text-xs h-8"
-                          onKeyDown={e => {
-                            if (e.key === "Enter" && currentSlide) {
-                              const url = (e.target as HTMLInputElement).value;
-                              if (url.trim()) {
-                                saveInsertMut.mutate({
-                                  projectId,
-                                  afterSlideId: currentSlide.id,
-                                  contentType: "video",
-                                  title: "삽입 영상",
-                                  contentUrl: url,
-                                });
-                              }
-                            }
-                          }}
-                        />
-                        <p className="text-[10px] text-muted-foreground">Enter를 눌러 저장</p>
+                    placeholder={t("lectureBuilder.stringLiteral238")}
+                    className="text-xs h-8"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && currentSlide) {
+                        const url = (e.target as HTMLInputElement).value;
+                        if (url.trim()) {
+                          saveInsertMut.mutate({
+                            projectId,
+                            afterSlideId: currentSlide.id,
+                            contentType: "video",
+                            title: t("lectureBuilder.stringLiteral239"),
+                            contentUrl: url
+                          });
+                        }
+                      }
+                    }} />
+                  
+                        <p className="text-[10px] text-muted-foreground">{t("lectureBuilder.jsxText240")}</p>
                       </div>
-                    )}
+                }
 
-                    {insertType === "image" && (
-                      <div className="space-y-2">
-                        <Label className="text-xs">이미지 URL</Label>
+                    {insertType === "image" &&
+                <div className="space-y-2">
+                        <Label className="text-xs">{t("lectureBuilder.jsxText241")}</Label>
                         <Input
-                          placeholder="이미지 URL 입력..."
-                          className="text-xs h-8"
-                          onKeyDown={e => {
-                            if (e.key === "Enter" && currentSlide) {
-                              const url = (e.target as HTMLInputElement).value;
-                              if (url.trim()) {
-                                saveInsertMut.mutate({
-                                  projectId,
-                                  afterSlideId: currentSlide.id,
-                                  contentType: "image",
-                                  title: "삽입 이미지",
-                                  contentUrl: url,
-                                });
-                              }
-                            }
-                          }}
-                        />
-                        <p className="text-[10px] text-muted-foreground">Enter를 눌러 저장</p>
+                    placeholder={t("lectureBuilder.stringLiteral242")}
+                    className="text-xs h-8"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && currentSlide) {
+                        const url = (e.target as HTMLInputElement).value;
+                        if (url.trim()) {
+                          saveInsertMut.mutate({
+                            projectId,
+                            afterSlideId: currentSlide.id,
+                            contentType: "image",
+                            title: t("lectureBuilder.stringLiteral243"),
+                            contentUrl: url
+                          });
+                        }
+                      }
+                    }} />
+                  
+                        <p className="text-[10px] text-muted-foreground">{t("lectureBuilder.jsxText244")}</p>
                       </div>
-                    )}
+                }
 
-                    {insertType === "design" && (
-                      <div className="space-y-2">
-                        <Label className="text-xs">AI 디자인 프롬프트</Label>
+                    {insertType === "design" &&
+                <div className="space-y-2">
+                        <Label className="text-xs">{t("lectureBuilder.jsxText245")}</Label>
                         <Textarea
-                          value={wbPrompt}
-                          onChange={e => setWbPrompt(e.target.value)}
-                          placeholder="예: '수익률 비교 차트' 또는 '파트너 로고 모음'"
-                          rows={2}
-                          className="text-xs"
-                        />
+                    value={wbPrompt}
+                    onChange={(e) => setWbPrompt(e.target.value)}
+                    placeholder={t("lectureBuilder.stringLiteral246")}
+                    rows={2}
+                    className="text-xs" />
+                  
                         <Button
-                          size="sm"
-                          className="w-full gap-1 bg-purple-600 hover:bg-purple-700"
-                          onClick={() => {
-                            if (!wbPrompt.trim() || !currentSlide) return;
-                            setWbGenerating(true);
-                            generateWhiteboardMut.mutate({
-                              prompt: wbPrompt,
-                              contentType: "diagram",
-                            });
-                          }}
-                          disabled={wbGenerating || !wbPrompt.trim()}
-                        >
-                          {wbGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                          AI 디자인 생성
-                        </Button>
+                    size="sm"
+                    className="w-full gap-1 bg-purple-600 hover:bg-purple-700"
+                    onClick={() => {
+                      if (!wbPrompt.trim() || !currentSlide) return;
+                      setWbGenerating(true);
+                      generateWhiteboardMut.mutate({
+                        prompt: wbPrompt,
+                        contentType: "diagram"
+                      });
+                    }}
+                    disabled={wbGenerating || !wbPrompt.trim()}>
+                    
+                          {wbGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}{t("lectureBuilder.jsxText247")}
+
+                  </Button>
                       </div>
-                    )}
+                }
 
                     {/* Existing insert content for this slide */}
-                    {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length > 0 && (
-                      <div className="space-y-1 pt-2 border-t">
-                        <span className="text-xs text-muted-foreground">이 슬라이드 뒤 삽입 콘텐츠:</span>
-                        {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).map((ic: any) => (
-                          <div key={ic.id} className="flex items-center justify-between p-1.5 rounded bg-muted/50 text-xs">
+                    {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).length > 0 &&
+                <div className="space-y-1 pt-2 border-t">
+                        <span className="text-xs text-muted-foreground">{t("lectureBuilder.jsxText248")}</span>
+                        {insertContent.filter((ic: any) => ic.afterSlideId === currentSlide?.id).map((ic: any) =>
+                  <div key={ic.id} className="flex items-center justify-between p-1.5 rounded bg-muted/50 text-xs">
                             <span className="flex items-center gap-1">
                               {ic.contentType === "whiteboard" ? "📝" : ic.contentType === "video" ? "🎬" : ic.contentType === "image" ? "🖼️" : "🎨"}
                               {ic.title || ic.contentType}
                             </span>
                             <Button variant="ghost" size="sm" className="h-5 w-5 p-0 text-destructive"
-                              onClick={() => deleteInsertMut.mutate({ id: ic.id })}>
+                    onClick={() => deleteInsertMut.mutate({ id: ic.id })}>
                               <X className="w-3 h-3" />
                             </Button>
                           </div>
-                        ))}
+                  )}
                       </div>
-                    )}
+                }
                   </CardContent>
                 </Card>
-              )}
+            }
 
               {/* Transition Effect Panel */}
-              {showTransitionPanel && (
-                <Card className="mt-2 border-amber-500/30 bg-amber-500/5">
+              {showTransitionPanel &&
+            <Card className="mt-2 border-amber-500/30 bg-amber-500/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-amber-500" /> 슬라이드 {selectedSlideIdx + 1} 전환 효과
-                    </CardTitle>
+                      <Sparkles className="w-4 h-4 text-amber-500" />{t("lectureBuilder.jsxText249")}{selectedSlideIdx + 1}{t("lectureBuilder.jsxText250")}
+                </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div>
-                      <Label className="text-xs">전환 타입</Label>
+                      <Label className="text-xs">{t("lectureBuilder.jsxText251")}</Label>
                       <Select value={transitionType} onValueChange={setTransitionType}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">없음</SelectItem>
-                          <SelectItem value="fade">페이드</SelectItem>
-                          <SelectItem value="slide_left">슬라이드 좌</SelectItem>
-                          <SelectItem value="slide_right">슬라이드 우</SelectItem>
-                          <SelectItem value="slide_up">슬라이드 위</SelectItem>
-                          <SelectItem value="zoom_in">줌 인</SelectItem>
-                          <SelectItem value="zoom_out">줌 아웃</SelectItem>
-                          <SelectItem value="wipe_left">와이프 좌</SelectItem>
-                          <SelectItem value="wipe_right">와이프 우</SelectItem>
-                          <SelectItem value="dissolve">디졸브</SelectItem>
+                          <SelectItem value="none">{t("lectureBuilder.jsxText252")}</SelectItem>
+                          <SelectItem value="fade">{t("lectureBuilder.jsxText253")}</SelectItem>
+                          <SelectItem value="slide_left">{t("lectureBuilder.jsxText254")}</SelectItem>
+                          <SelectItem value="slide_right">{t("lectureBuilder.jsxText255")}</SelectItem>
+                          <SelectItem value="slide_up">{t("lectureBuilder.jsxText256")}</SelectItem>
+                          <SelectItem value="zoom_in">{t("lectureBuilder.jsxText257")}</SelectItem>
+                          <SelectItem value="zoom_out">{t("lectureBuilder.jsxText258")}</SelectItem>
+                          <SelectItem value="wipe_left">{t("lectureBuilder.jsxText259")}</SelectItem>
+                          <SelectItem value="wipe_right">{t("lectureBuilder.jsxText260")}</SelectItem>
+                          <SelectItem value="dissolve">{t("lectureBuilder.jsxText261")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs">지속 시간: {transitionDuration}ms</Label>
+                      <Label className="text-xs">{t("lectureBuilder.jsxText262")}{transitionDuration}ms</Label>
                       <Slider
-                        value={[transitionDuration]}
-                        onValueChange={([v]) => setTransitionDuration(v)}
-                        min={100} max={3000} step={100}
-                        className="mt-1"
-                      />
+                    value={[transitionDuration]}
+                    onValueChange={([v]) => setTransitionDuration(v)}
+                    min={100} max={3000} step={100}
+                    className="mt-1" />
+                  
                     </div>
                     <div>
-                      <Label className="text-xs">이징</Label>
+                      <Label className="text-xs">{t("lectureBuilder.jsxText263")}</Label>
                       <Select value={transitionEasing} onValueChange={setTransitionEasing}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="linear">선형</SelectItem>
-                          <SelectItem value="ease_in">가속</SelectItem>
-                          <SelectItem value="ease_out">감속</SelectItem>
-                          <SelectItem value="ease_in_out">가감속</SelectItem>
+                          <SelectItem value="linear">{t("lectureBuilder.jsxText264")}</SelectItem>
+                          <SelectItem value="ease_in">{t("lectureBuilder.jsxText265")}</SelectItem>
+                          <SelectItem value="ease_out">{t("lectureBuilder.jsxText266")}</SelectItem>
+                          <SelectItem value="ease_in_out">{t("lectureBuilder.jsxText267")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" className="h-7 text-xs gap-1 flex-1"
-                        disabled={upsertTransitionMut.isPending}
-                        onClick={() => {
-                          if (!currentSlide) return;
-                          upsertTransitionMut.mutate({
-                            projectId,
-                            slideId: currentSlide.id,
-                            transitionType: transitionType as any,
-                            durationMs: transitionDuration,
-                            easing: transitionEasing as any,
-                          });
-                        }}>
-                        {upsertTransitionMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                        이 슬라이드 저장
-                      </Button>
+                  disabled={upsertTransitionMut.isPending}
+                  onClick={() => {
+                    if (!currentSlide) return;
+                    upsertTransitionMut.mutate({
+                      projectId,
+                      slideId: currentSlide.id,
+                      transitionType: transitionType as any,
+                      durationMs: transitionDuration,
+                      easing: transitionEasing as any
+                    });
+                  }}>
+                        {upsertTransitionMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}{t("lectureBuilder.jsxText268")}
+
+                  </Button>
                       <Button size="sm" variant="outline" className="h-7 text-xs gap-1 flex-1"
-                        disabled={setAllTransitionsMut.isPending}
-                        onClick={() => {
-                          setAllTransitionsMut.mutate({
-                            projectId,
-                            transitionType: transitionType as any,
-                            durationMs: transitionDuration,
-                            easing: transitionEasing as any,
-                          });
-                        }}>
-                        {setAllTransitionsMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                        전체 적용
-                      </Button>
+                  disabled={setAllTransitionsMut.isPending}
+                  onClick={() => {
+                    setAllTransitionsMut.mutate({
+                      projectId,
+                      transitionType: transitionType as any,
+                      durationMs: transitionDuration,
+                      easing: transitionEasing as any
+                    });
+                  }}>
+                        {setAllTransitionsMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}{t("lectureBuilder.jsxText269")}
+
+                  </Button>
                     </div>
                     {/* Transition preview hint */}
-                    {transitionType !== "none" && (
-                      <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                        프리뷰: 슬라이드 전환 시 <span className="font-semibold text-amber-400">{transitionType.replace("_", " ")}</span> 효과가 {transitionDuration}ms 동안 적용됩니다.
-                        MP4 내보내기 시 실제 영상에 반영됩니다.
-                      </div>
-                    )}
+                    {transitionType !== "none" &&
+                <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">{t("lectureBuilder.jsxText270")}
+                  <span className="font-semibold text-amber-400">{transitionType.replace("_", " ")}</span>{t("lectureBuilder.jsxText271")}{transitionDuration}{t("lectureBuilder.jsxText272")}
+
+                </div>
+                }
                   </CardContent>
                 </Card>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              슬라이드를 먼저 업로드하세요
-            </div>
-          )}
+            }
+            </div> :
+
+          <div className="flex items-center justify-center h-full text-muted-foreground">{t("lectureBuilder.jsxText273")}
+
+          </div>
+          }
         </div>
 
         {/* Right: Script Assignment */}
@@ -2941,56 +2947,56 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
             {/* Current slide script */}
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">슬라이드 {selectedSlideIdx + 1} 스크립트</CardTitle>
+                <CardTitle className="text-sm">{t("lectureBuilder.jsxText274")}{selectedSlideIdx + 1}{t("lectureBuilder.jsxText275")}</CardTitle>
               </CardHeader>
               <CardContent>
-                {currentSlide ? (
-                  <div className="space-y-3">
+                {currentSlide ?
+                <div className="space-y-3">
                     <Textarea
-                      value={currentScript?.text || ""}
-                      onChange={e => {
-                        if (currentSlide) {
-                          setSlideScriptMap(prev => ({
-                            ...prev,
-                            [currentSlide.id]: { ...prev[currentSlide.id], text: e.target.value },
-                          }));
-                        }
-                      }}
-                      onBlur={() => {
-                        if (currentSlide && slideScriptMap[currentSlide.id]?.text) {
-                          assignScript(currentSlide.id, slideScriptMap[currentSlide.id].text, slideScriptMap[currentSlide.id].avatarId);
-                        }
-                      }}
-                      placeholder="이 슬라이드의 스크립트를 입력하세요..."
-                      rows={5}
-                    />
-                    {avatars.length > 0 && (
-                      <div>
-                        <Label className="text-xs">화자</Label>
+                    value={currentScript?.text || ""}
+                    onChange={(e) => {
+                      if (currentSlide) {
+                        setSlideScriptMap((prev) => ({
+                          ...prev,
+                          [currentSlide.id]: { ...prev[currentSlide.id], text: e.target.value }
+                        }));
+                      }
+                    }}
+                    onBlur={() => {
+                      if (currentSlide && slideScriptMap[currentSlide.id]?.text) {
+                        assignScript(currentSlide.id, slideScriptMap[currentSlide.id].text, slideScriptMap[currentSlide.id].avatarId);
+                      }
+                    }}
+                    placeholder={t("lectureBuilder.stringLiteral276")}
+                    rows={5} />
+                  
+                    {avatars.length > 0 &&
+                  <div>
+                        <Label className="text-xs">{t("lectureBuilder.jsxText277")}</Label>
                         <Select
-                          value={currentScript?.avatarId?.toString() || "default"}
-                          onValueChange={v => {
-                            if (currentSlide) {
-                              const avatarId = v === "default" ? undefined : parseInt(v);
-                              const text = slideScriptMap[currentSlide.id]?.text || "";
-                              assignScript(currentSlide.id, text, avatarId);
-                            }
-                          }}
-                        >
+                      value={currentScript?.avatarId?.toString() || "default"}
+                      onValueChange={(v) => {
+                        if (currentSlide) {
+                          const avatarId = v === "default" ? undefined : parseInt(v);
+                          const text = slideScriptMap[currentSlide.id]?.text || "";
+                          assignScript(currentSlide.id, text, avatarId);
+                        }
+                      }}>
+                      
                           <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="default">기본 화자</SelectItem>
-                            {avatars.map((av: any) => (
-                              <SelectItem key={av.id} value={av.id.toString()}>{av.name}</SelectItem>
-                            ))}
+                            <SelectItem value="default">{t("lectureBuilder.jsxText278")}</SelectItem>
+                            {avatars.map((av: any) =>
+                        <SelectItem key={av.id} value={av.id.toString()}>{av.name}</SelectItem>
+                        )}
                           </SelectContent>
                         </Select>
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">슬라이드를 선택하세요</p>
-                )}
+                  }
+                  </div> :
+
+                <p className="text-sm text-muted-foreground">{t("lectureBuilder.jsxText279")}</p>
+                }
               </CardContent>
             </Card>
 
@@ -2999,7 +3005,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm flex items-center gap-1.5">
-                    <Globe className="h-4 w-4" /> 통역 모드
+                    <Globe className="h-4 w-4" />{t("lectureBuilder.jsxText280")}
                   </CardTitle>
                   <Switch
                     checked={interpreterEnabled}
@@ -3009,209 +3015,209 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                         projectId,
                         interpreterEnabled: checked,
                         interpreterLanguage,
-                        interpreterVoiceId: interpreterVoiceId || undefined,
+                        interpreterVoiceId: interpreterVoiceId || undefined
                       });
-                    }}
-                  />
+                    }} />
+                  
                 </div>
               </CardHeader>
-              {interpreterEnabled && (
-                <CardContent className="space-y-3">
+              {interpreterEnabled &&
+              <CardContent className="space-y-3">
                   {/* Language selector */}
                   <div>
-                    <Label className="text-xs">통역 언어</Label>
+                    <Label className="text-xs">{t("lectureBuilder.jsxText281")}</Label>
                     <Select
-                      value={interpreterLanguage}
-                      onValueChange={(v) => {
-                        setInterpreterLanguage(v);
-                        updateInterpreterSettingsMut.mutate({
-                          projectId,
-                          interpreterEnabled: true,
-                          interpreterLanguage: v,
-                          interpreterVoiceId: interpreterVoiceId || undefined,
-                        });
-                      }}
-                    >
+                    value={interpreterLanguage}
+                    onValueChange={(v) => {
+                      setInterpreterLanguage(v);
+                      updateInterpreterSettingsMut.mutate({
+                        projectId,
+                        interpreterEnabled: true,
+                        interpreterLanguage: v,
+                        interpreterVoiceId: interpreterVoiceId || undefined
+                      });
+                    }}>
+                    
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {INTERPRETER_LANGUAGES.map((lang) => (
-                          <SelectItem key={lang.code} value={lang.code}>
+                        {INTERPRETER_LANGUAGES.map((lang) =>
+                      <SelectItem key={lang.code} value={lang.code}>
                             {lang.flag} {lang.name}
                           </SelectItem>
-                        ))}
+                      )}
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Voice selector */}
                   <div>
-                    <Label className="text-xs">통역 음성</Label>
+                    <Label className="text-xs">{t("lectureBuilder.jsxText282")}</Label>
                     <Select
-                      value={interpreterVoiceId || "Kore"}
-                      onValueChange={(v) => {
-                        setInterpreterVoiceId(v);
-                        updateInterpreterSettingsMut.mutate({
-                          projectId,
-                          interpreterEnabled: true,
-                          interpreterLanguage,
-                          interpreterVoiceId: v,
-                        });
-                      }}
-                    >
+                    value={interpreterVoiceId || "Kore"}
+                    onValueChange={(v) => {
+                      setInterpreterVoiceId(v);
+                      updateInterpreterSettingsMut.mutate({
+                        projectId,
+                        interpreterEnabled: true,
+                        interpreterLanguage,
+                        interpreterVoiceId: v
+                      });
+                    }}>
+                    
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {voicesQuery.data?.map((voice: any) => (
-                          <SelectItem key={voice.id} value={voice.id}>
+                        {voicesQuery.data?.map((voice: any) =>
+                      <SelectItem key={voice.id} value={voice.id}>
                             {voice.name} ({voice.gender})
                           </SelectItem>
-                        ))}
+                      )}
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Auto translate button */}
                   <Button
-                    size="sm"
-                    className="w-full"
-                    variant="outline"
-                    disabled={autoTranslateSlidesMut.isPending}
-                    onClick={() => {
-                      autoTranslateSlidesMut.mutate({ projectId, targetLanguage: interpreterLanguage });
-                    }}
-                  >
-                    {autoTranslateSlidesMut.isPending ? (
-                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> AI 번역 중...</>
-                    ) : (
-                      <><Languages className="h-3 w-3 mr-1" /> 전체 슬라이드 자동 번역</>
-                    )}
+                  size="sm"
+                  className="w-full"
+                  variant="outline"
+                  disabled={autoTranslateSlidesMut.isPending}
+                  onClick={() => {
+                    autoTranslateSlidesMut.mutate({ projectId, targetLanguage: interpreterLanguage });
+                  }}>
+                  
+                    {autoTranslateSlidesMut.isPending ?
+                  <><Loader2 className="h-3 w-3 mr-1 animate-spin" />{t("lectureBuilder.jsxText283")}</> :
+
+                  <><Languages className="h-3 w-3 mr-1" />{t("lectureBuilder.jsxText284")}</>
+                  }
                   </Button>
 
                   {/* Generate all interpreter TTS */}
                   <Button
-                    size="sm"
-                    className="w-full"
-                    variant="outline"
-                    disabled={generateAllTtsMut.isPending}
-                    onClick={() => {
-                      generateAllTtsMut.mutate({ projectId, voiceId: interpreterVoiceId || undefined });
-                    }}
-                  >
-                    {generateAllTtsMut.isPending ? (
-                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> TTS 생성 중...</>
-                    ) : (
-                      <><Headphones className="h-3 w-3 mr-1" /> 전체 통역 오디오 생성</>
-                    )}
+                  size="sm"
+                  className="w-full"
+                  variant="outline"
+                  disabled={generateAllTtsMut.isPending}
+                  onClick={() => {
+                    generateAllTtsMut.mutate({ projectId, voiceId: interpreterVoiceId || undefined });
+                  }}>
+                  
+                    {generateAllTtsMut.isPending ?
+                  <><Loader2 className="h-3 w-3 mr-1 animate-spin" />{t("lectureBuilder.jsxText285")}</> :
+
+                  <><Headphones className="h-3 w-3 mr-1" />{t("lectureBuilder.jsxText286")}</>
+                  }
                   </Button>
 
                   {/* SRT Export */}
                   <div className="flex gap-1">
                     <Button
-                      size="sm"
-                      variant="ghost"
-                      className="flex-1 text-xs"
-                      disabled={exportSrtMut.isPending}
-                      onClick={() => exportSrtMut.mutate({ projectId, mode: "interpreter_only" })}
-                    >
-                      <FileText className="h-3 w-3 mr-1" /> 통역 SRT
-                    </Button>
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 text-xs"
+                    disabled={exportSrtMut.isPending}
+                    onClick={() => exportSrtMut.mutate({ projectId, mode: "interpreter_only" })}>
+                    
+                      <FileText className="h-3 w-3 mr-1" />{t("lectureBuilder.jsxText287")}
+                  </Button>
                     <Button
-                      size="sm"
-                      variant="ghost"
-                      className="flex-1 text-xs"
-                      disabled={exportSrtMut.isPending}
-                      onClick={() => exportSrtMut.mutate({ projectId, mode: "dual" })}
-                    >
-                      <FileText className="h-3 w-3 mr-1" /> 이중 SRT
-                    </Button>
+                    size="sm"
+                    variant="ghost"
+                    className="flex-1 text-xs"
+                    disabled={exportSrtMut.isPending}
+                    onClick={() => exportSrtMut.mutate({ projectId, mode: "dual" })}>
+                    
+                      <FileText className="h-3 w-3 mr-1" />{t("lectureBuilder.jsxText288")}
+                  </Button>
                   </div>
 
                   {/* Current slide interpreter text */}
-                  {currentSlide && (
-                    <div>
-                      <Label className="text-xs">슬라이드 {selectedSlideIdx + 1} 통역 텍스트</Label>
+                  {currentSlide &&
+                <div>
+                      <Label className="text-xs">{t("lectureBuilder.jsxText289")}{selectedSlideIdx + 1}{t("lectureBuilder.jsxText290")}</Label>
                       <Textarea
-                        value={interpreterTexts[currentSlide.id] || ""}
-                        onChange={(e) => {
-                          setInterpreterTexts(prev => ({ ...prev, [currentSlide.id]: e.target.value }));
-                        }}
-                        onBlur={() => {
-                          if (currentSlide) {
-                            const script = scripts.find((s: any) => s.slideId === currentSlide.id);
-                            if (script) {
-                              updateSlideInterpreterTextMut.mutate({
-                                scriptId: script.id,
-                                interpreterText: interpreterTexts[currentSlide.id] || "",
-                              });
-                            }
-                          }
-                        }}
-                        placeholder="통역 텍스트를 입력하거나 자동 번역을 사용하세요..."
-                        rows={3}
-                        className="text-xs"
-                      />
+                    value={interpreterTexts[currentSlide.id] || ""}
+                    onChange={(e) => {
+                      setInterpreterTexts((prev) => ({ ...prev, [currentSlide.id]: e.target.value }));
+                    }}
+                    onBlur={() => {
+                      if (currentSlide) {
+                        const script = scripts.find((s: any) => s.slideId === currentSlide.id);
+                        if (script) {
+                          updateSlideInterpreterTextMut.mutate({
+                            scriptId: script.id,
+                            interpreterText: interpreterTexts[currentSlide.id] || ""
+                          });
+                        }
+                      }
+                    }}
+                    placeholder={t("lectureBuilder.stringLiteral291")}
+                    rows={3}
+                    className="text-xs" />
+                  
                     </div>
-                  )}
+                }
 
                   {/* Translation progress */}
-                  {Object.keys(interpreterTexts).length > 0 && (
-                    <div className="text-xs text-muted-foreground">
-                      번역 완료: {Object.keys(interpreterTexts).filter(k => interpreterTexts[parseInt(k)]).length} / {slides.length} 슬라이드
-                    </div>
-                  )}
+                  {Object.keys(interpreterTexts).length > 0 &&
+                <div className="text-xs text-muted-foreground">{t("lectureBuilder.jsxText292")}
+                  {Object.keys(interpreterTexts).filter((k) => interpreterTexts[parseInt(k)]).length} / {slides.length}{t("lectureBuilder.jsxText293")}
+                </div>
+                }
                 </CardContent>
-              )}
+              }
             </Card>
 
             {/* Unassigned scripts pool */}
-            {unassignedScripts.length > 0 && (
-              <Card>
+            {unassignedScripts.length > 0 &&
+            <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">미배정 스크립트 ({unassignedScripts.length}개)</CardTitle>
-                  <CardDescription className="text-xs">클릭하면 현재 슬라이드에 배치됩니다</CardDescription>
+                  <CardTitle className="text-sm">{t("lectureBuilder.jsxText294")}{unassignedScripts.length}{t("lectureBuilder.jsxText295")}</CardTitle>
+                  <CardDescription className="text-xs">{t("lectureBuilder.jsxText296")}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="max-h-48">
                     <div className="space-y-2">
-                      {unassignedScripts.map((s: any, i: number) => (
-                        <button key={s.id}
-                          className="w-full text-left p-2 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-colors"
-                          onClick={() => {
-                            if (currentSlide) {
-                              assignScript(currentSlide.id, s.scriptText, s.avatarId || undefined);
-                            }
-                          }}
-                        >
+                      {unassignedScripts.map((s: any, i: number) =>
+                    <button key={s.id}
+                    className="w-full text-left p-2 rounded-lg border hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                    onClick={() => {
+                      if (currentSlide) {
+                        assignScript(currentSlide.id, s.scriptText, s.avatarId || undefined);
+                      }
+                    }}>
+                      
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="text-[10px] shrink-0">{s.sortOrder + 1}</Badge>
                             <span className="text-xs line-clamp-2">{s.scriptText}</span>
                           </div>
                         </button>
-                      ))}
+                    )}
                     </div>
                   </ScrollArea>
                 </CardContent>
               </Card>
-            )}
+            }
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }
 
 // ============ STEP 5: PREVIEW & SETTINGS ============
-function Step5Preview({ projectId, project, slides, scripts, avatars, annotations, avatarOverrides, insertContent, transitions, onRefresh }: {
-  projectId: number;
-  project: any;
-  slides: any[];
-  scripts: any[];
-  avatars: any[];
-  annotations: any[];
-  avatarOverrides: any[];
-  insertContent: any[];
-  transitions: any[];
-  onRefresh: () => void;
-}) {
+function Step5Preview({ projectId, project, slides, scripts, avatars, annotations, avatarOverrides, insertContent, transitions, onRefresh
+
+
+
+
+
+
+
+
+
+
+}: {projectId: number;project: any;slides: any[];scripts: any[];avatars: any[];annotations: any[];avatarOverrides: any[];insertContent: any[];transitions: any[];onRefresh: () => void;}) {const { t } = useLanguage();
   const [previewSlideIdx, setPreviewSlideIdx] = useState(0);
   const [prevSlideIdx, setPrevSlideIdx] = useState<number | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -3240,20 +3246,20 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       layoutsQuery.refetch();
       toast.success(`${data.count}개 슬라이드에 대한 레이아웃이 추천되었습니다`);
     },
-    onError: (err) => toast.error(err.message || "AI 레이아웃 추천 실패"),
+    onError: (err) => toast.error(err.message || t("lectureBuilder.stringLiteral297"))
   });
   const applyLayoutMut = trpc.slideLayout.applyLayout.useMutation({
-    onSuccess: () => { layoutsQuery.refetch(); toast.success("레이아웃이 적용되었습니다"); },
+    onSuccess: () => {layoutsQuery.refetch();toast.success(t("lectureBuilder.stringLiteral298"));}
   });
   const clearLayoutsMut = trpc.slideLayout.clear.useMutation({
-    onSuccess: () => { layoutsQuery.refetch(); toast.info("레이아웃 추천이 초기화되었습니다"); },
+    onSuccess: () => {layoutsQuery.refetch();toast.info(t("lectureBuilder.stringLiteral299"));}
   });
 
   // Watermark Settings
   const watermarkQuery = trpc.watermark.get.useQuery({ projectId });
   const saveWatermarkMut = trpc.watermark.upsert.useMutation({
-    onSuccess: () => { watermarkQuery.refetch(); toast.success("워터마크가 저장되었습니다"); },
-    onError: (err) => toast.error(err.message || "워터마크 저장 실패"),
+    onSuccess: () => {watermarkQuery.refetch();toast.success(t("lectureBuilder.stringLiteral300"));},
+    onError: (err) => toast.error(err.message || t("lectureBuilder.stringLiteral301"))
   });
   const uploadLogoMut = trpc.watermark.uploadLogo.useMutation();
 
@@ -3273,11 +3279,11 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
     if (watermarkQuery.data) {
       const wm = watermarkQuery.data;
       setWmEnabled(wm.isEnabled ?? false);
-      setWmType((wm.watermarkType as any) || "text");
+      setWmType(wm.watermarkType as any || "text");
       setWmText(wm.textContent || "");
       setWmLogoUrl(wm.logoUrl || "");
       setWmLogoFileKey(wm.logoFileKey || "");
-      setWmPosition((wm.position as any) || "bottom-right");
+      setWmPosition(wm.position as any || "bottom-right");
       setWmOpacity(wm.opacity ?? 70);
       setWmFontSize(wm.fontSize ?? 24);
       setWmFontColor(wm.fontColor || "#FFFFFF");
@@ -3297,12 +3303,12 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       position: wmPosition,
       opacity: wmOpacity,
       sizePercent: wmSizePercent,
-      isEnabled: wmEnabled,
+      isEnabled: wmEnabled
     });
   };
 
   const updateProject = trpc.lectureBuilder.updateProject.useMutation({
-    onSuccess: () => { toast.success("설정이 저장되었습니다"); onRefresh(); },
+    onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral302"));onRefresh();}
   });
   const uploadBgmMut = trpc.lectureBuilder.uploadBgm.useMutation();
   const generateVideoMut = trpc.lectureBuilder.generateVideo.useMutation();
@@ -3322,14 +3328,14 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       setGenerating(false);
       setGeneratedVideoUrl(d.videoUrl);
       setGenProgress(100);
-      setGenStep("완료");
-      toast.success("영상이 성공적으로 생성되었습니다!");
+      setGenStep(t("lectureBuilder.stringLiteral303"));
+      toast.success(t("lectureBuilder.stringLiteral304"));
       onRefresh();
     } else if (d.status === "failed") {
       setGenerating(false);
       setGenProgress(0);
       setGenStep("");
-      toast.error(d.errorMessage || "영상 생성 실패");
+      toast.error(d.errorMessage || t("lectureBuilder.stringLiteral305"));
     }
   }, [generating, progressQuery.data]);
 
@@ -3369,7 +3375,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   useEffect(() => {
     if (!isPlaying) return;
     const timer = setTimeout(() => {
-      if (previewSlideIdx >= previewSlides.length - 1) { setIsPlaying(false); return; }
+      if (previewSlideIdx >= previewSlides.length - 1) {setIsPlaying(false);return;}
       changeSlide(previewSlideIdx + 1);
     }, 3000);
     return () => clearTimeout(timer);
@@ -3394,25 +3400,25 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
 
   const generateInterpreterTtsMut = trpc.lectureBuilder.generateInterpreterTts.useMutation({
     onSuccess: (data) => {
-      setInterpreterAudioUrls(prev => ({ ...prev, [data.scriptId]: data.audioUrl }));
+      setInterpreterAudioUrls((prev) => ({ ...prev, [data.scriptId]: data.audioUrl }));
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message)
   });
   const generateAllInterpreterTtsMut = trpc.lectureBuilder.generateAllInterpreterTts.useMutation({
     onSuccess: (data) => {
       data.results.forEach((r: any) => {
-        setInterpreterAudioUrls(prev => ({ ...prev, [r.scriptId]: r.audioUrl }));
+        setInterpreterAudioUrls((prev) => ({ ...prev, [r.scriptId]: r.audioUrl }));
       });
       toast.success(`${data.generated}/${data.total}개 통역 오디오 생성 완료`);
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message)
   });
 
   // Interpreter sequential playback: original script (timer) -> interpreter audio -> next slide
   useEffect(() => {
     if (!interpreterMode || !interpreterPlaying) return;
     const script = currentSlideScript;
-    if (!script) { setInterpreterPlaying(false); return; }
+    if (!script) {setInterpreterPlaying(false);return;}
 
     if (interpreterPhase === "original") {
       // Show original script for estimated duration, then switch to interpreter
@@ -3467,10 +3473,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   }, [interpreterMode, interpreterPlaying, interpreterPhase, previewSlideIdx, currentSlideScript, interpreterAudioUrls]);
 
   const toggleSlideSelection = (slideId: number) => {
-    setSelectedSlideIds(prev => {
+    setSelectedSlideIds((prev) => {
       const next = new Set(prev);
-      if (next.has(slideId)) next.delete(slideId);
-      else next.add(slideId);
+      if (next.has(slideId)) next.delete(slideId);else
+      next.add(slideId);
       return next;
     });
   };
@@ -3483,7 +3489,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 20 * 1024 * 1024) {
-      toast.error("배경음악 파일은 20MB 이하로 업로드해주세요");
+      toast.error(t("lectureBuilder.stringLiteral306"));
       return;
     }
     setBgmUploading(true);
@@ -3498,12 +3504,12 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
         projectId,
         fileData: base64,
         fileName: file.name,
-        mimeType: file.type || "audio/mpeg",
+        mimeType: file.type || "audio/mpeg"
       });
       setBgmUrl(result.url);
-      toast.success("배경음악이 업로드되었습니다");
+      toast.success(t("lectureBuilder.stringLiteral307"));
     } catch (err: any) {
-      toast.error(err.message || "배경음악 업로드 실패");
+      toast.error(err.message || t("lectureBuilder.stringLiteral308"));
     } finally {
       setBgmUploading(false);
       if (bgmInputRef.current) bgmInputRef.current.value = "";
@@ -3513,12 +3519,12 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   // Generate video (fire-and-forget, progress via polling)
   const handleGenerateVideo = async () => {
     if (selectedSlideIds.size === 0) {
-      toast.error("영상에 포함할 슬라이드를 선택해주세요");
+      toast.error(t("lectureBuilder.stringLiteral309"));
       return;
     }
     setGenerating(true);
     setGenProgress(0);
-    setGenStep("영상 생성 준비 중...");
+    setGenStep(t("lectureBuilder.stringLiteral310"));
     try {
       const result = await generateVideoMut.mutateAsync({
         projectId,
@@ -3530,15 +3536,15 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
         bgmVolume,
         noiseReduction: false,
         resolution: "1080p",
-        selectedSlideIds: Array.from(selectedSlideIds),
+        selectedSlideIds: Array.from(selectedSlideIds)
       });
       setGeneratedVideoUrl(result.videoUrl);
       setGenProgress(100);
-      setGenStep("완료");
-      toast.success("영상이 성공적으로 생성되었습니다!");
+      setGenStep(t("lectureBuilder.stringLiteral311"));
+      toast.success(t("lectureBuilder.stringLiteral312"));
       onRefresh();
     } catch (err: any) {
-      toast.error(err.message || "영상 생성 실패");
+      toast.error(err.message || t("lectureBuilder.stringLiteral313"));
     } finally {
       setGenerating(false);
     }
@@ -3546,7 +3552,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">미리보기 & 최종 설정</h2>
+      <h2 className="text-2xl font-bold">{t("lectureBuilder.jsxText314")}</h2>
 
       <div className="grid grid-cols-12 gap-6 overflow-hidden">
         {/* Preview Area */}
@@ -3555,80 +3561,80 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             <CardContent className="pt-6">
               <div className="relative bg-black rounded-xl overflow-hidden aspect-video">
                 {/* Previous slide (for transition) */}
-                {isTransitioning && prevSlideIdx !== null && previewSlides[prevSlideIdx] && (
-                  <img src={previewSlides[prevSlideIdx].imageUrl} alt="이전" className="absolute inset-0 w-full h-full object-contain z-0" />
-                )}
-                {currentSlide ? (
-                  <>
+                {isTransitioning && prevSlideIdx !== null && previewSlides[prevSlideIdx] &&
+                <img src={previewSlides[prevSlideIdx].imageUrl} alt={t("lectureBuilder.stringLiteral315")} className="absolute inset-0 w-full h-full object-contain z-0" />
+                }
+                {currentSlide ?
+                <>
                     <img
-                      src={currentSlide.imageUrl}
-                      alt="미리보기"
-                      className="w-full h-full object-contain"
-                      style={isTransitioning ? (() => {
-                        const trans = getTransition(currentSlide.id);
-                        const dur = `${(trans.durationMs || 500)}ms`;
-                        const ease = trans.easing || 'ease';
-                        const base: React.CSSProperties = { position: 'relative', zIndex: 1, transition: `all ${dur} ${ease}` };
-                        switch (trans.type) {
-                          case 'fade': return { ...base, animation: `fadeIn ${dur} ${ease} forwards` };
-                          case 'slide-left': return { ...base, animation: `slideFromRight ${dur} ${ease} forwards` };
-                          case 'slide-right': return { ...base, animation: `slideFromLeft ${dur} ${ease} forwards` };
-                          case 'slide-up': return { ...base, animation: `slideFromBottom ${dur} ${ease} forwards` };
-                          case 'slide-down': return { ...base, animation: `slideFromTop ${dur} ${ease} forwards` };
-                          case 'zoom-in': return { ...base, animation: `zoomIn ${dur} ${ease} forwards` };
-                          case 'zoom-out': return { ...base, animation: `zoomOut ${dur} ${ease} forwards` };
-                          case 'wipe': return { ...base, animation: `wipeRight ${dur} ${ease} forwards` };
-                          case 'dissolve': return { ...base, animation: `dissolve ${dur} ${ease} forwards` };
-                          default: return base;
-                        }
-                      })() : undefined}
-                    />
+                    src={currentSlide.imageUrl}
+                    alt={t("lectureBuilder.stringLiteral316")}
+                    className="w-full h-full object-contain"
+                    style={isTransitioning ? (() => {
+                      const trans = getTransition(currentSlide.id);
+                      const dur = `${trans.durationMs || 500}ms`;
+                      const ease = trans.easing || 'ease';
+                      const base: React.CSSProperties = { position: 'relative', zIndex: 1, transition: `all ${dur} ${ease}` };
+                      switch (trans.type) {
+                        case 'fade':return { ...base, animation: `fadeIn ${dur} ${ease} forwards` };
+                        case 'slide-left':return { ...base, animation: `slideFromRight ${dur} ${ease} forwards` };
+                        case 'slide-right':return { ...base, animation: `slideFromLeft ${dur} ${ease} forwards` };
+                        case 'slide-up':return { ...base, animation: `slideFromBottom ${dur} ${ease} forwards` };
+                        case 'slide-down':return { ...base, animation: `slideFromTop ${dur} ${ease} forwards` };
+                        case 'zoom-in':return { ...base, animation: `zoomIn ${dur} ${ease} forwards` };
+                        case 'zoom-out':return { ...base, animation: `zoomOut ${dur} ${ease} forwards` };
+                        case 'wipe':return { ...base, animation: `wipeRight ${dur} ${ease} forwards` };
+                        case 'dissolve':return { ...base, animation: `dissolve ${dur} ${ease} forwards` };
+                        default:return base;
+                      }
+                    })() : undefined} />
+                  
                     {/* Avatar PIP overlay */}
-                    {project?.avatarPosition !== "none" && currentAvatar && (
-                      <div className={`absolute ${
-                        project?.avatarPosition === "bottom-right" ? "bottom-4 right-4" :
-                        project?.avatarPosition === "bottom-left" ? "bottom-4 left-4" :
-                        project?.avatarPosition === "top-right" ? "top-4 right-4" :
-                        "top-4 left-4"
-                      }`}>
+                    {project?.avatarPosition !== "none" && currentAvatar &&
+                  <div className={`absolute ${
+                  project?.avatarPosition === "bottom-right" ? "bottom-4 right-4" :
+                  project?.avatarPosition === "bottom-left" ? "bottom-4 left-4" :
+                  project?.avatarPosition === "top-right" ? "top-4 right-4" :
+                  "top-4 left-4"}`
+                  }>
                         <div className={`${
-                          project?.avatarSize === "small" ? "w-20 h-20" :
-                          project?.avatarSize === "medium" ? "w-28 h-28" :
-                          "w-36 h-36"
-                        } ${
-                          project?.avatarShape === "circle" ? "rounded-full" :
-                          project?.avatarShape === "rounded" ? "rounded-xl" :
-                          "rounded-none"
-                        } overflow-hidden border-2 border-white/30 shadow-lg`}
-                          style={{ opacity: (project?.avatarOpacity || 100) / 100 }}
-                        >
+                    project?.avatarSize === "small" ? "w-20 h-20" :
+                    project?.avatarSize === "medium" ? "w-28 h-28" :
+                    "w-36 h-36"} ${
+
+                    project?.avatarShape === "circle" ? "rounded-full" :
+                    project?.avatarShape === "rounded" ? "rounded-xl" :
+                    "rounded-none"} overflow-hidden border-2 border-white/30 shadow-lg`
+                    }
+                    style={{ opacity: (project?.avatarOpacity || 100) / 100 }}>
+                      
                           <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                             <Users className="w-8 h-8 text-white/70" />
                           </div>
                         </div>
                       </div>
-                    )}
+                  }
                     {/* Script overlay */}
-                    {currentSlideScript && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 p-4">
-                        {interpreterMode && interpreterPhase === "interpreter" && currentSlideScript.interpreterText ? (
-                          <>
+                    {currentSlideScript &&
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 p-4">
+                        {interpreterMode && interpreterPhase === "interpreter" && currentSlideScript.interpreterText ?
+                    <>
                             <p className="text-yellow-300 text-xs mb-1 flex items-center gap-1">
-                              <Globe className="w-3 h-3" /> 통역
-                            </p>
+                              <Globe className="w-3 h-3" />{t("lectureBuilder.jsxText317")}
+                      </p>
                             <p className="text-white text-sm line-clamp-2">{currentSlideScript.interpreterText}</p>
-                          </>
-                        ) : (
-                          <p className="text-white text-sm line-clamp-2">{currentSlideScript.scriptText}</p>
-                        )}
+                          </> :
+
+                    <p className="text-white text-sm line-clamp-2">{currentSlideScript.scriptText}</p>
+                    }
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    {selectedSlideIds.size === 0 ? "슬라이드를 선택해주세요" : "슬라이드가 없습니다"}
+                  }
+                  </> :
+
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    {selectedSlideIds.size === 0 ? t("lectureBuilder.stringLiteral318") : t("lectureBuilder.stringLiteral319")}
                   </div>
-                )}
+                }
               </div>
 
               {/* Playback Controls */}
@@ -3643,7 +3649,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                   <ChevronRight className="w-4 h-4" />
                 </Button>
                 <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: previewSlides.length > 0 ? `${((previewSlideIdx + 1) / previewSlides.length) * 100}%` : "0%" }} />
+                  <div className="h-full bg-primary rounded-full transition-all" style={{ width: previewSlides.length > 0 ? `${(previewSlideIdx + 1) / previewSlides.length * 100}%` : "0%" }} />
                 </div>
                 <span className="text-sm text-muted-foreground">{previewSlides.length > 0 ? previewSlideIdx + 1 : 0}/{previewSlides.length}</span>
                 {/* Interpreter mode toggle */}
@@ -3658,55 +3664,55 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                       setInterpreterPhase("original");
                     }
                   }}
-                  title="통역 모드"
-                >
+                  title={t("lectureBuilder.stringLiteral320")}>
+                  
                   <Globe className="w-4 h-4" />
                 </Button>
               </div>
               {/* Interpreter playback controls */}
-              {interpreterMode && (
-                <div className="flex items-center gap-2 mt-2 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+              {interpreterMode &&
+              <div className="flex items-center gap-2 mt-2 p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
                   <Globe className="w-4 h-4 text-yellow-500 shrink-0" />
-                  <span className="text-xs text-yellow-600 dark:text-yellow-400 shrink-0">통역 모드</span>
+                  <span className="text-xs text-yellow-600 dark:text-yellow-400 shrink-0">{t("lectureBuilder.jsxText321")}</span>
                   <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => {
-                      if (interpreterPlaying) {
-                        setInterpreterPlaying(false);
-                        setInterpreterPhase("original");
-                        if (interpreterAudioRef.current) { interpreterAudioRef.current.pause(); interpreterAudioRef.current = null; }
-                      } else {
-                        setInterpreterPlaying(true);
-                        setInterpreterPhase("original");
-                        setIsPlaying(false);
-                      }
-                    }}
-                  >
-                    {interpreterPlaying ? <><Pause className="w-3 h-3" /> 정지</> : <><Play className="w-3 h-3" /> 원문→통역 재생</>}
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  onClick={() => {
+                    if (interpreterPlaying) {
+                      setInterpreterPlaying(false);
+                      setInterpreterPhase("original");
+                      if (interpreterAudioRef.current) {interpreterAudioRef.current.pause();interpreterAudioRef.current = null;}
+                    } else {
+                      setInterpreterPlaying(true);
+                      setInterpreterPhase("original");
+                      setIsPlaying(false);
+                    }
+                  }}>
+                  
+                    {interpreterPlaying ? <><Pause className="w-3 h-3" />{t("lectureBuilder.jsxText322")}</> : <><Play className="w-3 h-3" />{t("lectureBuilder.jsxText323")}</>}
                   </Button>
-                  {interpreterPlaying && (
-                    <Badge variant="outline" className="text-xs">
-                      {interpreterPhase === "original" ? "🇰🇷 원문" : "🌐 통역"}
+                  {interpreterPlaying &&
+                <Badge variant="outline" className="text-xs">
+                      {interpreterPhase === "original" ? t("lectureBuilder.stringLiteral324") : t("lectureBuilder.stringLiteral325")}
                     </Badge>
-                  )}
+                }
                   <div className="flex-1" />
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    disabled={generateAllInterpreterTtsMut.isPending}
-                    onClick={() => generateAllInterpreterTtsMut.mutate({ projectId })}
-                  >
-                    {generateAllInterpreterTtsMut.isPending ? (
-                      <><Loader2 className="w-3 h-3 animate-spin" /> 생성중</>
-                    ) : (
-                      <><Headphones className="w-3 h-3" /> TTS 생성</>
-                    )}
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs gap-1"
+                  disabled={generateAllInterpreterTtsMut.isPending}
+                  onClick={() => generateAllInterpreterTtsMut.mutate({ projectId })}>
+                  
+                    {generateAllInterpreterTtsMut.isPending ?
+                  <><Loader2 className="w-3 h-3 animate-spin" />{t("lectureBuilder.jsxText326")}</> :
+
+                  <><Headphones className="w-3 h-3" />{t("lectureBuilder.jsxText327")}</>
+                  }
                   </Button>
                 </div>
-              )}
+              }
             </CardContent>
           </Card>
 
@@ -3715,46 +3721,46 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-purple-500" /> AI 레이아웃 추천
+                  <Sparkles className="w-4 h-4 text-purple-500" />{t("lectureBuilder.jsxText328")}
                 </CardTitle>
                 <Button variant="outline" size="sm" className="text-xs gap-1 border-purple-300 text-purple-700 hover:bg-purple-50"
-                  onClick={() => recommendLayoutMut.mutate({ projectId })}
-                  disabled={recommendLayoutMut.isPending || slides.length === 0}>
-                  {recommendLayoutMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                  분석 시작
+                onClick={() => recommendLayoutMut.mutate({ projectId })}
+                disabled={recommendLayoutMut.isPending || slides.length === 0}>
+                  {recommendLayoutMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}{t("lectureBuilder.jsxText329")}
+
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              {layoutsQuery.data && layoutsQuery.data.length > 0 ? (
-                <div className="space-y-1.5">
+              {layoutsQuery.data && layoutsQuery.data.length > 0 ?
+              <div className="space-y-1.5">
                   {layoutsQuery.data.map((layout: any) => {
-                    const slideIdx = slides.findIndex((s: any) => s.id === layout.slideId);
-                    return (
-                      <div key={layout.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 text-xs">
-                        <Badge variant="outline" className="text-[10px] shrink-0">슬{slideIdx + 1}</Badge>
+                  const slideIdx = slides.findIndex((s: any) => s.id === layout.slideId);
+                  return (
+                    <div key={layout.id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 text-xs">
+                        <Badge variant="outline" className="text-[10px] shrink-0">{t("lectureBuilder.jsxText330")}{slideIdx + 1}</Badge>
                         <Badge className="bg-purple-100 text-purple-700 text-[10px]">{layout.layoutType}</Badge>
                         <span className="text-muted-foreground truncate flex-1">{layout.aiReasoning}</span>
-                        {!layout.isApplied && (
-                          <Button variant="ghost" size="sm" className="h-5 text-[10px] text-purple-600"
-                            onClick={() => applyLayoutMut.mutate({ layoutId: layout.id })}>
-                            적용
-                          </Button>
-                        )}
+                        {!layout.isApplied &&
+                      <Button variant="ghost" size="sm" className="h-5 text-[10px] text-purple-600"
+                      onClick={() => applyLayoutMut.mutate({ layoutId: layout.id })}>{t("lectureBuilder.jsxText331")}
+
+                      </Button>
+                      }
                         {layout.isApplied && <Check className="w-3 h-3 text-green-500 shrink-0" />}
-                      </div>
-                    );
-                  })}
+                      </div>);
+
+                })}
                   <Button variant="ghost" size="sm" className="text-xs text-red-400 w-full"
-                    onClick={() => clearLayoutsMut.mutate({ projectId })}>
-                    추천 초기화
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-2">
-                  AI가 스크립트를 분석하여 각 슬라이드에 최적의 레이아웃을 추천합니다.
-                </p>
-              )}
+                onClick={() => clearLayoutsMut.mutate({ projectId })}>{t("lectureBuilder.jsxText332")}
+
+                </Button>
+                </div> :
+
+              <p className="text-xs text-muted-foreground text-center py-2">{t("lectureBuilder.jsxText333")}
+
+              </p>
+              }
             </CardContent>
           </Card>
 
@@ -3762,10 +3768,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
           <Card className="mt-4">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">슬라이드 선택 ({selectedSlideIds.size}/{slides.length})</CardTitle>
+                <CardTitle className="text-sm">{t("lectureBuilder.jsxText334")}{selectedSlideIds.size}/{slides.length})</CardTitle>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={selectAll}>전체 선택</Button>
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={deselectAll}>전체 해제</Button>
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={selectAll}>{t("lectureBuilder.jsxText335")}</Button>
+                  <Button variant="ghost" size="sm" className="text-xs" onClick={deselectAll}>{t("lectureBuilder.jsxText336")}</Button>
                 </div>
               </div>
             </CardHeader>
@@ -3775,30 +3781,30 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                   const isSelected = selectedSlideIds.has(slide.id);
                   return (
                     <button key={slide.id}
-                      className={`relative w-16 h-10 rounded-md overflow-hidden border-2 transition-all ${
-                        isSelected ? "border-primary ring-1 ring-primary/30" : "border-muted opacity-50"
-                      }`}
-                      onClick={() => toggleSlideSelection(slide.id)}
-                    >
+                    className={`relative w-16 h-10 rounded-md overflow-hidden border-2 transition-all ${
+                    isSelected ? "border-primary ring-1 ring-primary/30" : "border-muted opacity-50"}`
+                    }
+                    onClick={() => toggleSlideSelection(slide.id)}>
+                      
                       <img src={slide.imageUrl} alt={`${idx + 1}`} className="w-full h-full object-contain" />
                       <div className="absolute top-0 left-0 text-[8px] bg-black/60 text-white px-0.5 rounded-br">{idx + 1}</div>
                       {isSelected && <Check className="absolute bottom-0 right-0 w-3 h-3 text-green-400" />}
-                    </button>
-                  );
+                    </button>);
+
                 })}
               </div>
             </CardContent>
           </Card>
 
           {/* Generated Video & Export */}
-          {generatedVideoUrl && (
-            <Card className="mt-4 border-green-500/30">
+          {generatedVideoUrl &&
+          <Card className="mt-4 border-green-500/30">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" /> 생성된 영상
-                  </CardTitle>
-                  <Badge variant="outline" className="text-green-500 border-green-500/30">완료</Badge>
+                    <Check className="w-4 h-4 text-green-500" />{t("lectureBuilder.jsxText337")}
+                </CardTitle>
+                  <Badge variant="outline" className="text-green-500 border-green-500/30">{t("lectureBuilder.jsxText338")}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -3806,117 +3812,117 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                 <div className="grid grid-cols-2 gap-2">
                   <a href={generatedVideoUrl} target="_blank" rel="noopener noreferrer" download>
                     <Button variant="outline" size="sm" className="gap-1 w-full">
-                      <Download className="w-3 h-3" /> 영상 다운로드
-                    </Button>
+                      <Download className="w-3 h-3" />{t("lectureBuilder.jsxText339")}
+                  </Button>
                   </a>
                   <Button variant="outline" size="sm" className="gap-1" onClick={() => {
-                    navigator.clipboard.writeText(generatedVideoUrl);
-                    toast.success("영상 URL이 복사되었습니다");
-                  }}>
-                    <Link2 className="w-3 h-3" /> URL 복사
-                  </Button>
+                  navigator.clipboard.writeText(generatedVideoUrl);
+                  toast.success(t("lectureBuilder.stringLiteral340"));
+                }}>
+                    <Link2 className="w-3 h-3" />{t("lectureBuilder.jsxText341")}
+                </Button>
                 </div>
               </CardContent>
             </Card>
-          )}
+          }
         </div>
 
         {/* Settings Panel */}
         <div className="col-span-4 space-y-4">
           {/* Stats */}
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">프로젝트 요약</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">{t("lectureBuilder.jsxText342")}</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">아바타</span><span>{avatars.length}명</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">슬라이드</span><span>{slides.length}장</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">배정된 스크립트</span><span>{assignedSlides.length}/{slides.length}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">예상 길이</span><span>~{Math.ceil(totalDuration / 60)}분</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">선택된 슬라이드</span><span>{selectedSlideIds.size}장</span></div>
-              {project.status && project.status !== "draft" && (
-                <div className="flex justify-between"><span className="text-muted-foreground">상태</span>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("lectureBuilder.jsxText343")}</span><span>{avatars.length}{t("lectureBuilder.jsxText344")}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("lectureBuilder.jsxText345")}</span><span>{slides.length}{t("lectureBuilder.jsxText346")}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("lectureBuilder.jsxText347")}</span><span>{assignedSlides.length}/{slides.length}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("lectureBuilder.jsxText348")}</span><span>~{Math.ceil(totalDuration / 60)}{t("lectureBuilder.jsxText349")}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("lectureBuilder.jsxText350")}</span><span>{selectedSlideIds.size}{t("lectureBuilder.jsxText351")}</span></div>
+              {project.status && project.status !== "draft" &&
+              <div className="flex justify-between"><span className="text-muted-foreground">{t("lectureBuilder.jsxText352")}</span>
                   <Badge variant={project.status === "completed" ? "default" : project.status === "generating" ? "secondary" : "destructive"}>
-                    {project.status === "completed" ? "완료" : project.status === "generating" ? "생성 중" : project.status === "error" ? "오류" : project.status}
+                    {project.status === "completed" ? t("lectureBuilder.stringLiteral353") : project.status === "generating" ? t("lectureBuilder.stringLiteral354") : project.status === "error" ? t("lectureBuilder.stringLiteral355") : project.status}
                   </Badge>
                 </div>
-              )}
+              }
             </CardContent>
           </Card>
 
           {/* Avatar Position */}
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">아바타 위치</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">{t("lectureBuilder.jsxText356")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <Select value={project.avatarPosition} onValueChange={v => updateProject.mutate({ id: projectId, avatarPosition: v as any })}>
+              <Select value={project.avatarPosition} onValueChange={(v) => updateProject.mutate({ id: projectId, avatarPosition: v as any })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bottom-right">우하단</SelectItem>
-                  <SelectItem value="bottom-left">좌하단</SelectItem>
-                  <SelectItem value="top-right">우상단</SelectItem>
-                  <SelectItem value="top-left">좌상단</SelectItem>
-                  <SelectItem value="none">없음</SelectItem>
+                  <SelectItem value="bottom-right">{t("lectureBuilder.jsxText357")}</SelectItem>
+                  <SelectItem value="bottom-left">{t("lectureBuilder.jsxText358")}</SelectItem>
+                  <SelectItem value="top-right">{t("lectureBuilder.jsxText359")}</SelectItem>
+                  <SelectItem value="top-left">{t("lectureBuilder.jsxText360")}</SelectItem>
+                  <SelectItem value="none">{t("lectureBuilder.jsxText361")}</SelectItem>
                 </SelectContent>
               </Select>
               <div>
-                <Label className="text-xs">크기</Label>
-                <Select value={project.avatarSize} onValueChange={v => updateProject.mutate({ id: projectId, avatarSize: v as any })}>
+                <Label className="text-xs">{t("lectureBuilder.jsxText362")}</Label>
+                <Select value={project.avatarSize} onValueChange={(v) => updateProject.mutate({ id: projectId, avatarSize: v as any })}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="small">작게</SelectItem>
-                    <SelectItem value="medium">보통</SelectItem>
-                    <SelectItem value="large">크게</SelectItem>
+                    <SelectItem value="small">{t("lectureBuilder.jsxText363")}</SelectItem>
+                    <SelectItem value="medium">{t("lectureBuilder.jsxText364")}</SelectItem>
+                    <SelectItem value="large">{t("lectureBuilder.jsxText365")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">모양</Label>
-                <Select value={project.avatarShape} onValueChange={v => updateProject.mutate({ id: projectId, avatarShape: v as any })}>
+                <Label className="text-xs">{t("lectureBuilder.jsxText366")}</Label>
+                <Select value={project.avatarShape} onValueChange={(v) => updateProject.mutate({ id: projectId, avatarShape: v as any })}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="circle">원형</SelectItem>
-                    <SelectItem value="rounded">둥근 사각형</SelectItem>
-                    <SelectItem value="rectangle">사각형</SelectItem>
+                    <SelectItem value="circle">{t("lectureBuilder.jsxText367")}</SelectItem>
+                    <SelectItem value="rounded">{t("lectureBuilder.jsxText368")}</SelectItem>
+                    <SelectItem value="rectangle">{t("lectureBuilder.jsxText369")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs">투명도: {project.avatarOpacity}%</Label>
+                <Label className="text-xs">{t("lectureBuilder.jsxText370")}{project.avatarOpacity}%</Label>
                 <Slider value={[project.avatarOpacity]} min={20} max={100} step={5}
-                  onValueChange={v => updateProject.mutate({ id: projectId, avatarOpacity: v[0] })} />
+                onValueChange={(v) => updateProject.mutate({ id: projectId, avatarOpacity: v[0] })} />
               </div>
             </CardContent>
           </Card>
 
           {/* BGM Upload */}
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">배경음악</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">{t("lectureBuilder.jsxText371")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <input ref={bgmInputRef} type="file" accept=".mp3,.wav,.ogg,.m4a" className="hidden" onChange={handleBgmUpload} />
               <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => bgmInputRef.current?.click()} disabled={bgmUploading}>
                 {bgmUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Volume2 className="w-4 h-4" />}
-                {bgmUrl ? "배경음악 변경" : "배경음악 업로드"}
+                {bgmUrl ? t("lectureBuilder.stringLiteral372") : t("lectureBuilder.stringLiteral373")}
               </Button>
-              {bgmUrl && (
-                <>
+              {bgmUrl &&
+              <>
                   <audio src={bgmUrl} controls className="w-full h-8" />
                   <div>
-                    <Label className="text-xs">볼륨: {bgmVolume}%</Label>
-                    <Slider value={[bgmVolume]} min={0} max={100} step={5} onValueChange={v => setBgmVolume(v[0])} />
+                    <Label className="text-xs">{t("lectureBuilder.jsxText374")}{bgmVolume}%</Label>
+                    <Slider value={[bgmVolume]} min={0} max={100} step={5} onValueChange={(v) => setBgmVolume(v[0])} />
                   </div>
                   <Button variant="ghost" size="sm" className="text-xs text-red-400" onClick={() => setBgmUrl("")}>
-                    <X className="w-3 h-3 mr-1" /> 배경음악 제거
-                  </Button>
+                    <X className="w-3 h-3 mr-1" />{t("lectureBuilder.jsxText375")}
+                </Button>
                 </>
-              )}
+              }
             </CardContent>
           </Card>
 
           {/* MP4 Export Settings */}
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm">🎬 MP4 내보내기</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm">{t("lectureBuilder.jsxText376")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <div>
-                <Label className="text-xs">해상도</Label>
-                <Select value={exportResolution} onValueChange={v => setExportResolution(v as any)}>
+                <Label className="text-xs">{t("lectureBuilder.jsxText377")}</Label>
+                <Select value={exportResolution} onValueChange={(v) => setExportResolution(v as any)}>
                   <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="720p">720p (HD)</SelectItem>
@@ -3926,45 +3932,45 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="subtitles" checked={includeSubtitles} onChange={e => setIncludeSubtitles(e.target.checked)} className="rounded" />
-                <Label htmlFor="subtitles" className="text-xs cursor-pointer">자막 포함</Label>
+                <input type="checkbox" id="subtitles" checked={includeSubtitles} onChange={(e) => setIncludeSubtitles(e.target.checked)} className="rounded" />
+                <Label htmlFor="subtitles" className="text-xs cursor-pointer">{t("lectureBuilder.jsxText378")}</Label>
               </div>
               <Button
                 className="w-full gap-2"
                 variant="secondary"
                 size="sm"
                 onClick={async () => {
-                  if (slides.length === 0) { toast.error("슬라이드가 없습니다"); return; }
+                  if (slides.length === 0) {toast.error(t("lectureBuilder.stringLiteral379"));return;}
                   setExporting(true);
                   setExportProgress(0);
-                  setExportStep("MP4 내보내기 준비 중...");
+                  setExportStep(t("lectureBuilder.stringLiteral380"));
                   try {
                     const result = await exportVideoMut.mutateAsync({
                       projectId,
                       resolution: exportResolution,
-                      includeSubtitles,
+                      includeSubtitles
                     });
                     setGeneratedVideoUrl(result.videoUrl);
                     setExportProgress(100);
-                    setExportStep("완료");
+                    setExportStep(t("lectureBuilder.stringLiteral381"));
                     toast.success(`MP4 내보내기 완료! (${(result.fileSize / 1024 / 1024).toFixed(1)}MB)`);
                     onRefresh();
                   } catch (err: any) {
-                    toast.error(err.message || "MP4 내보내기 실패");
+                    toast.error(err.message || t("lectureBuilder.stringLiteral382"));
                   } finally {
                     setExporting(false);
                   }
                 }}
-                disabled={exporting || slides.length === 0}
-              >
-                {exporting ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> MP4 내보내는 중...</>
-                ) : (
-                  <><Download className="w-4 h-4" /> MP4로 내보내기</>
-                )}
+                disabled={exporting || slides.length === 0}>
+                
+                {exporting ?
+                <><Loader2 className="w-4 h-4 animate-spin" />{t("lectureBuilder.jsxText383")}</> :
+
+                <><Download className="w-4 h-4" />{t("lectureBuilder.jsxText384")}</>
+                }
               </Button>
-              {exporting && (
-                <div className="space-y-2">
+              {exporting &&
+              <div className="space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">{exportStep}</span>
                     <span className="font-mono text-primary">{exportProgress}%</span>
@@ -3973,7 +3979,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                     <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500" style={{ width: `${exportProgress}%` }} />
                   </div>
                 </div>
-              )}
+              }
             </CardContent>
           </Card>
 
@@ -3981,174 +3987,174 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">🎨 워터마크 / 브랜딩</CardTitle>
+                <CardTitle className="text-sm">{t("lectureBuilder.jsxText385")}</CardTitle>
                 <div className="flex items-center gap-2">
                   <input type="checkbox" id="wm-enabled" checked={wmEnabled}
-                    onChange={e => setWmEnabled(e.target.checked)} className="rounded" />
-                  <Label htmlFor="wm-enabled" className="text-xs cursor-pointer">활성화</Label>
+                  onChange={(e) => setWmEnabled(e.target.checked)} className="rounded" />
+                  <Label htmlFor="wm-enabled" className="text-xs cursor-pointer">{t("lectureBuilder.jsxText386")}</Label>
                 </div>
               </div>
             </CardHeader>
-            {wmEnabled && (
-              <CardContent className="space-y-3">
+            {wmEnabled &&
+            <CardContent className="space-y-3">
                 <div>
-                  <Label className="text-xs">워터마크 타입</Label>
-                  <Select value={wmType} onValueChange={v => setWmType(v as any)}>
+                  <Label className="text-xs">{t("lectureBuilder.jsxText387")}</Label>
+                  <Select value={wmType} onValueChange={(v) => setWmType(v as any)}>
                     <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="text">텍스트</SelectItem>
-                      <SelectItem value="logo">로고 이미지</SelectItem>
-                      <SelectItem value="both">텍스트 + 로고</SelectItem>
+                      <SelectItem value="text">{t("lectureBuilder.jsxText388")}</SelectItem>
+                      <SelectItem value="logo">{t("lectureBuilder.jsxText389")}</SelectItem>
+                      <SelectItem value="both">{t("lectureBuilder.jsxText390")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {(wmType === "text" || wmType === "both") && (
-                  <div>
-                    <Label className="text-xs">텍스트</Label>
-                    <Input value={wmText} onChange={e => setWmText(e.target.value)}
-                      placeholder="예: © My Lecture" className="h-8 text-xs" />
+                {(wmType === "text" || wmType === "both") &&
+              <div>
+                    <Label className="text-xs">{t("lectureBuilder.jsxText391")}</Label>
+                    <Input value={wmText} onChange={(e) => setWmText(e.target.value)}
+                placeholder={t("lectureBuilder.stringLiteral392")} className="h-8 text-xs" />
                   </div>
-                )}
-                {(wmType === "logo" || wmType === "both") && (
-                  <div>
-                    <Label className="text-xs">로고 이미지</Label>
+              }
+                {(wmType === "logo" || wmType === "both") &&
+              <div>
+                    <Label className="text-xs">{t("lectureBuilder.jsxText393")}</Label>
                     <div className="flex gap-2">
                       <Input type="file" accept="image/*" className="h-8 text-xs flex-1"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = async () => {
-                            const base64 = (reader.result as string).split(",")[1];
-                            try {
-                              const result = await uploadLogoMut.mutateAsync({
-                                projectId,
-                                fileName: file.name,
-                                fileBase64: base64,
-                                mimeType: file.type,
-                              });
-                              setWmLogoUrl(result.url);
-                              setWmLogoFileKey(result.fileKey);
-                              toast.success("로고가 업로드되었습니다");
-                            } catch (err: any) {
-                              toast.error(err.message || "로고 업로드 실패");
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async () => {
+                      const base64 = (reader.result as string).split(",")[1];
+                      try {
+                        const result = await uploadLogoMut.mutateAsync({
+                          projectId,
+                          fileName: file.name,
+                          fileBase64: base64,
+                          mimeType: file.type
+                        });
+                        setWmLogoUrl(result.url);
+                        setWmLogoFileKey(result.fileKey);
+                        toast.success(t("lectureBuilder.stringLiteral394"));
+                      } catch (err: any) {
+                        toast.error(err.message || t("lectureBuilder.stringLiteral395"));
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }} />
+                  
                       {wmLogoUrl && <img src={wmLogoUrl} alt="logo" className="w-8 h-8 rounded border object-contain" />}
                     </div>
                   </div>
-                )}
+              }
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-xs">위치</Label>
-                    <Select value={wmPosition} onValueChange={v => setWmPosition(v as any)}>
+                    <Label className="text-xs">{t("lectureBuilder.jsxText396")}</Label>
+                    <Select value={wmPosition} onValueChange={(v) => setWmPosition(v as any)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="top-left">좌상단</SelectItem>
-                        <SelectItem value="top-center">상단 중앙</SelectItem>
-                        <SelectItem value="top-right">우상단</SelectItem>
-                        <SelectItem value="bottom-left">좌하단</SelectItem>
-                        <SelectItem value="bottom-center">하단 중앙</SelectItem>
-                        <SelectItem value="bottom-right">우하단</SelectItem>
+                        <SelectItem value="top-left">{t("lectureBuilder.jsxText397")}</SelectItem>
+                        <SelectItem value="top-center">{t("lectureBuilder.jsxText398")}</SelectItem>
+                        <SelectItem value="top-right">{t("lectureBuilder.jsxText399")}</SelectItem>
+                        <SelectItem value="bottom-left">{t("lectureBuilder.jsxText400")}</SelectItem>
+                        <SelectItem value="bottom-center">{t("lectureBuilder.jsxText401")}</SelectItem>
+                        <SelectItem value="bottom-right">{t("lectureBuilder.jsxText402")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs">투명도: {wmOpacity}%</Label>
+                    <Label className="text-xs">{t("lectureBuilder.jsxText403")}{wmOpacity}%</Label>
                     <Slider value={[wmOpacity]} min={10} max={100} step={5}
-                      onValueChange={v => setWmOpacity(v[0])} />
+                  onValueChange={(v) => setWmOpacity(v[0])} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-xs">글자 크기: {wmFontSize}px</Label>
+                    <Label className="text-xs">{t("lectureBuilder.jsxText404")}{wmFontSize}px</Label>
                     <Slider value={[wmFontSize]} min={12} max={48} step={2}
-                      onValueChange={v => setWmFontSize(v[0])} />
+                  onValueChange={(v) => setWmFontSize(v[0])} />
                   </div>
                   <div>
-                    <Label className="text-xs">사이즈: {wmSizePercent}%</Label>
+                    <Label className="text-xs">{t("lectureBuilder.jsxText405")}{wmSizePercent}%</Label>
                     <Slider value={[wmSizePercent]} min={5} max={40} step={1}
-                      onValueChange={v => setWmSizePercent(v[0])} />
+                  onValueChange={(v) => setWmSizePercent(v[0])} />
                   </div>
                 </div>
                 <div>
-                  <Label className="text-xs">글자 색상</Label>
+                  <Label className="text-xs">{t("lectureBuilder.jsxText406")}</Label>
                   <div className="flex gap-1">
-                    {["#FFFFFF", "#000000", "#FF0000", "#0066FF", "#00AA00", "#FFAA00"].map(c => (
-                      <button key={c}
-                        className={`w-6 h-6 rounded-full border-2 ${wmFontColor === c ? "border-primary scale-110" : "border-transparent"}`}
-                        style={{ backgroundColor: c, boxShadow: c === "#FFFFFF" ? "inset 0 0 0 1px #ccc" : undefined }}
-                        onClick={() => setWmFontColor(c)}
-                      />
-                    ))}
+                    {["#FFFFFF", "#000000", "#FF0000", "#0066FF", "#00AA00", "#FFAA00"].map((c) =>
+                  <button key={c}
+                  className={`w-6 h-6 rounded-full border-2 ${wmFontColor === c ? "border-primary scale-110" : "border-transparent"}`}
+                  style={{ backgroundColor: c, boxShadow: c === "#FFFFFF" ? "inset 0 0 0 1px #ccc" : undefined }}
+                  onClick={() => setWmFontColor(c)} />
+
+                  )}
                   </div>
                 </div>
                 <Button variant="default" size="sm" className="w-full gap-1"
-                  onClick={handleSaveWatermark}
-                  disabled={saveWatermarkMut.isPending}>
-                  {saveWatermarkMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
-                  워터마크 저장
-                </Button>
+              onClick={handleSaveWatermark}
+              disabled={saveWatermarkMut.isPending}>
+                  {saveWatermarkMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}{t("lectureBuilder.jsxText407")}
+
+              </Button>
                 {/* Preview */}
                 <div className="relative w-full aspect-video bg-muted rounded-lg border overflow-hidden">
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
-                    워터마크 미리보기
-                  </div>
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">{t("lectureBuilder.jsxText408")}
+
+                </div>
                   <div className={`absolute flex items-center gap-1 ${
-                    wmPosition.includes("top") ? "top-2" : "bottom-2"
-                  } ${
-                    wmPosition.includes("left") ? "left-2" : wmPosition.includes("center") ? "left-1/2 -translate-x-1/2" : "right-2"
-                  }`} style={{ opacity: wmOpacity / 100 }}>
-                    {wmLogoUrl && (wmType === "logo" || wmType === "both") && (
-                      <img src={wmLogoUrl} alt="wm" className="rounded" style={{ height: `${wmSizePercent * 1.5}px` }} />
-                    )}
-                    {(wmType === "text" || wmType === "both") && wmText && (
-                      <span style={{ fontSize: `${Math.max(8, wmFontSize * 0.5)}px`, color: wmFontColor }} className="font-bold drop-shadow-md">
+                wmPosition.includes("top") ? "top-2" : "bottom-2"} ${
+
+                wmPosition.includes("left") ? "left-2" : wmPosition.includes("center") ? "left-1/2 -translate-x-1/2" : "right-2"}`
+                } style={{ opacity: wmOpacity / 100 }}>
+                    {wmLogoUrl && (wmType === "logo" || wmType === "both") &&
+                  <img src={wmLogoUrl} alt="wm" className="rounded" style={{ height: `${wmSizePercent * 1.5}px` }} />
+                  }
+                    {(wmType === "text" || wmType === "both") && wmText &&
+                  <span style={{ fontSize: `${Math.max(8, wmFontSize * 0.5)}px`, color: wmFontColor }} className="font-bold drop-shadow-md">
                         {wmText}
                       </span>
-                    )}
+                  }
                   </div>
                 </div>
               </CardContent>
-            )}
+            }
           </Card>
 
           {/* Generate Button */}
           <Button id="step5-generate-video-btn" className="w-full gap-2" size="lg" onClick={handleGenerateVideo} disabled={generating || exporting || selectedSlideIds.size === 0}>
-            {generating ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> 영상 생성 중...</>
-            ) : (
-              <><Video className="w-5 h-5" /> 최종 영상 생성</>
-            )}
+            {generating ?
+            <><Loader2 className="w-5 h-5 animate-spin" />{t("lectureBuilder.jsxText409")}</> :
+
+            <><Video className="w-5 h-5" />{t("lectureBuilder.jsxText410")}</>
+            }
           </Button>
-          {generating && (
-            <Card>
+          {generating &&
+          <Card>
               <CardContent className="pt-4 space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">영상 생성 진행률</span>
+                  <span className="text-muted-foreground">{t("lectureBuilder.jsxText411")}</span>
                   <span className="font-mono font-bold text-primary">{genProgress}%</span>
                 </div>
                 <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
-                    style={{ width: `${genProgress}%` }}
-                  />
+                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${genProgress}%` }} />
+                
                 </div>
-                {genStep && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-2">
+                {genStep &&
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
                     <Loader2 className="w-3 h-3 animate-spin" />
                     {genStep}
                   </p>
-                )}
-                <p className="text-[10px] text-muted-foreground/60 text-center">영상 생성에는 시간이 걸릴 수 있습니다. 이 페이지를 떠나지 마세요.</p>
+              }
+                <p className="text-[10px] text-muted-foreground/60 text-center">{t("lectureBuilder.jsxText412")}</p>
               </CardContent>
             </Card>
-          )}
+          }
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 }

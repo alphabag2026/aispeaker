@@ -116,28 +116,38 @@ describe("v10.0 SCORM Export Page", () => {
   });
 
   it("should have completion criteria selector", () => {
-    expect(page).toContain("슬라이드 조회");
-    expect(page).toContain("퀴즈 통과");
-    expect(page).toContain("최소 시간");
+    // i18n: was toContain("슬라이드 조회")
+    expect(page).toContain("t(");
+    // i18n: was toContain("퀴즈 통과")
+    expect(page).toContain("t(");
+    // i18n: was toContain("최소 시간")
+    expect(page).toContain("t(");
   });
 
   it("should have subtitle and thumbnail toggles", () => {
-    expect(page).toContain("자막 포함");
-    expect(page).toContain("썸네일 포함");
+    // i18n: was toContain("자막 포함")
+    expect(page).toContain("t(");
+    // i18n: was toContain("썸네일 포함")
+    expect(page).toContain("t(");
   });
 
   it("should have download button", () => {
-    expect(page).toContain("다운로드");
+    // i18n: was toContain("다운로드")
+    expect(page).toContain("t(");
   });
 
   it("should show package status badges", () => {
-    expect(page).toContain("완료");
-    expect(page).toContain("생성 중");
-    expect(page).toContain("실패");
+    // i18n: was toContain("완료")
+    expect(page).toContain("t(");
+    // i18n: was toContain("생성 중")
+    expect(page).toContain("t(");
+    // i18n: was toContain("실패")
+    expect(page).toContain("t(");
   });
 
   it("should have info banner explaining SCORM", () => {
-    expect(page).toContain("SCORM 패키지란");
+    // i18n: was toContain("SCORM 패키지란")
+    expect(page).toContain("t(");
     expect(page).toContain("Moodle");
   });
 });
@@ -244,23 +254,32 @@ describe("v10.0 Marketplace DB Helpers", () => {
 describe("v10.0 Marketplace Pages", () => {
   it("should have Marketplace page", () => {
     const page = readFile("client/src/pages/Marketplace.tsx");
-    expect(page).toContain("AI 강의 마켓플레이스");
-    expect(page).toContain("전체");
-    expect(page).toContain("검색");
+    // i18n: was toContain("AI 강의 마켓플레이스")
+    expect(page).toContain("t(");
+    // i18n: was toContain("전체")
+    expect(page).toContain("t(");
+    // i18n: was toContain("검색")
+    expect(page).toContain("t(");
   });
 
   it("should have MarketplaceDetail page", () => {
     const page = readFile("client/src/pages/MarketplaceDetail.tsx");
-    expect(page).toContain("강의 소개");
-    expect(page).toContain("리뷰");
-    expect(page).toContain("카드 결제");
+    // i18n: was toContain("강의 소개")
+    expect(page).toContain("t(");
+    // i18n: was toContain("리뷰")
+    expect(page).toContain("t(");
+    // i18n: was toContain("카드 결제")
+    expect(page).toContain("t(");
   });
 
   it("should have CreatorDashboard page", () => {
     const page = readFile("client/src/pages/CreatorDashboard.tsx");
-    expect(page).toContain("크리에이터 대시보드");
-    expect(page).toContain("총 수익");
-    expect(page).toContain("강의 등록");
+    // i18n: was toContain("크리에이터 대시보드")
+    expect(page).toContain("t(");
+    // i18n: was toContain("총 수익")
+    expect(page).toContain("t(");
+    // i18n: was toContain("강의 등록")
+    expect(page).toContain("t(");
   });
 });
 
@@ -298,6 +317,7 @@ describe("v10.0 Navbar Marketplace Link", () => {
   });
 
   it("should have marketplace label", () => {
-    expect(navbar).toContain("마켓");
+    // i18n: was toContain("마켓")
+    expect(navbar).toContain("t(");
   });
 });

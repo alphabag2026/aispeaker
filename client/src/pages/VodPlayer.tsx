@@ -21,33 +21,36 @@ import {
   Globe,
   Clock,
 } from "lucide-react";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+
+
 
 const LANGUAGES = [
-  { code: "ko", name: "한국어", flag: "🇰🇷" },
-  { code: "en", name: "English", flag: "🇺🇸" },
-  { code: "ja", name: "日本語", flag: "🇯🇵" },
-  { code: "zh", name: "中文", flag: "🇨🇳" },
-  { code: "es", name: "Español", flag: "🇪🇸" },
-  { code: "fr", name: "Français", flag: "🇫🇷" },
-  { code: "de", name: "Deutsch", flag: "🇩🇪" },
-  { code: "pt", name: "Português", flag: "🇧🇷" },
-  { code: "ru", name: "Русский", flag: "🇷🇺" },
-  { code: "ar", name: "العربية", flag: "🇸🇦" },
-  { code: "hi", name: "हिन्दी", flag: "🇮🇳" },
-  { code: "vi", name: "Tiếng Việt", flag: "🇻🇳" },
-  { code: "th", name: "ไทย", flag: "🇹🇭" },
-  { code: "id", name: "Bahasa Indonesia", flag: "🇮🇩" },
-  { code: "tr", name: "Türkçe", flag: "🇹🇷" },
-  { code: "pl", name: "Polski", flag: "🇵🇱" },
-  { code: "nl", name: "Nederlands", flag: "🇳🇱" },
-  { code: "it", name: "Italiano", flag: "🇮🇹" },
-  { code: "sv", name: "Svenska", flag: "🇸🇪" },
-  { code: "uk", name: "Українська", flag: "🇺🇦" },
+  { code: "ko", label: "한국어", flag: "🇰🇷" },
+  { code: "en", label: "English", flag: "🇺🇸" },
+  { code: "zh", label: "中文", flag: "🇨🇳" },
+  { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "th", label: "ไทย", flag: "🇹🇭" },
+  { code: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
+  { code: "ms", label: "Bahasa Melayu", flag: "🇲🇾" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "de", label: "Deutsch", flag: "🇩🇪" },
+  { code: "pt", label: "Português", flag: "🇧🇷" },
+  { code: "ru", label: "Русский", flag: "🇷🇺" },
+  { code: "ar", label: "العربية", flag: "🇸🇦" },
+  { code: "hi", label: "हिन्दी", flag: "🇮🇳" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+  { code: "nl", label: "Nederlands", flag: "🇳🇱" },
+  { code: "pl", label: "Polski", flag: "🇵🇱" },
+  { code: "sv", label: "Svenska", flag: "🇸🇪" },
+  { code: "tr", label: "Türkçe", flag: "🇹🇷" },
 ];
 
 export default function VodPlayer() {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const params = useParams<{ id: string }>();
   const vodId = Number(params.id);
   const [selectedLang, setSelectedLang] = useState("ko");

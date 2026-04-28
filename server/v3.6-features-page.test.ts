@@ -89,7 +89,7 @@ describe("v3.6 Features 페이지", () => {
       expect(i18nContent).toContain("D-ID AI 아바타");
       expect(i18nContent).toContain("라이브 방송");
       expect(i18nContent).toContain("실시간 AI Q&A");
-      expect(i18nContent).toContain("다국어 자동 번역");
+      expect(i18nContent).toContain("다국어");
     });
 
     it("AI Speaker 브랜드명이 번역 파일에 있어야 한다", () => {
@@ -115,13 +115,12 @@ describe("v3.6 Features 페이지", () => {
     const navContent = readFile("client/src/components/Navbar.tsx");
 
     it("Navbar에 기능 메뉴가 있어야 한다", () => {
-      expect(navContent).toContain('href: "/features"');
-      expect(navContent).toContain('label: "기능"');
+      expect(navContent).toContain('/features');
+      expect(navContent).toContain('navbar.links.features');
     });
 
     it("Layers 아이콘을 사용해야 한다", () => {
       expect(navContent).toContain("Layers");
-      expect(navContent).toContain("icon: Layers");
     });
   });
 

@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Search, Star, ShoppingCart, Eye, Clock, Tag, Filter, Store, TrendingUp, Plus } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/i18n/pages/Marketplace";
 
 const CATEGORIES = [
   { value: "all", label: "전체" },
@@ -25,6 +27,7 @@ const CATEGORIES = [
 ];
 
 export default function Marketplace() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [search, setSearch] = useState("");
@@ -54,22 +57,22 @@ export default function Marketplace() {
         {/* Hero */}
         <div className="text-center mb-6 sm:mb-10">
           <h1 className="text-2xl sm:text-4xl font-bold mb-3 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
-            AI 강의 마켓플레이스
+            {t("marketplace.title")}
           </h1>
           <p className="text-gray-400 text-sm sm:text-lg max-w-2xl mx-auto">
-            전문가가 만든 AI 강의를 구매하고, 나만의 강의를 판매하세요
+            {t("marketplace.description")}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mt-4 sm:mt-6">
             {user && (
               <>
                 <Link href="/creator-dashboard">
                   <Button variant="outline" className="border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
-                    <Store className="w-4 h-4 mr-2" />크리에이터 대시보드
+                    <Store className="w-4 h-4 mr-2" />{t("marketplace.creatorDashboard")}
                   </Button>
                 </Link>
                 <Link href="/scorm-export">
                   <Button variant="outline" className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
-                    <Tag className="w-4 h-4 mr-2" />SCORM 내보내기
+                    <Tag className="w-4 h-4 mr-2" />{t("marketplace.scormExport")}
                   </Button>
                 </Link>
               </>
@@ -84,7 +87,7 @@ export default function Marketplace() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="강의 검색..."
+              placeholder={t("marketplace.searchPlaceholder")}
               className="pl-10 bg-[#1a1a2e] border-gray-700 text-white"
             />
           </div>
@@ -95,7 +98,7 @@ export default function Marketplace() {
             </SelectTrigger>
             <SelectContent className="bg-[#1a1a2e] border-gray-700">
               {CATEGORIES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                <SelectItem key={c.value} value={c.value}>{t(`marketplace.category.${c.value}`)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -105,11 +108,11 @@ export default function Marketplace() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#1a1a2e] border-gray-700">
-              <SelectItem value="latest">최신순</SelectItem>
-              <SelectItem value="popular">인기순</SelectItem>
-              <SelectItem value="rating">평점순</SelectItem>
-              <SelectItem value="price_low">가격 낮은순</SelectItem>
-              <SelectItem value="price_high">가격 높은순</SelectItem>
+              <SelectItem value="latest">{t("marketplace.sort.latest")}</SelectItem>
+              <SelectItem value="popular">{t("marketplace.sort.popular")}</SelectItem>
+              <SelectItem value="rating">{t("marketplace.sort.rating")}</SelectItem>
+              <SelectItem value="price_low">{t("marketplace.sort.priceLow")}</SelectItem>
+              <SelectItem value="price_high">{t("marketplace.sort.priceHigh")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -131,12 +134,12 @@ export default function Marketplace() {
         ) : sortedListings.length === 0 ? (
           <div className="text-center py-20">
             <Store className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-400 mb-2">등록된 강의가 없습니다</h3>
-            <p className="text-gray-500 text-sm mb-6">첫 번째 강의를 등록해보세요!</p>
+            <h3 className="text-lg font-medium text-gray-400 mb-2">{t("marketplace.noListings")}</h3>
+            <p className="text-gray-500 text-sm mb-6">{t("marketplace.firstListingPrompt")}</p>
             {user && (
               <Link href="/creator-dashboard">
                 <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Plus className="w-4 h-4 mr-2" />강의 등록하기
+                  <Plus className="w-4 h-4 mr-2" />{t("marketplace.addListing")}
                 </Button>
               </Link>
             )}
@@ -159,18 +162,18 @@ export default function Marketplace() {
                     </div>
                   )}
                   {listing.isFeatured && (
-                    <Badge className="absolute top-2 left-2 bg-orange-500/90 text-white text-xs">추천</Badge>
+                    <Badge className="absolute top-2 left-2 bg-orange-500/90 text-white text-xs">{t("marketplace.featured")}</Badge>
                   )}
                   {listing.salePriceInCents && listing.salePriceInCents < listing.priceInCents && (
                     <Badge className="absolute top-2 right-2 bg-red-500/90 text-white text-xs">
-                      {Math.round((1 - listing.salePriceInCents / listing.priceInCents) * 100)}% 할인
+                      {t("marketplace.percentDiscount", { discount: Math.round((1 - listing.salePriceInCents / listing.priceInCents) * 100) })}
                     </Badge>
                   )}
                 </div>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">
-                      {CATEGORIES.find((c) => c.value === listing.category)?.label || listing.category}
+                      {t(`marketplace.category.${listing.category.toLowerCase()}`) || listing.category}
                     </Badge>
                     {listing.acceptCrypto && (
                       <Badge variant="outline" className="text-xs border-green-600 text-green-400">Crypto</Badge>

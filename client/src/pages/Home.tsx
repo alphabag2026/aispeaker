@@ -43,78 +43,78 @@ import { useState, useEffect, useRef } from "react";
 import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
 
 /* ── Product Tabs (Akool-style) ── */
-const productTabs = [
-  { key: "i2v", label: "이미지 → 비디오", icon: Clapperboard, badge: "hot" as const },
-  { key: "faceswap", label: "얼굴 교환", icon: Users, badge: "new" as const },
-  { key: "avatar", label: "아바타 비디오", icon: Brain, badge: null },
-  { key: "translate", label: "비디오 번역", icon: Languages, badge: null },
-  { key: "tts", label: "음성 합성", icon: Volume2, badge: null },
-  { key: "lecture", label: "강의 빌더", icon: BookOpen, badge: "hot" as const },
-  { key: "live", label: "라이브 스트리밍", icon: Radio, badge: null },
+const getProductTabs = (t: (k: string) => string) => [
+  { key: "i2v", label: t("home.tab.i2v"), icon: Clapperboard, badge: "hot" as const },
+  { key: "faceswap", label: t("home.tool.faceswap"), icon: Users, badge: "new" as const },
+  { key: "avatar", label: t("home.tool.avatar"), icon: Brain, badge: null },
+  { key: "translate", label: t("home.tool.translate"), icon: Languages, badge: null },
+  { key: "tts", label: t("home.tab.tts"), icon: Volume2, badge: null },
+  { key: "lecture", label: t("home.tab.lecture"), icon: BookOpen, badge: "hot" as const },
+  { key: "live", label: t("home.tab.live"), icon: Radio, badge: null },
 ];
 
-const productDetails: Record<string, { title: string; desc: string; features: string[]; gradient: string; link: string }> = {
+const getProductDetails = (t: (k: string) => string): Record<string, { title: string; desc: string; features: string[]; gradient: string; link: string }> => ({
   i2v: {
     title: "Image to Video",
-    desc: "정적 이미지를 고화질 AI 비디오로 즉시 변환합니다. 정밀 모션 제어, 카메라 효과, 캐릭터 얼굴 일관성 유지. Kiss Screen, Catwalk, 360° Orbit 등 12+ 효과 프리셋 원클릭 적용.",
-    features: ["4K Ultra HD 출력", "12+ 효과 프리셋", "모션 궤적 제어", "10+ AI 모델 선택", "5~10초 비디오 생성"],
+    desc: t("home.product.i2v.desc"),
+    features: [t("home.product.i2v.feat1"), t("home.product.i2v.feat2"), t("home.product.i2v.feat3"), t("home.product.i2v.feat4"), t("home.product.i2v.feat5")],
     gradient: "from-violet-600 to-blue-500",
     link: "/ai-studio",
   },
   faceswap: {
     title: "Face Swap Pro",
-    desc: "사진과 영상에서 얼굴을 자연스럽게 교환합니다. Pro/Plus 두 모드 지원, 멀티페이스 인식, HQ 모델로 최고 품질의 결과물을 제공합니다.",
-    features: ["Pro + Plus 모드", "멀티페이스 지원", "HQ 고화질 모델", "이미지/비디오 모두 지원", "자연스러운 블렌딩"],
+    desc: t("home.product.faceswap.desc"),
+    features: [t("home.product.faceswap.feat1"), t("home.product.faceswap.feat2"), t("home.product.faceswap.feat3"), t("home.product.faceswap.feat4"), t("home.product.faceswap.feat5")],
     gradient: "from-pink-600 to-rose-500",
     link: "/ai-studio",
   },
   avatar: {
     title: "Talking Avatar",
-    desc: "AI 아바타가 텍스트를 읽어주는 강의 영상을 자동 생성합니다. 100+ 아바타, 155+ 언어 TTS, 배경 커스터마이징까지 지원합니다.",
-    features: ["100+ AI 아바타", "155+ 언어 TTS", "커스텀 배경", "립싱크 자동 매칭", "스크립트 기반 생성"],
+    desc: t("home.product.avatar.desc"),
+    features: [t("home.product.avatar.feat1"), t("home.product.avatar.feat2"), t("home.product.avatar.feat3"), t("home.product.avatar.feat4"), t("home.product.avatar.feat5")],
     gradient: "from-cyan-500 to-teal-500",
     link: "/ai-studio",
   },
   translate: {
     title: "Video Translation",
-    desc: "강의 영상을 155+ 언어로 자동 번역합니다. 립싱크와 음성 복제 기술로 자연스러운 다국어 콘텐츠를 만들어 글로벌 시장에 진출하세요.",
-    features: ["155+ 언어 지원", "립싱크 자동 매칭", "음성 복제 기술", "자막 자동 생성", "원본 화질 유지"],
+    desc: t("home.product.translate.desc"),
+    features: [t("home.product.translate.feat1"), t("home.product.translate.feat2"), t("home.product.translate.feat3"), t("home.product.translate.feat4"), t("home.product.translate.feat5")],
     gradient: "from-amber-500 to-orange-500",
     link: "/ai-studio",
   },
   tts: {
     title: "Voice Clone & TTS",
-    desc: "나만의 목소리를 복제하거나 300+ AI 음성으로 강의 내레이션을 자동 생성합니다. 감정, 속도, 톤 조절이 가능합니다.",
-    features: ["300+ AI 음성", "음성 복제 기술", "감정/속도 조절", "다국어 지원", "실시간 미리듣기"],
+    desc: t("home.product.tts.desc"),
+    features: [t("home.product.tts.feat1"), t("home.product.tts.feat2"), t("home.product.tts.feat3"), t("home.product.tts.feat4"), t("home.product.tts.feat5")],
     gradient: "from-emerald-500 to-green-500",
     link: "/voices",
   },
   lecture: {
-    title: "5단계 AI 강의 빌더",
-    desc: "슬라이드 업로드부터 AI 스크립트 생성, 아바타 선택, 화이트보드 편집, 최종 영상 생성까지 5단계로 완성하는 올인원 강의 제작 도구입니다.",
-    features: ["5단계 워크플로우", "AI 스크립트 자동 생성", "화이트보드 협업", "슬라이드 전환 효과", "프로젝트 복제"],
+    title: t("home.tab.lecture"),
+    desc: t("home.product.lecture.desc"),
+    features: [t("home.product.lecture.feat1"), t("home.product.lecture.feat2"), t("home.product.lecture.feat3"), t("home.product.lecture.feat4"), t("home.product.lecture.feat5")],
     gradient: "from-fuchsia-500 to-purple-500",
     link: "/lecture-builder",
   },
   live: {
-    title: "라이브 스트리밍",
-    desc: "AI 아바타가 실시간으로 강의를 진행합니다. Zoom, Google Meet, OBS Studio 등 주요 플랫폼과 연동하여 라이브 방송이 가능합니다.",
-    features: ["실시간 AI 아바타", "Zoom/Meet 연동", "OBS Studio 지원", "채팅 실시간 응답", "녹화 자동 저장"],
+    title: t("home.tab.live"),
+    desc: t("home.product.live.desc"),
+    features: [t("home.product.live.feat1"), t("home.product.live.feat2"), t("home.product.live.feat3"), t("home.product.live.feat4"), t("home.product.live.feat5")],
     gradient: "from-blue-500 to-indigo-500",
     link: "/broadcasts",
   },
-};
+});
 
 /* ── Stats ── */
-const stats = [
-  { value: "25+", label: "AI 도구" },
-  { value: "10+", label: "AI 모델" },
-  { value: "155+", label: "지원 언어" },
-  { value: "4K", label: "Ultra HD" },
+const getStats = (t: (k: string) => string) => [
+  { value: "25+", label: t("home.stat.tools") },
+  { value: "10+", label: t("home.stat.models") },
+  { value: "155+", label: t("home.stat.langs") },
+  { value: "4K", label: t("home.stat.ultraHD") },
 ];
 
 /* ── Hero typing words ── */
-const typingWords = ["강의 제작", "마케팅 영상", "교육 콘텐츠", "글로벌 번역", "라이브 방송"];
+const getTypingWords = (t: (k: string) => string) => [t("home.typing.word1"), t("home.typing.word2"), t("home.typing.word3"), t("home.typing.word4"), t("home.typing.word5")];
 
 /* ── Trusted logos ── */
 const trustedLogos = [
@@ -123,30 +123,35 @@ const trustedLogos = [
 ];
 
 /* ── Full tool grid ── */
-const allTools = [
-  { icon: Clapperboard, label: "이미지→비디오", href: "/ai-studio", badge: "hot" as const },
-  { icon: FileVideo, label: "텍스트→비디오", href: "/ai-studio", badge: null },
-  { icon: Users, label: "얼굴 교환", href: "/ai-studio", badge: "new" as const },
-  { icon: Brain, label: "아바타 비디오", href: "/ai-studio", badge: "unlimited" as const },
-  { icon: Languages, label: "비디오 번역", href: "/ai-studio", badge: null },
-  { icon: Volume2, label: "텍스트→음성", href: "/voices", badge: null },
-  { icon: Mic, label: "음성 복제", href: "/voices", badge: null },
-  { icon: Headphones, label: "음성 변환기", href: "/voices", badge: null },
-  { icon: Image, label: "이미지 생성기", href: "/ai-studio", badge: null },
-  { icon: Camera, label: "라이브 카메라", href: "/browser-studio", badge: null },
-  { icon: Radio, label: "스트리밍 아바타", href: "/broadcasts", badge: null },
-  { icon: Tv, label: "AI 강의 라이브", href: "/broadcasts", badge: "hot" as const },
-  { icon: BookOpen, label: "5단계 강의 빌더", href: "/lecture-builder", badge: "hot" as const },
-  { icon: MessageSquare, label: "화이트보드 협업", href: "/lecture-builder", badge: "new" as const },
-  { icon: Monitor, label: "PPT→비디오", href: "/lecture-builder", badge: "unlimited" as const },
-  { icon: Palette, label: "배경 변경", href: "/ai-studio", badge: null },
-  { icon: Wand2, label: "AI 레이아웃 추천", href: "/lecture-builder", badge: null },
-  { icon: Play, label: "프로덕션 스튜디오", href: "/studio", badge: null },
+const getAllTools = (t: (k: string) => string) => [
+  { icon: Clapperboard, label: t("home.tool.i2v"), href: "/ai-studio", badge: "hot" as const },
+  { icon: FileVideo, label: t("home.tool.t2v"), href: "/ai-studio", badge: null },
+  { icon: Users, label: t("home.tool.faceswap"), href: "/ai-studio", badge: "new" as const },
+  { icon: Brain, label: t("home.tool.avatar"), href: "/ai-studio", badge: "unlimited" as const },
+  { icon: Languages, label: t("home.tool.translate"), href: "/ai-studio", badge: null },
+  { icon: Volume2, label: t("home.tool.tts"), href: "/voices", badge: null },
+  { icon: Mic, label: t("home.tool.clone"), href: "/voices", badge: null },
+  { icon: Headphones, label: t("home.tool.voicechanger"), href: "/voices", badge: null },
+  { icon: Image, label: t("home.tool.imagegen"), href: "/ai-studio", badge: null },
+  { icon: Camera, label: t("home.tool.livecam"), href: "/browser-studio", badge: null },
+  { icon: Radio, label: t("home.tool.streamavatar"), href: "/broadcasts", badge: null },
+  { icon: Tv, label: t("home.tool.lecturelive"), href: "/broadcasts", badge: "hot" as const },
+  { icon: BookOpen, label: t("home.tool.lecturebuilder"), href: "/lecture-builder", badge: "hot" as const },
+  { icon: MessageSquare, label: t("home.tool.whiteboard"), href: "/lecture-builder", badge: "new" as const },
+  { icon: Monitor, label: t("home.tool.ppt2v"), href: "/lecture-builder", badge: "unlimited" as const },
+  { icon: Palette, label: t("home.tool.bgchange"), href: "/ai-studio", badge: null },
+  { icon: Wand2, label: t("home.tool.layout"), href: "/lecture-builder", badge: null },
+  { icon: Play, label: t("home.tool.studio"), href: "/studio", badge: null },
 ];
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const productTabs = getProductTabs(t);
+  const productDetails = getProductDetails(t);
+  const stats = getStats(t);
+  const typingWords = getTypingWords(t);
+  const allTools = getAllTools(t);
   const [activeTab, setActiveTab] = useState("i2v");
   const [typingIndex, setTypingIndex] = useState(0);
   const [displayText, setDisplayText] = useState("");
@@ -291,17 +296,14 @@ export default function Home() {
               {/* Main heading with typing */}
               <div>
                 <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  <span className="gradient-text">AI가 만드는</span>
+                  <span className="gradient-text">{t("home.hero.title1")}</span>
                   <br />
                   <span className="text-foreground">
                     {displayText}
                     <span className="inline-block w-[3px] h-[0.9em] bg-primary ml-1 align-middle" style={{ animation: 'blink 1s step-end infinite' }} />
                   </span>
                 </h1>
-                <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">
-                  25+ AI 도구, 10+ AI 모델, 155+ 언어를 하나의 플랫폼에서.
-                  이미지→비디오, 얼굴 교환, 아바타, 번역, 강의 빌더까지.
-                </p>
+                <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">{t("home.hero.desc")}</p>
               </div>
 
               {/* CTA buttons */}
@@ -311,7 +313,7 @@ export default function Home() {
                     <Link href="/lecture-builder">
                       <Button size="lg" className="glow-button gap-2 text-base h-12 px-8">
                         <Sparkles className="h-5 w-5" />
-                        강의 만들기
+                        {t("home.hero.btn.create")}
                       </Button>
                     </Link>
                     <Link href="/ai-studio">
@@ -326,13 +328,13 @@ export default function Home() {
                     <Button size="lg" asChild className="glow-button gap-2 text-base h-12 px-8">
                       <a href={getLoginUrl()}>
                         <Sparkles className="h-5 w-5" />
-                        무료로 시작하기
+                        {t("home.hero.btn.start")}
                       </a>
                     </Button>
                     <Link href="#products">
                       <Button size="lg" variant="outline" className="gap-2 border-primary/30 hover:bg-primary/10 h-12 px-8 text-base">
                         <Play className="h-5 w-5" />
-                        제품 둘러보기
+                        {t("home.hero.btn.explore")}
                       </Button>
                     </Link>
                   </>
@@ -396,7 +398,7 @@ export default function Home() {
                     </div>
                     <Link href={activeProduct.link}>
                       <Button size="sm" className="mt-5 glow-button text-xs h-9 px-6">
-                        지금 시도하기 <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                        {t("home.product.try")} <ArrowRight className="h-3.5 w-3.5 ml-1" />
                       </Button>
                     </Link>
                   </div>
@@ -436,11 +438,11 @@ export default function Home() {
               AI Products
             </div>
             <h2 className="text-3xl md:text-5xl font-extrabold mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              <span className="gradient-text">25+ AI 도구</span>
-              <span className="text-foreground">, 하나의 플랫폼</span>
+              <span className="gradient-text">{t("home.section.products.title1")}</span>
+              <span className="text-foreground">{t("home.section.products.title2")}</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Akool API 기반의 최첨단 AI 도구들로 강의 콘텐츠를 혁신하세요
+              {t("home.section.products.desc")}
             </p>
           </div>
 
@@ -475,7 +477,7 @@ export default function Home() {
                 </p>
                 <Link href={activeProduct.link}>
                   <Button className="glow-button gap-2">
-                    지금 시도하기 <ArrowRight className="h-4 w-4" />
+                    {t("home.product.try")} <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
               </div>
@@ -499,9 +501,9 @@ export default function Home() {
         <div className="container relative z-10">
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-4xl font-extrabold mb-3" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              전체 도구 목록
+              {t("home.section.tools.title")}
             </h2>
-            <p className="text-muted-foreground">18+ AI 도구를 자유롭게 사용하세요</p>
+            <p className="text-muted-foreground">{t("home.section.tools.desc")}</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {(showAllTools ? allTools : allTools.slice(0, 12)).map((tool, i) => (
@@ -519,7 +521,7 @@ export default function Home() {
           {!showAllTools && allTools.length > 12 && (
             <div className="text-center mt-6">
               <Button variant="outline" onClick={() => setShowAllTools(true)} className="gap-2 border-primary/30 hover:bg-primary/10">
-                더 보기 ({allTools.length - 12}개) <ChevronRight className="h-4 w-4" />
+                {t("home.section.tools.more")} ({allTools.length - 12}{t("home.section.tools.count")}) <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           )}
@@ -540,7 +542,7 @@ export default function Home() {
               <span className="text-foreground">, Your Choice</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Akool, Kling, Wan, Seedance, Sora, Veo 등 세계 최고의 AI 모델을 비교하고 선택하세요
+              {t("home.section.models.desc")}
             </p>
           </div>
           <ModelCarousel showComparison={true} />
@@ -561,7 +563,7 @@ export default function Home() {
               <span className="text-foreground">, One Click</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Kiss Screen, Catwalk, 360° Orbit 등 다양한 효과 프리셋을 원클릭으로 적용하세요
+              {t("home.section.effects.desc")}
             </p>
           </div>
           <EffectsGallery />
@@ -573,11 +575,11 @@ export default function Home() {
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-5xl font-extrabold mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              <span className="gradient-text">AI 강사</span>
-              <span className="text-foreground"> 쇼케이스</span>
+              <span className="gradient-text">{t("home.section.instructors.title1")}</span>
+              <span className="text-foreground">{t("home.section.instructors.title2")}</span>
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              다양한 AI 아바타가 여러분의 강의를 대신 진행합니다
+              {t("home.section.instructors.desc")}
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -702,7 +704,7 @@ export default function Home() {
           <div className="flex flex-wrap gap-4 justify-center">
             <Button size="lg" className="glow-button gap-2 text-base h-12 px-8" asChild>
               <a href={isAuthenticated ? "/lecture-builder" : getLoginUrl()}>
-                무료로 시작하기
+                {t("home.hero.btn.start")}
                 <ArrowRight className="h-4 w-4" />
               </a>
             </Button>

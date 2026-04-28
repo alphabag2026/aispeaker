@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/i18n/pages/VideoEffectsStudio";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -16,16 +18,18 @@ import {
   Wand2, Image as ImageIcon, Film, X, RefreshCw
 } from "lucide-react";
 
-const CATEGORY_TABS = [
-  { key: "style", label: "스타일 변환", icon: "🎨" },
-  { key: "fun", label: "재미 효과", icon: "✨" },
-  { key: "transform", label: "변신", icon: "🦋" },
-  { key: "dance", label: "댄스", icon: "💃" },
-  { key: "dual", label: "듀얼 (2인)", icon: "👫" },
+const getCATEGORY_TABS = (t: (k: string) => string) => [
+  { key: "style", label: t("videoEffectsStudio.styleTransform"), icon: "🎨" },
+  { key: "fun", label: t("videoEffectsStudio.funEffects"), icon: "✨" },
+  { key: "transform", label: t("videoEffectsStudio.transform"), icon: "🦋" },
+  { key: "dance", label: t("videoEffectsStudio.dance"), icon: "💃" },
+  { key: "dual", label: t("videoEffectsStudio.dual"), icon: "👫" },
 ];
 
 export default function VideoEffectsStudio() {
   const { user } = useAuth();
+  const { t } = useLanguage();
+  const CATEGORY_TABS = getCATEGORY_TABS(t);
   const [activeTab, setActiveTab] = useState("style");
   const [selectedEffect, setSelectedEffect] = useState<string>("");
   const [imageUrl, setImageUrl] = useState("");
@@ -41,7 +45,7 @@ export default function VideoEffectsStudio() {
   const createMut = trpc.videoEffects.create.useMutation({
     onSuccess: (data) => {
       setTaskId(data.taskId);
-      toast.success("효과 적용이 시작되었습니다!");
+      toast.success(t("videoEffectsStudio.effectApplicationStarted"));
     },
     onError: (err) => toast.error(err.message),
   });
@@ -65,7 +69,7 @@ export default function VideoEffectsStudio() {
     setResultUrl(statusQuery.data.videoUrl);
   }
   if (statusQuery.data?.taskStatus === "failed" && taskId) {
-    toast.error(statusQuery.data.taskStatusMsg || "효과 적용에 실패했습니다");
+    toast.error(statusQuery.data.taskStatusMsg || t("videoEffectsStudio.effectApplicationFailed"));
     setTaskId(null);
   }
 
@@ -76,7 +80,7 @@ export default function VideoEffectsStudio() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("파일 크기는 10MB 이하여야 합니다");
+      toast.error(t("videoEffectsStudio.fileSizeLimit"));
       return;
     }
     setIsUploading(true);
@@ -95,22 +99,22 @@ export default function VideoEffectsStudio() {
       };
       reader.readAsDataURL(file);
     } catch {
-      toast.error("업로드 실패");
+      toast.error(t("videoEffectsStudio.uploadFailed"));
       setIsUploading(false);
     }
   };
 
   const handleGenerate = () => {
     if (!selectedEffect) {
-      toast.error("효과를 선택해주세요");
+      toast.error(t("videoEffectsStudio.selectEffect"));
       return;
     }
     if (!imageUrl) {
-      toast.error("이미지를 업로드해주세요");
+      toast.error(t("videoEffectsStudio.uploadImage"));
       return;
     }
     if (isDual && !imageUrl2) {
-      toast.error("두 번째 이미지도 업로드해주세요");
+      toast.error(t("videoEffectsStudio.uploadSecondImage"));
       return;
     }
     setResultUrl(null);
@@ -144,7 +148,7 @@ export default function VideoEffectsStudio() {
               <h1 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
                 Video Effects Studio
               </h1>
-              <p className="text-xs text-muted-foreground">263가지 AI 비디오 이펙트 • Kling AI</p>
+              <p className="text-xs text-muted-foreground">{t("videoEffectsStudio.headerSubtitle")}</p>
             </div>
           </div>
         </div>
@@ -165,7 +169,7 @@ export default function VideoEffectsStudio() {
                   className="shrink-0 gap-1.5"
                 >
                   <span>{tab.icon}</span>
-                  {tab.label}
+                  {t(tab.label)}
                 </Button>
               ))}
             </div>
@@ -175,7 +179,7 @@ export default function VideoEffectsStudio() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Wand2 className="h-4 w-4 text-violet-400" />
-                  효과 선택
+                  {t("videoEffectsStudio.selectEffectTitle")}
                   {selectedEffect && (
                     <Badge variant="secondary" className="ml-2 text-xs">
                       {(currentEffects as any[]).find((e: any) => e.id === selectedEffect)?.label || selectedEffect}
@@ -211,7 +215,7 @@ export default function VideoEffectsStudio() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <ImageIcon className="h-4 w-4 text-teal-400" />
-                  {isDual ? "이미지 2장 업로드" : "이미지 업로드"}
+                  {isDual ? t("videoEffectsStudio.uploadTwoImages") : t("videoEffectsStudio.uploadSingleImage")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -227,7 +231,7 @@ export default function VideoEffectsStudio() {
                     >
                       <X className="h-3 w-3" />
                     </Button>
-                    {isDual && <Badge className="absolute bottom-2 left-2 text-[10px]">이미지 1 (왼쪽)</Badge>}
+                    {isDual && <Badge className="absolute bottom-2 left-2 text-[10px]">{t("videoEffectsStudio.image1Left")}</Badge>}
                   </div>
                 ) : (
                   <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border/50 rounded-lg cursor-pointer hover:border-violet-500/50 transition-colors">
@@ -236,7 +240,7 @@ export default function VideoEffectsStudio() {
                     ) : (
                       <>
                         <Upload className="h-6 w-6 text-muted-foreground mb-2" />
-                        <span className="text-xs text-muted-foreground">{isDual ? "이미지 1 업로드" : "이미지 업로드"}</span>
+                        <span className="text-xs text-muted-foreground">{isDual ? t("videoEffectsStudio.uploadImage1") : t("videoEffectsStudio.uploadSingleImage")}</span>
                       </>
                     )}
                     <input ref={fileRef} type="file" className="hidden" accept="image/jpeg,image/png" onChange={(e) => handleFileUpload(e, 1)} />
@@ -257,7 +261,7 @@ export default function VideoEffectsStudio() {
                         >
                           <X className="h-3 w-3" />
                         </Button>
-                        <Badge className="absolute bottom-2 left-2 text-[10px]">이미지 2 (오른쪽)</Badge>
+                        <Badge className="absolute bottom-2 left-2 text-[10px]">{t("videoEffectsStudio.image2Right")}</Badge>
                       </div>
                     ) : (
                       <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border/50 rounded-lg cursor-pointer hover:border-violet-500/50 transition-colors">
@@ -266,7 +270,7 @@ export default function VideoEffectsStudio() {
                         ) : (
                           <>
                             <Upload className="h-6 w-6 text-muted-foreground mb-2" />
-                            <span className="text-xs text-muted-foreground">이미지 2 업로드</span>
+                            <span className="text-xs text-muted-foreground">{t("videoEffectsStudio.uploadImage2")}</span>
                           </>
                         )}
                         <input ref={fileRef2} type="file" className="hidden" accept="image/jpeg,image/png" onChange={(e) => handleFileUpload(e, 2)} />

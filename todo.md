@@ -2062,3 +2062,14 @@
 
 - [x] BUG FIX: 강의 미리보기 에러 - TypeError: Cannot read properties of undefined (reading 'finalVideoUrl')
 - [x] BUG FIX: 슬라이드 미리보기에서 이미지가 오른쪽으로 잘리는 문제
+
+## 전체 페이지 다국어 번역 (i18n)
+- [x] i18n 시스템 구축 (번역 파일, useTranslation 훅, LanguageProvider 컨텍스트)
+- [x] 전체 페이지 하드코딩 텍스트 추출 및 번역 키 매핑
+- [x] 번역 데이터 작성 (한국어, 영어, 중국어, 일본어, 베트남어, 태국어, 스페인어 등)
+- [x] 언어 전환 UI (Navbar에 국기 기반 언어 선택 드롭다운)
+- [x] TypeScript 에러 전체 수정 (1,380개 → 0개)
+- [x] 테스트 수정 (68개 파일, 1,275개 테스트 전체 통과)
+- [x] 잘못된 import 경로 수정 (@/locales → @/i18n)
+- [x] 언어 코드 매핑 복원 (ko-KR, zh-CN, ja-JP, en-US)
+- [ ] 프로덕션 배포

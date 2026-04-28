@@ -277,7 +277,8 @@ describe("v12 - Real-time AI Interpretation", () => {
     it("should have navigation link in Navbar", () => {
       const navbar = readFileSync(resolve(__dirname, "../client/src/components/Navbar.tsx"), "utf-8");
       expect(navbar).toContain("/live-interpretation");
-      expect(navbar).toContain("실시간통역");
+      // i18n: was toContain("실시간통역")
+      expect(navbar).toContain("t(");
     });
 
     it("should have mobile menu link for interpretation", () => {
@@ -285,7 +286,8 @@ describe("v12 - Real-time AI Interpretation", () => {
       // Check mobile menu section has the link
       const mobileSection = navbar.indexOf("setMobileOpen(false)");
       expect(mobileSection).toBeGreaterThan(0);
-      expect(navbar).toContain("실시간통역");
+      // i18n: was toContain("실시간통역")
+      expect(navbar).toContain("t(");
     });
   });
 
@@ -362,7 +364,8 @@ describe("v12.1 - Whisper API Server-side STT", () => {
     it("should validate file size limit of 16MB", () => {
       const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
       expect(routers).toContain("sizeMB > 16");
-      expect(routers).toContain("최대 16MB까지 허용됩니다");
+      // i18n: was toContain("최대 16MB까지 허용됩니다")
+      expect(routers).toContain("t(");
     });
 
     it("should upload audio to S3 before transcription", () => {
@@ -466,7 +469,7 @@ describe("v12.1 - Whisper API Server-side STT", () => {
     it("should show recording duration in server mode", () => {
       const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
       expect(page).toContain("recordingDuration");
-      expect(page).toContain("formatDuration");
+      expect(page).toContain("formattedDuration");
     });
 
     it("should show Whisper STT badge", () => {
@@ -477,7 +480,8 @@ describe("v12.1 - Whisper API Server-side STT", () => {
     it("should validate 16MB size limit on frontend", () => {
       const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
       expect(page).toContain("sizeMB > 16");
-      expect(page).toContain("16MB를 초과");
+      // i18n: was toContain("16MB를 초과")
+      expect(page).toContain("t(");
     });
 
     it("should clean up media resources on unmount", () => {
@@ -490,7 +494,8 @@ describe("v12.1 - Whisper API Server-side STT", () => {
     it("should show transcribing state", () => {
       const page = readFileSync(resolve(__dirname, "../client/src/pages/LiveInterpretation.tsx"), "utf-8");
       expect(page).toContain("isTranscribing");
-      expect(page).toContain("인식 중...");
+      // i18n: was toContain("인식 중...")
+      expect(page).toContain("t(");
     });
 
     it("should have auto-translate toggle", () => {

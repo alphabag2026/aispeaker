@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
   Presentation, Video, Filter, ArrowUpDown
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
 
 /* ─── Interactive Before/After Slider with Auto Animation ─── */
 function BeforeAfterSlider({
@@ -233,26 +234,24 @@ function PipLectureModeSection() {
       setPipSize(pipSettings.data.size as any);
       setPipShape(pipSettings.data.shape as any);
       setPipOpacity(pipSettings.data.opacity);
-      if (pipSettings.data.customX != null) setCustomX(pipSettings.data.customX);
-      if (pipSettings.data.customY != null) setCustomY(pipSettings.data.customY);
+      setCustomX(pipSettings.data.customX ?? 75);
+      setCustomY(pipSettings.data.customY ?? 75);
     }
   }, [pipSettings.data]);
 
-  const sizeMap = { small: "w-20 h-20 md:w-24 md:h-24", medium: "w-28 h-28 md:w-36 md:h-36", large: "w-36 h-36 md:w-48 md:h-48" };
-  const posMap: Record<string, string> = {
-    "bottom-right": "bottom-3 right-3",
-    "bottom-left": "bottom-3 left-3",
-    "top-right": "top-3 right-3",
-    "top-left": "top-3 left-3",
+  const handleSave = () => {
+    updatePip.mutate({ position: pipPosition, size: pipSize, shape: pipShape, opacity: pipOpacity, customX, customY });
   };
-  const shapeMap = { circle: "rounded-full", rounded: "rounded-2xl", rectangle: "rounded-md" };
 
-  const pipStyle: React.CSSProperties = {
-    position: pipPosition === "custom" ? "absolute" : undefined,
-    left: pipPosition === "custom" ? `${customX}%` : undefined,
-    top: pipPosition === "custom" ? `${customY}%` : undefined,
-    transform: pipPosition === "custom" ? "translate(-50%, -50%)" : undefined,
-    opacity: pipOpacity / 100,
+  const handleReset = () => {
+    setPipPosition("bottom-right");
+    setPipSize("medium");
+    setPipShape("rounded");
+    setPipOpacity(100);
+    setCustomX(75);
+    setCustomY(75);
+    updatePip.mutate({ position: "bottom-right", size: "medium", shape: "rounded", opacity: 100, customX: 75, customY: 75 });
+    toast.info(t("ifs.pipSettingsReset"));
   };
 
   const handlePipDrag = (e: React.PointerEvent) => {
@@ -266,239 +265,202 @@ function PipLectureModeSection() {
     setCustomY(pctY);
   };
 
-  const handlePipPointerDown = (e: React.PointerEvent) => {
-    if (pipPosition !== "custom") return;
-    setIsDragging(true);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-  };
+  const pipStyle: React.CSSProperties = useMemo(() => {
+    const baseStyle: React.CSSProperties = {
+      opacity: pipOpacity / 100,
+      transition: isDragging ? 'none' : 'all 0.2s ease-out',
+    };
+    if (pipShape === 'circle') baseStyle.borderRadius = '50%';
+    if (pipShape === 'rounded') baseStyle.borderRadius = '1rem';
+    if (pipShape === 'rectangle') baseStyle.borderRadius = '0';
+
+    const sizeMap = { small: '15%', medium: '20%', large: '25%' };
+    baseStyle.width = sizeMap[pipSize];
+    baseStyle.paddingBottom = sizeMap[pipSize];
+
+    if (pipPosition === 'custom') {
+      return { ...baseStyle, position: 'absolute', left: `${customX}%`, top: `${customY}%`, transform: 'translate(-50%, -50%)' };
+    }
+
+    const posMap = {
+      'bottom-right': { bottom: '1rem', right: '1rem' },
+      'bottom-left': { bottom: '1rem', left: '1rem' },
+      'top-right': { top: '1rem', right: '1rem' },
+      'top-left': { top: '1rem', left: '1rem' },
+    };
+    return { ...baseStyle, position: 'absolute', ...posMap[pipPosition] };
+  }, [pipPosition, pipSize, pipShape, pipOpacity, customX, customY, isDragging]);
 
   return (
-    <div className="mb-8">
-      <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <Layout className="h-5 w-5 text-primary" />
-        {t("ifs.pipLectureModeTitle")}
-      </h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        {t("ifs.pipLectureModeDescription")}
-      </p>
+    <Card className="mb-8 border-primary/10">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Layout className="h-5 w-5 text-primary" />
+          {t("ifs.pipLectureModeTitle")}
+        </CardTitle>
+        <CardDescription>{t("ifs.pipLectureModeDescription")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Preview */}
+          <div ref={previewRef} className="relative aspect-video rounded-xl bg-muted/30 overflow-hidden select-none">
+            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/slide-sample-U9tJqXp9YdZfV2aRzYh8h.webp" alt="PPT Background" className="w-full h-full object-cover" />
+            <div
+              style={pipStyle}
+              className="bg-primary/20 border-2 border-primary/50 shadow-lg cursor-move"
+              onPointerDown={(e) => { if (pipPosition === 'custom') { setIsDragging(true); (e.target as HTMLElement).setPointerCapture(e.pointerId); }}}
+              onPointerMove={handlePipDrag}
+              onPointerUp={() => setIsDragging(false)}
+            >
+              <div className="absolute inset-0 flex items-center justify-center">
+                <User2 className="h-1/3 w-1/3 text-primary/70" />
+              </div>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Preview */}
-        <div className="md:col-span-2 relative aspect-video rounded-xl overflow-hidden bg-muted/30 border border-border"
-          ref={previewRef}
-          onPointerMove={handlePipDrag}
-          onPointerUp={() => setIsDragging(false)}
-          onPointerLeave={() => setIsDragging(false)}
-        >
-          <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/slide-template-T28sD8qY5sVqfBv2hJtZq.webp" alt={t("ifs.slidePreviewAlt")} className="w-full h-full object-cover" />
-          <div
-            className={`absolute z-10 transition-all duration-200 ${sizeMap[pipSize]} ${pipPosition !== "custom" ? posMap[pipPosition] : ""} ${shapeMap[pipShape]}`}
-            style={pipStyle}
-            onPointerDown={handlePipPointerDown}
-          >
-            <img src={user?.avatarUrl || "https://d2xsxph8kpxj0f.cloudfront.net/310519663373200888/JNDtxB2WrDuBzbhLtHkGn8/default-avatar-gENTaGk3v4Xy3Fq8p3w8k.webp"} alt={t("ifs.instructorPipAlt")} className={`w-full h-full object-cover ${shapeMap[pipShape]} shadow-2xl ${pipPosition === "custom" ? "cursor-move" : ""}`} />
+          {/* Controls */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>{t("ifs.pipPositionLabel")}</Label>
+                <Select value={pipPosition} onValueChange={(v: any) => setPipPosition(v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bottom-right">{t("ifs.pipPositionBottomRight")}</SelectItem>
+                    <SelectItem value="bottom-left">{t("ifs.pipPositionBottomLeft")}</SelectItem>
+                    <SelectItem value="top-right">{t("ifs.pipPositionTopRight")}</SelectItem>
+                    <SelectItem value="top-left">{t("ifs.pipPositionTopLeft")}</SelectItem>
+                    <SelectItem value="custom">{t("ifs.pipPositionCustom")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{t("ifs.pipSizeLabel")}</Label>
+                <Select value={pipSize} onValueChange={(v: any) => setPipSize(v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">{t("ifs.pipSizeSmall")}</SelectItem>
+                    <SelectItem value="medium">{t("ifs.pipSizeMedium")}</SelectItem>
+                    <SelectItem value="large">{t("ifs.pipSizeLarge")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>{t("ifs.pipShapeLabel")}</Label>
+              <Select value={pipShape} onValueChange={(v: any) => setPipShape(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rounded">{t("ifs.pipShapeRounded")}</SelectItem>
+                  <SelectItem value="circle">{t("ifs.pipShapeCircle")}</SelectItem>
+                  <SelectItem value="rectangle">{t("ifs.pipShapeRectangle")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{t("ifs.pipOpacityLabel")} ({pipOpacity}%)</Label>
+              <input type="range" min="20" max="100" value={pipOpacity} onChange={e => setPipOpacity(Number(e.target.value))} className="w-full" />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave} disabled={updatePip.isPending}>{t("ifs.saveSettingsButton")}</Button>
+              <Button size="sm" variant="outline" onClick={handleReset}>{t("ifs.resetSettingsButton")}</Button>
+            </div>
           </div>
         </div>
-
-        {/* Controls */}
-        <div className="space-y-4">
-          <div>
-            <Label>{t("ifs.pipPositionLabel")}</Label>
-            <Select value={pipPosition} onValueChange={(v: any) => setPipPosition(v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bottom-right">{t("ifs.pipPositionBottomRight")}</SelectItem>
-                <SelectItem value="bottom-left">{t("ifs.pipPositionBottomLeft")}</SelectItem>
-                <SelectItem value="top-right">{t("ifs.pipPositionTopRight")}</SelectItem>
-                <SelectItem value="top-left">{t("ifs.pipPositionTopLeft")}</SelectItem>
-                <SelectItem value="custom">{t("ifs.pipPositionCustom")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{t("ifs.pipSizeLabel")}</Label>
-            <Select value={pipSize} onValueChange={(v: any) => setPipSize(v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="small">{t("ifs.pipSizeSmall")}</SelectItem>
-                <SelectItem value="medium">{t("ifs.pipSizeMedium")}</SelectItem>
-                <SelectItem value="large">{t("ifs.pipSizeLarge")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>{t("ifs.pipShapeLabel")}</Label>
-            <Select value={pipShape} onValueChange={(v: any) => setPipShape(v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rounded">{t("ifs.pipShapeRounded")}</SelectItem>
-                <SelectItem value="circle">{t("ifs.pipShapeCircle")}</SelectItem>
-                <SelectItem value="rectangle">{t("ifs.pipShapeRectangle")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-            <Label>{t("ifs.saveSettingsLabel")}</Label>
-            <Button size="sm" onClick={() => updatePip.mutate({ position: pipPosition, size: pipSize, shape: pipShape, opacity: pipOpacity, customX, customY })} disabled={updatePip.isPending}>
-              {updatePip.isPending ? t("ifs.savingButton") : t("ifs.saveButton")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
-/* ─── PPT Slide Editor ─── */
+/* ─── PPT Editor Section ─── */
 function PptEditorSection() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const pptList = trpc.ppt.list.useQuery(undefined, { enabled: !!user });
-  const reorderSlides = trpc.ppt.reorderSlides.useMutation({ onSuccess: () => toast.success(t("ifs.slideOrderSaved")) });
-  const deleteSlide = trpc.ppt.deleteSlide.useMutation({ onSuccess: () => toast.success(t("ifs.slideDeleted")) });
-
-  const [selectedPptId, setSelectedPptId] = useState<string | null>(null);
+  const [selectedPpt, setSelectedPpt] = useState<any>(null);
   const [slideImages, setSlideImages] = useState<string[]>([]);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedPpt = useMemo(() => pptList.data?.find((p: any) => p.id.toString() === selectedPptId), [pptList.data, selectedPptId]);
+  const ppts = trpc.ppt.list.useQuery(undefined, { enabled: !!user });
+  const uploadPpt = trpc.ppt.upload.useMutation({
+    onSuccess: () => { ppts.refetch(); toast.success(t("ifs.pptUploadSuccess")); },
+    onError: () => toast.error(t("ifs.pptUploadError")),
+  });
+  const deletePpt = trpc.ppt.delete.useMutation({
+    onSuccess: () => { ppts.refetch(); toast.success(t("ifs.pptDeleteSuccess")); setSelectedPpt(null); setSlideImages([]); },
+  });
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+      toast.error(t("ifs.pptSizeError"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = (event.target?.result as string).split(",")[1];
+      uploadPpt.mutate({ title: file.name, fileName: file.name, fileData: base64, mimeType: file.type || "application/pdf" });
+    };
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   useEffect(() => {
-    if (selectedPpt) {
-      setSlideImages(selectedPpt.slideImages || []);
+    if (selectedPpt?.slideUrls) {
+      setSlideImages(JSON.parse(selectedPpt.slideUrls));
     }
   }, [selectedPpt]);
 
-  const handleDragStart = (idx: number) => setDragIdx(idx);
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
-    e.preventDefault();
-    if (dragIdx !== null) setDragOverIdx(idx);
-  };
-  const handleDrop = (dropIdx: number) => {
-    if (dragIdx === null) return;
-    const newOrder = [...slideImages];
-    const [draggedItem] = newOrder.splice(dragIdx, 1);
-    newOrder.splice(dropIdx, 0, draggedItem);
-    setSlideImages(newOrder);
-    if (selectedPpt) reorderSlides.mutate({ id: selectedPpt.id, slideOrder: newOrder.map((_, i) => i) });
-  };
-  const handleDragEnd = () => {
-    setDragIdx(null);
-    setDragOverIdx(null);
-  };
-
-  const moveSlide = (from: number, to: number) => {
-    const newOrder = [...slideImages];
-    const [item] = newOrder.splice(from, 1);
-    newOrder.splice(to, 0, item);
-    setSlideImages(newOrder);
-    if (selectedPpt) reorderSlides.mutate({ id: selectedPpt.id, slideOrder: newOrder.map((_, i) => i) });
-  };
-
-  const handleDeleteSlide = (idx: number) => {
-    if (!confirm(t("ifs.deleteSlideConfirm")))
-      return;
-    const newOrder = slideImages.filter((_, i) => i !== idx);
-    setSlideImages(newOrder);
-    if (selectedPpt) deleteSlide.mutate({ id: selectedPpt.id, slideIndex: idx });
-  };
-
   return (
-    <div className="mb-8">
-      <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-        <Settings2 className="h-5 w-5 text-primary" />
-        {t("ifs.pptSlideEditTitle")}
+    <div className="mt-12 pt-8 border-t border-border">
+      <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+        <Video className="h-5 w-5 text-primary" />
+        {t("ifs.pptEditorTitle")}
       </h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        {t("ifs.pptSlideEditDescription")}
-      </p>
-
-      <Select value={selectedPptId || ""} onValueChange={setSelectedPptId}>
-        <SelectTrigger className="w-full max-w-md mb-4">
-          <SelectValue placeholder={t("ifs.selectPptFile")} />
-        </SelectTrigger>
-        <SelectContent>
-          {pptList.data?.map((ppt: any) => (
-            <SelectItem key={ppt.id} value={ppt.id.toString()}>
-              {ppt.title} ({ppt.totalSlides}{t("ifs.slideUnit")})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {selectedPpt && slideImages.length > 0 && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">{selectedPpt.title}</CardTitle>
-              <span className="text-sm text-muted-foreground">{slideImages.length}{t("ifs.slideUnit")}</span>
-            </div>
-            <CardDescription>{t("ifs.slideEditDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {slideImages.map((url, idx) => (
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* PPT List */}
+        <div className="md:col-span-1 space-y-3">
+          <Button onClick={() => fileInputRef.current?.click()} className="w-full" disabled={uploadPpt.isPending}>
+            {uploadPpt.isPending ? t("ifs.uploadingPpt") : <><Upload className="h-4 w-4 mr-2" />{t("ifs.uploadNewPpt")}</>}
+          </Button>
+          <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept=".ppt, .pptx" className="hidden" />
+          <Card className="max-h-96 overflow-y-auto">
+            <CardContent className="p-2">
+              {ppts.data?.length === 0 && <p className="text-sm text-muted-foreground p-4 text-center">{t("ifs.noPptFound")}</p>}
+              {ppts.data?.map((ppt: any) => (
                 <div
-                  key={`${url}-${idx}`}
-                  draggable
-                  onDragStart={() => handleDragStart(idx)}
-                  onDragOver={(e) => handleDragOver(e, idx)}
-                  onDrop={() => handleDrop(idx)}
-                  onDragEnd={handleDragEnd}
-                  className={`group relative aspect-video rounded-lg overflow-hidden border-2 transition-all cursor-grab active:cursor-grabbing ${
-                    dragIdx === idx ? "opacity-50 scale-95" : ""
-                  } ${
-                    dragOverIdx === idx && dragIdx !== idx ? "border-primary ring-2 ring-primary/30 scale-105" : "border-border hover:border-primary/50"
+                  key={ppt.id}
+                  className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-muted ${
+                    selectedPpt?.id === ppt.id ? 'bg-primary/10' : ''
                   }`}
+                  onClick={() => setSelectedPpt(ppt)}
                 >
-                  <img src={url} alt={`${t("ifs.slide")} ${idx + 1}`} className="w-full h-full object-cover" />
-                  {/* Slide number */}
-                  <div className="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
-                    {idx + 1}
-                  </div>
-                  {/* Drag handle */}
-                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <GripVertical className="w-4 h-4 text-white drop-shadow" />
-                  </div>
-                  {/* Action buttons */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between">
-                    <div className="flex gap-0.5">
-                      <Button
-                        variant="ghost" size="icon"
-                        className="h-6 w-6 text-white hover:bg-white/20"
-                        onClick={(e) => { e.stopPropagation(); moveSlide(idx, idx - 1); }}
-                        disabled={idx === 0 || reorderSlides.isPending}
-                      >
-                        <ChevronUp className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="h-6 w-6 text-white hover:bg-white/20"
-                        onClick={(e) => { e.stopPropagation(); moveSlide(idx, idx + 1); }}
-                        disabled={idx === slideImages.length - 1 || reorderSlides.isPending}
-                      >
-                        <ChevronDown className="w-3 h-3" />
-                      </Button>
-                    </div>
-                    <Button
-                      variant="ghost" size="icon"
-                      className="h-6 w-6 text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                      onClick={(e) => { e.stopPropagation(); handleDeleteSlide(idx); }}
-                      disabled={deleteSlide.isPending}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </div>
+                  <span className="text-sm flex-1 truncate pr-2">{ppt.fileName}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); deletePpt.mutate({ id: ppt.id }); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Slide Preview */}
+        <div className="md:col-span-2 aspect-video rounded-xl bg-muted/30 flex items-center justify-center overflow-hidden">
+          {selectedPpt && slideImages.length > 0 ? (
+            <div className="w-full h-full grid grid-cols-3 grid-rows-2 gap-1 p-1">
+              {slideImages.slice(0, 6).map((url, i) => (
+                <img key={i} src={url} alt={`Slide ${i+1}`} className="w-full h-full object-contain rounded-sm bg-black" />
+              ))}
             </div>
-            {(reorderSlides.isPending || deleteSlide.isPending) && (
-              <p className="text-xs text-muted-foreground mt-3 animate-pulse">{t("ifs.processing")}</p>
-            )}
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center text-muted-foreground">
+              <Presentation className="h-12 w-12 mx-auto mb-2" />
+              <p>{t("ifs.selectPptToPreview")}</p>
+            </div>
+          )}
+        </div>
+      </div>
 
       {selectedPpt && slideImages.length === 0 && (
         <p className="text-sm text-muted-foreground">{t("ifs.noSlides")}</p>
@@ -739,6 +701,7 @@ function GallerySection() {
       }
       toast.success(t("ifs.imageUploadSuccess", { type: type === "before" ? t("ifs.beforeLabel") : t("ifs.afterLabel") }));
     } catch (err) {
+      console.error(err);
       toast.error(t("ifs.imageUploadError"));
     } finally {
       setUploading(false);
@@ -840,7 +803,7 @@ function GallerySection() {
               className={`h-7 text-xs ${galleryMethod === m ? "" : "bg-transparent"}`}
               onClick={() => setGalleryMethod(m)}
             >
-              {m === "all" ? t("ifs.filterAll") : m === "builtin" ? t("ifs.techBuiltIn") : m === "did" ? "D-ID" : "HeyGen"} {/* 내장 AI */}
+              {m === "all" ? t("ifs.filterAll") : m === "builtin" ? t("ifs.techBuiltIn") : m === "did" ? "D-ID" : "HeyGen"}
             </Button>
           ))}
         </div>
@@ -854,7 +817,7 @@ function GallerySection() {
             className={`h-7 text-xs ${gallerySort === "latest" ? "" : "bg-transparent"}`}
             onClick={() => setGallerySort("latest")}
           >
-            {t("ifs.sortLatest")} {/* 최신순 */}
+            {t("ifs.sortLatest")}
           </Button>
           <Button
             size="sm"
@@ -862,7 +825,7 @@ function GallerySection() {
             className={`h-7 text-xs ${gallerySort === "likes" ? "" : "bg-transparent"}`}
             onClick={() => setGallerySort("likes")}
           >
-            <Heart className="h-3 w-3 mr-1" />{t("ifs.sortLikes")} {/* 좋아요순 */}
+            <Heart className="h-3 w-3 mr-1" />{t("ifs.sortLikes")}
           </Button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +21,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { useLocation, useParams, Link } from "wouter";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
 
 const NETWORK_EXPLORERS: Record<string, string> = {
   ethereum: "https://etherscan.io/address/",
@@ -84,50 +85,51 @@ function BtcLogo({ className = "w-5 h-5" }: { className?: string }) {
 // ── CryptoFAQ Component ──
 const faqItems = [
   {
-    q: "어떤 암호화폐로 결제할 수 있나요?",
-    a: "USDT, USDC, ETH, BTC를 지원합니다. USDT와 USDC는 ERC20 및 TRC20 네트워크를 통해 전송할 수 있습니다.",
+    q: "cryptoPayment.faq.q1",
+    a: "cryptoPayment.faq.a1",
     icons: [UsdtLogo, UsdcLogo, EthLogo, BtcLogo],
   },
   {
-    q: "결제 확인까지 얼마나 걸리나요?",
-    a: "네트워크에 따라 다릅니다. ERC20 네트워크는 보통 5~15분, TRC20은 1~5분, BTC는 10~60분 정도 소요됩니다.",
+    q: "cryptoPayment.faq.q2",
+    a: "cryptoPayment.faq.a2",
     icons: [EthLogo, BtcLogo],
   },
   {
-    q: "잘못된 네트워크로 전송하면 어떻게 되나요?",
-    a: "잘못된 네트워크로 전송된 자산은 복구가 불가능할 수 있습니다. 반드시 지정된 네트워크를 확인 후 전송해주세요.",
+    q: "cryptoPayment.faq.q3",
+    a: "cryptoPayment.faq.a3",
     icons: [AlertTriangle as any],
   },
   {
-    q: "최소 결제 금액이 있나요?",
-    a: "최소 결제 금액은 $5 USD 상당입니다. 네트워크 수수료(가스비)는 별도이므로 충분한 금액을 전송해주세요.",
+    q: "cryptoPayment.faq.q4",
+    a: "cryptoPayment.faq.a4",
     icons: [UsdtLogo, UsdcLogo],
   },
   {
-    q: "환불은 어떻게 받을 수 있나요?",
-    a: "환불은 원래 전송한 지갑 주소로 동일한 암호화폐로 진행됩니다. 환불 요청은 고객센터로 문의해주세요. 처리까지 영업일 기준 3~5일 소요됩니다.",
+    q: "cryptoPayment.faq.q5",
+    a: "cryptoPayment.faq.a5",
     icons: [UsdtLogo],
   },
   {
-    q: "USDT와 USDC의 차이점은 무엇인가요?",
-    a: "USDT(Tether)와 USDC(USD Coin)는 모두 1 USD에 페깅된 스테이블코인입니다. USDT는 Tether Limited가, USDC는 Circle이 발행합니다. 두 코인 모두 ERC20과 TRC20 네트워크를 지원합니다.",
+    q: "cryptoPayment.faq.q6",
+    a: "cryptoPayment.faq.a6",
     icons: [UsdtLogo, UsdcLogo],
   },
   {
-    q: "결제 시간이 초과되면 어떻게 하나요?",
-    a: "결제 시간(30분)이 초과되면 해당 결제는 자동 취소됩니다. 이미 전송한 경우 고객센터로 트랜잭션 해시를 보내주시면 수동으로 확인해드립니다.",
+    q: "cryptoPayment.faq.q7",
+    a: "cryptoPayment.faq.a7",
     icons: [Clock as any],
   },
 ];
 
 function CryptoFAQ() {
+  const { t } = useLanguage();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <div className="mt-8 border-t pt-6">
       <div className="flex items-center justify-center gap-2 mb-4">
         <HelpCircle className="w-5 h-5 text-muted-foreground" />
-        <h3 className="text-lg font-semibold">자주 묻는 질문</h3>
+        <h3 className="text-lg font-semibold">{t("cryptoPayment.faq.title")}</h3>
       </div>
       <div className="space-y-2">
         {faqItems.map((item, idx) => (
@@ -137,7 +139,7 @@ function CryptoFAQ() {
               onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
             >
               <div className="flex items-center gap-2 flex-1 min-w-0">
-                <span className="text-sm font-medium">{item.q}</span>
+                <span className="text-sm font-medium">{t(item.q)}</span>
                 <div className="flex items-center gap-1 shrink-0">
                   {item.icons.map((Icon, i) => (
                     <Icon key={i} className="w-4 h-4" />
@@ -152,7 +154,7 @@ function CryptoFAQ() {
             </button>
             {openIndex === idx && (
               <div className="px-3 pb-3 text-sm text-muted-foreground border-t bg-muted/20">
-                <p className="pt-2">{item.a}</p>
+                <p className="pt-2">{t(item.a)}</p>
               </div>
             )}
           </div>
@@ -160,7 +162,7 @@ function CryptoFAQ() {
       </div>
       <div className="mt-4 text-center">
         <Link href="/payment-troubleshooting" className="text-sm text-primary hover:underline">
-          결제 문제 해결 가이드 보기 →
+          {t("cryptoPayment.faq.troubleshootingLink")}
         </Link>
       </div>
     </div>

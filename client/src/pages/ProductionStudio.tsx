@@ -25,28 +25,31 @@ import {
 } from "lucide-react";
 import CreditGuardModal, { useCreditGuard } from "@/components/CreditGuardModal";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/i18n/pages/ProductionStudio";
 
-const CATEGORIES = [
+const getCATEGORIES = (t: (k: string) => string) => [
   { value: "web3", label: "Web3" },
-  { value: "ai", label: "AI / 인공지능" },
-  { value: "blockchain", label: "블록체인" },
+  { value: "ai", label: t("ps.catAi") },
+  { value: "blockchain", label: t("ps.catBlockchain") },
   { value: "defi", label: "DeFi" },
   { value: "nft", label: "NFT" },
   { value: "metaverse", label: "메타버스" },
-  { value: "general", label: "일반" },
+  { value: "general", label: t("ps.catGeneral") },
 ];
 
-const DIFFICULTIES = [
-  { value: "beginner", label: "초급", color: "bg-green-500/20 text-green-400" },
-  { value: "intermediate", label: "중급", color: "bg-yellow-500/20 text-yellow-400" },
-  { value: "advanced", label: "고급", color: "bg-red-500/20 text-red-400" },
+const getDIFFICULTIES = (t: (k: string) => string) => [
+  { value: "beginner", label: t("ps.diffBeginner"), color: "bg-green-500/20 text-green-400" },
+  { value: "intermediate", label: t("ps.diffIntermediate"), color: "bg-yellow-500/20 text-yellow-400" },
+  { value: "advanced", label: t("ps.diffAdvanced"), color: "bg-red-500/20 text-red-400" },
 ];
 
 // Voices loaded from server API (Gemini TTS voices)
 
 export default function ProductionStudio() {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
+  const CATEGORIES = getCATEGORIES(t);
+  const DIFFICULTIES = getDIFFICULTIES(t);
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("create");
 
@@ -1043,7 +1046,7 @@ export default function ProductionStudio() {
                                 <SelectTrigger className="mt-1 h-8"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="en">English</SelectItem>
-                                  <SelectItem value="ko">한국어</SelectItem>
+                                  <SelectItem value="ko">{t("ps.langKo")}</SelectItem>
                                   <SelectItem value="ja">日本語</SelectItem>
                                   <SelectItem value="zh">中文</SelectItem>
                                   <SelectItem value="vi">Tiếng Việt</SelectItem>
@@ -2925,6 +2928,7 @@ function PresetCommentCount({ presetType, presetId }: { presetType: "avatar" | "
 
 /* ── Preset Comment Section ── */
 function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" | "subtitle"; presetId: number }) {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [newComment, setNewComment] = useState("");
   const [rating, setRating] = useState(0);
@@ -2988,7 +2992,7 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
           {replyTo && (
             <div className="text-xs text-muted-foreground flex items-center gap-1">
               답글 작성 중...
-              <button className="text-primary hover:underline" onClick={() => setReplyTo(null)}>취소</button>
+              <button className="text-primary hover:underline" onClick={() => setReplyTo(null)}>{t("ps.cancelAction")}</button>
             </div>
           )}
           {!replyTo && (
