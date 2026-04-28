@@ -81,6 +81,8 @@ import {
   interpretationSessions, InsertInterpretationSession,
   translationSegments, InsertTranslationSegment,
   supportedLanguages, InsertSupportedLanguage,
+  systemSettings, InsertSystemSetting,
+  projectCollaborators, InsertProjectCollaborator,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3687,4 +3689,104 @@ export async function getSessionSegmentCount(sessionId: number) {
   const db = await getDb(); if (!db) throw new Error("DB not available");
   const rows = await db.select({ count: sql<number>`count(*)` }).from(translationSegments).where(eq(translationSegments.sessionId, sessionId));
   return rows[0]?.count ?? 0;
+}
+
+
+// ============ System Settings helpers ============
+export async function getSystemSetting(key: string) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(systemSettings).where(eq(systemSettings.settingKey, key)).limit(1);
+  return rows[0]?.settingValue ?? null;
+}
+
+export async function setSystemSetting(key: string, value: string, userId?: number) {
+  const db = await getDb(); if (!db) return;
+  await db.insert(systemSettings).values({ settingKey: key, settingValue: value, updatedBy: userId ?? null })
+    .onDuplicateKeyUpdate({ set: { settingValue: value, updatedBy: userId ?? null } });
+}
+
+// ============ Project Collaboration helpers ============
+export async function addCollaborator(data: InsertProjectCollaborator) {
+  const db = await getDb(); if (!db) return null;
+  const result = await db.insert(projectCollaborators).values(data);
+  return result[0].insertId;
+}
+
+export async function getProjectCollaborators(projectId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select({
+    id: projectCollaborators.id,
+    projectId: projectCollaborators.projectId,
+    userId: projectCollaborators.userId,
+    role: projectCollaborators.role,
+    inviteStatus: projectCollaborators.inviteStatus,
+    inviteEmail: projectCollaborators.inviteEmail,
+    createdAt: projectCollaborators.createdAt,
+    userName: users.name,
+    userEmail: users.email,
+    userAvatar: users.avatarUrl,
+  }).from(projectCollaborators)
+    .leftJoin(users, eq(projectCollaborators.userId, users.id))
+    .where(eq(projectCollaborators.projectId, projectId))
+    .orderBy(desc(projectCollaborators.createdAt));
+}
+
+export async function getMyCollaborations(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select({
+    id: projectCollaborators.id,
+    projectId: projectCollaborators.projectId,
+    role: projectCollaborators.role,
+    inviteStatus: projectCollaborators.inviteStatus,
+    projectTitle: lectureProjects.title,
+    createdAt: projectCollaborators.createdAt,
+  }).from(projectCollaborators)
+    .leftJoin(lectureProjects, eq(projectCollaborators.projectId, lectureProjects.id))
+    .where(and(eq(projectCollaborators.userId, userId), eq(projectCollaborators.inviteStatus, "accepted")))
+    .orderBy(desc(projectCollaborators.createdAt));
+}
+
+export async function getPendingInvitations(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select({
+    id: projectCollaborators.id,
+    projectId: projectCollaborators.projectId,
+    role: projectCollaborators.role,
+    inviteEmail: projectCollaborators.inviteEmail,
+    projectTitle: lectureProjects.title,
+    inviterName: users.name,
+    createdAt: projectCollaborators.createdAt,
+  }).from(projectCollaborators)
+    .leftJoin(lectureProjects, eq(projectCollaborators.projectId, lectureProjects.id))
+    .leftJoin(users, eq(projectCollaborators.invitedBy, users.id))
+    .where(and(eq(projectCollaborators.userId, userId), eq(projectCollaborators.inviteStatus, "pending")))
+    .orderBy(desc(projectCollaborators.createdAt));
+}
+
+export async function updateCollaboratorStatus(id: number, status: "accepted" | "rejected") {
+  const db = await getDb(); if (!db) return;
+  await db.update(projectCollaborators).set({ inviteStatus: status }).where(eq(projectCollaborators.id, id));
+}
+
+export async function removeCollaborator(id: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(projectCollaborators).where(eq(projectCollaborators.id, id));
+}
+
+export async function isProjectCollaborator(projectId: number, userId: number) {
+  const db = await getDb(); if (!db) return false;
+  const rows = await db.select({ id: projectCollaborators.id }).from(projectCollaborators)
+    .where(and(
+      eq(projectCollaborators.projectId, projectId),
+      eq(projectCollaborators.userId, userId),
+      eq(projectCollaborators.inviteStatus, "accepted")
+    )).limit(1);
+  return rows.length > 0;
+}
+
+export async function findUserByEmail(email: string) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select({ id: users.id, name: users.name, email: users.email, avatarUrl: users.avatarUrl })
+    .from(users).where(eq(users.email, email)).limit(1);
+  return rows[0] ?? null;
 }

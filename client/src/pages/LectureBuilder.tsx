@@ -26,6 +26,7 @@ import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import KlingAvatarCreator from "@/components/KlingAvatarCreator";
 import LectureFormatSelector from "@/components/LectureFormatSelector";
+import ProjectCollaborationPanel, { PendingInvitationsPanel } from "@/components/ProjectCollaborationPanel";
 
 // ============ TYPES ============
 interface ScriptSection {
@@ -214,6 +215,8 @@ export default function LectureBuilder() {
             </Dialog>
           </div>
 
+          <PendingInvitationsPanel />
+
           {projectsQuery.isLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
           ) : !projectsQuery.data?.length ? (
@@ -318,6 +321,13 @@ export default function LectureBuilder() {
           </div>
         </div>
       </div>
+
+      {/* Collaboration Panel - Right Side */}
+      {projectId && (
+        <div className="max-w-7xl mx-auto px-4 pt-4">
+          <ProjectCollaborationPanel projectId={projectId} isOwner={project?.userId === user?.id} />
+        </div>
+      )}
 
       {/* Step Content */}
       <div className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">

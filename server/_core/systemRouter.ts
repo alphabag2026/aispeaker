@@ -26,4 +26,16 @@ export const systemRouter = router({
         success: delivered,
       } as const;
     }),
+
+  setKlingKeys: adminProcedure
+    .input(z.object({
+      accessKey: z.string().min(1),
+      secretKey: z.string().min(1),
+    }))
+    .mutation(async ({ input }) => {
+      // Update process.env at runtime so kling.ts picks up the new keys
+      process.env.KLING_ACCESS_KEY = input.accessKey;
+      process.env.KLING_SECRET_KEY = input.secretKey;
+      return { success: true };
+    }),
 });

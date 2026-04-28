@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -243,16 +244,7 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
 
   if (!klingConfigured.data?.configured) {
     return (
-      <Card className={`border-dashed ${className}`}>
-        <CardContent className="py-12 text-center">
-          <Sparkles className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold mb-2">KLING AI 영상 생성</h3>
-          <p className="text-muted-foreground text-sm mb-4">
-            KLING API 키가 설정되지 않았습니다.<br />
-            관리자에게 KLING_ACCESS_KEY와 KLING_SECRET_KEY 설정을 요청하세요.
-          </p>
-        </CardContent>
-      </Card>
+      <KlingSetupCard className={className} />
     );
   }
 
@@ -734,5 +726,87 @@ export default function KlingAvatarCreator({ onVideoCreated, onAvatarRegistered,
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+
+// ============ KLING Setup Card (Admin can set API keys) ============
+function KlingSetupCard({ className = "" }: { className?: string }) {
+  const { user } = useAuth();
+  const [showSetup, setShowSetup] = useState(false);
+  const [accessKey, setAccessKey] = useState("");
+  const [secretKey, setSecretKey] = useState("");
+  const isAdmin = user?.role === "admin";
+
+  const saveKeys = trpc.system.setKlingKeys.useMutation({
+    onSuccess: () => {
+      toast.success("KLING API 키가 설정되었습니다. 페이지를 새로고침합니다.");
+      setTimeout(() => window.location.reload(), 1500);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  return (
+    <Card className={`border-dashed ${className}`}>
+      <CardContent className="py-12 text-center">
+        <Sparkles className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+        <h3 className="text-lg font-semibold mb-2">KLING AI 영상 생성</h3>
+        <p className="text-muted-foreground text-sm mb-4">
+          KLING API 키가 설정되지 않았습니다.
+        </p>
+
+        {isAdmin && !showSetup && (
+          <Button onClick={() => setShowSetup(true)} className="gap-2">
+            <Wand2 className="w-4 h-4" /> 바로 설정하기
+          </Button>
+        )}
+
+        {!isAdmin && (
+          <p className="text-xs text-muted-foreground">
+            관리자에게 KLING_ACCESS_KEY와 KLING_SECRET_KEY 설정을 요청하세요.
+          </p>
+        )}
+
+        {isAdmin && showSetup && (
+          <div className="mt-4 space-y-3 max-w-sm mx-auto text-left">
+            <div>
+              <Label className="text-xs">KLING Access Key</Label>
+              <Input
+                type="password"
+                placeholder="Access Key 입력"
+                value={accessKey}
+                onChange={(e) => setAccessKey(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">KLING Secret Key</Label>
+              <Input
+                type="password"
+                placeholder="Secret Key 입력"
+                value={secretKey}
+                onChange={(e) => setSecretKey(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              <a href="https://klingai.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                KLING AI 공식 사이트
+              </a>에서 API 키를 발급받을 수 있습니다.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => saveKeys.mutate({ accessKey, secretKey })}
+                disabled={!accessKey || !secretKey || saveKeys.isPending}
+                className="flex-1"
+              >
+                {saveKeys.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "저장"}
+              </Button>
+              <Button variant="outline" onClick={() => setShowSetup(false)}>
+                취소
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

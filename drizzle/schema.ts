@@ -2209,3 +2209,29 @@ export const supportedLanguages = mysqlTable("supportedLanguages", {
 });
 export type SupportedLanguage = typeof supportedLanguages.$inferSelect;
 export type InsertSupportedLanguage = typeof supportedLanguages.$inferInsert;
+
+
+// ============ v12.3 - System Settings & Collaboration ============
+export const systemSettings = mysqlTable("systemSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  settingKey: varchar("settingKey", { length: 100 }).notNull().unique(),
+  settingValue: text("settingValue"),
+  updatedBy: int("updatedBy"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SystemSetting = typeof systemSettings.$inferSelect;
+export type InsertSystemSetting = typeof systemSettings.$inferInsert;
+
+export const projectCollaborators = mysqlTable("projectCollaborators", {
+  id: int("id").autoincrement().primaryKey(),
+  projectId: int("projectId").notNull(),
+  userId: int("userId").notNull(),
+  role: mysqlEnum("role", ["owner", "editor", "viewer"]).default("editor").notNull(),
+  invitedBy: int("invitedBy").notNull(),
+  inviteStatus: mysqlEnum("inviteStatus", ["pending", "accepted", "rejected"]).default("pending").notNull(),
+  inviteEmail: varchar("inviteEmail", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ProjectCollaborator = typeof projectCollaborators.$inferSelect;
+export type InsertProjectCollaborator = typeof projectCollaborators.$inferInsert;
