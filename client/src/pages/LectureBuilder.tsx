@@ -111,6 +111,7 @@ export default function LectureBuilder() {
       setShowCreateDialog(false);
       setLocation(`/lecture-builder/${data.id}`);
     },
+    onError: (e) => toast.error(e.message || "프로젝트 생성에 실패했습니다"),
   });
 
   // Only set step from DB on initial load
