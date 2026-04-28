@@ -2871,6 +2871,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         ttsVoiceId: z.string().optional(),
         voiceProfileId: safeOptionalNumber,
         scheduledAt: z.string().optional(),
+        projectId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const script = await db.getLectureScriptById(input.scriptId);
@@ -2886,6 +2887,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           ttsVoiceId: input.ttsVoiceId || "alloy",
           voiceProfileId: input.voiceProfileId || null,
           scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
+          projectId: input.projectId || null,
         });
         return { id, roomCode };
       }),
@@ -2920,13 +2922,15 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       return db.getLiveBroadcasts();
     }),
 
-    /** Start broadcasting */
+    /** Start broadcasting (owner or presenter) */
     start: instructorProcedure
       .input(z.object({ broadcastId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const broadcast = await db.getBroadcastById(input.broadcastId);
         if (!broadcast) throw new TRPCError({ code: "NOT_FOUND" });
-        if (broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        const isOwner = broadcast.instructorId === ctx.user.id;
+        const collabRole = broadcast.projectId ? await db.getCollaboratorRole(broadcast.projectId, ctx.user.id) : null;
+        if (!isOwner && collabRole !== "presenter") throw new TRPCError({ code: "FORBIDDEN", message: "방송 시작은 소유자 또는 발표자만 가능합니다" });
         await db.updateBroadcast(input.broadcastId, {
           status: "live",
           startedAt: new Date(),
@@ -2937,32 +2941,41 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { success: true };
       }),
 
-    /** Pause broadcasting */
+    /** Pause broadcasting (owner or presenter) */
     pause: instructorProcedure
       .input(z.object({ broadcastId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const broadcast = await db.getBroadcastById(input.broadcastId);
-        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        if (!broadcast) throw new TRPCError({ code: "FORBIDDEN" });
+        const isOwner = broadcast.instructorId === ctx.user.id;
+        const collabRole = broadcast.projectId ? await db.getCollaboratorRole(broadcast.projectId, ctx.user.id) : null;
+        if (!isOwner && collabRole !== "presenter") throw new TRPCError({ code: "FORBIDDEN" });
         await db.updateBroadcast(input.broadcastId, { status: "paused", isAudioPlaying: false });
         return { success: true };
       }),
 
-    /** Resume broadcasting */
+    /** Resume broadcasting (owner or presenter) */
     resume: instructorProcedure
       .input(z.object({ broadcastId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const broadcast = await db.getBroadcastById(input.broadcastId);
-        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        if (!broadcast) throw new TRPCError({ code: "FORBIDDEN" });
+        const isOwner = broadcast.instructorId === ctx.user.id;
+        const collabRole = broadcast.projectId ? await db.getCollaboratorRole(broadcast.projectId, ctx.user.id) : null;
+        if (!isOwner && collabRole !== "presenter") throw new TRPCError({ code: "FORBIDDEN" });
         await db.updateBroadcast(input.broadcastId, { status: "live" });
         return { success: true };
       }),
 
-    /** End broadcasting */
+    /** End broadcasting (owner or presenter) */
     end: instructorProcedure
       .input(z.object({ broadcastId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const broadcast = await db.getBroadcastById(input.broadcastId);
-        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        if (!broadcast) throw new TRPCError({ code: "FORBIDDEN" });
+        const isOwner = broadcast.instructorId === ctx.user.id;
+        const collabRole = broadcast.projectId ? await db.getCollaboratorRole(broadcast.projectId, ctx.user.id) : null;
+        if (!isOwner && collabRole !== "presenter") throw new TRPCError({ code: "FORBIDDEN" });
         await db.updateBroadcast(input.broadcastId, {
           status: "ended",
           endedAt: new Date(),
@@ -2971,7 +2984,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         return { success: true };
       }),
 
-    /** Update slide state (instructor controls) */
+    /** Update slide state (owner or presenter controls) */
     updateSlide: instructorProcedure
       .input(z.object({
         broadcastId: z.number(),
@@ -2981,7 +2994,10 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       }))
       .mutation(async ({ ctx, input }) => {
         const broadcast = await db.getBroadcastById(input.broadcastId);
-        if (!broadcast || broadcast.instructorId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
+        if (!broadcast) throw new TRPCError({ code: "FORBIDDEN" });
+        const isOwner = broadcast.instructorId === ctx.user.id;
+        const collabRole = broadcast.projectId ? await db.getCollaboratorRole(broadcast.projectId, ctx.user.id) : null;
+        if (!isOwner && collabRole !== "presenter") throw new TRPCError({ code: "FORBIDDEN" });
         await db.updateBroadcastSlideState(input.broadcastId, input.slideIndex, input.isAudioPlaying, input.audioPosition);
         return { success: true };
       }),
@@ -4303,6 +4319,8 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         name: z.string().optional(),
         role: z.enum(["instructor", "host", "guest", "narrator"]).optional(),
         ttsVoiceId: z.string().optional(),
+        sampleFaceId: z.number().nullable().optional(),
+        customFaceUrl: z.string().nullable().optional(),
         sortOrder: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -8247,11 +8265,11 @@ Return a JSON object with a "sections" array. Each section has:
       .input(z.object({
         projectId: z.number(),
         email: z.string().email(),
-        role: z.enum(["editor", "viewer"]).default("editor"),
+     role: z.enum(["presenter", "editor", "viewer"]).default("editor"),
       }))
       .mutation(async ({ ctx, input }) => {
-        // 프로젝트 소유자 확인
-        const project = await db.getLectureProject(input.projectId);
+        // 프로젝트 소유자만 초대 가능
+       const project = await db.getLectureProject(input.projectId);
         if (!project || project.userId !== ctx.user.id) {
           throw new TRPCError({ code: "FORBIDDEN", message: "프로젝트 소유자만 초대할 수 있습니다" });
         }
@@ -8282,7 +8300,7 @@ Return a JSON object with a "sections" array. Each section has:
             userId: targetUser.id,
             type: "system",
             title: "협업 초대",
-            message: `${ctx.user.name || '사용자'}님이 프로젝트 "${project.title || '제목 없음'}"(에) ${input.role === 'editor' ? '편집자' : '뷰어'}로 초대했습니다.`,
+            message: `${ctx.user.name || '사용자'}님이 프로젝트 "${project.title || '제목 없음'}"(에) ${input.role === 'presenter' ? '발표자' : input.role === 'editor' ? '편집자' : '뷰어'}로 초대했습니다.`,
             link: "/lecture-builder",
           });
         } catch (_) { /* 알림 실패는 무시 */ }
@@ -8372,7 +8390,7 @@ Return a JSON object with a "sections" array. Each section has:
       .input(z.object({
         collaboratorId: z.number(),
         projectId: z.number(),
-        role: z.enum(["editor", "viewer"]),
+        role: z.enum(["presenter", "editor", "viewer"]),
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.projectId);

@@ -7,16 +7,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Users, UserPlus, Mail, Loader2, X, Check, Crown, Eye, Pencil } from "lucide-react";
+import { Users, UserPlus, Mail, Loader2, X, Check, Eye, Pencil, Mic } from "lucide-react";
 
 interface Props {
   projectId: number;
   isOwner: boolean;
 }
 
+const ROLE_LABELS: Record<string, { label: string; desc: string; icon: React.ReactNode; color: string }> = {
+  presenter: { label: "발표자", desc: "방송 시작/진행/슬라이드 제어 가능", icon: <Mic className="w-3.5 h-3.5" />, color: "text-violet-600 dark:text-violet-400" },
+  editor: { label: "편집자", desc: "콘텐츠 수정 가능", icon: <Pencil className="w-3.5 h-3.5" />, color: "text-blue-600 dark:text-blue-400" },
+  viewer: { label: "뷰어", desc: "보기만 가능", icon: <Eye className="w-3.5 h-3.5" />, color: "text-gray-500" },
+};
+
+function getRoleLabel(role: string) {
+  return ROLE_LABELS[role]?.label || role;
+}
+
+function getRoleBadgeVariant(role: string): "default" | "secondary" | "outline" {
+  if (role === "presenter") return "default";
+  if (role === "editor") return "secondary";
+  return "outline";
+}
+
 export default function ProjectCollaborationPanel({ projectId, isOwner }: Props) {
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"editor" | "viewer">("editor");
+  const [inviteRole, setInviteRole] = useState<"presenter" | "editor" | "viewer">("editor");
   const [showInviteDialog, setShowInviteDialog] = useState(false);
 
   const collaborators = trpc.collaboration.listByProject.useQuery({ projectId });
@@ -77,23 +93,44 @@ export default function ProjectCollaborationPanel({ projectId, isOwner }: Props)
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">역할</label>
-                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "editor" | "viewer")}>
+                    <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "presenter" | "editor" | "viewer")}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="presenter">
+                          <div className="flex items-center gap-2">
+                            <Mic className="w-3.5 h-3.5 text-violet-500" /> 발표자 - 방송 시작/진행/슬라이드 제어
+                          </div>
+                        </SelectItem>
                         <SelectItem value="editor">
                           <div className="flex items-center gap-2">
-                            <Pencil className="w-3.5 h-3.5" /> 편집자 - 콘텐츠 수정 가능
+                            <Pencil className="w-3.5 h-3.5 text-blue-500" /> 편집자 - 콘텐츠 수정 가능
                           </div>
                         </SelectItem>
                         <SelectItem value="viewer">
                           <div className="flex items-center gap-2">
-                            <Eye className="w-3.5 h-3.5" /> 뷰어 - 보기만 가능
+                            <Eye className="w-3.5 h-3.5 text-gray-500" /> 뷰어 - 보기만 가능
                           </div>
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                    {/* Role permission summary */}
+                    <div className="rounded-md bg-muted/50 p-3 text-xs space-y-1.5">
+                      <p className="font-medium text-muted-foreground">역할별 권한 안내</p>
+                      <div className="flex items-start gap-2">
+                        <Mic className="w-3 h-3 mt-0.5 text-violet-500 shrink-0" />
+                        <span><strong className="text-violet-600 dark:text-violet-400">발표자</strong>: 방송 시작/일시정지/재개/종료, 슬라이드 제어, 콘텐츠 보기</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Pencil className="w-3 h-3 mt-0.5 text-blue-500 shrink-0" />
+                        <span><strong className="text-blue-600 dark:text-blue-400">편집자</strong>: 스크립트/슬라이드 수정, 콘텐츠 보기</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Eye className="w-3 h-3 mt-0.5 text-gray-500 shrink-0" />
+                        <span><strong className="text-gray-500">뷰어</strong>: 콘텐츠 보기만 가능</span>
+                      </div>
+                    </div>
                   </div>
                   <Button className="w-full" onClick={handleInvite} disabled={inviteMut.isPending || !inviteEmail.trim()}>
                     {inviteMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
@@ -129,16 +166,22 @@ export default function ProjectCollaborationPanel({ projectId, isOwner }: Props)
                   <Badge variant={c.inviteStatus === "accepted" ? "default" : c.inviteStatus === "pending" ? "secondary" : "destructive"} className="text-[10px] h-5">
                     {c.inviteStatus === "accepted" ? "참여중" : c.inviteStatus === "pending" ? "대기중" : "거절"}
                   </Badge>
+                  {/* Role badge with icon */}
+                  <Badge variant={getRoleBadgeVariant(c.role)} className={`text-[10px] h-5 gap-0.5 ${ROLE_LABELS[c.role]?.color || ""}`}>
+                    {ROLE_LABELS[c.role]?.icon}
+                    {getRoleLabel(c.role)}
+                  </Badge>
                   {isOwner && (
                     <>
                       <Select
                         value={c.role}
-                        onValueChange={(v) => updateRoleMut.mutate({ collaboratorId: c.id, projectId, role: v as "editor" | "viewer" })}
+                        onValueChange={(v) => updateRoleMut.mutate({ collaboratorId: c.id, projectId, role: v as "presenter" | "editor" | "viewer" })}
                       >
                         <SelectTrigger className="h-6 w-20 text-[10px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="presenter">발표자</SelectItem>
                           <SelectItem value="editor">편집자</SelectItem>
                           <SelectItem value="viewer">뷰어</SelectItem>
                         </SelectContent>
@@ -190,7 +233,9 @@ export function PendingInvitationsPanel() {
             <div key={inv.id} className="flex items-center justify-between py-2 px-3 bg-background rounded-md border">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{inv.projectTitle || "프로젝트"}</p>
-                <p className="text-xs text-muted-foreground">{inv.inviterName}님이 초대 · {inv.role === "editor" ? "편집자" : "뷰어"}</p>
+                <p className="text-xs text-muted-foreground">
+                  {inv.inviterName}님이 초대 · {inv.role === "presenter" ? "발표자" : inv.role === "editor" ? "편집자" : "뷰어"}
+                </p>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <Button

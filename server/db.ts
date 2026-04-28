@@ -3784,6 +3784,17 @@ export async function isProjectCollaborator(projectId: number, userId: number) {
   return rows.length > 0;
 }
 
+export async function getCollaboratorRole(projectId: number, userId: number): Promise<string | null> {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select({ role: projectCollaborators.role }).from(projectCollaborators)
+    .where(and(
+      eq(projectCollaborators.projectId, projectId),
+      eq(projectCollaborators.userId, userId),
+      eq(projectCollaborators.inviteStatus, "accepted")
+    )).limit(1);
+  return rows[0]?.role ?? null;
+}
+
 export async function findUserByEmail(email: string) {
   const db = await getDb(); if (!db) return null;
   const rows = await db.select({ id: users.id, name: users.name, email: users.email, avatarUrl: users.avatarUrl })
