@@ -679,6 +679,8 @@ export const liveBroadcasts = mysqlTable("liveBroadcasts", {
   currentViewers: int("currentViewers").default(0),
   /** Generated TTS audio URLs as JSON array (per section) */
   audioUrls: text("audioUrls"),
+  /** Associated lecture project ID (for collaboration permissions) */
+  projectId: int("projectId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -2226,7 +2228,7 @@ export const projectCollaborators = mysqlTable("projectCollaborators", {
   id: int("id").autoincrement().primaryKey(),
   projectId: int("projectId").notNull(),
   userId: int("userId").notNull(),
-  role: mysqlEnum("role", ["owner", "editor", "viewer"]).default("editor").notNull(),
+  role: mysqlEnum("role", ["owner", "presenter", "editor", "viewer"]).default("editor").notNull(),
   invitedBy: int("invitedBy").notNull(),
   inviteStatus: mysqlEnum("inviteStatus", ["pending", "accepted", "rejected"]).default("pending").notNull(),
   inviteEmail: varchar("inviteEmail", { length: 255 }),

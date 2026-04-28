@@ -1,0 +1,1 @@
+ALTER TABLE `liveBroadcasts` ADD `projectId` int;

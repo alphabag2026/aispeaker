@@ -27,6 +27,7 @@ import VoicePreviewButton from "@/components/VoicePreviewButton";
 import KlingAvatarCreator from "@/components/KlingAvatarCreator";
 import LectureFormatSelector from "@/components/LectureFormatSelector";
 import ProjectCollaborationPanel, { PendingInvitationsPanel } from "@/components/ProjectCollaborationPanel";
+import AvatarSettingsDialog from "@/components/AvatarSettingsDialog";
 
 // ============ TYPES ============
 interface ScriptSection {
@@ -438,6 +439,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
   const [avatarVoice, setAvatarVoice] = useState("Kore");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showKlingDialog, setShowKlingDialog] = useState(false);
+  const [editingAvatar, setEditingAvatar] = useState<any | null>(null);
 
   const addAvatar = trpc.lectureBuilder.addAvatar.useMutation({
     onSuccess: () => {
@@ -580,15 +582,18 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
             const face = faces.find(f => f.id === av.sampleFaceId);
             const roleInfo = AVATAR_ROLES.find(r => r.value === av.role);
             return (
-              <Card key={av.id} className="relative group">
+              <Card key={av.id} className="relative group cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all"
+                onClick={() => setEditingAvatar(av)}>
                 <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  onClick={() => deleteAvatar.mutate({ id: av.id })}>
+                  onClick={(e) => { e.stopPropagation(); deleteAvatar.mutate({ id: av.id }); }}>
                   <X className="w-5 h-5 text-destructive hover:text-destructive/80" />
                 </button>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
-                      {face?.imageUrl ? (
+                      {av.customFaceUrl ? (
+                        <img src={av.customFaceUrl} alt={av.name} className="w-full h-full object-cover" />
+                      ) : face?.imageUrl ? (
                         <img src={face.imageUrl} alt={av.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -603,6 +608,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
                         <Volume2 className="w-3 h-3" /> {av.ttsVoiceId}
                         <VoicePreviewButton voiceId={av.ttsVoiceId || ""} size="sm" variant="ghost" className="ml-1 h-6 w-6 p-0" />
                       </p>
+                      <p className="text-[11px] text-primary/70 mt-1">클릭하여 설정 변경</p>
                     </div>
                   </div>
                 </CardContent>
@@ -610,6 +616,18 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh }: {
             );
           })}
         </div>
+      )}
+
+      {/* Avatar Settings Dialog */}
+      {editingAvatar && (
+        <AvatarSettingsDialog
+          open={!!editingAvatar}
+          onOpenChange={(open) => { if (!open) setEditingAvatar(null); }}
+          avatar={editingAvatar}
+          faces={faces}
+          voices={voices}
+          onUpdated={onRefresh}
+        />
       )}
     </div>
   );
