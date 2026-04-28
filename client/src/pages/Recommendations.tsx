@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -10,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Sparkles, TrendingUp, Clock, Target, BookOpen, Star, ShoppingCart, Settings, Loader2, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/i18n/pages/Recommendations";
 
 const CATEGORIES = [
   { value: "web3", label: "Web3" },
@@ -24,6 +27,7 @@ const CATEGORIES = [
 ];
 
 export default function Recommendations() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [showPrefs, setShowPrefs] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -37,7 +41,7 @@ export default function Recommendations() {
 
   const updatePrefsMutation = trpc.recommendation.updatePreferences.useMutation({
     onSuccess: () => {
-      toast.success("학습 선호도가 업데이트되었습니다!");
+      toast.success(t("recommendations.toast.prefsUpdated"));
       prefsQuery.refetch();
       personalizedQuery.refetch();
       setShowPrefs(false);
@@ -57,7 +61,18 @@ export default function Recommendations() {
     setSelectedCategories(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
   };
 
-  const formatPrice = (cents: number | null) => cents ? `$${(cents / 100).toFixed(2)}` : "무료";
+  const formatPrice = (cents: number | null) => cents ? `$${(cents / 100).toFixed(2)}` : t("recommendations.free");
+
+  const translatedCategories = CATEGORIES.map(c => {
+    switch (c.label) {
+        case '블록체인': return { ...c, label: t('recommendations.category.blockchain') };
+        case '메타버스': return { ...c, label: t('recommendations.category.metaverse') };
+        case '프로그래밍': return { ...c, label: t('recommendations.category.programming') };
+        case '비즈니스': return { ...c, label: t('recommendations.category.business') };
+        case '디자인': return { ...c, label: t('recommendations.category.design') };
+        default: return c;
+    }
+  });
 
   return (
     <div className="min-h-screen bg-[#0f0f23] text-white">
@@ -67,12 +82,12 @@ export default function Recommendations() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
               <Sparkles className="w-7 h-7 text-yellow-400" />
-              AI 맞춤 추천
+              {t("recommendations.header.title")}
             </h1>
-            <p className="text-gray-400 mt-1">학습 이력과 선호도를 기반으로 최적의 강의를 추천합니다</p>
+            <p className="text-gray-400 mt-1">{t("recommendations.header.description")}</p>
           </div>
           <Button variant="outline" onClick={() => setShowPrefs(!showPrefs)} className="border-gray-600 text-gray-300 hover:text-white">
-            <Settings className="w-4 h-4 mr-2" />학습 선호도 설정
+            <Settings className="w-4 h-4 mr-2" />{t("recommendations.prefs.title")}
           </Button>
         </div>
 
@@ -82,14 +97,14 @@ export default function Recommendations() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Target className="w-5 h-5 text-blue-400" />
-                학습 선호도 설정
+                {t("recommendations.prefs.title")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>관심 카테고리 (복수 선택 가능)</Label>
+                <Label>{t("recommendations.prefs.categoriesLabel")}</Label>
                 <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map(cat => (
+                  {translatedCategories.map(cat => (
                     <Badge key={cat.value} onClick={() => toggleCategory(cat.value)} className={`cursor-pointer transition-colors ${selectedCategories.includes(cat.value) ? "bg-purple-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}>
                       {cat.label}
                     </Badge>
@@ -98,25 +113,25 @@ export default function Recommendations() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>난이도</Label>
+                  <Label>{t("recommendations.prefs.difficultyLabel")}</Label>
                   <Select value={difficulty} onValueChange={setDifficulty}>
                     <SelectTrigger className="bg-[#16213e] border-gray-600"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-[#1a1a2e] border-gray-700">
-                      <SelectItem value="all">전체</SelectItem>
-                      <SelectItem value="beginner">초급</SelectItem>
-                      <SelectItem value="intermediate">중급</SelectItem>
-                      <SelectItem value="advanced">고급</SelectItem>
+                      <SelectItem value="all">{t("recommendations.prefs.difficulty.all")}</SelectItem>
+                      <SelectItem value="beginner">{t("recommendations.prefs.difficulty.beginner")}</SelectItem>
+                      <SelectItem value="intermediate">{t("recommendations.prefs.difficulty.intermediate")}</SelectItem>
+                      <SelectItem value="advanced">{t("recommendations.prefs.difficulty.advanced")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>주간 학습 목표 (분)</Label>
+                  <Label>{t("recommendations.prefs.weeklyTargetLabel")}</Label>
                   <Input type="number" value={weeklyTarget} onChange={(e) => setWeeklyTarget(Number(e.target.value))} min={10} max={600} className="bg-[#16213e] border-gray-600" />
                 </div>
               </div>
               <Button onClick={handleSavePrefs} disabled={updatePrefsMutation.isPending} className="bg-purple-600 hover:bg-purple-700">
                 {updatePrefsMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                저장
+                {t("recommendations.prefs.saveButton")}
               </Button>
             </CardContent>
           </Card>
@@ -127,8 +142,8 @@ export default function Recommendations() {
           <section className="mb-8">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-yellow-400" />
-              나를 위한 추천
-              {personalizedQuery.data?.fromCache && <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">캐시</Badge>}
+              {t("recommendations.personalized.title")}
+              {personalizedQuery.data?.fromCache && <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">{t("recommendations.personalized.fromCache")}</Badge>}
             </h2>
             {personalizedQuery.isLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-purple-400" /></div>
@@ -136,9 +151,9 @@ export default function Recommendations() {
               <Card className="bg-[#1a1a2e] border-gray-800">
                 <CardContent className="py-8 text-center">
                   <BookOpen className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400">아직 추천할 강의가 없습니다. 마켓플레이스를 둘러보고 학습을 시작해보세요!</p>
+                  <p className="text-gray-400">{t("recommendations.personalized.noRecs")}</p>
                   <Link href="/marketplace">
-                    <Button className="mt-4 bg-purple-600 hover:bg-purple-700">마켓플레이스 둘러보기 <ArrowRight className="w-4 h-4 ml-2" /></Button>
+                    <Button className="mt-4 bg-purple-600 hover:bg-purple-700">{t("recommendations.personalized.browseMarketplace")} <ArrowRight className="w-4 h-4 ml-2" /></Button>
                   </Link>
                 </CardContent>
               </Card>
@@ -168,13 +183,13 @@ export default function Recommendations() {
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-orange-400" />
-            인기 강의
+            {t("recommendations.trending.title")}
           </h2>
           {trendingQuery.isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-purple-400" /></div>
           ) : (trendingQuery.data?.length || 0) === 0 ? (
             <Card className="bg-[#1a1a2e] border-gray-800">
-              <CardContent className="py-8 text-center text-gray-400">아직 등록된 강의가 없습니다.</CardContent>
+              <CardContent className="py-8 text-center text-gray-400">{t("recommendations.trending.noCourses")}</CardContent>
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -203,18 +218,18 @@ export default function Recommendations() {
           <section>
             <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-400" />
-              최근 학습 이력
+              {t("recommendations.history.title")}
             </h2>
             <div className="space-y-2">
               {historyQuery.data?.slice(0, 5).map((item: any) => (
                 <div key={item.id} className="flex items-center justify-between p-3 bg-[#1a1a2e] border border-gray-800 rounded-lg">
                   <div>
-                    <p className="font-medium">강의 #{item.listingId}</p>
-                    <p className="text-xs text-gray-400">진행률: {item.progressPercent}% | 학습 시간: {Math.round((item.watchTimeSec || 0) / 60)}분</p>
+                    <p className="font-medium">{t("recommendations.history.courseLabel")}{item.listingId}</p>
+                    <p className="text-xs text-gray-400">{t("recommendations.history.progressLabel")}: {item.progressPercent}% | {t("recommendations.history.learningTimeLabel")}: {Math.round((item.watchTimeSec || 0) / 60)}분</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {item.isCompleted ? (
-                      <Badge className="bg-green-500/20 text-green-400">완료</Badge>
+                      <Badge className="bg-green-500/20 text-green-400">{t("recommendations.history.completed")}</Badge>
                     ) : (
                       <Badge className="bg-blue-500/20 text-blue-400">{item.progressPercent}%</Badge>
                     )}

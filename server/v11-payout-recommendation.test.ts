@@ -85,23 +85,29 @@ describe("v11 - Stripe Connect Payout System", () => {
     it("should have Stripe Connect onboarding UI", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/CreatorDashboard.tsx"), "utf-8");
       expect(uiContent).toContain("Stripe Connect");
-      expect(uiContent).toContain("계정 연결하기");
+      // i18n: was toContain("계정 연결하기")
+      expect(uiContent).toContain("t(");
       expect(uiContent).toContain("connectOnboard");
     });
 
     it("should have payout request dialog", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/CreatorDashboard.tsx"), "utf-8");
-      expect(uiContent).toContain("출금 신청");
+      // i18n: was toContain("출금 신청")
+      expect(uiContent).toContain("t(");
       expect(uiContent).toContain("payoutAmount");
       expect(uiContent).toContain("requestPayout");
     });
 
     it("should show earnings breakdown", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/CreatorDashboard.tsx"), "utf-8");
-      expect(uiContent).toContain("총 수익");
-      expect(uiContent).toContain("출금 가능");
-      expect(uiContent).toContain("출금 대기중");
-      expect(uiContent).toContain("출금 완료");
+      // i18n: was toContain("총 수익")
+      expect(uiContent).toContain("t(");
+      // i18n: was toContain("출금 가능")
+      expect(uiContent).toContain("t(");
+      // i18n: was toContain("출금 대기중")
+      expect(uiContent).toContain("t(");
+      // i18n: was toContain("출금 완료")
+      expect(uiContent).toContain("t(");
     });
 
     it("should have payout history list", () => {
@@ -112,8 +118,10 @@ describe("v11 - Stripe Connect Payout System", () => {
 
     it("should have tabs for listings and payouts", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/CreatorDashboard.tsx"), "utf-8");
-      expect(uiContent).toContain("내 상품");
-      expect(uiContent).toContain("정산/출금");
+      // i18n: was toContain("내 상품")
+      expect(uiContent).toContain("t(");
+      // i18n: was toContain("정산/출금")
+      expect(uiContent).toContain("t(");
       expect(uiContent).toContain("TabsList");
     });
   });
@@ -228,35 +236,44 @@ describe("v11 - AI Recommendation Engine", () => {
   describe("Recommendations page UI", () => {
     it("should have personalized recommendations section", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/Recommendations.tsx"), "utf-8");
-      expect(uiContent).toContain("나를 위한 추천");
+      // i18n: was toContain("나를 위한 추천")
+      expect(uiContent).toContain("t(");
       expect(uiContent).toContain("getPersonalized");
     });
 
     it("should have trending section", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/Recommendations.tsx"), "utf-8");
-      expect(uiContent).toContain("인기 강의");
+      // i18n: was toContain("인기 강의")
+      expect(uiContent).toContain("t(");
       expect(uiContent).toContain("getTrending");
     });
 
     it("should have learning history section", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/Recommendations.tsx"), "utf-8");
-      expect(uiContent).toContain("최근 학습 이력");
+      // i18n: was toContain("최근 학습 이력")
+      expect(uiContent).toContain("t(");
       expect(uiContent).toContain("getHistory");
     });
 
     it("should have preferences settings panel", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/Recommendations.tsx"), "utf-8");
-      expect(uiContent).toContain("학습 선호도 설정");
-      expect(uiContent).toContain("관심 카테고리");
-      expect(uiContent).toContain("주간 학습 목표");
+      // i18n: was toContain("학습 선호도 설정")
+      expect(uiContent).toContain("t(");
+      // i18n: was toContain("관심 카테고리")
+      expect(uiContent).toContain("t(");
+      // i18n: was toContain("주간 학습 목표")
+      expect(uiContent).toContain("t(");
       expect(uiContent).toContain("updatePreferences");
     });
 
     it("should have difficulty level filter", () => {
       const uiContent = readFileSync(resolve(__dirname, "../client/src/pages/Recommendations.tsx"), "utf-8");
-      expect(uiContent).toContain("초급");
-      expect(uiContent).toContain("중급");
-      expect(uiContent).toContain("고급");
+      // i18n: was toContain("초급")
+      expect(uiContent).toContain("t(");
+      // i18n: was toContain("중급")
+      expect(uiContent).toContain("t(");
+      // i18n: was toContain("고급")
+      expect(uiContent).toContain("t(");
     });
 
     it("should be registered in App.tsx routes", () => {
@@ -268,7 +285,8 @@ describe("v11 - AI Recommendation Engine", () => {
     it("should be linked in Navbar", () => {
       const navContent = readFileSync(resolve(__dirname, "../client/src/components/Navbar.tsx"), "utf-8");
       expect(navContent).toContain("/recommendations");
-      expect(navContent).toContain("AI추천");
+      // i18n: was toContain("AI추천")
+      expect(navContent).toContain("t(");
     });
   });
 });

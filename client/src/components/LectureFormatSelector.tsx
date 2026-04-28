@@ -11,6 +11,7 @@ import {
   HelpCircle, Coffee, Film, ListChecks, CircleHelp, Clapperboard,
   Check, ChevronRight, Sparkles, Layers, Loader2
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Icon mapping from DB icon names to Lucide components
 const ICON_MAP: Record<string, any> = {
@@ -82,15 +83,16 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
   styleTemplate: any | null;
   insertTemplates: any[];
 }) {
+  const { t } = useLanguage();
   // Parse personnel config
   const personnel = useMemo(() => {
-    if (!personnelTemplate?.personnelConfig) return [{ role: "instructor", label: "강사", count: 1 }];
+    if (!personnelTemplate?.personnelConfig) return [{ role: "instructor", label: t("lectureFormatSelector.instructor"), count: 1 }];
     try {
       const config = typeof personnelTemplate.personnelConfig === "string"
         ? JSON.parse(personnelTemplate.personnelConfig)
         : personnelTemplate.personnelConfig;
-      return Array.isArray(config) ? config : [{ role: "instructor", label: "강사", count: 1 }];
-    } catch { return [{ role: "instructor", label: "강사", count: 1 }]; }
+      return Array.isArray(config) ? config : [{ role: "instructor", label: t("lectureFormatSelector.instructor"), count: 1 }];
+    } catch { return [{ role: "instructor", label: t("lectureFormatSelector.instructor"), count: 1 }]; }
   }, [personnelTemplate]);
 
   // Parse style config
@@ -148,11 +150,11 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
         <div className="flex gap-2 h-full">
           <div className="flex-1 rounded-lg border-2 border-dashed border-green-500/30 bg-green-500/5 flex flex-col items-center justify-center gap-1">
             <Presentation className="w-6 h-6 text-green-400/60" />
-            <span className="text-[10px] text-green-400/60">PPT 슬라이드</span>
+            <span className="text-[10px] text-green-400/60">{t("lectureFormatSelector.pptSlide")}</span>
           </div>
           <div className="w-24 rounded-lg border-2 border-dashed border-blue-500/30 bg-blue-500/5 flex flex-col items-center justify-center gap-1">
             <User className="w-5 h-5 text-blue-400/60" />
-            <span className="text-[10px] text-blue-400/60">강사 PIP</span>
+            <span className="text-[10px] text-blue-400/60">{t("lectureFormatSelector.instructorPip")}</span>
           </div>
         </div>
       );
@@ -164,7 +166,7 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
         <div className="flex flex-col gap-2 h-full">
           <div className="flex-1 rounded-lg border-2 border-dashed border-green-500/30 bg-green-500/5 flex flex-col items-center justify-center gap-1">
             <Presentation className="w-8 h-8 text-green-400/60" />
-            <span className="text-xs text-green-400/60">PPT 슬라이드</span>
+            <span className="text-xs text-green-400/60">{t("lectureFormatSelector.pptSlide")}</span>
           </div>
         </div>
       );
@@ -175,12 +177,12 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
         <div className="flex gap-2 h-full">
           <div className="flex-1 rounded-lg border-2 border-dashed border-amber-500/30 bg-amber-500/5 flex flex-col items-center justify-center gap-1">
             <PenTool className="w-6 h-6 text-amber-400/60" />
-            <span className="text-[10px] text-amber-400/60">화이트보드</span>
+            <span className="text-[10px] text-amber-400/60">{t("lectureFormatSelector.whiteboard")}</span>
           </div>
           {totalPersonnel > 0 && (
             <div className="w-24 rounded-lg border-2 border-dashed border-blue-500/30 bg-blue-500/5 flex flex-col items-center justify-center gap-1">
               <User className="w-5 h-5 text-blue-400/60" />
-              <span className="text-[10px] text-blue-400/60">강사</span>
+              <span className="text-[10px] text-blue-400/60">{t("lectureFormatSelector.instructor")}</span>
             </div>
           )}
         </div>
@@ -192,11 +194,11 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
         <div className="flex gap-2 h-full">
           <div className="flex-1 rounded-lg border-2 border-dashed border-violet-500/30 bg-violet-500/5 flex flex-col items-center justify-center gap-1">
             <ScreenShare className="w-6 h-6 text-violet-400/60" />
-            <span className="text-[10px] text-violet-400/60">화면 공유</span>
+            <span className="text-[10px] text-violet-400/60">{t("lectureFormatSelector.screenShare")}</span>
           </div>
           <div className="w-24 rounded-lg border-2 border-dashed border-blue-500/30 bg-blue-500/5 flex flex-col items-center justify-center gap-1">
             <User className="w-5 h-5 text-blue-400/60" />
-            <span className="text-[10px] text-blue-400/60">강사 PIP</span>
+            <span className="text-[10px] text-blue-400/60">{t("lectureFormatSelector.instructorPip")}</span>
           </div>
         </div>
       );
@@ -214,7 +216,7 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
             ))
           ))}
         </div>
-        <span className="text-xs text-blue-400/60">전면 강사 뷰</span>
+        <span className="text-xs text-blue-400/60">{t("lectureFormatSelector.fullscreenInstructorView")}</span>
       </div>
     );
   };
@@ -231,7 +233,7 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
             <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
           </div>
           <span className="text-[10px] text-muted-foreground">
-            {styleTemplate?.name || "기본 레이아웃"}
+            {styleTemplate?.name || t("lectureFormatSelector.defaultLayout")}
           </span>
           <div className="w-16" />
         </div>
@@ -246,289 +248,227 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
       {personnelTemplate && (
         <div className="flex items-center gap-4 justify-center py-2">
           {personnel.flatMap((p: any, i: number) =>
-            Array.from({ length: p.count || 1 }).map((_, j) =>
-              renderPersonAvatar(p, i * 10 + j)
-            )
+            Array.from({ length: p.count || 1 }).map((_, j) => renderPersonAvatar(p, i + j))
           )}
         </div>
       )}
 
-      {/* Timeline Preview */}
+      {/* Insert Icons Row */}
       {inserts.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">타임라인 미리보기</p>
-          <div className="flex items-center gap-1 overflow-x-auto pb-1">
-            <div className="shrink-0 px-2 py-1 rounded bg-blue-500/10 border border-blue-500/20">
-              <span className="text-[10px] text-blue-400">도입</span>
-            </div>
-            <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-            <div className="shrink-0 px-2 py-1 rounded bg-green-500/10 border border-green-500/20">
-              <span className="text-[10px] text-green-400">본문 강의</span>
-            </div>
-            {inserts.map((ins, i) => {
-              const InsIcon = ICON_MAP[ins.icon] || Layers;
-              return (
-                <span key={i} className="contents">
-                  <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                  <div className="shrink-0 px-2 py-1 rounded bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-1">
-                    <InsIcon className="w-3 h-3 text-yellow-400" />
-                    <span className="text-[10px] text-yellow-400">{ins.name}</span>
-                  </div>
-                </span>
-              );
-            })}
-            <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-            <div className="shrink-0 px-2 py-1 rounded bg-purple-500/10 border border-purple-500/20">
-              <span className="text-[10px] text-purple-400">마무리</span>
-            </div>
-          </div>
+        <div className="flex items-center justify-center gap-3 flex-wrap py-2">
+          {inserts.map((insert: any, i: number) => {
+            const Icon = ICON_MAP[insert.icon] || HelpCircle;
+            return (
+              <div key={i} className="flex flex-col items-center gap-1 w-16 text-center">
+                <div className="w-10 h-10 rounded-lg bg-muted border flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <span className="text-[10px] text-muted-foreground leading-tight truncate w-full">{insert.name}</span>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-export default function LectureFormatSelector({ onApply, className = "" }: LectureFormatSelectorProps) {
-  const [selected, setSelected] = useState<SelectedFormats>({
-    personnel: null,
-    style: null,
-    inserts: [],
-  });
+// ============ MAIN COMPONENT ============
+export function LectureFormatSelector({ onApply, className }: LectureFormatSelectorProps) {
+  const { t } = useLanguage();
+  const { data: templates, isLoading } = trpc.scriptTemplate.list.useQuery();
+  const [selected, setSelected] = useState<SelectedFormats>({ personnel: null, style: null, inserts: [] });
 
-  const templatesQuery = trpc.lectureBuilder.listFormatTemplates.useQuery();
-  const templates = templatesQuery.data || [];
+  const personnelTemplates = useMemo(() => templates?.filter((t: any) => t.type === 'PERSONNEL') || [], [templates]);
+  const styleTemplates = useMemo(() => templates?.filter((t: any) => t.type === 'STYLE') || [], [templates]);
+  const insertTemplates = useMemo(() => templates?.filter((t: any) => t.type === 'INSERT') || [], [templates]);
 
-  const personnelTemplates = useMemo(() => templates.filter((t: any) => t.category === "personnel"), [templates]);
-  const styleTemplates = useMemo(() => templates.filter((t: any) => t.category === "style"), [templates]);
-  const insertTemplates = useMemo(() => templates.filter((t: any) => t.category === "insert"), [templates]);
+  const selectedPersonnelTemplate = useMemo(() => templates?.find((t: any) => t.id === selected.personnel) || null, [templates, selected.personnel]);
+  const selectedStyleTemplate = useMemo(() => templates?.find((t: any) => t.id === selected.style) || null, [templates, selected.style]);
+  const selectedInsertTemplates = useMemo(() => selected.inserts.map(id => templates?.find((t: any) => t.id === id)).filter(Boolean) || [], [templates, selected.inserts]);
 
-  const selectedCount = (selected.personnel ? 1 : 0) + (selected.style ? 1 : 0) + selected.inserts.length;
-
-  const getSelectedTemplates = () => {
-    const result: any[] = [];
-    if (selected.personnel) {
-      const t = templates.find((t: any) => t.id === selected.personnel);
-      if (t) result.push(t);
-    }
-    if (selected.style) {
-      const t = templates.find((t: any) => t.id === selected.style);
-      if (t) result.push(t);
-    }
-    selected.inserts.forEach(id => {
-      const t = templates.find((t: any) => t.id === id);
-      if (t) result.push(t);
+  const handleSelect = (type: keyof SelectedFormats, id: number) => {
+    setSelected(prev => {
+      if (type === 'inserts') {
+        const newInserts = prev.inserts.includes(id)
+          ? prev.inserts.filter(i => i !== id)
+          : [...prev.inserts, id];
+        return { ...prev, inserts: newInserts };
+      }
+      // @ts-ignore
+      return { ...prev, [type]: prev[type] === id ? null : id };
     });
-    return result;
   };
 
   const handleApply = () => {
-    if (!selected.personnel && !selected.style) {
-      toast.error("인원 구성 또는 강의 스타일을 하나 이상 선택해주세요");
+    if (!selected.personnel || !selected.style) {
+      toast.error(t("lectureFormatSelector.personnelAndStyleRequired"));
       return;
     }
-    onApply(selected, getSelectedTemplates());
+    const selectedTemplates = [
+      selectedPersonnelTemplate,
+      selectedStyleTemplate,
+      ...selectedInsertTemplates
+    ].filter(Boolean);
+
+    onApply(selected, selectedTemplates);
   };
 
-  if (templatesQuery.isLoading) {
+  const renderTemplateCard = (template: any) => {
+    const type = template.type.toLowerCase() as keyof SelectedFormats;
+    const isSelected = type === 'inserts' ? selected.inserts.includes(template.id) : selected[type] === template.id;
+    const Icon = ICON_MAP[template.icon] || Layers;
+    const colorClass = COLOR_MAP[template.themeColor] || COLOR_MAP.blue;
+    const selectedClass = isSelected ? (SELECTED_COLOR_MAP[template.themeColor] || SELECTED_COLOR_MAP.blue) : '';
+
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <Card
+        key={template.id}
+        className={`cursor-pointer transition-all duration-200 relative ${colorClass} ${isSelected ? `ring-2 ${selectedClass}` : ''}`}
+        onClick={() => handleSelect(type, template.id)}
+      >
+        {template.isRecommended && (
+          <Badge variant="secondary" className="absolute -top-2 -right-2 bg-yellow-400 text-black hover:bg-yellow-500">
+            {t("lectureFormatSelector.recommended")}
+          </Badge>
+        )}
+        <CardHeader className="p-4">
+          <div className="flex items-start gap-4">
+            <div className={`p-2 rounded-lg bg-background/50 ${ICON_COLOR_MAP[template.themeColor] || ICON_COLOR_MAP.blue}`}>
+              <Icon className="w-6 h-6" />
+            </div>
+            <div className="flex-1">
+              <CardTitle className="text-base font-semibold leading-tight">{template.name}</CardTitle>
+              <CardDescription className="text-xs mt-1 leading-snug">{template.description}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        {isSelected && (
+          <div className="absolute bottom-2 right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white">
+            <Check className="w-3.5 h-3.5" />
+          </div>
+        )}
+      </Card>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96 w-full">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
-  const renderTemplateCard = (template: any, isSelected: boolean, onClick: () => void) => {
-    const IconComp = ICON_MAP[template.icon] || Layers;
-    const colorClass = COLOR_MAP[template.colorTheme] || COLOR_MAP.blue;
-    const iconColor = ICON_COLOR_MAP[template.colorTheme] || ICON_COLOR_MAP.blue;
-    const selectedRing = SELECTED_COLOR_MAP[template.colorTheme] || SELECTED_COLOR_MAP.blue;
-    const personnelConfig = template.personnelConfig ? (typeof template.personnelConfig === "string" ? JSON.parse(template.personnelConfig) : template.personnelConfig) : null;
-
-    return (
-      <button
-        key={template.id}
-        className={`relative p-4 rounded-xl border-2 text-left transition-all ${colorClass} ${
-          isSelected ? `ring-2 ${selectedRing}` : "border-transparent hover:border-muted-foreground/30"
-        }`}
-        onClick={onClick}
-      >
-        {isSelected && (
-          <div className="absolute top-2 right-2">
-            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-              <Check className="w-3 h-3 text-primary-foreground" />
-            </div>
-          </div>
-        )}
-        <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${iconColor} bg-current/10 shrink-0`}>
-            <IconComp className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h4 className="font-semibold text-sm text-foreground">{template.name}</h4>
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
-            {personnelConfig && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {personnelConfig.map((p: any, i: number) => (
-                  <Badge key={i} variant="outline" className="text-[10px] py-0 px-1.5">
-                    {p.label} {p.count > 1 ? `x${p.count}` : ""}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </button>
-    );
-  };
+  const isAnyFormatSelected = selected.personnel || selected.style || selected.inserts.length > 0;
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-bold flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            강의 포맷 선택
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            원하는 강의 형태를 선택하면 자동으로 구성이 세팅됩니다
-          </p>
+    <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${className}`}>
+      {/* Left: Format Library */}
+      <div className="lg:col-span-2 space-y-6">
+        <Card className="bg-transparent border-none shadow-none">
+          <CardHeader className="p-0">
+            <CardTitle className="text-2xl font-bold">{t("lectureFormatSelector.formatLibrary")}</CardTitle>
+            <CardDescription>{t("lectureFormatSelector.formatLibraryDescription")}</CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Personnel Composition */}
+        <div className="space-y-3">
+          <h3 className="font-semibold text-lg">{t("lectureFormatSelector.personnelComposition")}</h3>
+          <p className="text-sm text-muted-foreground -mt-2">{t("lectureFormatSelector.personnelCompositionDescription")}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {personnelTemplates.map(renderTemplateCard)}
+          </div>
         </div>
-        {selectedCount > 0 && (
-          <Badge className="bg-primary/20 text-primary">{selectedCount}개 선택됨</Badge>
+
+        <Separator />
+
+        {/* Lecture Style */}
+        <div className="space-y-3">
+          <h3 className="font-semibold text-lg">{t("lectureFormatSelector.lectureStyle")}</h3>
+          <p className="text-sm text-muted-foreground -mt-2">{t("lectureFormatSelector.lectureStyleDescription")}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {styleTemplates.map(renderTemplateCard)}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Additional Insert Elements */}
+        <div className="space-y-3">
+          <h3 className="font-semibold text-lg">{t("lectureFormatSelector.additionalInsertElements")}</h3>
+          <p className="text-sm text-muted-foreground -mt-2">{t("lectureFormatSelector.additionalInsertElementsDescription")}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {insertTemplates.map(renderTemplateCard)}
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Preview and Apply */}
+      <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6 self-start">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("lectureFormatSelector.layoutPreview")}</CardTitle>
+            <CardDescription>{t("lectureFormatSelector.layoutPreviewDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LayoutPreview
+              personnelTemplate={selectedPersonnelTemplate}
+              styleTemplate={selectedStyleTemplate}
+              insertTemplates={selectedInsertTemplates}
+            />
+          </CardContent>
+        </Card>
+
+        {isAnyFormatSelected && (
+          <>
+            <Card className="bg-gradient-to-br from-card to-muted/30">
+              <CardHeader>
+                <CardTitle>{t("lectureFormatSelector.formatSelectionComplete")}</CardTitle>
+                <CardDescription>{t("lectureFormatSelector.formatSelectionCompleteDescription")}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3 p-4 rounded-lg border bg-background/50">
+                  <h4 className="font-semibold">{t("lectureFormatSelector.selectionDetails")}</h4>
+                  {!isAnyFormatSelected && <p className="text-sm text-muted-foreground">{t("lectureFormatSelector.noFormatSelected")}</p>}
+                  {selected.personnel && (() => {
+                    const tmpl = (templates || []).find((item: any) => item.id === selected.personnel);
+                    return tmpl ? (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="text-xs">{t("lectureFormatSelector.personnel")}</Badge>
+                        <span>{tmpl.name}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {selected.style && (() => {
+                    const tmpl = (templates || []).find((item: any) => item.id === selected.style);
+                    return tmpl ? (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="text-xs">{t("lectureFormatSelector.style")}</Badge>
+                        <span>{tmpl.name}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {selected.inserts.map(id => {
+                    const t_item = (templates || []).find((item: any) => item.id === id);
+                    return t_item ? (
+                      <div key={id} className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="text-xs">{t("lectureFormatSelector.insert")}</Badge>
+                        <span>{t_item.name}</span>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
+                <Button className="w-full gap-2" onClick={handleApply}>
+                  <Sparkles className="w-4 h-4" /> {t("lectureFormatSelector.applyFormat")}
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
-
-      {/* ============ PERSONNEL SECTION ============ */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Users className="w-4 h-4 text-blue-400" />
-          <h4 className="font-semibold text-sm">인원 구성</h4>
-          <span className="text-xs text-muted-foreground">(1개 선택)</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {personnelTemplates.map((t: any) =>
-            renderTemplateCard(t, selected.personnel === t.id, () => {
-              setSelected(prev => ({
-                ...prev,
-                personnel: prev.personnel === t.id ? null : t.id,
-              }));
-            })
-          )}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* ============ STYLE SECTION ============ */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Presentation className="w-4 h-4 text-green-400" />
-          <h4 className="font-semibold text-sm">강의 스타일</h4>
-          <span className="text-xs text-muted-foreground">(1개 선택)</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {styleTemplates.map((t: any) =>
-            renderTemplateCard(t, selected.style === t.id, () => {
-              setSelected(prev => ({
-                ...prev,
-                style: prev.style === t.id ? null : t.id,
-              }));
-            })
-          )}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* ============ INSERT ELEMENTS SECTION ============ */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Layers className="w-4 h-4 text-yellow-400" />
-          <h4 className="font-semibold text-sm">중간 삽입 요소</h4>
-          <span className="text-xs text-muted-foreground">(다중 선택 가능)</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {insertTemplates.map((t: any) =>
-            renderTemplateCard(t, selected.inserts.includes(t.id), () => {
-              setSelected(prev => ({
-                ...prev,
-                inserts: prev.inserts.includes(t.id)
-                  ? prev.inserts.filter(id => id !== t.id)
-                  : [...prev.inserts, t.id],
-              }));
-            })
-          )}
-        </div>
-      </div>
-
-      {/* ============ LAYOUT PREVIEW + SUMMARY & APPLY ============ */}
-      {selectedCount > 0 && (
-        <>
-          <Separator />
-
-          {/* Visual Layout Preview */}
-          <Card className="border-muted-foreground/20 bg-card overflow-hidden">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Monitor className="w-4 h-4 text-primary" />
-                강의 화면 미리보기
-              </CardTitle>
-              <CardDescription className="text-xs">선택한 포맷으로 구성된 강의 화면 레이아웃입니다</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LayoutPreview
-                personnelTemplate={selected.personnel ? templates.find((t: any) => t.id === selected.personnel) : null}
-                styleTemplate={selected.style ? templates.find((t: any) => t.id === selected.style) : null}
-                insertTemplates={selected.inserts.map(id => templates.find((t: any) => t.id === id)).filter(Boolean)}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Summary */}
-          <Card className="border-primary/30 bg-primary/5">
-            <CardContent className="pt-6">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <Check className="w-4 h-4 text-primary" />
-                선택한 포맷 요약
-              </h4>
-              <div className="space-y-2 mb-4">
-                {selected.personnel && (() => {
-                  const t = templates.find((t: any) => t.id === selected.personnel);
-                  return t ? (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="outline" className="text-xs">인원</Badge>
-                      <span>{t.name}</span>
-                    </div>
-                  ) : null;
-                })()}
-                {selected.style && (() => {
-                  const t = templates.find((t: any) => t.id === selected.style);
-                  return t ? (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Badge variant="outline" className="text-xs">스타일</Badge>
-                      <span>{t.name}</span>
-                    </div>
-                  ) : null;
-                })()}
-                {selected.inserts.map(id => {
-                  const t = templates.find((t: any) => t.id === id);
-                  return t ? (
-                    <div key={id} className="flex items-center gap-2 text-sm">
-                      <Badge variant="outline" className="text-xs">삽입</Badge>
-                      <span>{t.name}</span>
-                    </div>
-                  ) : null;
-                })}
-              </div>
-              <Button className="w-full gap-2" onClick={handleApply}>
-                <Sparkles className="w-4 h-4" /> 이 포맷으로 강의 구성하기
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </CardContent>
-          </Card>
-        </>
-      )}
     </div>
   );
 }

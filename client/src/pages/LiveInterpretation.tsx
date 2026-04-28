@@ -1,3 +1,6 @@
+// @ts-ignore - SpeechRecognition API
+declare global { interface Window { SpeechRecognition: any; webkitSpeechRecognition: any; } }
+
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -15,7 +18,7 @@ import {
   Zap, Radio, ChevronDown, ChevronUp, Trash2, Server, Monitor
 } from "lucide-react";
 import { Link } from "wouter";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TranslationResult {
   targetLanguage: string;
@@ -25,7 +28,7 @@ interface TranslationResult {
 }
 
 export default function LiveInterpretation() {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const { user } = useAuth();
 
   // Session state
@@ -74,9 +77,9 @@ export default function LiveInterpretation() {
   const startSession = trpc.interpretation.startSession.useMutation({
     onSuccess: (data) => {
       setActiveSessionId(data.sessionId);
-      toast.success("통역 세션이 시작되었습니다.");
+      toast.success(t("liveInterpretation.toastSessionStarted"));
     },
-    onError: () => toast.error("세션 시작에 실패했습니다."),
+    onError: () => toast.error(t("liveInterpretation.toastSessionStartFailed")),
   });
 
   const batchTranslate = trpc.interpretation.batchTranslate.useMutation({
@@ -100,7 +103,7 @@ export default function LiveInterpretation() {
     },
     onError: () => {
       setIsTranslating(false);
-      toast.error("번역에 실패했습니다.");
+      toast.error(t("liveInterpretation.toastTranslationFailed"));
     },
   });
 
@@ -108,7 +111,7 @@ export default function LiveInterpretation() {
     onSuccess: () => {
       setActiveSessionId(null);
       setTranslations([]);
-      toast.success("통역 세션이 종료되었습니다.");
+      toast.success(t("liveInterpretation.toastSessionEnded"));
       sessionsQuery.refetch();
     },
   });
@@ -119,7 +122,7 @@ export default function LiveInterpretation() {
   const transcribeAndTranslate = trpc.interpretation.transcribeAndTranslate.useMutation({
     onSuccess: (data) => {
       if (!data.sourceText) {
-        toast.info("음성이 감지되지 않았습니다. 다시 시도해주세요.");
+        toast.info(t("liveInterpretation.toastNoSoundDetected"));
         setIsTranscribing(false);
         return;
       }
@@ -143,11 +146,11 @@ export default function LiveInterpretation() {
         if (ttsResult) speakText(ttsResult.text, ttsResult.language);
       }
 
-      toast.success(`음성 인식 완료 (${data.detectedLanguage || sourceLanguage})`);
+      toast.success(`${t("liveInterpretation.toastSttComplete")} (${data.detectedLanguage || sourceLanguage})`);
     },
     onError: (err) => {
       setIsTranscribing(false);
-      toast.error(`음성 인식 실패: ${err.message}`);
+      toast.error(`${t("liveInterpretation.toastSttFailed")} ${err.message}`);
     },
   });
 
@@ -155,17 +158,17 @@ export default function LiveInterpretation() {
   const transcribeOnly = trpc.interpretation.transcribeAudioUpload.useMutation({
     onSuccess: (data) => {
       if (!data.text) {
-        toast.info("음성이 감지되지 않았습니다.");
+        toast.info(t("liveInterpretation.toastNoSoundDetected"));
         setIsTranscribing(false);
         return;
       }
       setInputText((prev) => (prev ? prev + " " + data.text : data.text));
       setIsTranscribing(false);
-      toast.success("음성 인식 완료");
+      toast.success(t("liveInterpretation.toastSttComplete"));
     },
     onError: (err) => {
       setIsTranscribing(false);
-      toast.error(`음성 인식 실패: ${err.message}`);
+      toast.error(`${t("liveInterpretation.toastSttFailed")} ${err.message}`);
     },
   });
 
@@ -188,11 +191,11 @@ export default function LiveInterpretation() {
   // Start interpretation session
   const handleStartSession = () => {
     if (!user) {
-      toast.error("로그인이 필요합니다.");
+      toast.error(t("liveInterpretation.toastLoginRequired"));
       return;
     }
     if (selectedTargetLanguages.length === 0) {
-      toast.error("최소 1개의 대상 언어를 선택해주세요.");
+      toast.error(t("liveInterpretation.toastSelectTargetLang"));
       return;
     }
     startSession.mutate({
@@ -249,12 +252,12 @@ export default function LiveInterpretation() {
         const sizeMB = blob.size / (1024 * 1024);
 
         if (sizeMB > 16) {
-          toast.error("녹음 파일이 16MB를 초과합니다. 더 짧게 녹음해주세요.");
+          toast.error(t("liveInterpretation.toastFileTooLarge"));
           return;
         }
 
         if (blob.size < 1000) {
-          toast.info("녹음이 너무 짧습니다. 다시 시도해주세요.");
+          toast.info(t("liveInterpretation.toastRecordingTooShort"));
           return;
         }
 
@@ -298,620 +301,542 @@ export default function LiveInterpretation() {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
 
-      toast.info("녹음을 시작합니다. 말씀하세요...");
+      toast.info(t("liveInterpretation.toastRecordingStarted"));
     } catch (err) {
       console.error("Microphone access error:", err);
-      toast.error("마이크 접근 권한이 필요합니다.");
+      toast.error(t("liveInterpretation.toastMicAccessRequired"));
     }
-  }, [sourceLanguage, selectedTargetLanguages, activeSessionId, autoTranslate]);
+  }, [sourceLanguage, selectedTargetLanguages, activeSessionId, autoTranslate, transcribeAndTranslate, transcribeOnly]);
 
   const stopServerRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
-      mediaRecorderRef.current = null;
+      setIsRecording(false);
+      toast.success(t("liveInterpretation.toastRecordingStopped"));
     }
-    setIsRecording(false);
-    setRecordingDuration(0);
   }, []);
 
   // ========== Browser-side STT (Web Speech API) ==========
   const startBrowserRecording = useCallback(() => {
-    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      toast.error("이 브라우저에서는 음성 인식을 지원하지 않습니다. 서버 모드를 사용해주세요.");
-      return;
-    }
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = sourceLanguage === "ko" ? "ko-KR" : sourceLanguage === "zh" ? "zh-CN" : sourceLanguage === "ja" ? "ja-JP" : "en-US";
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.lang = sourceLanguage === "ko" ? "ko-KR" : sourceLanguage === "zh" ? "zh-CN" : sourceLanguage === "ja" ? "ja-JP" : "en-US";
+      recognition.interimResults = true;
+      recognition.continuous = true;
 
-    recognition.onresult = (event: any) => {
-      let interim = "";
-      let final = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          final += transcript;
-        } else {
-          interim += transcript;
+      recognition.onstart = () => {
+        setIsRecording(true);
+        toast.info(t("liveInterpretation.toastBrowserSttStarted"));
+      };
+
+      recognition.onresult = (event: any) => {
+        let finalTranscript = "";
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
         }
-      }
-      setInterimTranscript(interim);
-      if (final) {
-        setInputText((prev) => (prev ? prev + " " + final : final));
+        setInterimTranscript(interim);
+        if (finalTranscript) {
+          setInputText((prev) => (prev ? prev + " " + finalTranscript : finalTranscript));
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error("Speech recognition error:", event.error);
+        toast.error(`${t("liveInterpretation.toastSttFailed")} ${event.error}`);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
         setInterimTranscript("");
-      }
-    };
+        if (autoTranslate && inputText) {
+          handleTranslate();
+        }
+      };
 
-    recognition.onerror = (event: any) => {
-      console.error("Speech recognition error:", event.error);
-      if (event.error !== "no-speech") {
-        toast.error("음성 인식 오류: " + event.error);
-      }
-      setIsRecording(false);
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-    };
-
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsRecording(true);
-  }, [sourceLanguage]);
+      recognition.start();
+    } else {
+      toast.error(t("liveInterpretation.toastBrowserSttNotSupported"));
+    }
+  }, [sourceLanguage, autoTranslate, inputText, handleTranslate]);
 
   const stopBrowserRecording = useCallback(() => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
-      recognitionRef.current = null;
+      setIsRecording(false);
+      toast.success(t("liveInterpretation.toastSttStopped"));
     }
-    setIsRecording(false);
-    setInterimTranscript("");
   }, []);
 
-  // Unified start/stop recording
+  // Generic recording controls
   const startRecording = sttMode === "server" ? startServerRecording : startBrowserRecording;
   const stopRecording = sttMode === "server" ? stopServerRecording : stopBrowserRecording;
 
-  // TTS (Web Speech Synthesis)
+  // Text-to-Speech
   const speakText = useCallback((text: string, lang: string) => {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
+    if (!("speechSynthesis" in window)) {
+      toast.error("TTS is not supported in this browser.");
+      return;
+    }
     const utterance = new SpeechSynthesisUtterance(text);
     const langMap: Record<string, string> = {
       ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP",
-      vi: "vi-VN", th: "th-TH", es: "es-ES", fr: "fr-FR",
-      de: "de-DE", ar: "ar-SA", hi: "hi-IN", pt: "pt-BR",
-      ru: "ru-RU", id: "id-ID", tr: "tr-TR",
     };
     utterance.lang = langMap[lang] || "en-US";
-    utterance.rate = 0.9;
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+      toast.error("TTS failed to play.");
+    };
     window.speechSynthesis.speak(utterance);
   }, []);
 
-  // Format duration
-  const formatDuration = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
-  };
+  const formattedDuration = useMemo(() => {
+    const minutes = Math.floor(recordingDuration / 60).toString().padStart(2, "0");
+    const seconds = (recordingDuration % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  }, [recordingDuration]);
 
-  // Cleanup
   useEffect(() => {
-    return () => {
-      if (recognitionRef.current) recognitionRef.current.stop();
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
-      if (timerRef.current) clearInterval(timerRef.current);
-      window.speechSynthesis?.cancel();
-    };
-  }, []);
+    // Make sure TTS language is one of the selected target languages
+    if (!selectedTargetLanguages.includes(ttsLang) && selectedTargetLanguages.length > 0) {
+      setTtsLang(selectedTargetLanguages[0]);
+    }
+    if (selectedTargetLanguages.length === 0 && ttsLang !== "en") {
+      setTtsLang("en");
+    }
+  }, [selectedTargetLanguages, ttsLang]);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Link href="/">
-                <Button variant="ghost" size="icon" className="shrink-0">
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-xl font-bold flex items-center gap-2">
-                  <Languages className="w-6 h-6 text-primary" />
-                  실시간 AI 통역
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  AI가 실시간으로 강의를 다국어로 통역합니다
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {activeSessionId && (
-                <Badge variant="default" className="bg-green-600 animate-pulse">
-                  <Radio className="w-3 h-3 mr-1" /> LIVE
-                </Badge>
-              )}
-            </div>
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Link href="/">
+            <Button variant="outline" size="icon" className="h-8 w-8">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Zap className="w-6 h-6 text-primary" />
+              {t("liveInterpretation.title")}
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              {t("liveInterpretation.description")}
+            </p>
           </div>
         </div>
+        {!user && (
+          <Button asChild variant="secondary">
+            <Link href="/login">{t("liveInterpretation.loginToViewHistory")}</Link>
+          </Button>
+        )}
       </div>
 
-      <div className="container py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Panel: Controls */}
-          <div className="lg:col-span-1 space-y-4">
-            {/* STT Mode Selector */}
-            <Card className="glass-card border-primary/20">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-primary" />
-                  음성 인식 모드
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setSttMode("server")}
-                    disabled={isRecording}
-                    className={`p-3 rounded-lg border text-left transition-all ${
-                      sttMode === "server"
-                        ? "border-primary bg-primary/10 ring-1 ring-primary/30"
-                        : "border-border hover:border-primary/50"
-                    } ${isRecording ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <Server className="w-5 h-5 mb-1.5 text-primary" />
-                    <div className="text-sm font-medium">서버 (Whisper)</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      높은 정확도, 모든 브라우저
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setSttMode("browser")}
-                    disabled={isRecording}
-                    className={`p-3 rounded-lg border text-left transition-all ${
-                      sttMode === "browser"
-                        ? "border-primary bg-primary/10 ring-1 ring-primary/30"
-                        : "border-border hover:border-primary/50"
-                    } ${isRecording ? "opacity-50 cursor-not-allowed" : ""}`}
-                  >
-                    <Monitor className="w-5 h-5 mb-1.5 text-primary" />
-                    <div className="text-sm font-medium">브라우저 (Web API)</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      실시간 표시, Chrome 권장
-                    </div>
-                  </button>
-                </div>
-                {sttMode === "server" && (
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
-                    <div className="text-xs">
-                      <span className="font-medium">자동 번역</span>
-                      <span className="text-muted-foreground ml-1">(녹음 후 즉시)</span>
-                    </div>
-                    <Switch checked={autoTranslate} onCheckedChange={setAutoTranslate} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Panel: Settings */}
+        <div className="lg:col-span-1 space-y-4">
 
-            {/* Language Settings */}
-            <Card className="glass-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-primary" />
-                  언어 설정
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Source Language */}
+          {/* STT Engine Settings */}
+          <Card className="glass-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Radio className="w-4 h-4 text-primary" />
+                {t("liveInterpretation.sttEngineSettings")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {t("liveInterpretation.speechRecognitionTechnology")}
+              </p>
+              <Select value={sttMode} onValueChange={(v) => setSttMode(v as any)} disabled={isRecording}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="server">
+                    <div className="flex items-center gap-2">
+                      <Server className="w-4 h-4" />
+                      <div>
+                        <p>{t("liveInterpretation.sttServer")}</p>
+                        <p className="text-xs text-muted-foreground">{t("liveInterpretation.sttServerDescription")}</p>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="browser">
+                    <div className="flex items-center gap-2">
+                      <Monitor className="w-4 h-4" />
+                      <div>
+                        <p>{t("liveInterpretation.sttBrowser")}</p>
+                        <p className="text-xs text-muted-foreground">{t("liveInterpretation.sttBrowserDescription")}</p>
+                      </div>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{t("liveInterpretation.autoTranslate")}</span>
+                  <span className="text-xs text-muted-foreground">{t("liveInterpretation.autoTranslateDescription")}</span>
+                </div>
+                <Switch checked={autoTranslate} onCheckedChange={setAutoTranslate} disabled={isRecording} />
+              </div>
+              {isTranscribing && (
+                <div className="flex items-center gap-2 text-xs text-blue-500 pt-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t("liveInterpretation.recording")}...
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Language Settings */}
+          <Card className="glass-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Globe className="w-4 h-4 text-primary" />
+                {t("liveInterpretation.languageSettings")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Source Language */}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-1 block">{t("liveInterpretation.sourceLanguage")}</label>
+                <Select value={sourceLanguage} onValueChange={setSourceLanguage} disabled={!!activeSessionId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.flag} {lang.nativeName} ({lang.name})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Target Languages */}
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                  {t("liveInterpretation.targetLanguage")} ({selectedTargetLanguages.length}{t("liveInterpretation.itemsSelected")})
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {languages
+                    .filter((l) => l.code !== sourceLanguage)
+                    .map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => toggleTargetLang(lang.code)}
+                        disabled={!!activeSessionId}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                          selectedTargetLanguages.includes(lang.code)
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        } ${activeSessionId ? "opacity-60 cursor-not-allowed" : ""}`}
+                      >
+                        {lang.flag} {lang.nativeName}
+                      </button>
+                    ))}
+                </div>
+              </div>
+
+              {/* Session Controls */}
+              <div className="pt-2 border-t border-border/50">
+                {!activeSessionId ? (
+                  <Button
+                    onClick={handleStartSession}
+                    className="w-full"
+                    disabled={startSession.isPending || !user}
+                  >
+                    {startSession.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4 mr-2" />
+                    )}
+                    {t("liveInterpretation.startSession")}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => endSession.mutate({ sessionId: activeSessionId })}
+                    variant="destructive"
+                    className="w-full"
+                    disabled={endSession.isPending}
+                  >
+                    <Square className="w-4 h-4 mr-2" />
+                    {t("liveInterpretation.endSession")}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* TTS Settings */}
+          <Card className="glass-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-primary" />
+                {t("liveInterpretation.tts")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm">{t("liveInterpretation.autoTts")}</span>
+                <Switch checked={ttsEnabled} onCheckedChange={setTtsEnabled} />
+              </div>
+              {ttsEnabled && selectedTargetLanguages.length > 0 && (
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground mb-1 block">원본 언어</label>
-                  <Select value={sourceLanguage} onValueChange={setSourceLanguage} disabled={!!activeSessionId}>
-                    <SelectTrigger>
+                  <label className="text-xs text-muted-foreground mb-1 block">{t("liveInterpretation.outputLanguage")}</label>
+                  <Select value={ttsLang} onValueChange={setTtsLang}>
+                    <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {languages.map((lang) => (
-                        <SelectItem key={lang.code} value={lang.code}>
-                          {lang.flag} {lang.nativeName} ({lang.name})
-                        </SelectItem>
-                      ))}
+                      {selectedTargetLanguages.map((code) => {
+                        const info = getLangInfo(code);
+                        return (
+                          <SelectItem key={code} value={code}>
+                            {info.flag} {info.nativeName}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Target Languages */}
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                    대상 언어 ({selectedTargetLanguages.length}개 선택)
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {languages
-                      .filter((l) => l.code !== sourceLanguage)
-                      .map((lang) => (
-                        <button
-                          key={lang.code}
-                          onClick={() => toggleTargetLang(lang.code)}
-                          disabled={!!activeSessionId}
-                          className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-                            selectedTargetLanguages.includes(lang.code)
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "bg-muted text-muted-foreground hover:bg-muted/80"
-                          } ${activeSessionId ? "opacity-60 cursor-not-allowed" : ""}`}
-                        >
-                          {lang.flag} {lang.nativeName}
-                        </button>
-                      ))}
-                  </div>
+              )}
+              {isSpeaking && (
+                <div className="flex items-center gap-2 text-xs text-green-500">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  {t("liveInterpretation.ttsSpeaking")}
                 </div>
+              )}
+            </CardContent>
+          </Card>
 
-                {/* Session Controls */}
-                <div className="pt-2 border-t border-border/50">
-                  {!activeSessionId ? (
-                    <Button
-                      onClick={handleStartSession}
-                      className="w-full"
-                      disabled={startSession.isPending || !user}
-                    >
-                      {startSession.isPending ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <Play className="w-4 h-4 mr-2" />
-                      )}
-                      통역 세션 시작
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={() => endSession.mutate({ sessionId: activeSessionId })}
-                      variant="destructive"
-                      className="w-full"
-                      disabled={endSession.isPending}
-                    >
-                      <Square className="w-4 h-4 mr-2" />
-                      세션 종료
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* TTS Settings */}
+          {/* Session History */}
+          {user && (
             <Card className="glass-card">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Volume2 className="w-4 h-4 text-primary" />
-                  음성 출력 (TTS)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">자동 음성 출력</span>
-                  <Switch checked={ttsEnabled} onCheckedChange={setTtsEnabled} />
-                </div>
-                {ttsEnabled && selectedTargetLanguages.length > 0 && (
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">출력 언어</label>
-                    <Select value={ttsLang} onValueChange={setTtsLang}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {selectedTargetLanguages.map((code) => {
-                          const info = getLangInfo(code);
-                          return (
-                            <SelectItem key={code} value={code}>
-                              {info.flag} {info.nativeName}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-                {isSpeaking && (
-                  <div className="flex items-center gap-2 text-xs text-green-500">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    음성 출력 중...
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Session History */}
-            {user && (
-              <Card className="glass-card">
-                <CardHeader className="pb-3">
-                  <button
-                    onClick={() => setShowHistory(!showHistory)}
-                    className="flex items-center justify-between w-full"
-                  >
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <History className="w-4 h-4 text-primary" />
-                      세션 기록
-                    </CardTitle>
-                    {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </button>
-                </CardHeader>
-                {showHistory && (
-                  <CardContent className="pt-0">
-                    {sessionsQuery.isLoading ? (
-                      <div className="flex justify-center py-4">
-                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : sessionsQuery.data?.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
-                        아직 세션 기록이 없습니다.
-                      </p>
-                    ) : (
-                      <div className="space-y-2">
-                        {sessionsQuery.data?.map((session) => (
-                          <div
-                            key={session.id}
-                            className="p-2.5 rounded-lg bg-muted/50 text-sm"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">
-                                {getLangInfo(session.sourceLanguage).flag}{" "}
-                                {getLangInfo(session.sourceLanguage).nativeName}
-                              </span>
-                              <Badge
-                                variant={session.status === "active" ? "default" : "secondary"}
-                                className="text-xs"
-                              >
-                                {session.status === "active" ? "진행중" : "종료"}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                              <Clock className="w-3 h-3" />
-                              {new Date(session.createdAt).toLocaleDateString("ko-KR")}
-                              <span className="mx-1">|</span>
-                              {session.totalSegments || 0}개 세그먼트
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                )}
-              </Card>
-            )}
-          </div>
-
-          {/* Right Panel: Translation Area */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Input Area */}
-            <Card className="glass-card">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="flex items-center justify-between w-full"
+                >
                   <CardTitle className="text-base flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-primary" />
-                    입력 ({getLangInfo(sourceLanguage).flag} {getLangInfo(sourceLanguage).nativeName})
+                    <History className="w-4 h-4 text-primary" />
+                    {t("liveInterpretation.sessionHistory")}
                   </CardTitle>
-                  {sttMode === "server" && (
-                    <Badge variant="outline" className="text-xs">
-                      <Server className="w-3 h-3 mr-1" />
-                      Whisper STT
-                    </Badge>
-                  )}
-                </div>
+                  {showHistory ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="relative">
-                  <Textarea
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    placeholder={
-                      activeSessionId
-                        ? sttMode === "server"
-                          ? "마이크 버튼을 눌러 녹음하면 Whisper AI가 음성을 인식합니다. 텍스트 직접 입력도 가능합니다."
-                          : "번역할 텍스트를 입력하거나 마이크 버튼을 눌러 음성으로 입력하세요..."
-                        : "세션을 먼저 시작해주세요..."
-                    }
-                    disabled={!activeSessionId}
-                    className="min-h-[100px] pr-12 resize-none"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleTranslate();
-                      }
-                    }}
-                  />
-                  {interimTranscript && sttMode === "browser" && (
-                    <div className="absolute bottom-2 left-3 text-sm text-muted-foreground italic">
-                      {interimTranscript}
+              {showHistory && (
+                <CardContent className="pt-0">
+                  {sessionsQuery.isLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : sessionsQuery.data?.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      {t("liveInterpretation.noHistory")}
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {sessionsQuery.data?.map((session) => (
+                        <div
+                          key={session.id}
+                          className="p-2.5 rounded-lg bg-muted/50 text-sm"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">
+                              {getLangInfo(session.sourceLanguage).flag}{" "}
+                              {getLangInfo(session.sourceLanguage).nativeName}
+                            </span>
+                            <Badge
+                              variant={session.status === "active" ? "default" : "secondary"}
+                              className="text-xs"
+                            >
+                              {session.status === "active" ? t("liveInterpretation.statusActive") : t("liveInterpretation.statusEnded")}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            {new Date(session.createdAt).toLocaleDateString("ko-KR")}
+                            <span className="mx-1">|</span>
+                            {session.totalSegments || 0}{t("liveInterpretation.segments")}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={isRecording ? stopRecording : startRecording}
-                    variant={isRecording ? "destructive" : "outline"}
-                    size="sm"
-                    disabled={!activeSessionId || isTranscribing}
-                    className="shrink-0"
-                  >
-                    {isRecording ? (
-                      <>
-                        <MicOff className="w-4 h-4 mr-1" />
-                        {sttMode === "server" ? (
-                          <span className="animate-pulse">
-                            녹음 중 {formatDuration(recordingDuration)}
-                          </span>
-                        ) : (
-                          <span className="animate-pulse">녹음 중...</span>
-                        )}
-                      </>
-                    ) : isTranscribing ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                        <span>인식 중...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Mic className="w-4 h-4 mr-1" />
-                        음성 입력
-                      </>
-                    )}
-                  </Button>
-                  <div className="flex-1" />
-                  <Button
-                    onClick={() => setInputText("")}
-                    variant="ghost"
-                    size="sm"
-                    disabled={!inputText}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    onClick={handleTranslate}
-                    disabled={!activeSessionId || !inputText.trim() || isTranslating}
-                    size="sm"
-                  >
-                    {isTranslating ? (
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                    ) : (
-                      <Languages className="w-4 h-4 mr-1" />
-                    )}
-                    번역
-                  </Button>
-                </div>
-              </CardContent>
+                </CardContent>
+              )}
             </Card>
+          )}
+        </div>
 
-            {/* Translation Results */}
-            <Card className="glass-card">
-              <CardHeader className="pb-3">
+        {/* Right Panel: Translation Area */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Input Area */}
+          <Card className="glass-card">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Languages className="w-4 h-4 text-primary" />
-                  번역 결과
-                  {translations.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {translations.length}
-                    </Badge>
-                  )}
+                  <MessageSquare className="w-4 h-4 text-primary" />
+                  {t("liveInterpretation.input")} ({getLangInfo(sourceLanguage).flag} {getLangInfo(sourceLanguage).nativeName})
                 </CardTitle>
-              </CardHeader>
-              <CardContent>
+                {sttMode === "server" && (
+                  <Badge variant="outline" className="text-xs">
+                    <Server className="w-3 h-3 mr-1" />
+                    Whisper STT
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="relative">
+                <Textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder={
+                    activeSessionId
+                      ? sttMode === "server"
+                        ? t("liveInterpretation.placeholderWhisper")
+                        : t("liveInterpretation.placeholderBrowser")
+                      : t("liveInterpretation.placeholderStartSession")
+                  }
+                  disabled={!activeSessionId}
+                  className="min-h-[100px] pr-12 resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleTranslate();
+                    }
+                  }}
+                />
+                {interimTranscript && sttMode === "browser" && (
+                  <div className="absolute bottom-2 left-3 text-sm text-muted-foreground italic">
+                    {interimTranscript}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={isRecording ? stopRecording : startRecording}
+                  variant={isRecording ? "destructive" : "outline"}
+                  size="sm"
+                  disabled={!activeSessionId || isTranscribing}
+                  className="shrink-0"
+                >
+                  {isRecording ? (
+                    <>
+                      <MicOff className="w-4 h-4 mr-1" />
+                      {sttMode === "server" ? (
+                        <span className="animate-pulse">
+                          {t("liveInterpretation.recordingDuration")} ({formattedDuration})
+                        </span>
+                      ) : (
+                        t("liveInterpretation.recording")
+                      )}
+                    </>
+                  ) : (
+                    <Mic className="w-4 h-4" />
+                  )}
+                </Button>
+                <Button
+                  onClick={handleTranslate}
+                  size="sm"
+                  disabled={!activeSessionId || isTranslating || !inputText.trim()}
+                  className="w-full"
+                >
+                  {isTranslating ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Languages className="w-4 h-4 mr-2" />
+                  )}
+                  {t("liveInterpretation.translate")}
+                </Button>
+                <Button
+                  onClick={() => setInputText("")}
+                  variant="ghost"
+                  size="icon"
+                  disabled={!inputText.trim()}
+                  className="shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Results Area */}
+          <Card className="glass-card min-h-[400px]">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Languages className="w-4 h-4 text-primary" />
+                {t("liveInterpretation.translationResults")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[calc(100vh-450px)] min-h-[300px] pr-3">
                 {translations.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Languages className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">
-                      {activeSessionId
-                        ? "텍스트를 입력하면 실시간으로 번역됩니다."
-                        : "세션을 시작하고 텍스트를 입력해보세요."}
-                    </p>
-                    <p className="text-xs mt-1 opacity-70">
-                      15개 언어 동시 통역 지원
-                    </p>
+                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                    <Languages className="w-12 h-12 mb-4 text-border" />
+                    <p>{t("liveInterpretation.waitingForTranslation")}</p>
                   </div>
                 ) : (
-                  <ScrollArea className="h-[400px] lg:h-[500px]">
-                    <div className="space-y-3">
-                      {/* Group translations by source text */}
-                      {(() => {
-                        const groups: { sourceText: string; items: TranslationResult[]; timestamp: Date }[] = [];
-                        translations.forEach((tr) => {
-                          const existing = groups.find((g) => g.sourceText === tr.sourceText && g.timestamp.getTime() === tr.timestamp.getTime());
-                          if (existing) {
-                            existing.items.push(tr);
-                          } else {
-                            groups.push({ sourceText: tr.sourceText, items: [tr], timestamp: tr.timestamp });
-                          }
-                        });
-                        return groups.map((group, gi) => (
-                          <div key={gi} className="rounded-lg border border-border/50 overflow-hidden">
-                            {/* Source text */}
-                            <div className="bg-muted/30 px-4 py-2.5 border-b border-border/30">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg">{getLangInfo(sourceLanguage).flag}</span>
-                                  <span className="text-sm font-medium">{group.sourceText}</span>
+                  <div className="space-y-5">
+                    {translations.map((result, index) => (
+                      <div key={index} className="space-y-2">
+                        {index === 0 && result.sourceText && (
+                          <div className="p-3 rounded-lg bg-muted/30">
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-2 text-sm font-semibold">
+                                <div className="w-5 h-5 flex items-center justify-center rounded-full bg-primary/10 text-primary">
+                                  {getLangInfo(sourceLanguage).flag}
                                 </div>
-                                <span className="text-xs text-muted-foreground">
-                                  {group.timestamp.toLocaleTimeString("ko-KR")}
-                                </span>
+                                {getLangInfo(sourceLanguage).nativeName}
                               </div>
+                              <span className="text-xs text-muted-foreground">
+                                {result.timestamp.toLocaleTimeString()}
+                              </span>
                             </div>
-                            {/* Translations */}
-                            <div className="divide-y divide-border/20">
-                              {group.items.map((item, ti) => {
-                                const langInfo = getLangInfo(item.targetLanguage);
-                                return (
-                                  <div
-                                    key={ti}
-                                    className="px-4 py-2.5 flex items-start gap-3 hover:bg-muted/20 transition-colors"
-                                  >
-                                    <span className="text-lg shrink-0 mt-0.5">{langInfo.flag}</span>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm">{item.translatedText}</p>
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        {langInfo.nativeName}
-                                      </p>
-                                    </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="shrink-0 h-7 w-7 p-0"
-                                      onClick={() => speakText(item.translatedText, item.targetLanguage)}
-                                    >
-                                      <Volume2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                  </div>
-                                );
-                              })}
+                            <p className="text-sm leading-relaxed">{result.sourceText}</p>
+                          </div>
+                        )}
+                        <div className="p-3 rounded-lg bg-muted/60">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <div className="flex items-center gap-2 text-sm font-semibold">
+                              <div className="w-5 h-5 flex items-center justify-center rounded-full bg-primary/10 text-primary">
+                                {getLangInfo(result.targetLanguage).flag}
+                              </div>
+                              {getLangInfo(result.targetLanguage).nativeName}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => speakText(result.translatedText, result.targetLanguage)} disabled={isSpeaking}>
+                                {isSpeaking && ttsLang === result.targetLanguage ? (
+                                  <Volume2 className="w-4 h-4 text-primary" />
+                                ) : (
+                                  <VolumeX className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                )}
+                              </button>
                             </div>
                           </div>
-                        ));
-                      })()}
-                    </div>
-                  </ScrollArea>
+                          <p className="text-sm leading-relaxed">{result.translatedText}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Feature Info */}
-            {!activeSessionId && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Card className="glass-card">
-                  <CardContent className="pt-5 text-center">
-                    <Server className="w-8 h-8 mx-auto mb-2 text-primary" />
-                    <h3 className="font-medium text-sm">Whisper STT</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      OpenAI Whisper API로 높은 정확도의 음성 인식
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="glass-card">
-                  <CardContent className="pt-5 text-center">
-                    <Languages className="w-8 h-8 mx-auto mb-2 text-primary" />
-                    <h3 className="font-medium text-sm">AI 번역</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      LLM 기반 고품질 실시간 다국어 번역
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="glass-card">
-                  <CardContent className="pt-5 text-center">
-                    <Volume2 className="w-8 h-8 mx-auto mb-2 text-primary" />
-                    <h3 className="font-medium text-sm">음성 출력 (TTS)</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      번역된 텍스트를 자연스러운 음성으로 출력
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

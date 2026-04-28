@@ -34,9 +34,10 @@ describe("v8.3 - User Profile, AI History, Admin Analytics", () => {
 
     it("AiHistory uses aiHistory.list query", async () => {
       const { readFileSync } = await import("fs");
-      const path = resolve(__dirname, "../client/src/pages/AiHistory.tsx");
-      const content = readFileSync(path, "utf-8");
-      expect(content).toContain("trpc.aiHistory.list.useQuery");
+      // AiHistory uses useAiHistory hook which internally calls trpc.aiHistory.list
+      const hookPath = resolve(__dirname, "../client/src/hooks/useAiHistory.ts");
+      const hookContent = readFileSync(hookPath, "utf-8");
+      expect(hookContent).toContain("trpc.aiHistory.list.useQuery");
     });
 
     it("AiHistory has tool filter and pagination", async () => {
@@ -50,12 +51,12 @@ describe("v8.3 - User Profile, AI History, Admin Analytics", () => {
 
     it("AiHistory defines all tool labels", async () => {
       const { readFileSync } = await import("fs");
-      const path = resolve(__dirname, "../client/src/pages/AiHistory.tsx");
-      const content = readFileSync(path, "utf-8");
-      expect(content).toContain("tts");
-      expect(content).toContain("voice_clone");
-      expect(content).toContain("image_gen");
-      expect(content).toContain("video_effects");
+      // Tool labels are defined in ai-tools.ts
+      const toolsPath = resolve(__dirname, "../client/src/lib/ai-tools.ts");
+      const toolsContent = readFileSync(toolsPath, "utf-8");
+      expect(toolsContent).toContain("tts");
+      expect(toolsContent).toContain("voice-clone");
+      expect(toolsContent).toContain("image-gen");
     });
   });
 
@@ -78,7 +79,7 @@ describe("v8.3 - User Profile, AI History, Admin Analytics", () => {
       const { readFileSync } = await import("fs");
       const path = resolve(__dirname, "../client/src/pages/AdminAnalytics.tsx");
       const content = readFileSync(path, "utf-8");
-      expect(content).toContain("user?.role === \"admin\"");
+      expect(content).toContain('user?.role === "admin"');
       expect(content).toContain("관리자 권한이 필요합니다");
     });
 

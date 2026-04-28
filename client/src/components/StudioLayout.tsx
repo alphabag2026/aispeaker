@@ -12,60 +12,58 @@ import {
   Languages,
   Sparkles,
   Zap,
-  Video,
   Image as ImageIcon,
   Mic,
   Headphones,
   Volume2,
   Camera,
   Radio,
-  Wand2,
   Palette,
-  LayoutGrid,
   ChevronRight,
   Crown,
-  TrendingUp,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/i18n/components/StudioLayout";
 
 /* ── Sidebar Menu Data ── */
 const sidebarSections = [
   {
-    title: "동영상",
+    title: "studioLayout.video",
     items: [
-      { label: "이미지 → 비디오", href: "/ai-studio/image-to-video", icon: Clapperboard, badge: "hot" as const },
-      { label: "얼굴 교환", href: "/ai-studio/face-swap", icon: User2, badge: "new" as const },
-      { label: "아바타 비디오", href: "/ai-studio/talking-avatar", icon: Brain, badge: null },
-      { label: "비디오 번역", href: "/ai-studio/video-translate", icon: Languages, badge: null },
+      { label: "studioLayout.imageToVideo", href: "/ai-studio/image-to-video", icon: Clapperboard, badge: "hot" as const },
+      { label: "studioLayout.faceSwap", href: "/ai-studio/face-swap", icon: User2, badge: "new" as const },
+      { label: "studioLayout.talkingAvatar", href: "/ai-studio/talking-avatar", icon: Brain, badge: null },
+      { label: "studioLayout.videoTranslate", href: "/ai-studio/video-translate", icon: Languages, badge: null },
     ],
   },
   {
-    title: "이미지",
+    title: "studioLayout.image",
     items: [
-      { label: "이미지 생성", href: "/ai-studio/image-gen", icon: ImageIcon, badge: null },
-      { label: "배경 변경", href: "/ai-studio/bg-remove", icon: Palette, badge: null },
+      { label: "studioLayout.imageGen", href: "/ai-studio/image-gen", icon: ImageIcon, badge: null },
+      { label: "studioLayout.bgRemove", href: "/ai-studio/bg-remove", icon: Palette, badge: null },
     ],
   },
   {
-    title: "오디오",
+    title: "studioLayout.audio",
     items: [
-      { label: "텍스트 → 음성", href: "/ai-studio/tts", icon: Volume2, badge: null },
-      { label: "음성 복제", href: "/ai-studio/voice-clone", icon: Mic, badge: null },
-      { label: "음성 변환", href: "/ai-studio/voice-change", icon: Headphones, badge: null },
+      { label: "studioLayout.tts", href: "/ai-studio/tts", icon: Volume2, badge: null },
+      { label: "studioLayout.voiceClone", href: "/ai-studio/voice-clone", icon: Mic, badge: null },
+      { label: "studioLayout.voiceChange", href: "/ai-studio/voice-change", icon: Headphones, badge: null },
     ],
   },
   {
-    title: "실시간",
+    title: "studioLayout.realtime",
     items: [
-      { label: "라이브 카메라", href: "/ai-studio/live-camera", icon: Camera, badge: null },
-      { label: "스트리밍 아바타", href: "/ai-studio/streaming-avatar", icon: Radio, badge: null },
+      { label: "studioLayout.liveCamera", href: "/ai-studio/live-camera", icon: Camera, badge: null },
+      { label: "studioLayout.streamingAvatar", href: "/ai-studio/streaming-avatar", icon: Radio, badge: null },
     ],
   },
   {
-    title: "라이브러리",
+    title: "studioLayout.library",
     items: [
-      { label: "AI 모델 비교", href: "/ai-studio/models", icon: Sparkles, badge: null },
-      { label: "효과 프리셋", href: "/ai-studio/effects", icon: Zap, badge: null },
+      { label: "studioLayout.models", href: "/ai-studio/models", icon: Sparkles, badge: null },
+      { label: "studioLayout.effects", href: "/ai-studio/effects", icon: Zap, badge: null },
     ],
   },
 ];
@@ -84,7 +82,8 @@ interface StudioLayoutProps {
 }
 
 export default function StudioLayout({ children, title, subtitle }: StudioLayoutProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
+  const { isAuthenticated } = useAuth();
   const [location] = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const creditsQuery = trpc.akool.getCredits.useQuery(undefined, {
@@ -103,10 +102,10 @@ export default function StudioLayout({ children, title, subtitle }: StudioLayout
           </div>
           <h1 className="text-4xl font-bold mb-4 gradient-text">AI Studio</h1>
           <p className="text-muted-foreground mb-8 text-center max-w-md">
-            25+ AI 도구를 하나의 플랫폼에서 사용하세요. 로그인 후 시작할 수 있습니다.
+            {t("studioLayout.authPrompt.description")}
           </p>
           <Button asChild className="glow-button text-base px-8 py-3 h-auto">
-            <a href={getLoginUrl()}>무료로 시작하기</a>
+            <a href={getLoginUrl()}>{t("studioLayout.authPrompt.action")}</a>
           </Button>
         </div>
       </div>
@@ -152,7 +151,7 @@ export default function StudioLayout({ children, title, subtitle }: StudioLayout
               <div className="px-3 py-2 border-b border-border/50 hover:bg-accent/50 transition-colors cursor-pointer">
                 <div className="flex items-center gap-2 text-xs">
                   <Zap className="h-3.5 w-3.5 text-yellow-500" />
-                  <span className="text-muted-foreground">크레딧:</span>
+                  <span className="text-muted-foreground">{t("studioLayout.credits")}</span>
                   <span className="font-semibold text-foreground">{creditsQuery.data.credits ?? "N/A"}</span>
                 </div>
               </div>
@@ -165,7 +164,7 @@ export default function StudioLayout({ children, title, subtitle }: StudioLayout
               <div key={section.title} className="mb-1">
                 {!sidebarCollapsed && (
                   <p className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                    {section.title}
+                    {t(section.title)}
                   </p>
                 )}
                 {section.items.map((item) => {
@@ -178,12 +177,12 @@ export default function StudioLayout({ children, title, subtitle }: StudioLayout
                             ? "bg-primary/15 text-primary font-medium border border-primary/20"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
                         } ${sidebarCollapsed ? "justify-center px-0" : ""}`}
-                        title={sidebarCollapsed ? item.label : undefined}
+                        title={sidebarCollapsed ? t(item.label) : undefined}
                       >
                         <item.icon className={`h-4 w-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
                         {!sidebarCollapsed && (
                           <>
-                            <span className="truncate flex-1">{item.label}</span>
+                            <span className="truncate flex-1">{t(item.label)}</span>
                             {item.badge && <span className={badgeClass(item.badge)}>{item.badge}</span>}
                           </>
                         )}
@@ -202,9 +201,9 @@ export default function StudioLayout({ children, title, subtitle }: StudioLayout
                 <div className="glass-card p-3 cursor-pointer group">
                   <div className="flex items-center gap-2 mb-1">
                     <Crown className="h-4 w-4 text-yellow-500" />
-                    <span className="text-xs font-semibold">Pro 업그레이드</span>
+                    <span className="text-xs font-semibold">{t("studioLayout.upgrade.title")}</span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">무제한 생성 + 우선 처리</p>
+                  <p className="text-[10px] text-muted-foreground">{t("studioLayout.upgrade.description")}</p>
                 </div>
               </Link>
             </div>

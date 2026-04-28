@@ -96,7 +96,8 @@ describe("v4.2 - Google OAuth Login/Register Fix", () => {
       const registerPath = path.join(__dirname, "../client/src/pages/Register.tsx");
       const content = fs.readFileSync(registerPath, "utf-8");
       expect(content).toContain("googleNotConfigured");
-      expect(content).toContain("Sign up with Google");
+      // After i18n, text is in translation key
+      expect(content).toContain("googleRegister");
     });
   });
 

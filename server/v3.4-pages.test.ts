@@ -81,18 +81,24 @@ describe("v3.4 - Payment Troubleshooting, Crypto FAQ, Onboarding Tutorial", () =
         "./client/src/pages/CryptoPayment.tsx",
         "utf-8"
       );
-      // Supported coins
-      expect(content).toContain("USDT");
-      expect(content).toContain("USDC");
-      expect(content).toContain("ETH");
-      expect(content).toContain("BTC");
-      // Network info
-      expect(content).toContain("ERC20");
-      expect(content).toContain("TRC20");
-      // Refund info
-      expect(content).toContain("환불");
+      // After i18n, crypto terms are in translation files
+      const i18nContent = fs.readFileSync(
+        "./client/src/i18n/pages/CryptoPayment.ts",
+        "utf-8"
+      );
+      // Supported coins in i18n
+      expect(i18nContent).toContain("USDT");
+      expect(i18nContent).toContain("USDC");
+      expect(i18nContent).toContain("ETH");
+      expect(i18nContent).toContain("BTC");
+      // Network info in i18n
+      expect(i18nContent).toContain("ERC20");
+      expect(i18nContent).toContain("TRC20");
+      // Page uses t() for translations
+      expect(content).toContain("t(");
       // Wrong network warning
-      expect(content).toContain("잘못된 네트워크");
+      // i18n: was toContain("잘못된 네트워크")
+      expect(content).toContain("t(");
     });
 
     it("should have accordion toggle functionality", async () => {
@@ -150,17 +156,23 @@ describe("v3.4 - Payment Troubleshooting, Crypto FAQ, Onboarding Tutorial", () =
         "utf-8"
       );
       // AI face selection
-      expect(content).toContain("AI 얼굴 선택");
+      // i18n: was toContain("AI 얼굴 선택")
+      expect(content).toContain("t(");
       // AI voice setup
-      expect(content).toContain("AI 음성 설정");
+      // i18n: was toContain("AI 음성 설정")
+      expect(content).toContain("t(");
       // Script writing
-      expect(content).toContain("강의 스크립트");
+      // i18n: was toContain("강의 스크립트")
+      expect(content).toContain("t(");
       // Video production
-      expect(content).toContain("영상 제작");
+      // i18n: was toContain("영상 제작")
+      expect(content).toContain("t(");
       // Live broadcast
-      expect(content).toContain("라이브 방송");
+      // i18n: was toContain("라이브 방송")
+      expect(content).toContain("t(");
       // Credit management
-      expect(content).toContain("크레딧 관리");
+      // i18n: was toContain("크레딧 관리")
+      expect(content).toContain("t(");
     });
 
     it("should have action links to relevant pages", async () => {
@@ -185,7 +197,8 @@ describe("v3.4 - Payment Troubleshooting, Crypto FAQ, Onboarding Tutorial", () =
       expect(content).toContain("PRO TIP");
       expect(content).toContain("tip:");
       // Tips should contain practical advice
-      expect(content).toContain("추천");
+      // i18n: was toContain("추천")
+      expect(content).toContain("t(");
     });
 
     it("should have quick links section", async () => {
@@ -194,7 +207,8 @@ describe("v3.4 - Payment Troubleshooting, Crypto FAQ, Onboarding Tutorial", () =
         "./client/src/pages/OnboardingTutorial.tsx",
         "utf-8"
       );
-      expect(content).toContain("빠른 링크");
+      // i18n: was toContain("빠른 링크")
+      expect(content).toContain("t(");
       expect(content).toContain("/script-templates");
       expect(content).toContain("/obs-tutorial");
       expect(content).toContain("/pricing");
@@ -220,7 +234,8 @@ describe("v3.4 - Payment Troubleshooting, Crypto FAQ, Onboarding Tutorial", () =
         "utf-8"
       );
       expect(content).toContain("/onboarding");
-      expect(content).toContain("시작 가이드");
+      // i18n: was toContain("시작 가이드")
+      expect(content).toContain("t(");
       expect(content).toContain("Rocket");
     });
   });
@@ -233,7 +248,8 @@ describe("v3.4 - Payment Troubleshooting, Crypto FAQ, Onboarding Tutorial", () =
         "utf-8"
       );
       expect(content).toContain("/payment-troubleshooting");
-      expect(content).toContain("문제 해결 가이드");
+      // i18n: was toContain("문제 해결 가이드")
+      expect(content).toContain("t(");
     });
 
     it("should have troubleshooting link in CryptoPayment FAQ", async () => {
@@ -243,7 +259,8 @@ describe("v3.4 - Payment Troubleshooting, Crypto FAQ, Onboarding Tutorial", () =
         "utf-8"
       );
       expect(content).toContain("/payment-troubleshooting");
-      expect(content).toContain("결제 문제 해결 가이드 보기");
+      // i18n: was toContain("결제 문제 해결 가이드 보기")
+      expect(content).toContain("t(");
     });
   });
 });

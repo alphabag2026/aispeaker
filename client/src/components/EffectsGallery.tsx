@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,8 @@ import {
   RotateCw,
   X,
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/i18n/components/EffectsGallery";
 
 /* ── Effect Preset Data ── */
 export interface EffectPreset {
@@ -50,7 +53,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "kiss-screen",
     name: "Kiss Screen",
-    description: "캐릭터가 화면에 키스하는 인터랙티브 효과. 소셜 미디어 콘텐츠에 최적화.",
+    description: "effectsGallery.kissScreen.description",
     category: "special",
     icon: Heart,
     gradient: "from-pink-500 to-rose-600",
@@ -67,7 +70,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "catwalk",
     name: "Catwalk",
-    description: "패션 런웨이 스타일의 워킹 모션. 모델/캐릭터가 카메라를 향해 걸어오는 효과.",
+    description: "effectsGallery.catwalk.description",
     category: "motion",
     icon: Move,
     gradient: "from-amber-500 to-orange-600",
@@ -84,7 +87,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "360-orbit",
     name: "360° Orbit",
-    description: "카메라가 피사체 주위를 360도 회전하는 시네마틱 효과. 제품 쇼케이스에 적합.",
+    description: "effectsGallery.360Orbit.description",
     category: "camera",
     icon: RotateCcw,
     gradient: "from-blue-500 to-cyan-600",
@@ -101,7 +104,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "zoom-in",
     name: "Dramatic Zoom",
-    description: "피사체를 향해 극적으로 줌인하는 효과. 강조 장면이나 리액션 영상에 적합.",
+    description: "effectsGallery.dramaticZoom.description",
     category: "camera",
     icon: Maximize,
     gradient: "from-violet-500 to-purple-600",
@@ -118,7 +121,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "pan-left",
     name: "Smooth Pan",
-    description: "카메라가 부드럽게 좌우로 패닝하는 효과. 풍경이나 파노라마 장면에 적합.",
+    description: "effectsGallery.smoothPan.description",
     category: "camera",
     icon: ArrowRight,
     gradient: "from-teal-500 to-emerald-600",
@@ -135,7 +138,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "tilt-up",
     name: "Cinematic Tilt",
-    description: "카메라가 아래에서 위로 틸트하며 피사체를 드러내는 시네마틱 효과.",
+    description: "effectsGallery.cinematicTilt.description",
     category: "camera",
     icon: ArrowUp,
     gradient: "from-indigo-500 to-blue-600",
@@ -152,7 +155,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "dolly-zoom",
     name: "Dolly Zoom",
-    description: "히치콕 효과. 줌인하면서 카메라가 후진하여 배경이 왜곡되는 극적 효과.",
+    description: "effectsGallery.dollyZoom.description",
     category: "special",
     icon: Film,
     gradient: "from-red-500 to-orange-600",
@@ -169,7 +172,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "slow-motion",
     name: "Slow Motion",
-    description: "시간을 늦추는 슬로우 모션 효과. 액션 장면이나 감성적 순간에 적합.",
+    description: "effectsGallery.slowMotion.description",
     category: "motion",
     icon: Wind,
     gradient: "from-sky-500 to-blue-600",
@@ -186,7 +189,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "parallax",
     name: "Parallax Depth",
-    description: "2D 이미지에 깊이감을 추가하여 3D 패럴랙스 효과를 생성.",
+    description: "effectsGallery.parallaxDepth.description",
     category: "style",
     icon: Sparkles,
     gradient: "from-fuchsia-500 to-pink-600",
@@ -203,7 +206,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "style-transfer",
     name: "Style Transfer",
-    description: "영상에 아트 스타일을 적용. 유화, 수채화, 애니메이션 등 다양한 화풍 변환.",
+    description: "effectsGallery.styleTransfer.description",
     category: "style",
     icon: Wand2,
     gradient: "from-emerald-500 to-teal-600",
@@ -220,7 +223,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "face-zoom",
     name: "Face Focus",
-    description: "얼굴을 자동 감지하여 부드럽게 줌인. 인물 중심 콘텐츠에 최적화.",
+    description: "effectsGallery.faceFocus.description",
     category: "special",
     icon: Eye,
     gradient: "from-cyan-500 to-blue-600",
@@ -237,7 +240,7 @@ export const EFFECT_PRESETS: EffectPreset[] = [
   {
     id: "rotation-spin",
     name: "Spin Effect",
-    description: "피사체가 회전하는 역동적 효과. 제품 360도 뷰나 트랜지션에 적합.",
+    description: "effectsGallery.spinEffect.description",
     category: "motion",
     icon: RotateCw,
     gradient: "from-yellow-500 to-amber-600",
@@ -255,11 +258,11 @@ export const EFFECT_PRESETS: EffectPreset[] = [
 
 /* ── Category config ── */
 const CATEGORIES = [
-  { id: "all" as const, label: "All Effects", icon: Sparkles },
-  { id: "motion" as const, label: "Motion", icon: Move },
-  { id: "camera" as const, label: "Camera", icon: Camera },
-  { id: "style" as const, label: "Style", icon: Wand2 },
-  { id: "special" as const, label: "Special", icon: Zap },
+  { id: "all" as const, label: "effectsGallery.category.all", icon: Sparkles },
+  { id: "motion" as const, label: "effectsGallery.category.motion", icon: Move },
+  { id: "camera" as const, label: "effectsGallery.category.camera", icon: Camera },
+  { id: "style" as const, label: "effectsGallery.category.style", icon: Wand2 },
+  { id: "special" as const, label: "effectsGallery.category.special", icon: Zap },
 ];
 
 /* ── Difficulty badge color ── */
@@ -274,6 +277,7 @@ function difficultyColor(d: string) {
 
 /* ── Animated Preview Placeholder ── */
 function EffectPreview({ effect, isHovered }: { effect: EffectPreset; isHovered: boolean }) {
+  const { t } = useLanguage();
   const Icon = effect.icon;
   return (
     <div className={`relative w-full aspect-video rounded-lg overflow-hidden ${effect.thumbnail} border border-border/30`}>
@@ -297,209 +301,115 @@ function EffectPreview({ effect, isHovered }: { effect: EffectPreset; isHovered:
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
           <div className="absolute bottom-2 right-2 px-2 py-1 rounded bg-black/60 text-white text-[10px] flex items-center gap-1">
             <Play className="h-3 w-3" fill="white" />
-            Preview
+            {t("effectsGallery.preview")}
           </div>
         </div>
       )}
 
       {/* Popularity stars */}
-      <div className="absolute top-2 left-2 flex gap-0.5">
-        {Array.from({ length: effect.popularity }).map((_, i) => (
-          <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-        ))}
+      <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 text-xs text-white">
+        <Sparkles className="h-3 w-3 text-yellow-400" />
+        <span>{t("effectsGallery.popularity")} {effect.popularity}/5</span>
+      </div>
+
+      {/* Difficulty badge */}
+      <div className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs bg-black/50 border ${difficultyColor(effect.difficulty)}`}>
+        {t("effectsGallery.difficulty")}: {effect.difficulty}
       </div>
     </div>
   );
 }
 
-/* ── Effect Card ── */
-function EffectCard({
-  effect,
-  onSelect,
-  onDetail,
-}: {
-  effect: EffectPreset;
-  onSelect?: (effect: EffectPreset) => void;
-  onDetail: (effect: EffectPreset) => void;
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <Card
-      className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onDetail(effect)}
-    >
-      <CardContent className="p-3">
-        <EffectPreview effect={effect} isHovered={isHovered} />
-
-        <div className="mt-3">
-          <div className="flex items-start justify-between mb-1">
-            <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">{effect.name}</h3>
-            <Badge variant="outline" className={`text-[9px] ${difficultyColor(effect.difficulty)}`}>
-              {effect.difficulty}
-            </Badge>
-          </div>
-          <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2 mb-2">
-            {effect.description}
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {effect.tags.map((tag) => (
-              <span key={tag} className="px-1.5 py-0.5 rounded text-[9px] bg-primary/10 text-primary border border-primary/20">
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick apply button */}
-        {onSelect && (
-          <Button
-            size="sm"
-            className="w-full mt-3 gap-1 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white border-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-8"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect(effect);
-            }}
-          >
-            <Zap className="h-3 w-3" />
-            Apply Effect
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-/* ═══════════ Main Component: EffectsGallery ═══════════ */
-export default function EffectsGallery({
-  onEffectSelect,
-  compact = false,
-}: {
-  onEffectSelect?: (effect: EffectPreset) => void;
-  compact?: boolean;
-}) {
-  const [category, setCategory] = useState<"all" | "motion" | "camera" | "style" | "special">("all");
+/* ── Main Gallery Component ── */
+export default function EffectsGallery({ onEffectSelect }: { onEffectSelect?: (effect: EffectPreset) => void }) {
+  const { t } = useLanguage();
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [hoveredEffect, setHoveredEffect] = useState<string | null>(null);
   const [detailEffect, setDetailEffect] = useState<EffectPreset | null>(null);
 
-  const filtered = category === "all"
+  const filteredEffects = activeCategory === "all"
     ? EFFECT_PRESETS
-    : EFFECT_PRESETS.filter((e) => e.category === category);
+    : EFFECT_PRESETS.filter((e) => e.category === activeCategory);
 
   return (
-    <div className="space-y-6">
-      {/* Category filter */}
-      <div className="flex flex-wrap justify-center gap-2">
-        {CATEGORIES.map((cat) => {
-          const Icon = cat.icon;
-          return (
-            <Button
-              key={cat.id}
-              variant={category === cat.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setCategory(cat.id)}
-              className={`gap-1.5 ${
-                category === cat.id
-                  ? "bg-gradient-to-r from-violet-600 to-blue-600 text-white border-0"
-                  : "border-primary/30 hover:bg-primary/10"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {cat.label}
-              {cat.id !== "all" && (
-                <span className="text-[10px] opacity-70">
-                  ({EFFECT_PRESETS.filter((e) => e.category === cat.id).length})
-                </span>
-              )}
-            </Button>
-          );
-        })}
-      </div>
-
-      {/* Effects grid */}
-      <div className={`grid gap-4 ${
-        compact
-          ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-          : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
-      }`}>
-        {filtered.map((effect) => (
-          <EffectCard
-            key={effect.id}
-            effect={effect}
-            onSelect={onEffectSelect}
-            onDetail={setDetailEffect}
-          />
+    <div className="w-full max-w-7xl mx-auto p-4 sm:p-6">
+      {/* Category Filters */}
+      <div className="flex flex-wrap justify-center gap-2 mb-6 sm:mb-8">
+        {CATEGORIES.map(({ id, label, icon: Icon }) => (
+          <Button
+            key={id}
+            variant={activeCategory === id ? "default" : "outline"}
+            className={`gap-2 transition-all duration-200 ${activeCategory === id ? "bg-primary text-primary-foreground" : ""}`}
+            onClick={() => setActiveCategory(id)}
+          >
+            <Icon className="h-4 w-4" />
+            {t(label)}
+          </Button>
         ))}
       </div>
 
-      {/* Detail modal */}
+      {/* Effects Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {filteredEffects.map((effect) => (
+          <Card
+            key={effect.id}
+            className="overflow-hidden cursor-pointer group transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border-border/30 bg-card/80"
+            onMouseEnter={() => setHoveredEffect(effect.id)}
+            onMouseLeave={() => setHoveredEffect(null)}
+            onClick={() => setDetailEffect(effect)}
+          >
+            <CardContent className="p-0">
+              <EffectPreview effect={effect} isHovered={hoveredEffect === effect.id} />
+              <div className="p-4">
+                <h3 className="font-semibold text-lg mb-1.5 group-hover:text-primary transition-colors">{effect.name}</h3>
+                <p className="text-sm text-muted-foreground h-10 overflow-hidden">{t(effect.description)}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Effect Detail Modal */}
       <Dialog open={!!detailEffect} onOpenChange={(open) => !open && setDetailEffect(null)}>
-        <DialogContent className="max-w-lg bg-card border-border/50">
+        <DialogContent className="max-w-3xl p-0">
           {detailEffect && (
             <>
-              <DialogHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`p-2.5 rounded-xl bg-gradient-to-br ${detailEffect.gradient} text-white shadow-lg`}>
-                    <detailEffect.icon className="h-5 w-5" />
+              <DialogHeader className="p-6 pb-0">
+                <DialogTitle className="text-2xl font-bold flex items-center gap-3">
+                  <div className={`p-2 rounded-lg bg-gradient-to-br ${detailEffect.gradient}`}>
+                    <detailEffect.icon className="h-6 w-6 text-white" />
                   </div>
-                  <div>
-                    <DialogTitle className="text-xl">{detailEffect.name}</DialogTitle>
-                    <DialogDescription className="text-sm">{detailEffect.description}</DialogDescription>
-                  </div>
-                </div>
+                  {detailEffect.name}
+                </DialogTitle>
+                <DialogDescription className="pt-2 text-base">
+                  {t(detailEffect.description)}
+                </DialogDescription>
               </DialogHeader>
 
-              {/* Preview */}
-              <div className={`w-full aspect-video rounded-lg overflow-hidden ${detailEffect.thumbnail} border border-border/30 relative`}>
-                <div className={`absolute inset-0 bg-gradient-to-br ${detailEffect.gradient} opacity-20 animate-pulse`} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className={`p-6 rounded-full bg-gradient-to-br ${detailEffect.gradient} shadow-xl`}>
-                    <detailEffect.icon className="h-10 w-10 text-white" />
-                  </div>
+              {/* Main content */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 py-4">
+                {/* Left: Preview */}
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border/30 bg-card/50">
+                  <EffectPreview effect={detailEffect} isHovered={true} />
                 </div>
-              </div>
 
-              {/* Info */}
-              <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-3 rounded-lg bg-muted/30 border border-border/30">
-                  <div className="text-xs text-muted-foreground mb-1">Category</div>
-                  <div className="text-sm font-semibold capitalize">{detailEffect.category}</div>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/30 border border-border/30">
-                  <div className="text-xs text-muted-foreground mb-1">Difficulty</div>
-                  <Badge variant="outline" className={`text-[10px] ${difficultyColor(detailEffect.difficulty)}`}>
-                    {detailEffect.difficulty}
-                  </Badge>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/30 border border-border/30">
-                  <div className="text-xs text-muted-foreground mb-1">Popularity</div>
-                  <div className="flex justify-center gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <div key={i} className={`w-2 h-2 rounded-full ${i < detailEffect.popularity ? "bg-amber-400" : "bg-muted/50"}`} />
+                {/* Right: Parameters */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-lg border-b pb-2">{t("effectsGallery.parameters")}</h4>
+                  <ul className="space-y-2 text-sm">
+                    {detailEffect.parameters.map((param) => (
+                      <li key={param.name} className="flex justify-between items-center p-2 rounded-md bg-muted/50">
+                        <span className="text-muted-foreground">{param.name}</span>
+                        <span className="font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">{param.default}</span>
+                      </li>
                     ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Parameters */}
-              <div>
-                <h4 className="text-sm font-semibold mb-2">Parameters</h4>
-                <div className="space-y-2">
-                  {detailEffect.parameters.map((param) => (
-                    <div key={param.name} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 border border-border/30">
-                      <span className="text-sm font-medium">{param.name}</span>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>{param.range}</span>
-                        <Badge variant="outline" className="text-[10px]">Default: {param.default}</Badge>
-                      </div>
-                    </div>
-                  ))}
+                  </ul>
                 </div>
               </div>
 
               {/* Tags */}
-              <div className="flex flex-wrap gap-1.5">
+              <h4 className="font-semibold text-lg px-6">{t("effectsGallery.tags")}</h4>
+              <div className="flex flex-wrap gap-1.5 px-6">
                 {detailEffect.tags.map((tag) => (
                   <span key={tag} className="px-2 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20">
                     {tag}
@@ -509,16 +419,18 @@ export default function EffectsGallery({
 
               {/* Apply button */}
               {onEffectSelect && (
-                <Button
-                  className="w-full gap-2 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white border-0"
-                  onClick={() => {
-                    onEffectSelect(detailEffect);
-                    setDetailEffect(null);
-                  }}
-                >
-                  <Zap className="h-4 w-4" />
-                  Apply "{detailEffect.name}" Effect
-                </Button>
+                <div className="p-6 pt-4">
+                  <Button
+                    className="w-full gap-2 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white border-0"
+                    onClick={() => {
+                      onEffectSelect(detailEffect);
+                      setDetailEffect(null);
+                    }}
+                  >
+                    <Zap className="h-4 w-4" />
+                    {t("effectsGallery.applyEffect", { effectName: detailEffect.name })}
+                  </Button>
+                </div>
               )}
             </>
           )}

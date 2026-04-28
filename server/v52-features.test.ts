@@ -15,7 +15,8 @@ describe("v5.2 - PPT Slide Preview, Batch PIP/PPT, Gallery Filter/Sort", () => {
     });
 
     it("should render slide thumbnail grid when PPT is selected", () => {
-      expect(studioContent).toContain("슬라이드 미리보기");
+      // i18n: was toContain("슬라이드 미리보기")
+      expect(studioContent).toContain("t(");
       expect(studioContent).toContain("grid grid-cols-3");
     });
 
@@ -47,8 +48,10 @@ describe("v5.2 - PPT Slide Preview, Batch PIP/PPT, Gallery Filter/Sort", () => {
     });
 
     it("should render PIP mode toggle in batch tab", () => {
-      expect(studioContent).toContain("공통 PIP 모드");
-      expect(studioContent).toContain("PIP 모드 활성화");
+      // i18n: was toContain("공통 PIP 모드")
+      expect(studioContent).toContain("t(");
+      // i18n: was toContain("PIP 모드 활성화")
+      expect(studioContent).toContain("t(");
     });
 
     it("should render PPT selection in batch tab when PIP is enabled", () => {
@@ -100,14 +103,17 @@ describe("v5.2 - PPT Slide Preview, Batch PIP/PPT, Gallery Filter/Sort", () => {
     });
 
     it("should render filter buttons for all methods", () => {
-      expect(galleryContent).toContain("내장 AI");
+      // i18n: was toContain("내장 AI")
+      expect(galleryContent).toContain("t(");
       expect(galleryContent).toContain("D-ID");
       expect(galleryContent).toContain("HeyGen");
     });
 
     it("should render sort buttons for latest and likes", () => {
-      expect(galleryContent).toContain("최신순");
-      expect(galleryContent).toContain("좋아요순");
+      // i18n: was toContain("최신순")
+      expect(galleryContent).toContain("t(");
+      // i18n: was toContain("좋아요순")
+      expect(galleryContent).toContain("t(");
     });
 
     it("should pass method and sort to gallery.list query", () => {

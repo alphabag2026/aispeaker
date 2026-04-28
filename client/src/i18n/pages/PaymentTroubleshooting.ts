@@ -1,131 +1,82 @@
 import { registerTranslations } from "@/contexts/LanguageContext";
 
-const translations = {
-  "pt.stripeIssues.cardDeclined.title": "카드가 거절되었습니다 (Card Declined)",
-  "pt.stripeIssues.cardDeclined.symptom1": "결제 시 'Your card was declined' 메시지 표시",
-  "pt.stripeIssues.cardDeclined.symptom2": "결제 버튼 클릭 후 에러 화면으로 돌아옴",
-  "pt.stripeIssues.cardDeclined.symptom3": "카드 정보 입력 후 승인 실패",
-  "pt.stripeIssues.cardDeclined.solution1": "테스트 환경에서는 테스트 카드 번호를 사용하세요: 4242 4242 4242 4242",
-  "pt.stripeIssues.cardDeclined.solution2": "만료일은 미래 날짜(예: 12/30), CVC는 아무 3자리(예: 123)를 입력하세요",
-  "pt.stripeIssues.cardDeclined.solution3": "실제 카드 사용 시 카드사에 해외 결제가 차단되어 있지 않은지 확인하세요",
-  "pt.stripeIssues.cardDeclined.solution4": "카드 한도를 초과하지 않았는지 확인하세요",
-  "pt.stripeIssues.cardDeclined.solution5": "3D Secure 인증이 필요한 경우 카드사 앱에서 승인해주세요",
-  "pt.stripeIssues.checkoutNotLoading.title": "결제 페이지가 로딩되지 않습니다",
-  "pt.stripeIssues.checkoutNotLoading.symptom1": "결제 버튼 클릭 후 빈 화면 또는 무한 로딩",
-  "pt.stripeIssues.checkoutNotLoading.symptom2": "Stripe 체크아웃 페이지가 열리지 않음",
-  "pt.stripeIssues.checkoutNotLoading.symptom3": "새 탭이 열리지만 에러 표시",
-  "pt.stripeIssues.checkoutNotLoading.solution1": "팝업 차단기가 활성화되어 있다면 이 사이트를 허용 목록에 추가하세요",
-  "pt.stripeIssues.checkoutNotLoading.solution2": "브라우저의 JavaScript가 활성화되어 있는지 확인하세요",
-  "pt.stripeIssues.checkoutNotLoading.solution3": "시크릿/프라이빗 모드에서 시도해보세요",
-  "pt.stripeIssues.checkoutNotLoading.solution4": "다른 브라우저(Chrome, Firefox, Edge)에서 시도해보세요",
-  "pt.stripeIssues.checkoutNotLoading.solution5": "VPN이나 프록시를 사용 중이라면 일시적으로 비활성화해보세요",
-  "pt.stripeIssues.paymentPending.title": "결제 완료 후 구독이 활성화되지 않습니다",
-  "pt.stripeIssues.paymentPending.symptom1": "결제는 성공했지만 플랜이 변경되지 않음",
-  "pt.stripeIssues.paymentPending.symptom2": "크레딧이 충전되지 않음",
-  "pt.stripeIssues.paymentPending.symptom3": "결제 내역에는 표시되지만 서비스 이용 불가",
-  "pt.stripeIssues.paymentPending.solution1": "결제 처리에 최대 1~2분이 소요될 수 있습니다. 잠시 기다린 후 페이지를 새로고침하세요",
-  "pt.stripeIssues.paymentPending.solution2": "로그아웃 후 다시 로그인하면 구독 상태가 갱신됩니다",
-  "pt.stripeIssues.paymentPending.solution3": "문제가 지속되면 결제 내역 페이지에서 결제 ID를 확인하고 고객지원에 문의하세요",
-  "pt.stripeIssues.paymentPending.solution4": "Stripe 대시보드에서 결제 상태를 직접 확인할 수 있습니다",
-  "pt.stripeIssues.duplicateCharge.title": "중복 결제가 발생했습니다",
-  "pt.stripeIssues.duplicateCharge.symptom1": "같은 금액이 두 번 이상 청구됨",
-  "pt.stripeIssues.duplicateCharge.symptom2": "결제 내역에 동일한 항목이 여러 개 표시",
-  "pt.stripeIssues.duplicateCharge.solution1": "결제 버튼을 여러 번 클릭하지 마세요. 처리 중에는 버튼이 비활성화됩니다",
-  "pt.stripeIssues.duplicateCharge.solution2": "중복 결제가 확인되면 자동으로 환불 처리됩니다 (영업일 기준 3~5일 소요)",
-  "pt.stripeIssues.duplicateCharge.solution3": "즉시 환불이 필요하면 결제 내역의 결제 ID와 함께 고객지원에 문의하세요",
-  "pt.stripeIssues.subscriptionCancel.title": "구독 취소/변경이 되지 않습니다",
-  "pt.stripeIssues.subscriptionCancel.symptom1": "구독 취소 버튼이 작동하지 않음",
-  "pt.stripeIssues.subscriptionCancel.symptom2": "플랜 변경 후 이전 플랜이 계속 청구됨",
-  "pt.stripeIssues.subscriptionCancel.solution1": "구독 취소는 현재 결제 주기가 끝날 때 적용됩니다. 즉시 해지가 아닙니다",
-  "pt.stripeIssues.subscriptionCancel.solution2": "플랜 업그레이드는 즉시 적용되며, 남은 기간에 대한 비례 금액이 청구됩니다",
-  "pt.stripeIssues.subscriptionCancel.solution3": "다운그레이드는 다음 결제 주기부터 적용됩니다",
-  "pt.stripeIssues.subscriptionCancel.solution4": "'내 구독' 페이지에서 구독 상태와 다음 결제일을 확인하세요",
-  "pt.stripeIssues.currencyIssue.title": "통화/환율 관련 문제",
-  "pt.stripeIssues.currencyIssue.symptom1": "예상과 다른 금액이 청구됨",
-  "pt.stripeIssues.currencyIssue.symptom2": "원화(KRW)로 결제하고 싶은데 달러(USD)로만 표시됨",
-  "pt.stripeIssues.currencyIssue.solution1": "모든 가격은 USD(미국 달러) 기준입니다",
-  "pt.stripeIssues.currencyIssue.solution2": "카드사에서 자동으로 현지 통화로 환산하여 청구합니다",
-  "pt.stripeIssues.currencyIssue.solution3": "환율은 카드사 기준이며, 해외 결제 수수료(1~3%)가 추가될 수 있습니다",
-  "pt.stripeIssues.currencyIssue.solution4": "정확한 청구 금액은 카드 명세서에서 확인하세요",
-  "pt.testCardInfo.success.type": "성공 테스트",
-  "pt.testCardInfo.success.desc": "정상 결제 승인",
-  "pt.testCardInfo.3ds.type": "3D Secure",
-  "pt.testCardInfo.3ds.desc": "3D Secure 인증 필요",
-  "pt.testCardInfo.declined.type": "결제 거절",
-  "pt.testCardInfo.declined.desc": "카드 거절 테스트",
-  "pt.testCardInfo.insufficient.type": "잔액 부족",
-  "pt.testCardInfo.insufficient.desc": "잔액 부족 거절",
-  "pt.failureScenarios.genericDecline.scenario": "일반 거절 (Generic Decline)",
-  "pt.failureScenarios.genericDecline.description": "카드사에서 특별한 이유 없이 결제를 거절합니다. 실제 환경에서는 카드사에 직접 문의해야 합니다.",
-  "pt.failureScenarios.genericDecline.resolution": "다른 카드를 사용하거나, 카드사에 해외 결제 차단 해제를 요청하세요.",
-  "pt.failureScenarios.insufficientFunds.scenario": "잔액 부족 (Insufficient Funds)",
-  "pt.failureScenarios.insufficientFunds.description": "카드 잔액이 결제 금액보다 부족할 때 발생합니다.",
-  "pt.failureScenarios.insufficientFunds.resolution": "카드 잔액을 충전하거나, 한도가 충분한 다른 카드를 사용하세요.",
-  "pt.failureScenarios.lostCard.scenario": "분실 카드 (Lost Card)",
-  "pt.failureScenarios.lostCard.description": "카드가 분실 신고된 상태입니다. 카드사에서 보안상 결제를 차단합니다.",
-  "pt.failureScenarios.lostCard.resolution": "카드사에 연락하여 카드 상태를 확인하거나, 새 카드를 발급받으세요.",
-  "pt.failureScenarios.stolenCard.scenario": "도난 카드 (Stolen Card)",
-  "pt.failureScenarios.stolenCard.description": "카드가 도난 신고된 상태입니다. 즉시 카드사에 연락해야 합니다.",
-  "pt.failureScenarios.stolenCard.resolution": "카드사에 즉시 연락하여 카드 상태를 확인하고, 새 카드를 발급받으세요.",
-  "pt.failureScenarios.expiredCard.scenario": "만료된 카드 (Expired Card)",
-  "pt.failureScenarios.expiredCard.description": "카드 유효기간이 지났습니다. 만료일이 과거인 경우 발생합니다.",
-  "pt.failureScenarios.expiredCard.resolution": "카드 만료일을 확인하고, 갱신된 카드 정보를 입력하세요.",
-  "pt.failureScenarios.incorrectCvc.scenario": "잘못된 CVC (Incorrect CVC)",
-  "pt.failureScenarios.incorrectCvc.description": "입력한 CVC(보안 코드)가 카드 뒷면의 번호와 일치하지 않습니다.",
-  "pt.failureScenarios.incorrectCvc.resolution": "카드 뒷면의 3자리 보안 코드를 다시 확인하고 정확히 입력하세요.",
-  "pt.failureScenarios.processingError.scenario": "처리 오류 (Processing Error)",
-  "pt.failureScenarios.processingError.description": "카드 처리 중 일시적인 시스템 오류가 발생했습니다.",
-  "pt.failureScenarios.processingError.resolution": "잠시 후 다시 시도하세요. 반복되면 다른 카드를 사용하거나 고객지원에 문의하세요.",
-  "pt.failureScenarios.3dsAuthFail.scenario": "3D Secure 인증 실패",
-  "pt.failureScenarios.3dsAuthFail.description": "3D Secure(본인인증) 과정에서 인증에 실패했습니다. 카드사 앱에서 승인을 거부하거나 시간이 초과된 경우 발생합니다.",
-  "pt.failureScenarios.3dsAuthFail.resolution": "카드사 앱 알림을 확인하고 인증을 승인하세요. 시간 초과 시 다시 결제를 시도하세요.",
-  "pt.severity.low": "낮음",
-  "pt.severity.medium": "보통",
-  "pt.severity.high": "높음",
-  "pt.copySuccess": "카드 번호가 클립보드에 복사되었습니다.",
-  "pt.backToPricing": "요금제로 돌아가기",
-  "pt.title": "결제 문제 해결 가이드",
-  "pt.subtitle": "결제 과정에서 문제가 발생했나요? 아래 가이드를 참고하여 대부분의 문제를 직접 해결할 수 있습니다.",
-  "pt.quickActions.title": "빠른 해결 방법",
-  "pt.quickActions.reload.title": "페이지 새로고침",
-  "pt.quickActions.reload.desc": "일시적 오류 해결",
-  "pt.quickActions.history.title": "결제 내역 확인",
-  "pt.quickActions.history.desc": "결제 상태 조회",
-  "pt.quickActions.subscription.title": "구독 상태 확인",
-  "pt.quickActions.subscription.desc": "현재 플랜 조회",
-  "pt.testCardInfo.title": "테스트 카드 정보 (샌드박스 환경)",
-  "pt.testCardInfo.description": "테스트 환경에서는 아래 카드 번호를 사용하세요. 만료일은 미래 날짜, CVC는 아무 3자리를 입력하면 됩니다.",
-  "pt.testCardInfo.note": "* 만료일 예시: 12/30 | CVC 예시: 123 | 우편번호: 아무 5자리",
-  "pt.failureScenarios.title": "Stripe 테스트 카드 실패 시나리오",
-  "pt.failureScenarios.description": "아래 카드 번호를 사용하면 각 실패 시나리오를 테스트할 수 있습니다. 실제 결제에서 동일한 에러가 발생하면 해결 방법을 참고하세요.",
-  "pt.failureScenarios.expectedError": "예상 에러 메시지",
-  "pt.failureScenarios.explanation": "설명",
-  "pt.failureScenarios.resolution": "해결 방법",
-  "pt.cardTroubleshooting.title": "카드 결제 문제 해결",
-  "pt.cardTroubleshooting.symptoms": "증상",
-  "pt.cardTroubleshooting.solutions": "해결 방법",
-  "pt.cryptoTroubleshooting.title": "암호화폐 결제 문제 해결",
-  "pt.cryptoTroubleshooting.unconfirmed.title": "전송한 금액이 정확한데 확인이 안 됩니다",
-  "pt.cryptoTroubleshooting.unconfirmed.content": "블록체인 네트워크 컨펌에 시간이 소요됩니다. ERC20/BEP20은 약 3~5분, TRC20은 약 1~3분, BTC는 약 10~60분이 소요됩니다. 30분 이내에 확인되지 않으면 트랜잭션 해시(TxHash)와 함께 고객지원에 문의하세요.",
-  "pt.cryptoTroubleshooting.wrongNetwork.title": "잘못된 네트워크로 전송했습니다",
-  "pt.cryptoTroubleshooting.wrongNetwork.content": "예를 들어 ERC20 주소로 TRC20 토큰을 보낸 경우, 복구가 불가능할 수 있습니다. 전송 전 반드시 네트워크를 확인하세요. 잘못 전송한 경우 트랜잭션 해시와 함께 즉시 고객지원에 문의하세요.",
-  "pt.cryptoTroubleshooting.expired.title": "결제 시간이 만료되었습니다",
-  "pt.cryptoTroubleshooting.expired.content": "암호화폐 결제는 30분 이내에 완료해야 합니다. 만료된 경우 새로운 결제를 생성하세요. 이미 전송한 경우 트랜잭션 해시와 함께 고객지원에 문의하면 수동으로 확인해드립니다.",
-  "pt.stillNeedHelp.title": "여전히 문제가 해결되지 않나요?",
-  "pt.stillNeedHelp.description": "위 가이드로 해결되지 않는 경우, 아래 정보를 포함하여 고객지원에 문의해주세요.",
-  "pt.stillNeedHelp.info.title": "문의 시 포함할 정보:",
-  "pt.stillNeedHelp.info.item1": "1. 결제 ID 또는 트랜잭션 해시",
-  "pt.stillNeedHelp.info.item2": "2. 결제 시도 일시",
-  "pt.stillNeedHelp.info.item3": "3. 사용한 결제 수단 (카드/암호화폐)",
-  "pt.stillNeedHelp.info.item4": "4. 에러 메시지 스크린샷",
-  "pt.stillNeedHelp.info.item5": "5. 사용 중인 브라우저 및 기기 정보",
-  "pt.stillNeedHelp.contactButton": "고객지원 문의하기"
-};
-
-const languages = [
-  "ko", "en", "zh", "ja", "vi", "th", "es", "fr", "de", "pt", "ru", "ar", "hi", "id", "ms", "tr", "it", "nl", "pl", "sv"
-];
-
-languages.forEach(lang => {
-  registerTranslations(lang, translations);
+registerTranslations("ko", {
+  "pt.stripeIssues.cardDeclined.title": "신용카드가 거절되었습니다",
 });
+
+registerTranslations("en", {
+  "pt.stripeIssues.cardDeclined.title": "Your credit card was declined",
+});
+
+registerTranslations("zh", {
+  "pt.stripeIssues.cardDeclined.title": "您的信用卡被拒绝",
+});
+
+registerTranslations("ja", {
+  "pt.stripeIssues.cardDeclined.title": "クレジットカードが拒否されました",
+});
+
+registerTranslations("vi", {
+  "pt.stripeIssues.cardDeclined.title": "Thẻ tín dụng của bạn đã bị từ chối",
+});
+
+registerTranslations("th", {
+  "pt.stripeIssues.cardDeclined.title": "บัตรเครดิตของคุณถูกปฏิเสธ",
+});
+
+registerTranslations("id", {
+  "pt.stripeIssues.cardDeclined.title": "Kartu kredit Anda ditolak",
+});
+
+registerTranslations("ms", {
+  "pt.stripeIssues.cardDeclined.title": "Kad kredit anda ditolak",
+});
+
+registerTranslations("es", {
+  "pt.stripeIssues.cardDeclined.title": "Su tarjeta de crédito fue rechazada",
+});
+
+registerTranslations("fr", {
+  "pt.stripeIssues.cardDeclined.title": "Votre carte de crédit a été refusée",
+});
+
+registerTranslations("de", {
+  "pt.stripeIssues.cardDeclined.title": "Ihre Kreditkarte wurde abgelehnt",
+});
+
+registerTranslations("pt", {
+  "pt.stripeIssues.cardDeclined.title": "Seu cartão de crédito foi recusado",
+});
+
+registerTranslations("ru", {
+  "pt.stripeIssues.cardDeclined.title": "Ваша кредитная карта отклонена",
+});
+
+registerTranslations("ar", {
+  "pt.stripeIssues.cardDeclined.title": "تم رفض بطاقتك الائتمانية",
+});
+
+registerTranslations("hi", {
+  "pt.stripeIssues.cardDeclined.title": "आपका क्रेडिट कार्ड अस्वीकार कर दिया गया था",
+});
+
+registerTranslations("it", {
+  "pt.stripeIssues.cardDeclined.title": "La tua carta di credito è stata rifiutata",
+});
+
+registerTranslations("nl", {
+  "pt.stripeIssues.cardDeclined.title": "Uw creditcard is geweigerd",
+});
+
+registerTranslations("pl", {
+  "pt.stripeIssues.cardDeclined.title": "Twoja karta kredytowa została odrzucona",
+});
+
+registerTranslations("sv", {
+  "pt.stripeIssues.cardDeclined.title": "Ditt kreditkort avvisades",
+});
+
+registerTranslations("tr", {
+  "pt.stripeIssues.cardDeclined.title": "Kredi kartınız reddedildi",
+});
+

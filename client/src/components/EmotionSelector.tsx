@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/i18n/components/EmotionSelector";
 
 const EMOTIONS = [
   { value: "neutral", label: "중립", emoji: "😐", color: "bg-gray-100 text-gray-700" },
@@ -25,11 +28,12 @@ interface EmotionSelectorProps {
 }
 
 export function EmotionSelector({ scriptId, currentEmotion = "neutral", currentIntensity = 5, onUpdate }: EmotionSelectorProps) {
+  const { t } = useLanguage();
   const [emotion, setEmotion] = useState(currentEmotion);
   const [intensity, setIntensity] = useState(currentIntensity);
   const updateScript = trpc.lectureBuilder.updateScript.useMutation({
     onSuccess: () => {
-      toast.success("감정 설정 저장됨");
+      toast.success(t("emotionSelector.saveSuccessToast"));
       onUpdate?.();
     },
   });
@@ -49,7 +53,7 @@ export function EmotionSelector({ scriptId, currentEmotion = "neutral", currentI
       <Select value={emotion} onValueChange={(v) => { setEmotion(v); }}>
         <SelectTrigger className="w-[130px] h-8 text-xs">
           <SelectValue>
-            <span>{currentEmotionInfo.emoji} {currentEmotionInfo.label}</span>
+            <span>{currentEmotionInfo.emoji} {t(`emotionSelector.emotions.${currentEmotionInfo.value}`)}</span>
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
@@ -57,7 +61,7 @@ export function EmotionSelector({ scriptId, currentEmotion = "neutral", currentI
             <SelectItem key={e.value} value={e.value}>
               <span className="flex items-center gap-1.5">
                 <span>{e.emoji}</span>
-                <span>{e.label}</span>
+                <span>{t(`emotionSelector.emotions.${e.value}`)}</span>
               </span>
             </SelectItem>
           ))}
@@ -75,7 +79,7 @@ export function EmotionSelector({ scriptId, currentEmotion = "neutral", currentI
       </div>
       <span className="text-xs text-muted-foreground w-4">{intensity}</span>
       <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleSave} disabled={updateScript.isPending}>
-        저장
+        {t("emotionSelector.saveButton")}
       </Button>
     </div>
   );
@@ -87,12 +91,13 @@ interface EmotionBadgeProps {
 }
 
 export function EmotionBadge({ emotion, intensity }: EmotionBadgeProps) {
+  const { t } = useLanguage();
   if (!emotion || emotion === "neutral") return null;
   const info = EMOTIONS.find(e => e.value === emotion);
   if (!info) return null;
   return (
     <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${info.color}`}>
-      {info.emoji} {info.label} {intensity && intensity > 5 ? `(${intensity})` : ""}
+      {info.emoji} {t(`emotionSelector.emotions.${info.value}`)} {intensity && intensity > 5 ? `(${intensity})` : ""}
     </Badge>
   );
 }
@@ -103,13 +108,14 @@ interface AutoEmotionButtonProps {
 }
 
 export function AutoEmotionButton({ projectId, onComplete }: AutoEmotionButtonProps) {
+  const { t } = useLanguage();
   const analyzeEmotions = trpc.lectureBuilder.analyzeEmotions.useMutation({
     onSuccess: (data) => {
-      toast.success(`감정 분석 완료: ${data.updated}개 스크립트에 감정 태그 적용`);
+      toast.success(t("emotionSelector.analysisCompleteToast", { updated: data.updated }));
       onComplete?.();
     },
     onError: () => {
-      toast.error("감정 분석 실패");
+      toast.error(t("emotionSelector.analysisFailedToast"));
     },
   });
 
@@ -122,7 +128,7 @@ export function AutoEmotionButton({ projectId, onComplete }: AutoEmotionButtonPr
       className="gap-1.5"
     >
       <Sparkles className="w-3.5 h-3.5" />
-      {analyzeEmotions.isPending ? "분석 중..." : "AI 감정 자동 분석"}
+      {analyzeEmotions.isPending ? t("emotionSelector.analyzingButton") : t("emotionSelector.autoAnalyzeButton")}
     </Button>
   );
 }

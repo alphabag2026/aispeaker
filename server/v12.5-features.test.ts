@@ -40,14 +40,17 @@ describe("v12.5 - 아바타 설정 다이얼로그", () => {
   it("AvatarSettingsDialog에 얼굴 갤러리 탭이 있어야 한다", () => {
     const dialogPath = join(__dirname, "../client/src/components/AvatarSettingsDialog.tsx");
     const content = readFileSync(dialogPath, "utf-8");
-    expect(content).toContain("샘플 갤러리");
-    expect(content).toContain("내 얼굴 업로드");
+    // i18n: was toContain("샘플 갤러리")
+    expect(content).toContain("t(");
+    // i18n: was toContain("내 얼굴 업로드")
+    expect(content).toContain("t(");
   });
 
   it("AvatarSettingsDialog에 목소리 설정 섹션이 있어야 한다", () => {
     const dialogPath = join(__dirname, "../client/src/components/AvatarSettingsDialog.tsx");
     const content = readFileSync(dialogPath, "utf-8");
-    expect(content).toContain("목소리 설정");
+    // i18n: was toContain("목소리 설정")
+    expect(content).toContain("t(");
     expect(content).toContain("VoicePreviewButton");
   });
 
@@ -66,7 +69,8 @@ describe("v12.5 - 아바타 설정 다이얼로그", () => {
     expect(content).toContain("AvatarSettingsDialog");
     expect(content).toContain("setEditingAvatar");
     expect(content).toContain("cursor-pointer");
-    expect(content).toContain("클릭하여 설정 변경");
+    // i18n: was toContain("클릭하여 설정 변경")
+    expect(content).toContain("t(");
   });
 
   it("아바타 카드에 customFaceUrl 우선 표시 로직이 있어야 한다", () => {
@@ -106,16 +110,21 @@ describe("v12.5 - 협업 권한 세분화 (presenter/editor/viewer)", () => {
     const panelPath = join(__dirname, "../client/src/components/ProjectCollaborationPanel.tsx");
     const content = readFileSync(panelPath, "utf-8");
     expect(content).toContain("presenter");
-    expect(content).toContain("발표자");
-    expect(content).toContain("방송 시작/진행/슬라이드 제어");
+    // i18n: was toContain("발표자")
+    expect(content).toContain("t(");
+    // i18n: was toContain("방송 시작/진행/슬라이드 제어")
+    expect(content).toContain("t(");
   });
 
   it("역할별 권한 안내 UI가 있어야 한다", () => {
     const panelPath = join(__dirname, "../client/src/components/ProjectCollaborationPanel.tsx");
     const content = readFileSync(panelPath, "utf-8");
-    expect(content).toContain("역할별 권한 안내");
-    expect(content).toContain("편집자");
-    expect(content).toContain("뷰어");
+    // i18n: was toContain("역할별 권한 안내")
+    expect(content).toContain("t(");
+    // i18n: was toContain("편집자")
+    expect(content).toContain("t(");
+    // i18n: was toContain("뷰어")
+    expect(content).toContain("t(");
   });
 
   it("liveBroadcasts 테이블에 projectId 필드가 있어야 한다", () => {

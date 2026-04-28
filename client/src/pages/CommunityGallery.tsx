@@ -15,6 +15,7 @@ import {
   Image as ImageIcon, Video, Music, Filter, TrendingUp,
   Clock, Sparkles, Send, X, Loader2
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TOOL_FILTERS = [
   { value: "", label: "전체" },
@@ -29,6 +30,7 @@ const TOOL_FILTERS = [
 ];
 
 export default function CommunityGallery() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [sort, setSort] = useState<"latest" | "popular">("latest");
   const [toolFilter, setToolFilter] = useState("");
@@ -73,7 +75,7 @@ export default function CommunityGallery() {
               <h1 className="text-xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
                 Community Gallery
               </h1>
-              <p className="text-xs text-muted-foreground">AI로 만든 작품을 공유하세요</p>
+              <p className="text-xs text-muted-foreground">{t("communityGallery.header.description")}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -83,7 +85,7 @@ export default function CommunityGallery() {
                 className="glow-button gap-2"
               >
                 <Plus className="h-4 w-4" />
-                작품 공유
+                {t("communityGallery.header.uploadButton")}
               </Button>
             )}
           </div>
@@ -101,7 +103,7 @@ export default function CommunityGallery() {
               className="gap-1.5"
             >
               <Clock className="h-3.5 w-3.5" />
-              최신순
+              {t("communityGallery.filters.latest")}
             </Button>
             <Button
               variant={sort === "popular" ? "default" : "outline"}
@@ -110,7 +112,7 @@ export default function CommunityGallery() {
               className="gap-1.5"
             >
               <TrendingUp className="h-3.5 w-3.5" />
-              인기순
+              {t("communityGallery.filters.popular")}
             </Button>
           </div>
           <div className="h-6 w-px bg-border/50" />
@@ -124,7 +126,7 @@ export default function CommunityGallery() {
                 onClick={() => { setToolFilter(f.value); setPage(0); }}
                 className="text-xs h-7"
               >
-                {f.label}
+                {f.value === '' ? t('communityGallery.toolFilter.all') : f.label}
               </Button>
             ))}
           </div>
@@ -138,8 +140,8 @@ export default function CommunityGallery() {
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Sparkles className="h-16 w-16 mb-4 opacity-20" />
-            <p className="text-lg font-medium">아직 공유된 작품이 없습니다</p>
-            <p className="text-sm mt-1">첫 번째 작품을 공유해 보세요!</p>
+            <p className="text-lg font-medium">{t("communityGallery.gallery.noPosts")}</p>
+            <p className="text-sm mt-1">{t("communityGallery.gallery.shareFirstPost")}</p>
           </div>
         ) : (
           <>
@@ -165,7 +167,7 @@ export default function CommunityGallery() {
                   disabled={page === 0}
                   onClick={() => setPage(p => p - 1)}
                 >
-                  이전
+                  {t("communityGallery.pagination.previous")}
                 </Button>
                 <span className="text-sm text-muted-foreground px-3">
                   {page + 1} / {totalPages}
@@ -176,7 +178,7 @@ export default function CommunityGallery() {
                   disabled={page >= totalPages - 1}
                   onClick={() => setPage(p => p + 1)}
                 >
-                  다음
+                  {t("communityGallery.pagination.next")}
                 </Button>
               </div>
             )}
@@ -210,6 +212,7 @@ export default function CommunityGallery() {
 function GalleryCard({ post, isLiked, onLike, onSelect, isLoggedIn }: {
   post: any; isLiked: boolean; onLike: () => void; onSelect: () => void; isLoggedIn: boolean;
 }) {
+  const { t } = useLanguage();
   const mediaIcon = post.mediaType === "video" ? <Video className="h-3 w-3" /> :
     post.mediaType === "audio" ? <Music className="h-3 w-3" /> :
     <ImageIcon className="h-3 w-3" />;
@@ -262,7 +265,7 @@ function GalleryCard({ post, isLiked, onLike, onSelect, isLoggedIn }: {
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <button
                 className={`flex items-center gap-1 transition-colors ${isLiked ? 'text-rose-400' : 'hover:text-rose-400'}`}
-                onClick={(e) => { e.stopPropagation(); if (isLoggedIn) onLike(); else toast.error("로그인이 필요합니다"); }}
+                onClick={(e) => { e.stopPropagation(); if (isLoggedIn) onLike(); else toast.error(t("communityGallery.card.loginRequired")); }}
               >
                 <Heart className={`h-3.5 w-3.5 ${isLiked ? 'fill-rose-400' : ''}`} />
                 {post.likeCount}
@@ -282,6 +285,7 @@ function GalleryCard({ post, isLiked, onLike, onSelect, isLoggedIn }: {
 function PostDetailModal({ postId, onClose, isLoggedIn, isLiked, onLike, onRefresh }: {
   postId: number; onClose: () => void; isLoggedIn: boolean; isLiked: boolean; onLike: () => void; onRefresh: () => void;
 }) {
+  const { t } = useLanguage();
   const { data: post, isLoading } = trpc.community.getById.useQuery({ id: postId });
   const { data: comments, refetch: refetchComments } = trpc.community.comments.useQuery({ postId });
   const [comment, setComment] = useState("");
@@ -290,7 +294,7 @@ function PostDetailModal({ postId, onClose, isLoggedIn, isLiked, onLike, onRefre
       setComment("");
       refetchComments();
       onRefresh();
-      toast.success("댓글이 등록되었습니다");
+      toast.success(t("communityGallery.detail.commentSuccess"));
     },
   });
 
@@ -347,7 +351,7 @@ function PostDetailModal({ postId, onClose, isLoggedIn, isLiked, onLike, onRefre
                 <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{post.viewCount}</span>
                 <button
                   className={`flex items-center gap-1 ${isLiked ? 'text-rose-400' : 'hover:text-rose-400'}`}
-                  onClick={() => { if (isLoggedIn) onLike(); else toast.error("로그인이 필요합니다"); }}
+                  onClick={() => { if (isLoggedIn) onLike(); else toast.error(t("communityGallery.card.loginRequired")); }}
                 >
                   <Heart className={`h-3.5 w-3.5 ${isLiked ? 'fill-rose-400' : ''}`} />
                   {post.likeCount}
@@ -360,7 +364,7 @@ function PostDetailModal({ postId, onClose, isLoggedIn, isLiked, onLike, onRefre
           {/* Comments */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {(comments || []).length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground py-8">아직 댓글이 없습니다</p>
+              <p className="text-center text-sm text-muted-foreground py-8">{t("communityGallery.detail.noComments")}</p>
             ) : (
               (comments || []).map((c: any) => (
                 <div key={c.id} className="flex gap-2">
@@ -384,7 +388,7 @@ function PostDetailModal({ postId, onClose, isLoggedIn, isLiked, onLike, onRefre
             <div className="p-3 border-t border-border/40">
               <div className="flex gap-2">
                 <Input
-                  placeholder="댓글을 입력하세요..."
+                  placeholder={t("communityGallery.detail.commentPlaceholder")}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   onKeyDown={(e) => {
@@ -411,6 +415,7 @@ function PostDetailModal({ postId, onClose, isLoggedIn, isLiked, onLike, onRefre
 }
 
 function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [mediaUrl, setMediaUrl] = useState("");
@@ -422,7 +427,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   const uploadMut = trpc.community.upload.useMutation();
   const createMut = trpc.community.create.useMutation({
     onSuccess: () => {
-      toast.success("작품이 공유되었습니다!");
+      toast.success(t("communityGallery.upload.success"));
       onSuccess();
     },
     onError: (err) => toast.error(err.message),
@@ -432,7 +437,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("파일 크기는 10MB 이하여야 합니다");
+      toast.error(t("communityGallery.upload.fileSizeError"));
       return;
     }
     setIsUploading(true);
@@ -454,14 +459,14 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
       };
       reader.readAsDataURL(file);
     } catch {
-      toast.error("업로드 실패");
+      toast.error(t("communityGallery.upload.uploadError"));
       setIsUploading(false);
     }
   };
 
   const handleSubmit = () => {
     if (!title.trim() || !mediaUrl) {
-      toast.error("제목과 미디어를 입력해주세요");
+      toast.error(t("communityGallery.upload.validationError"));
       return;
     }
     createMut.mutate({
@@ -480,7 +485,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
       <Card className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">작품 공유하기</CardTitle>
+            <CardTitle className="text-lg">{t("communityGallery.upload.title")}</CardTitle>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
@@ -488,9 +493,9 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-sm">제목 *</Label>
+            <Label className="text-sm">{t("communityGallery.upload.titleLabel")}</Label>
             <Input
-              placeholder="작품 제목을 입력하세요"
+              placeholder={t("communityGallery.upload.titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="mt-1"
@@ -498,9 +503,9 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           </div>
 
           <div>
-            <Label className="text-sm">설명</Label>
+            <Label className="text-sm">{t("communityGallery.upload.descriptionLabel")}</Label>
             <Textarea
-              placeholder="작품에 대한 설명을 입력하세요"
+              placeholder={t("communityGallery.upload.descriptionPlaceholder")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1"
@@ -509,7 +514,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           </div>
 
           <div>
-            <Label className="text-sm">미디어 파일 *</Label>
+            <Label className="text-sm">{t("communityGallery.upload.mediaLabel")}</Label>
             {mediaUrl ? (
               <div className="mt-1 relative rounded-lg overflow-hidden border border-border">
                 {mediaType === "image" && (
@@ -540,15 +545,15 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
                   ) : (
                     <>
                       <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                      <span className="text-sm text-muted-foreground">클릭하여 파일 업로드</span>
-                      <span className="text-xs text-muted-foreground mt-1">이미지, 비디오, 오디오 (최대 10MB)</span>
+                      <span className="text-sm text-muted-foreground">{t("communityGallery.upload.uploadLabel")}</span>
+                      <span className="text-xs text-muted-foreground mt-1">{t("communityGallery.upload.uploadHint")}</span>
                     </>
                   )}
                   <input type="file" className="hidden" accept="image/*,video/*,audio/*" onChange={handleFileUpload} />
                 </label>
                 <div className="mt-2">
                   <Input
-                    placeholder="또는 미디어 URL을 직접 입력"
+                    placeholder={t("communityGallery.upload.urlPlaceholder")}
                     value={mediaUrl}
                     onChange={(e) => setMediaUrl(e.target.value)}
                     className="text-xs"
@@ -560,20 +565,20 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-sm">사용 도구</Label>
+              <Label className="text-sm">{t("communityGallery.upload.toolLabel")}</Label>
               <select
                 className="w-full mt-1 h-9 rounded-md border border-input bg-background px-3 text-sm"
                 value={toolUsed}
                 onChange={(e) => setToolUsed(e.target.value)}
               >
-                <option value="">선택하세요</option>
+                <option value="">{t("communityGallery.upload.toolPlaceholder")}</option>
                 {TOOL_FILTERS.filter(f => f.value).map(f => (
                   <option key={f.value} value={f.value}>{f.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <Label className="text-sm">태그 (쉼표 구분)</Label>
+              <Label className="text-sm">{t("communityGallery.upload.tagsLabel")}</Label>
               <Input
                 placeholder="ai, portrait, art"
                 value={tags}
@@ -589,7 +594,7 @@ function UploadModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
             onClick={handleSubmit}
           >
             {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-            공유하기
+            {t("communityGallery.upload.submitButton")}
           </Button>
         </CardContent>
       </Card>

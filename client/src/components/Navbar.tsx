@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
@@ -53,7 +54,6 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Bell, Check } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
-/* ── Mega Menu Data ── */
 const productCategories = [
   {
     title: "동영상",
@@ -144,6 +144,38 @@ export default function Navbar() {
     return "";
   };
 
+  const getTranslationKey = (label: string) => {
+    const mapping: { [key: string]: string } = {
+      "동영상": "navbar.products.video.title",
+      "이미지 → 비디오": "navbar.products.video.imageToVideo",
+      "텍스트 → 비디오": "navbar.products.video.textToVideo",
+      "얼굴 교환": "navbar.products.video.faceSwap",
+      "아바타 비디오": "navbar.products.video.avatarVideo",
+      "비디오 번역": "navbar.products.video.videoTranslation",
+      "PPT → 비디오": "navbar.products.video.pptToVideo",
+      "이미지": "navbar.products.image.title",
+      "이미지 생성기": "navbar.products.image.imageGenerator",
+      "얼굴 교환 (이미지)": "navbar.products.image.faceSwapImage",
+      "배경 변경": "navbar.products.image.backgroundChange",
+      "오디오": "navbar.products.audio.title",
+      "텍스트 → 음성": "navbar.products.audio.textToSpeech",
+      "음성 복제": "navbar.products.audio.voiceCloning",
+      "음성 변환기": "navbar.products.audio.voiceChanger",
+      "실시간": "navbar.products.live.title",
+      "라이브 카메라": "navbar.products.live.liveCamera",
+      "스트리밍 아바타": "navbar.products.live.streamingAvatar",
+      "AI 강의 라이브": "navbar.products.live.aiLectureLive",
+      "강의 제작": "navbar.products.lecture.title",
+      "5단계 강의 빌더": "navbar.products.lecture.lectureBuilder",
+      "스크립트 에디터": "navbar.products.lecture.scriptEditor",
+      "프로덕션 스튜디오": "navbar.products.lecture.productionStudio",
+      "화이트보드 협업": "navbar.products.lecture.whiteboardCollaboration",
+      "AI 강의 빌더": "navbar.featured.aiLectureBuilder",
+      "효과 프리셋": "navbar.featured.effectsPreset",
+    };
+    return mapping[label] || label;
+  };
+
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/70 backdrop-blur-2xl">
       <div className="container flex h-16 items-center justify-between">
@@ -173,7 +205,7 @@ export default function Navbar() {
               size="sm"
               className={`gap-1 text-sm font-medium transition-colors ${megaMenuOpen ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              제품
+              {t("navbar.links.products")}
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${megaMenuOpen ? 'rotate-180' : ''}`} />
             </Button>
 
@@ -183,7 +215,7 @@ export default function Navbar() {
                 <div className="flex gap-6">
                   {/* Featured sidebar */}
                   <div className="w-44 shrink-0 border-r border-border/50 pr-5">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">추천</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">{t("navbar.megaMenu.featured")}</p>
                     <div className="space-y-1">
                       {featuredProducts.map((item) => (
                         <Link
@@ -192,7 +224,7 @@ export default function Navbar() {
                           onClick={() => setMegaMenuOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors"
                         >
-                          {item.label}
+                          {t(getTranslationKey(item.label))}
                           {item.badge && <span className={badgeClass(item.badge)}>{item.badge}</span>}
                         </Link>
                       ))}
@@ -203,7 +235,7 @@ export default function Navbar() {
                   <div className="flex-1 grid grid-cols-3 gap-5">
                     {productCategories.map((cat) => (
                       <div key={cat.title}>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{cat.title}</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t(getTranslationKey(cat.title))}</p>
                         <div className="space-y-0.5">
                           {cat.items.map((item) => (
                             <Link
@@ -213,7 +245,7 @@ export default function Navbar() {
                               className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-accent/10 transition-colors group/item"
                             >
                               <item.icon className="h-4 w-4 text-muted-foreground group-hover/item:text-primary transition-colors shrink-0" />
-                              <span className="truncate">{item.label}</span>
+                              <span className="truncate">{t(getTranslationKey(item.label))}</span>
                               {item.badge && <span className={badgeClass(item.badge)}>{item.badge}</span>}
                             </Link>
                           ))}
@@ -225,9 +257,9 @@ export default function Navbar() {
 
                 {/* Bottom bar */}
                 <div className="mt-5 pt-4 border-t border-border/50 flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">25+ AI 도구를 하나의 플랫폼에서</p>
+                  <p className="text-xs text-muted-foreground">{t("navbar.megaMenu.footer")}</p>
                   <Link href="/ai-studio" onClick={() => setMegaMenuOpen(false)} className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1">
-                    모든 도구 보기 <ExternalLink className="h-3 w-3" />
+                    {t("navbar.megaMenu.viewAll")} <ExternalLink className="h-3 w-3" />
                   </Link>
                 </div>
               </div>
@@ -255,7 +287,7 @@ export default function Navbar() {
                 className={`gap-1.5 text-sm font-medium ${location.startsWith('/lecture-builder') ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 <Video className="h-3.5 w-3.5" />
-                강의 제작
+                {t("navbar.links.lectureCreation")}
               </Button>
             </Link>
           )}
@@ -267,235 +299,170 @@ export default function Navbar() {
               size="sm"
               className={`gap-1.5 text-sm font-medium ${location === '/faces' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              AI 얼굴
-            </Button>
-          </Link>
-          <Link href="/voices">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`gap-1.5 text-sm font-medium ${location === '/voices' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              AI 목소리
+              <Users className="h-3.5 w-3.5" />
+              {t("navbar.links.facesAndVoices")}
             </Button>
           </Link>
 
-          {/* Features - { href: "/features", label: "기능", icon: Layers } */}
+          {/* Features */}
           <Link href="/features">
             <Button
               variant="ghost"
               size="sm"
-              className={`text-sm font-medium ${location === '/features' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`gap-1.5 text-sm font-medium ${location === '/features' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              기능
+              <Layers className="h-3.5 w-3.5" />
+              {t("navbar.links.features")}
             </Button>
           </Link>
 
-          {/* Marketplace */}
-          <Link href="/marketplace">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`gap-1.5 text-sm font-medium ${location === '/marketplace' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              마켓
-              <span className="badge-new">NEW</span>
-            </Button>
-          </Link>
-
-          {/* AI Recommendations */}
-          <Link href="/recommendations">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`gap-1.5 text-sm font-medium ${location === '/recommendations' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              AI추천
-            </Button>
-          </Link>
-
-          {/* Live Interpretation */}
-          <Link href="/live-interpretation">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`gap-1.5 text-sm font-medium ${location === '/live-interpretation' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              실시간통역
-            </Button>
-          </Link>
-
-          {/* Pricing with badge */}
+          {/* Pricing */}
           <Link href="/pricing">
             <Button
               variant="ghost"
               size="sm"
               className={`gap-1.5 text-sm font-medium ${location === '/pricing' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              가격
-              <span className="badge-hot">30% OFF</span>
+              <CreditCard className="h-3.5 w-3.5" />
+              {t("navbar.links.pricing")}
             </Button>
           </Link>
-
-          {/* More menu for instructor/admin */}
-          {(isInstructor || isAdmin) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
-                  더보기
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-52 bg-popover/95 backdrop-blur-xl border-border/50">
-                {isInstructor && (
-                  <>
-                    <DropdownMenuItem asChild>
-                      <Link href="/studio" className="cursor-pointer flex items-center gap-2">
-                        <Play className="h-4 w-4" /> 프로덕션 스튜디오
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/instructor" className="cursor-pointer flex items-center gap-2">
-                        <Monitor className="h-4 w-4" /> 강사 대시보드
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/broadcasts" className="cursor-pointer flex items-center gap-2">
-                        <Tv className="h-4 w-4" /> 라이브 방송
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/pipeline-dashboard" className="cursor-pointer flex items-center gap-2">
-                        <BarChart3 className="h-4 w-4" /> 파이프라인
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {isAdmin && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin" className="cursor-pointer flex items-center gap-2">
-                        <Shield className="h-4 w-4" /> 관리자
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </div>
 
-        {/* Right side controls */}
+        {/* Right side */}
         <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-
-          {/* Notification Bell */}
-          {isAuthenticated && <NotificationBell />}
-
-          {switchable && toggleTheme && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              title={t("nav.theme_toggle")}
-            >
-              {theme === "dark" ? (
-                <Sun className="h-4 w-4 text-yellow-400" />
-              ) : (
-                <Moon className="h-4 w-4" />
-              )}
+          {/* Theme Toggle */}
+          {switchable && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={toggleTheme}>
+              {theme === "light" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
           )}
 
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
+          {/* Auth buttons */}
           {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1.5 text-sm">
-                  <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span>
-                  </div>
-                  <span className="hidden sm:inline max-w-[100px] truncate text-foreground/80">{user?.name || t("nav.user")}</span>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 bg-popover/95 backdrop-blur-xl border-border/50">
-                <div className="px-3 py-2 border-b border-border/50">
-                  <p className="text-sm font-medium">{user?.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {isAdmin ? "관리자" : isInstructor ? "강사" : "학생"}
-                  </p>
-                </div>
-                <DropdownMenuItem asChild>
-                  <Link href="/payments" className="cursor-pointer flex items-center gap-2">
-                    <CreditCard className="h-4 w-4" /> 결제 내역
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/my-subscription" className="cursor-pointer flex items-center gap-2">
-                    <Zap className="h-4 w-4" /> 구독 관리
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/video-history" className="cursor-pointer flex items-center gap-2">
-                    <FileVideo className="h-4 w-4" /> 비디오 히스토리
-                  </Link>
-                </DropdownMenuItem>
-                {!isInstructor && (
+            <>
+              <NotificationBell />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 h-8 px-2">
+                    <img
+                      src={user?.avatarUrl || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${user?.id}`}
+                      alt={user?.name || "User"}
+                      className="h-6 w-6 rounded-full bg-muted"
+                    />
+                    <span className="hidden md:inline text-sm font-medium text-foreground truncate max-w-[100px]">{user?.name}</span>
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem asChild>
-                    <Link href="/instructor" className="cursor-pointer flex items-center gap-2">
-                      <Monitor className="h-4 w-4" /> 강사 모드 전환
+                    <Link href="/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>{t("navbar.user.myProfile")}</span>
                     </Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => logout()}
-                  className="text-destructive cursor-pointer"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  로그아웃
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-lectures">
+                      <Video className="mr-2 h-4 w-4" />
+                      <span>{t("navbar.user.myLectures")}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/billing">
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      <span>{t("navbar.user.paymentHistory")}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {isInstructor && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/studio">
+                          <Play className="mr-2 h-4 w-4" />
+                          <span>{t("navbar.products.lecture.productionStudio")}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/instructor">
+                          <Monitor className="mr-2 h-4 w-4" />
+                          <span>{t("navbar.user.instructorDashboard")}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/broadcasts">
+                          <Tv className="mr-2 h-4 w-4" />
+                          <span>{t("navbar.user.liveBroadcast")}</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin">
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>{t("navbar.user.admin")}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {(isInstructor || isAdmin) && <DropdownMenuSeparator />}
+                  <DropdownMenuItem onClick={logout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{t("navbar.user.logout")}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2">
               <Link href="/login">
-                <Button variant="ghost" size="sm" className="text-sm text-muted-foreground hover:text-foreground">
-                  로그인
+                <Button variant="ghost" size="sm" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+                  {t("navbar.auth.login")}
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button size="sm" className="glow-button text-sm px-4 py-1.5 h-auto">
-                  시작하기
+              <Link href="/signup">
+                <Button size="sm" className="text-sm font-medium">
+                  {t("navbar.auth.signup")}
                 </Button>
               </Link>
             </div>
           )}
 
-          {/* Mobile hamburger */}
+          {/* Mobile Menu Toggle */}
           <Button
             variant="ghost"
             size="icon"
             className="lg:hidden h-8 w-8"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </Button>
         </div>
       </div>
 
       {/* Mobile Nav */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl max-h-[80vh] overflow-y-auto">
-          {/* Mobile Product Categories */}
-          <div className="p-4 space-y-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">제품</p>
+        <div className="lg:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl animate-slide-down-fade" style={{ animationDuration: '0.3s' }}>
+          <div className="container py-4 space-y-2">
+            {!isAuthenticated && (
+              <div className="flex items-center gap-2 pb-2 border-b border-border/50">
+                <Link href="/login" className="flex-1" onClick={() => setMobileOpen(false)}>
+                  <Button variant="outline" className="w-full">
+                    {t("navbar.auth.login")}
+                  </Button>
+                </Link>
+                <Link href="/signup" className="flex-1" onClick={() => setMobileOpen(false)}>
+                  <Button className="w-full">{t("navbar.auth.signup")}</Button>
+                </Link>
+              </div>
+            )}
+
             {productCategories.map((cat) => (
-              <div key={cat.title}>
-                <p className="text-xs font-medium text-primary/70 mb-1.5">{cat.title}</p>
-                <div className="grid grid-cols-2 gap-1">
+              <div key={cat.title} className="py-1">
+                <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t(getTranslationKey(cat.title))}</p>
+                <div className="space-y-1">
                   {cat.items.map((item) => (
                     <Link
                       key={item.label}
@@ -504,7 +471,7 @@ export default function Navbar() {
                     >
                       <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs h-9">
                         <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate">{t(getTranslationKey(item.label))}</span>
                         {item.badge && <span className={`${badgeClass(item.badge)} ml-auto`}>{item.badge}</span>}
                       </Button>
                     </Link>
@@ -521,44 +488,44 @@ export default function Navbar() {
               </Link>
               <Link href="/features" onClick={() => setMobileOpen(false)}>
                 <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                  <Layers className="h-4 w-4" /> 기능
+                  <Layers className="h-4 w-4" /> {t("navbar.links.features")}
                 </Button>
               </Link>
               <Link href="/marketplace" onClick={() => setMobileOpen(false)}>
                 <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                  <Store className="h-4 w-4" /> 마켓플레이스 <span className="badge-new ml-auto">NEW</span>
+                  <Store className="h-4 w-4" /> {t("navbar.links.marketplace")} <span className="badge-new ml-auto">NEW</span>
                 </Button>
               </Link>
               <Link href="/recommendations" onClick={() => setMobileOpen(false)}>
                 <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                  <Sparkles className="h-4 w-4" /> AI추천
+                  <Sparkles className="h-4 w-4" /> {t("navbar.links.recommendations")}
                 </Button>
               </Link>
               <Link href="/live-interpretation" onClick={() => setMobileOpen(false)}>
                 <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                  <Languages className="h-4 w-4" /> 실시간통역 <span className="badge-new ml-auto">NEW</span>
+                  <Languages className="h-4 w-4" /> {t("navbar.links.liveInterpretation")} <span className="badge-new ml-auto">NEW</span>
                 </Button>
               </Link>
               <Link href="/pricing" onClick={() => setMobileOpen(false)}>
                 <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                  <CreditCard className="h-4 w-4" /> 가격 <span className="badge-hot ml-auto">30% OFF</span>
+                  <CreditCard className="h-4 w-4" /> {t("navbar.links.pricing")} <span className="badge-hot ml-auto">30% OFF</span>
                 </Button>
               </Link>
               {isInstructor && (
                 <>
                   <Link href="/studio" onClick={() => setMobileOpen(false)}>
                     <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                      <Play className="h-4 w-4" /> 프로덕션 스튜디오
+                      <Play className="h-4 w-4" /> {t("navbar.products.lecture.productionStudio")}
                     </Button>
                   </Link>
                   <Link href="/instructor" onClick={() => setMobileOpen(false)}>
                     <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                      <Monitor className="h-4 w-4" /> 강사 대시보드
+                      <Monitor className="h-4 w-4" /> {t("navbar.user.instructorDashboard")}
                     </Button>
                   </Link>
                   <Link href="/broadcasts" onClick={() => setMobileOpen(false)}>
                     <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                      <Tv className="h-4 w-4" /> 라이브 방송
+                      <Tv className="h-4 w-4" /> {t("navbar.user.liveBroadcast")}
                     </Button>
                   </Link>
                 </>
@@ -566,7 +533,7 @@ export default function Navbar() {
               {isAdmin && (
                 <Link href="/admin" onClick={() => setMobileOpen(false)}>
                   <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                    <Shield className="h-4 w-4" /> 관리자
+                    <Shield className="h-4 w-4" /> {t("navbar.user.admin")}
                   </Button>
                 </Link>
               )}
@@ -580,6 +547,7 @@ export default function Navbar() {
 
 /* ── Notification Bell Component ── */
 function NotificationBell() {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
   const { data: unreadCount = 0 } = trpc.notification.unreadCount.useQuery(undefined, {
@@ -615,12 +583,12 @@ function NotificationBell() {
 
   const typeIcon = (type: string) => {
     switch (type) {
-      case "like": return "\u2764\ufe0f";
-      case "comment": return "\ud83d\udcac";
-      case "reply": return "\u21a9\ufe0f";
-      case "report_resolved": return "\u2705";
-      case "system": return "\ud83d\udd14";
-      default: return "\ud83d\udd14";
+      case "like": return "❤️";
+      case "comment": return "💬";
+      case "reply": return "↩️";
+      case "report_resolved": return "✅";
+      case "system": return "🔔";
+      default: return "🔔";
     }
   };
 
@@ -628,10 +596,10 @@ function NotificationBell() {
     const d = new Date(date);
     const now = new Date();
     const diff = now.getTime() - d.getTime();
-    if (diff < 60000) return "\ubc29\uae08";
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}\ubd84 \uc804`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}\uc2dc\uac04 \uc804`;
-    return `${Math.floor(diff / 86400000)}\uc77c \uc804`;
+    if (diff < 60000) return t("navbar.notifications.justNow");
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}${t("navbar.notifications.minutesAgo")}`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}${t("navbar.notifications.hoursAgo")}`;
+    return `${Math.floor(diff / 86400000)}${t("navbar.notifications.daysAgo")}`;
   };
 
   return (
@@ -653,19 +621,19 @@ function NotificationBell() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto rounded-xl border border-border/50 bg-popover/95 backdrop-blur-xl shadow-xl z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-            <h3 className="text-sm font-semibold">\uc54c\ub9bc</h3>
+            <h3 className="text-sm font-semibold">{t("navbar.notifications.title")}</h3>
             {(unreadCount as number) > 0 && (
               <button
                 onClick={() => markAllRead.mutate()}
                 className="text-xs text-primary hover:underline flex items-center gap-1"
               >
-                <Check className="h-3 w-3" /> \ubaa8\ub450 \uc77d\uc74c
+                <Check className="h-3 w-3" /> {t("navbar.notifications.markAllAsRead")}
               </button>
             )}
           </div>
           {(notifications as any[]).length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              \uc54c\ub9bc\uc774 \uc5c6\uc2b5\ub2c8\ub2e4
+              {t("navbar.notifications.noNotifications")}
             </div>
           ) : (
             <div className="divide-y divide-border/30">

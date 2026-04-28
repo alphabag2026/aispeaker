@@ -4,10 +4,10 @@ import { trpc } from "@/lib/trpc";
 import { CheckCircle, Loader2, XCircle, ArrowRight, CreditCard, Coins, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function PaymentSuccess() {
-  const { t } = useTranslation();
+  const { t } = useLanguage();
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
   const sessionId = params.get("session_id");

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -14,21 +15,23 @@ import { toast } from "sonner";
 import { Store, DollarSign, ShoppingCart, TrendingUp, Plus, ArrowLeft, Loader2, Eye, Star, Package, Edit, Wallet, CreditCard, ArrowUpRight, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CATEGORIES = [
   { value: "web3", label: "Web3" },
   { value: "ai", label: "AI" },
-  { value: "blockchain", label: "블록체인" },
+  { value: "blockchain", label: "creatorDashboard.category.blockchain" },
   { value: "defi", label: "DeFi" },
   { value: "nft", label: "NFT" },
-  { value: "metaverse", label: "메타버스" },
-  { value: "programming", label: "프로그래밍" },
-  { value: "business", label: "비즈니스" },
-  { value: "design", label: "디자인" },
-  { value: "other", label: "기타" },
+  { value: "metaverse", label: "creatorDashboard.category.metaverse" },
+  { value: "programming", label: "creatorDashboard.category.programming" },
+  { value: "business", label: "creatorDashboard.category.business" },
+  { value: "design", label: "creatorDashboard.category.design" },
+  { value: "other", label: "creatorDashboard.category.other" },
 ];
 
 export default function CreatorDashboard() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [isPublishOpen, setIsPublishOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -53,7 +56,7 @@ export default function CreatorDashboard() {
   const payoutHistoryQuery = trpc.payout.payoutHistory.useQuery(undefined, { enabled: !!user });
   const connectOnboardMutation = trpc.payout.connectOnboard.useMutation({
     onSuccess: (data) => {
-      toast.success("Stripe Connect 온보딩 페이지로 이동합니다.");
+      toast.success(t("creatorDashboard.toast.connectOnboardSuccess"));
       window.open(data.url, "_blank");
       connectStatusQuery.refetch();
     },
@@ -61,7 +64,7 @@ export default function CreatorDashboard() {
   });
   const requestPayoutMutation = trpc.payout.requestPayout.useMutation({
     onSuccess: (data) => {
-      toast.success(`출금 요청 완료! 순 지급액: $${(data.netPayout / 100).toFixed(2)} (수수료 20%)`);
+      toast.success(t("creatorDashboard.toast.requestPayoutSuccess", { netPayout: `$${(data.netPayout / 100).toFixed(2)}` }));
       setIsPayoutDialogOpen(false);
       setPayoutAmount("");
       payoutEarningsQuery.refetch();
@@ -72,7 +75,7 @@ export default function CreatorDashboard() {
 
   const publishMutation = trpc.marketplace.publish.useMutation({
     onSuccess: () => {
-      toast.success("강의가 마켓플레이스에 등록되었습니다!");
+      toast.success(t("creatorDashboard.toast.publishSuccess"));
       setIsPublishOpen(false);
       myListingsQuery.refetch();
       resetForm();
@@ -93,11 +96,11 @@ export default function CreatorDashboard() {
 
   const handlePublish = () => {
     if (!title.trim()) {
-      toast.error("제목을 입력해주세요.");
+      toast.error(t("creatorDashboard.toast.titleRequired"));
       return;
     }
     if (priceInCents < 50) {
-      toast.error("최소 가격은 $0.50입니다.");
+      toast.error(t("creatorDashboard.toast.minPrice"));
       return;
     }
     publishMutation.mutate({
@@ -135,28 +138,28 @@ export default function CreatorDashboard() {
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Store className="w-7 h-7 text-purple-400" />
-                크리에이터 대시보드
+                {t("creatorDashboard.header.title")}
               </h1>
-              <p className="text-gray-400 mt-1">내 강의를 관리하고 수익을 확인하세요</p>
+              <p className="text-gray-400 mt-1">{t("creatorDashboard.header.description")}</p>
             </div>
           </div>
           <Dialog open={isPublishOpen} onOpenChange={setIsPublishOpen}>
             <DialogTrigger asChild>
               <Button className="bg-purple-600 hover:bg-purple-700">
-                <Plus className="w-4 h-4 mr-2" />강의 등록
+                <Plus className="w-4 h-4 mr-2" />{t("creatorDashboard.button.publishCourse")}
               </Button>
             </DialogTrigger>
             <DialogContent className="bg-[#1a1a2e] border-gray-700 text-white max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>새 강의 등록</DialogTitle>
-                <DialogDescription className="text-gray-400">마켓플레이스에 강의를 등록합니다.</DialogDescription>
+                <DialogTitle>{t("creatorDashboard.dialog.publish.title")}</DialogTitle>
+                <DialogDescription className="text-gray-400">{t("creatorDashboard.dialog.publish.description")}</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>파이프라인 연결 (선택)</Label>
+                  <Label>{t("creatorDashboard.dialog.publish.connectPipeline")}</Label>
                   <Select onValueChange={(v) => setSelectedPipelineId(Number(v))}>
                     <SelectTrigger className="bg-[#16213e] border-gray-600">
-                      <SelectValue placeholder="파이프라인 선택 (선택사항)" />
+                      <SelectValue placeholder={t("creatorDashboard.dialog.publish.selectPipelinePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1a1a2e] border-gray-700">
                       {completedPipelines.map((p: any) => {
@@ -168,46 +171,46 @@ export default function CreatorDashboard() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>제목 *</Label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="강의 제목" className="bg-[#16213e] border-gray-600" />
+                  <Label>{t("creatorDashboard.dialog.publish.titleLabel")}</Label>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("creatorDashboard.dialog.publish.titlePlaceholder")} className="bg-[#16213e] border-gray-600" />
                 </div>
                 <div className="space-y-2">
-                  <Label>짧은 설명</Label>
-                  <Input value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder="카드에 표시될 짧은 설명" maxLength={255} className="bg-[#16213e] border-gray-600" />
+                  <Label>{t("creatorDashboard.dialog.publish.shortDescriptionLabel")}</Label>
+                  <Input value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} placeholder={t("creatorDashboard.dialog.publish.shortDescriptionPlaceholder")} maxLength={255} className="bg-[#16213e] border-gray-600" />
                 </div>
                 <div className="space-y-2">
-                  <Label>상세 설명</Label>
-                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="강의 상세 설명" rows={4} className="bg-[#16213e] border-gray-600" />
+                  <Label>{t("creatorDashboard.dialog.publish.longDescriptionLabel")}</Label>
+                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("creatorDashboard.dialog.publish.longDescriptionPlaceholder")} rows={4} className="bg-[#16213e] border-gray-600" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>카테고리</Label>
+                    <Label>{t("creatorDashboard.dialog.publish.categoryLabel")}</Label>
                     <Select value={category} onValueChange={setCategory}>
                       <SelectTrigger className="bg-[#16213e] border-gray-600"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-[#1a1a2e] border-gray-700">
-                        {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                        {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{t(c.label)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>가격 (USD)</Label>
+                    <Label>{t("creatorDashboard.dialog.publish.priceLabel")}</Label>
                     <Input type="number" value={(priceInCents / 100).toFixed(2)} onChange={(e) => setPriceInCents(Math.round(Number(e.target.value) * 100))} min={0.5} step={0.01} className="bg-[#16213e] border-gray-600" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>태그 (쉼표 구분)</Label>
-                  <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="web3, blockchain, defi" className="bg-[#16213e] border-gray-600" />
+                  <Label>{t("creatorDashboard.dialog.publish.tagsLabel")}</Label>
+                  <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder={t("creatorDashboard.dialog.publish.tagsPlaceholder")} className="bg-[#16213e] border-gray-600" />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>암호화폐 결제 허용</Label>
+                  <Label>{t("creatorDashboard.dialog.publish.acceptCryptoLabel")}</Label>
                   <Switch checked={acceptCrypto} onCheckedChange={setAcceptCrypto} />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsPublishOpen(false)} className="border-gray-600">취소</Button>
+                <Button variant="outline" onClick={() => setIsPublishOpen(false)} className="border-gray-600">{t("creatorDashboard.dialog.publish.cancelButton")}</Button>
                 <Button onClick={handlePublish} disabled={publishMutation.isPending} className="bg-purple-600 hover:bg-purple-700">
                   {publishMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                  등록
+                  {t("creatorDashboard.dialog.publish.submitButton")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -220,7 +223,7 @@ export default function CreatorDashboard() {
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-green-500/10 rounded-lg"><DollarSign className="w-6 h-6 text-green-400" /></div>
               <div>
-                <p className="text-sm text-gray-400">총 수익</p>
+                <p className="text-sm text-gray-400">{t("creatorDashboard.stats.totalEarnings")}</p>
                 <p className="text-2xl font-bold text-green-400">{formatPrice(totalEarnings)}</p>
               </div>
             </CardContent>
@@ -229,8 +232,8 @@ export default function CreatorDashboard() {
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-purple-500/10 rounded-lg"><ShoppingCart className="w-6 h-6 text-purple-400" /></div>
               <div>
-                <p className="text-sm text-gray-400">총 판매</p>
-                <p className="text-2xl font-bold">{totalSales}건</p>
+                <p className="text-sm text-gray-400">{t("creatorDashboard.stats.totalSales")}</p>
+                <p className="text-2xl font-bold">{totalSales}{t("creatorDashboard.stats.salesUnit")}</p>
               </div>
             </CardContent>
           </Card>
@@ -238,8 +241,8 @@ export default function CreatorDashboard() {
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-blue-500/10 rounded-lg"><Package className="w-6 h-6 text-blue-400" /></div>
               <div>
-                <p className="text-sm text-gray-400">등록 상품</p>
-                <p className="text-2xl font-bold">{myListingsQuery.data?.length || 0}개</p>
+                <p className="text-sm text-gray-400">{t("creatorDashboard.stats.listedProducts")}</p>
+                <p className="text-2xl font-bold">{myListingsQuery.data?.length || 0}{t("creatorDashboard.stats.productsUnit")}</p>
               </div>
             </CardContent>
           </Card>
@@ -248,8 +251,8 @@ export default function CreatorDashboard() {
         {/* Tabs: Listings / Payouts */}
         <Tabs defaultValue="listings" className="mb-6">
           <TabsList className="bg-[#16213e] border-gray-700">
-            <TabsTrigger value="listings">내 상품</TabsTrigger>
-            <TabsTrigger value="payouts">정산/출금</TabsTrigger>
+            <TabsTrigger value="listings">{t("creatorDashboard.tabs.myProducts")}</TabsTrigger>
+            <TabsTrigger value="payouts">{t("creatorDashboard.tabs.payouts")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="payouts">
@@ -259,31 +262,31 @@ export default function CreatorDashboard() {
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Wallet className="w-5 h-5 text-purple-400" />
-                    Stripe Connect 계정
+                    {t("creatorDashboard.payouts.connectAccount")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {connectStatusQuery.data?.status === "active" ? (
                     <div className="flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-green-400" />
-                      <span className="text-green-400 font-medium">연결됨</span>
+                      <span className="text-green-400 font-medium">{t("creatorDashboard.payouts.connected")}</span>
                       <Badge className="bg-green-500/20 text-green-400">Active</Badge>
                     </div>
                   ) : connectStatusQuery.data?.status === "pending" ? (
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                       <Clock className="w-5 h-5 text-yellow-400" />
-                      <span className="text-yellow-400">온보딩 진행 중...</span>
+                      <span className="text-yellow-400">{t("creatorDashboard.payouts.onboardingInProgress")}</span>
                       <Button size="sm" onClick={() => connectOnboardMutation.mutate({ returnUrl: window.location.href })} className="bg-yellow-600 hover:bg-yellow-700">
-                        온보딩 계속하기
+                        {t("creatorDashboard.payouts.continueOnboarding")}
                       </Button>
                     </div>
                   ) : (
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                       <AlertCircle className="w-5 h-5 text-gray-400" />
-                      <span className="text-gray-400">Stripe Connect 계정을 연결하면 수익을 출금할 수 있습니다.</span>
+                      <span className="text-gray-400">{t("creatorDashboard.payouts.connectPrompt")}</span>
                       <Button onClick={() => connectOnboardMutation.mutate({ returnUrl: window.location.href })} disabled={connectOnboardMutation.isPending} className="bg-purple-600 hover:bg-purple-700">
                         {connectOnboardMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
-                        계정 연결하기
+                        {t("creatorDashboard.payouts.connectButton")}
                       </Button>
                     </div>
                   )}
@@ -294,25 +297,25 @@ export default function CreatorDashboard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <Card className="bg-[#1a1a2e] border-gray-800">
                   <CardContent className="p-4">
-                    <p className="text-xs text-gray-400">총 수익</p>
+                    <p className="text-xs text-gray-400">{t("creatorDashboard.stats.totalEarnings")}</p>
                     <p className="text-xl font-bold text-green-400">{formatPrice(payoutEarningsQuery.data?.totalEarnings || 0)}</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-[#1a1a2e] border-gray-800">
                   <CardContent className="p-4">
-                    <p className="text-xs text-gray-400">출금 가능</p>
+                    <p className="text-xs text-gray-400">{t("creatorDashboard.payouts.availableBalance")}</p>
                     <p className="text-xl font-bold text-blue-400">{formatPrice(payoutEarningsQuery.data?.availableBalance || 0)}</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-[#1a1a2e] border-gray-800">
                   <CardContent className="p-4">
-                    <p className="text-xs text-gray-400">출금 대기중</p>
+                    <p className="text-xs text-gray-400">{t("creatorDashboard.payouts.pendingPayouts")}</p>
                     <p className="text-xl font-bold text-yellow-400">{formatPrice(payoutEarningsQuery.data?.pendingPayouts || 0)}</p>
                   </CardContent>
                 </Card>
                 <Card className="bg-[#1a1a2e] border-gray-800">
                   <CardContent className="p-4">
-                    <p className="text-xs text-gray-400">출금 완료</p>
+                    <p className="text-xs text-gray-400">{t("creatorDashboard.payouts.completedPayouts")}</p>
                     <p className="text-xl font-bold text-gray-300">{formatPrice(payoutEarningsQuery.data?.completedPayouts || 0)}</p>
                   </CardContent>
                 </Card>
@@ -321,36 +324,36 @@ export default function CreatorDashboard() {
               {/* Payout Request */}
               <Card className="bg-[#1a1a2e] border-gray-800">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-lg">출금 요청</CardTitle>
+                  <CardTitle className="text-lg">{t("creatorDashboard.payouts.requestPayout")}</CardTitle>
                   <Dialog open={isPayoutDialogOpen} onOpenChange={setIsPayoutDialogOpen}>
                     <DialogTrigger asChild>
                       <Button size="sm" disabled={connectStatusQuery.data?.status !== "active" || (payoutEarningsQuery.data?.availableBalance || 0) < 1000} className="bg-green-600 hover:bg-green-700">
-                        <ArrowUpRight className="w-4 h-4 mr-1" />출금 신청
+                        <ArrowUpRight className="w-4 h-4 mr-1" />{t("creatorDashboard.payouts.requestPayoutButton")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="bg-[#1a1a2e] border-gray-700 text-white">
                       <DialogHeader>
-                        <DialogTitle>출금 신청</DialogTitle>
-                        <DialogDescription className="text-gray-400">출금 가능 잔액: {formatPrice(payoutEarningsQuery.data?.availableBalance || 0)} (최소 $10.00, 수수료 20%)</DialogDescription>
+                        <DialogTitle>{t("creatorDashboard.dialog.payout.title")}</DialogTitle>
+                        <DialogDescription className="text-gray-400">{t("creatorDashboard.dialog.payout.description", { balance: formatPrice(payoutEarningsQuery.data?.availableBalance || 0) })}</DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-4">
                         <div className="space-y-2">
-                          <Label>출금 금액 (USD)</Label>
-                          <Input type="number" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} placeholder="10.00" min={10} step={0.01} className="bg-[#16213e] border-gray-600" />
+                          <Label>{t("creatorDashboard.dialog.payout.amountLabel")}</Label>
+                          <Input type="number" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} placeholder={t("creatorDashboard.dialog.payout.amountPlaceholder")} min={10} step={0.01} className="bg-[#16213e] border-gray-600" />
                         </div>
                         {payoutAmount && Number(payoutAmount) >= 10 && (
                           <div className="text-sm text-gray-400 space-y-1">
-                            <p>요청 금액: ${Number(payoutAmount).toFixed(2)}</p>
-                            <p>플랫폼 수수료 (20%): -${(Number(payoutAmount) * 0.2).toFixed(2)}</p>
-                            <p className="text-green-400 font-medium">순 지급액: ${(Number(payoutAmount) * 0.8).toFixed(2)}</p>
+                            <p>{t("creatorDashboard.dialog.payout.requestedAmount", { amount: `$${Number(payoutAmount).toFixed(2)}` })}</p>
+                            <p>{t("creatorDashboard.dialog.payout.platformFee", { fee: `-$${(Number(payoutAmount) * 0.2).toFixed(2)}` })}</p>
+                            <p className="text-green-400 font-medium">{t("creatorDashboard.dialog.payout.netPayout", { amount: `$${(Number(payoutAmount) * 0.8).toFixed(2)}` })}</p>
                           </div>
                         )}
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsPayoutDialogOpen(false)} className="border-gray-600">취소</Button>
+                        <Button variant="outline" onClick={() => setIsPayoutDialogOpen(false)} className="border-gray-600">{t("creatorDashboard.dialog.publish.cancelButton")}</Button>
                         <Button onClick={() => requestPayoutMutation.mutate({ amountInCents: Math.round(Number(payoutAmount) * 100) })} disabled={requestPayoutMutation.isPending || !payoutAmount || Number(payoutAmount) < 10} className="bg-green-600 hover:bg-green-700">
                           {requestPayoutMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                          출금 신청
+                          {t("creatorDashboard.payouts.requestPayoutButton")}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -360,17 +363,17 @@ export default function CreatorDashboard() {
                   {payoutHistoryQuery.isLoading ? (
                     <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-purple-400" /></div>
                   ) : (payoutHistoryQuery.data?.length || 0) === 0 ? (
-                    <p className="text-gray-500 text-center py-4">출금 내역이 없습니다.</p>
+                    <p className="text-gray-500 text-center py-4">{t("creatorDashboard.payouts.history.noPayouts")}</p>
                   ) : (
                     <div className="space-y-2">
                       {payoutHistoryQuery.data?.map((payout: any) => (
                         <div key={payout.id} className="flex items-center justify-between p-3 bg-[#16213e] rounded-lg">
                           <div>
-                            <p className="text-sm font-medium">{formatPrice(payout.netPayoutInCents)} 출금</p>
+                            <p className="text-sm font-medium">{t("creatorDashboard.payouts.history.payout", { amount: formatPrice(payout.netPayoutInCents) })}</p>
                             <p className="text-xs text-gray-400">{new Date(payout.requestedAt).toLocaleDateString("ko-KR")}</p>
                           </div>
                           <Badge className={payout.status === "completed" ? "bg-green-500/20 text-green-400" : payout.status === "pending" ? "bg-yellow-500/20 text-yellow-400" : payout.status === "failed" ? "bg-red-500/20 text-red-400" : "bg-gray-500/20 text-gray-400"}>
-                            {payout.status === "completed" ? "완료" : payout.status === "pending" ? "대기" : payout.status === "processing" ? "처리중" : payout.status === "failed" ? "실패" : payout.status}
+                            {payout.status === "completed" ? t("creatorDashboard.payouts.history.status.completed") : payout.status === "pending" ? t("creatorDashboard.payouts.history.status.pending") : payout.status === "processing" ? t("creatorDashboard.payouts.history.status.processing") : payout.status === "failed" ? t("creatorDashboard.payouts.history.status.failed") : payout.status}
                           </Badge>
                         </div>
                       ))}
@@ -384,7 +387,7 @@ export default function CreatorDashboard() {
           <TabsContent value="listings">
         <Card className="bg-[#1a1a2e] border-gray-800">
           <CardHeader>
-            <CardTitle className="text-lg">내 등록 상품</CardTitle>
+            <CardTitle className="text-lg">{t("creatorDashboard.listings.title")}</CardTitle>
           </CardHeader>
           <CardContent>
             {myListingsQuery.isLoading ? (
@@ -392,9 +395,9 @@ export default function CreatorDashboard() {
             ) : (myListingsQuery.data?.length || 0) === 0 ? (
               <div className="text-center py-12">
                 <Store className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <p className="text-gray-400">아직 등록한 상품이 없습니다.</p>
+                <p className="text-gray-400">{t("creatorDashboard.listings.noProducts")}</p>
                 <Button onClick={() => setIsPublishOpen(true)} className="mt-4 bg-purple-600 hover:bg-purple-700">
-                  <Plus className="w-4 h-4 mr-2" />첫 강의 등록하기
+                  <Plus className="w-4 h-4 mr-2" />{t("creatorDashboard.listings.publishFirstCourse")}
                 </Button>
               </div>
             ) : (
@@ -417,7 +420,7 @@ export default function CreatorDashboard() {
                     <div className="flex items-center gap-4">
                       <span className="font-bold text-purple-400">{formatPrice(listing.priceInCents)}</span>
                       <Badge className={listing.status === "active" ? "bg-green-500/20 text-green-400" : "bg-gray-500/20 text-gray-400"}>
-                        {listing.status === "active" ? "판매중" : listing.status === "draft" ? "초안" : listing.status}
+                        {listing.status === "active" ? t("creatorDashboard.listings.status.active") : listing.status === "draft" ? t("creatorDashboard.listings.status.draft") : listing.status}
                       </Badge>
                     </div>
                   </div>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,11 +11,13 @@ import {
   BarChart3, Users, Clock, MessageSquare, TrendingUp, Eye,
   RefreshCw, ArrowLeft, Trophy, HelpCircle, Percent
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import "@/i18n/pages/BroadcastAnalytics";
 
-function formatDuration(seconds: number): string {
-  if (seconds < 60) return `${seconds}초`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}분 ${seconds % 60}초`;
-  return `${Math.floor(seconds / 3600)}시간 ${Math.floor((seconds % 3600) / 60)}분`;
+function formatDuration(seconds: number, t: (key: string) => string): string {
+  if (seconds < 60) return `${seconds}${t("broadcastAnalytics.timeUnit.second")}`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}${t("broadcastAnalytics.timeUnit.minute")} ${seconds % 60}${t("broadcastAnalytics.timeUnit.second")}`;
+  return `${Math.floor(seconds / 3600)}${t("broadcastAnalytics.timeUnit.hour")} ${Math.floor((seconds % 3600) / 60)}${t("broadcastAnalytics.timeUnit.minute")}`;
 }
 
 function ScoreGauge({ score, label }: { score: number; label: string }) {
@@ -29,6 +32,7 @@ function ScoreGauge({ score, label }: { score: number; label: string }) {
 
 export default function BroadcastAnalytics() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [selectedBroadcastId, setSelectedBroadcastId] = useState<number | null>(null);
 
   const { data: analyticsList, isLoading } = trpc.broadcast.analyticsList.useQuery(undefined, {
@@ -82,8 +86,8 @@ export default function BroadcastAnalytics() {
             <Button variant="ghost" size="icon"><ArrowLeft className="w-4 h-4" /></Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">방송 분석 대시보드</h1>
-            <p className="text-sm text-muted-foreground">라이브 방송 성과를 한눈에 확인하세요</p>
+            <h1 className="text-2xl font-bold">{t("broadcastAnalytics.dashboardTitle")}</h1>
+            <p className="text-sm text-muted-foreground">{t("broadcastAnalytics.dashboardSubtitle")}</p>
           </div>
         </div>
       </div>
@@ -95,7 +99,7 @@ export default function BroadcastAnalytics() {
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-100"><BarChart3 className="w-5 h-5 text-blue-600" /></div>
               <div>
-                <p className="text-sm text-muted-foreground">총 방송 수</p>
+                <p className="text-sm text-muted-foreground">{t("broadcastAnalytics.totalBroadcasts")}</p>
                 <p className="text-2xl font-bold">{totalBroadcasts}</p>
               </div>
             </div>
@@ -106,7 +110,7 @@ export default function BroadcastAnalytics() {
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-green-100"><Users className="w-5 h-5 text-green-600" /></div>
               <div>
-                <p className="text-sm text-muted-foreground">총 시청자</p>
+                <p className="text-sm text-muted-foreground">{t("broadcastAnalytics.totalViewers")}</p>
                 <p className="text-2xl font-bold">{totalViewers}</p>
               </div>
             </div>
@@ -117,7 +121,7 @@ export default function BroadcastAnalytics() {
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-purple-100"><TrendingUp className="w-5 h-5 text-purple-600" /></div>
               <div>
-                <p className="text-sm text-muted-foreground">평균 참여도</p>
+                <p className="text-sm text-muted-foreground">{t("broadcastAnalytics.avgEngagement")}</p>
                 <p className="text-2xl font-bold">{avgEngagement}<span className="text-sm text-muted-foreground">/100</span></p>
               </div>
             </div>
@@ -128,7 +132,7 @@ export default function BroadcastAnalytics() {
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-orange-100"><Percent className="w-5 h-5 text-orange-600" /></div>
               <div>
-                <p className="text-sm text-muted-foreground">평균 잔류율</p>
+                <p className="text-sm text-muted-foreground">{t("broadcastAnalytics.avgRetention")}</p>
                 <p className="text-2xl font-bold">{avgRetention}%</p>
               </div>
             </div>
@@ -138,8 +142,8 @@ export default function BroadcastAnalytics() {
 
       <Tabs defaultValue="analytics" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="analytics">방송별 분석</TabsTrigger>
-          <TabsTrigger value="recordings">녹화/VOD</TabsTrigger>
+          <TabsTrigger value="analytics">{t("broadcastAnalytics.tabAnalytics")}</TabsTrigger>
+          <TabsTrigger value="recordings">{t("broadcastAnalytics.tabRecordings")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analytics" className="space-y-4">
@@ -147,8 +151,8 @@ export default function BroadcastAnalytics() {
             <Card>
               <CardContent className="py-12 text-center">
                 <BarChart3 className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-muted-foreground">아직 분석 데이터가 없습니다.</p>
-                <p className="text-sm text-muted-foreground">방송을 종료하면 자동으로 분석이 생성됩니다.</p>
+                <p className="text-muted-foreground">{t("broadcastAnalytics.noAnalyticsData")}</p>
+                <p className="text-sm text-muted-foreground">{t("broadcastAnalytics.analyticsGeneratedAfterBroadcast")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -176,28 +180,28 @@ export default function BroadcastAnalytics() {
                             <Users className="w-3 h-3" />
                           </div>
                           <p className="text-lg font-semibold">{a.totalViewers}</p>
-                          <p className="text-[10px] text-muted-foreground">시청자</p>
+                          <p className="text-[10px] text-muted-foreground">{t("broadcastAnalytics.viewers")}</p>
                         </div>
                         <div>
                           <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
                             <Eye className="w-3 h-3" />
                           </div>
                           <p className="text-lg font-semibold">{a.peakConcurrentViewers}</p>
-                          <p className="text-[10px] text-muted-foreground">최대동시</p>
+                          <p className="text-[10px] text-muted-foreground">{t("broadcastAnalytics.peakConcurrent")}</p>
                         </div>
                         <div>
                           <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
                             <MessageSquare className="w-3 h-3" />
                           </div>
                           <p className="text-lg font-semibold">{a.totalChatMessages}</p>
-                          <p className="text-[10px] text-muted-foreground">채팅</p>
+                          <p className="text-[10px] text-muted-foreground">{t("broadcastAnalytics.chat")}</p>
                         </div>
                         <div>
                           <div className="flex items-center justify-center gap-1 text-muted-foreground mb-1">
                             <Trophy className="w-3 h-3" />
                           </div>
                           <p className="text-lg font-semibold">{a.engagementScore}</p>
-                          <p className="text-[10px] text-muted-foreground">참여도</p>
+                          <p className="text-[10px] text-muted-foreground">{t("broadcastAnalytics.engagement")}</p>
                         </div>
                       </div>
                       <div className="mt-3 flex items-center gap-2">
@@ -207,7 +211,7 @@ export default function BroadcastAnalytics() {
                             style={{ width: `${a.retentionRate}%` }}
                           />
                         </div>
-                        <span className="text-xs text-muted-foreground">{a.retentionRate}% 잔류</span>
+                        <span className="text-xs text-muted-foreground">{a.retentionRate}% {t("broadcastAnalytics.retention")}</span>
                       </div>
                     </CardContent>
                   </Card>
@@ -221,28 +225,28 @@ export default function BroadcastAnalytics() {
             <Card className="border-primary/20">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">상세 분석</CardTitle>
+                  <CardTitle className="text-lg">{t("broadcastAnalytics.detailedAnalytics")}</CardTitle>
                   <Button variant="outline" size="sm" onClick={() => regenerate.mutate({ broadcastId: selectedBroadcastId! })}>
-                    <RefreshCw className="w-3.5 h-3.5 mr-1" /> 재분석
+                    <RefreshCw className="w-3.5 h-3.5 mr-1" /> {t("broadcastAnalytics.regenerate")}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  <ScoreGauge score={selectedAnalytics.engagementScore || 0} label="참여도 점수" />
-                  <ScoreGauge score={selectedAnalytics.retentionRate || 0} label="잔류율 %" />
+                  <ScoreGauge score={selectedAnalytics.engagementScore || 0} label={t("broadcastAnalytics.engagementScore")} />
+                  <ScoreGauge score={selectedAnalytics.retentionRate || 0} label={t("broadcastAnalytics.retentionRate")} />
                   <div className="flex flex-col items-center gap-1">
                     <div className="text-3xl font-bold text-blue-500">
-                      {formatDuration(selectedAnalytics.avgWatchDurationSec || 0)}
+                      {formatDuration(selectedAnalytics.avgWatchDurationSec || 0, t)}
                     </div>
-                    <div className="text-xs text-muted-foreground">평균 시청 시간</div>
+                    <div className="text-xs text-muted-foreground">{t("broadcastAnalytics.avgWatchTime")}</div>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <div className="text-3xl font-bold text-purple-500">
                       {selectedAnalytics.totalQuestions || 0}
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
-                      <HelpCircle className="w-3 h-3" /> 질문 수
+                      <HelpCircle className="w-3 h-3" /> {t("broadcastAnalytics.questionCount")}
                     </div>
                   </div>
                 </div>
@@ -256,8 +260,8 @@ export default function BroadcastAnalytics() {
             <Card>
               <CardContent className="py-12 text-center">
                 <Clock className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-muted-foreground">아직 녹화된 방송이 없습니다.</p>
-                <p className="text-sm text-muted-foreground">방송을 종료하면 자동으로 녹화가 저장됩니다.</p>
+                <p className="text-muted-foreground">{t("broadcastAnalytics.noRecordings")}</p>
+                <p className="text-sm text-muted-foreground">{t("broadcastAnalytics.recordingSavedAfterBroadcast")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -277,12 +281,12 @@ export default function BroadcastAnalytics() {
                           <div>
                             <p className="font-medium">{b.title}</p>
                             <p className="text-xs text-muted-foreground">
-                              {formatDuration(r.totalDurationSec || 0)} · {r.slideCount || 0}장 슬라이드 · {new Date(r.createdAt).toLocaleDateString("ko-KR")}
+                              {formatDuration(r.totalDurationSec || 0, t)} · {r.slideCount || 0}{t("broadcastAnalytics.slideCountUnit")} · {new Date(r.createdAt).toLocaleDateString("ko-KR")}
                             </p>
                           </div>
                         </div>
                         <Badge variant={r.status === "ready" ? "default" : "secondary"}>
-                          {r.status === "ready" ? "VOD 준비됨" : r.status === "processing" ? "처리 중" : r.status}
+                          {r.status === "ready" ? t("broadcastAnalytics.vodReady") : r.status === "processing" ? t("broadcastAnalytics.processing") : r.status}
                         </Badge>
                       </div>
                     </CardContent>

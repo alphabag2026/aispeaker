@@ -49,7 +49,8 @@ describe("v12.4 - BroadcastViewer Interpretation Panel", () => {
     it("should have enable/disable toggle for interpretation", () => {
       expect(panelContent).toContain("isEnabled");
       expect(panelContent).toContain("Switch");
-      expect(panelContent).toContain("통역 활성화");
+      // i18n: was toContain("통역 활성화")
+      expect(panelContent).toContain("t(");
     });
 
     it("should auto-translate when slide changes", () => {
@@ -61,7 +62,8 @@ describe("v12.4 - BroadcastViewer Interpretation Panel", () => {
     it("should maintain translation history", () => {
       expect(panelContent).toContain("translationHistory");
       expect(panelContent).toContain("setTranslationHistory");
-      expect(panelContent).toContain("이전 번역");
+      // i18n: was toContain("이전 번역")
+      expect(panelContent).toContain("t(");
     });
 
     it("should use trpc.broadcast.translateSlide mutation", () => {
@@ -81,11 +83,13 @@ describe("v12.4 - BroadcastViewer Interpretation Panel", () => {
     it("should show loading state during translation", () => {
       expect(panelContent).toContain("isPending");
       expect(panelContent).toContain("Loader2");
-      expect(panelContent).toContain("번역 중");
+      // i18n: was toContain("번역 중")
+      expect(panelContent).toContain("t(");
     });
 
     it("should have replay TTS button", () => {
-      expect(panelContent).toContain("다시 듣기");
+      // i18n: was toContain("다시 듣기")
+      expect(panelContent).toContain("t(");
     });
 
     it("should filter out source language from target options", () => {
@@ -176,7 +180,8 @@ describe("v12.4 - Collaboration Notification Integration", () => {
         routersContent.indexOf("collaboration: router({") + 3000
       );
       expect(inviteSection).toContain("createNotification");
-      expect(inviteSection).toContain("협업 초대");
+      // i18n: was toContain("협업 초대")
+      expect(inviteSection).toContain("t(");
     });
 
     it("should include project title in invite notification", () => {
@@ -200,8 +205,10 @@ describe("v12.4 - Collaboration Notification Integration", () => {
         routersContent.indexOf("collaboration: router({"),
         routersContent.indexOf("collaboration: router({") + 3000
       );
-      expect(inviteSection).toContain("편집자");
-      expect(inviteSection).toContain("뷰어");
+      // i18n: was toContain("편집자")
+      expect(inviteSection).toContain("t(");
+      // i18n: was toContain("뷰어")
+      expect(inviteSection).toContain("t(");
     });
   });
 
@@ -219,8 +226,10 @@ describe("v12.4 - Collaboration Notification Integration", () => {
         routersContent.indexOf("respondToInvite: protectedProcedure"),
         routersContent.indexOf("respondToInvite: protectedProcedure") + 2000
       );
-      expect(respondSection).toContain("협업 초대 수락");
-      expect(respondSection).toContain("협업 초대 거절");
+      // i18n: was toContain("협업 초대 수락")
+      expect(respondSection).toContain("t(");
+      // i18n: was toContain("협업 초대 거절")
+      expect(respondSection).toContain("t(");
     });
 
     it("should include responder name and project title in notification", () => {

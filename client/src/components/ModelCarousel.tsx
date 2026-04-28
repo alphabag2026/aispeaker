@@ -21,6 +21,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 /* ── AI Model Data ── */
 export interface AIModel {
@@ -53,8 +54,8 @@ export const AI_MODELS: AIModel[] = [
     speed: "Fast",
     pricing: "$0.02/s",
     features: ["Image to Video", "Motion Control", "Camera Effects", "Face Consistency"],
-    strengths: ["정밀 모션 제어", "캐릭터 일관성", "효과 프리셋 풍부"],
-    weaknesses: ["긴 영상 제한"],
+    strengths: ["modelCarousel.akoolI2v.strengths.0", "modelCarousel.akoolI2v.strengths.1", "modelCarousel.akoolI2v.strengths.2"],
+    weaknesses: ["modelCarousel.akoolI2v.weaknesses.0"],
     category: "video",
   },
   {
@@ -69,8 +70,8 @@ export const AI_MODELS: AIModel[] = [
     speed: "Medium",
     pricing: "$0.03/s",
     features: ["T2V", "I2V", "Motion Brush", "Camera Control"],
-    strengths: ["자연스러운 모션", "높은 일관성", "다양한 스타일"],
-    weaknesses: ["4K 미지원", "최대 10초"],
+    strengths: ["modelCarousel.kling3.strengths.0", "modelCarousel.kling3.strengths.1", "modelCarousel.kling3.strengths.2"],
+    weaknesses: ["modelCarousel.kling3.weaknesses.0", "modelCarousel.kling3.weaknesses.1"],
     category: "video",
   },
   {
@@ -84,8 +85,8 @@ export const AI_MODELS: AIModel[] = [
     speed: "Fast",
     pricing: "$0.015/s",
     features: ["T2V", "I2V", "Style Transfer", "Inpainting"],
-    strengths: ["빠른 생성 속도", "저렴한 가격", "다양한 스타일"],
-    weaknesses: ["짧은 영상", "해상도 제한"],
+    strengths: ["modelCarousel.wan27.strengths.0", "modelCarousel.wan27.strengths.1", "modelCarousel.wan27.strengths.2"],
+    weaknesses: ["modelCarousel.wan27.weaknesses.0", "modelCarousel.wan27.weaknesses.1"],
     category: "video",
   },
   {
@@ -100,8 +101,8 @@ export const AI_MODELS: AIModel[] = [
     speed: "Medium",
     pricing: "$0.025/s",
     features: ["Dance Generation", "Character Animation", "Music Sync"],
-    strengths: ["댄스/모션 특화", "음악 동기화", "캐릭터 애니메이션"],
-    weaknesses: ["범용성 부족"],
+    strengths: ["modelCarousel.seedance2.strengths.0", "modelCarousel.seedance2.strengths.1", "modelCarousel.seedance2.strengths.2"],
+    weaknesses: ["modelCarousel.seedance2.weaknesses.0"],
     category: "video",
   },
   {
@@ -116,8 +117,8 @@ export const AI_MODELS: AIModel[] = [
     speed: "Slow",
     pricing: "$0.05/s",
     features: ["T2V", "I2V", "Video Editing", "Storyboard"],
-    strengths: ["최고 품질", "긴 영상 지원", "스토리보드"],
-    weaknesses: ["느린 속도", "높은 가격"],
+    strengths: ["modelCarousel.sora.strengths.0", "modelCarousel.sora.strengths.1", "modelCarousel.sora.strengths.2"],
+    weaknesses: ["modelCarousel.sora.weaknesses.0", "modelCarousel.sora.weaknesses.1"],
     category: "video",
   },
   {
@@ -131,8 +132,8 @@ export const AI_MODELS: AIModel[] = [
     speed: "Medium",
     pricing: "$0.04/s",
     features: ["T2V", "I2V", "8K Support", "Physics Simulation"],
-    strengths: ["4K/8K 지원", "물리 시뮬레이션", "긴 영상"],
-    weaknesses: ["접근 제한"],
+    strengths: ["modelCarousel.veo2.strengths.0", "modelCarousel.veo2.strengths.1", "modelCarousel.veo2.strengths.2"],
+    weaknesses: ["modelCarousel.veo2.weaknesses.0"],
     category: "video",
   },
   {
@@ -146,8 +147,8 @@ export const AI_MODELS: AIModel[] = [
     speed: "Fast",
     pricing: "$0.02/s",
     features: ["T2V", "I2V", "Character Consistency", "Multi-Scene"],
-    strengths: ["캐릭터 일관성", "멀티씬", "빠른 속도"],
-    weaknesses: ["짧은 영상"],
+    strengths: ["modelCarousel.minimax.strengths.0", "modelCarousel.minimax.strengths.1", "modelCarousel.minimax.strengths.2"],
+    weaknesses: ["modelCarousel.minimax.weaknesses.0"],
     category: "video",
   },
   {
@@ -161,8 +162,8 @@ export const AI_MODELS: AIModel[] = [
     speed: "Fast",
     pricing: "$0.05/img",
     features: ["T2I", "I2I", "Inpainting", "ControlNet"],
-    strengths: ["최고 이미지 품질", "프롬프트 정확도", "다양한 스타일"],
-    weaknesses: ["비디오 미지원"],
+    strengths: ["modelCarousel.fluxPro.strengths.0", "modelCarousel.fluxPro.strengths.1", "modelCarousel.fluxPro.strengths.2"],
+    weaknesses: ["modelCarousel.fluxPro.weaknesses.0"],
     category: "image",
   },
 ];
@@ -213,6 +214,7 @@ function LogoMarquee() {
 
 /* ── Model Comparison Table ── */
 function ModelComparisonTable({ models }: { models: AIModel[] }) {
+  const { t } = useLanguage();
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -283,6 +285,7 @@ function ModelComparisonTable({ models }: { models: AIModel[] }) {
 
 /* ── Model Detail Card ── */
 function ModelDetailCard({ model, isSelected, onSelect }: { model: AIModel; isSelected: boolean; onSelect: () => void }) {
+  const { t } = useLanguage();
   return (
     <Card
       className={`group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-300 cursor-pointer h-full ${
@@ -338,7 +341,7 @@ function ModelDetailCard({ model, isSelected, onSelect }: { model: AIModel; isSe
           {model.strengths.map((s) => (
             <div key={s} className="flex items-center gap-1.5 text-[11px]">
               <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-              <span className="text-muted-foreground">{s}</span>
+              <span className="text-muted-foreground">{t(s)}</span>
             </div>
           ))}
         </div>
@@ -357,6 +360,7 @@ export default function ModelCarousel({
   onModelSelect?: (model: AIModel) => void;
   selectedModelId?: string;
 }) {
+  const { t } = useLanguage();
   const [showTable, setShowTable] = useState(false);
   const [selectedId, setSelectedId] = useState(selectedModelId || "akool-i2v");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "video" | "image" | "avatar" | "audio">("all");
@@ -377,7 +381,7 @@ export default function ModelCarousel({
 
       {/* Category filter */}
       <div className="flex justify-center gap-2">
-        {(["all", "video", "image"] as const).map((cat) => (
+        {([ "all", "video", "image"] as const).map((cat) => (
           <Button
             key={cat}
             variant={categoryFilter === cat ? "default" : "outline"}
@@ -388,7 +392,7 @@ export default function ModelCarousel({
               : "border-primary/30 hover:bg-primary/10"
             }
           >
-            {cat === "all" ? "All Models" : cat === "video" ? "Video" : "Image"}
+            {cat === "all" ? t("modelCarousel.allModels") : cat === "video" ? t("modelCarousel.video") : t("modelCarousel.image")}
           </Button>
         ))}
       </div>
@@ -424,7 +428,7 @@ export default function ModelCarousel({
             className="gap-2 border-primary/30 hover:bg-primary/10"
           >
             {showTable ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            {showTable ? "Hide Comparison" : "Compare All Models"}
+            {showTable ? t("modelCarousel.hideComparison") : t("modelCarousel.compareAllModels")}
           </Button>
         </div>
       )}
