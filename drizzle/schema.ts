@@ -1930,6 +1930,10 @@ export const creatorProfiles = mysqlTable("creatorProfiles", {
   totalRevenue: int("totalRevenue").default(0),
   rating: int("rating").default(0),
   isVerified: boolean("isVerified").default(false),
+  /** Stripe Connect account ID for payouts */
+  stripeConnectAccountId: varchar("stripeConnectAccountId", { length: 255 }),
+  /** Stripe Connect onboarding status */
+  stripeConnectStatus: mysqlEnum("stripeConnectStatus", ["not_started", "pending", "active", "restricted"]).default("not_started"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -2043,3 +2047,109 @@ export const marketplaceReviews = mysqlTable("marketplaceReviews", {
 });
 export type MarketplaceReview = typeof marketplaceReviews.$inferSelect;
 export type InsertMarketplaceReview = typeof marketplaceReviews.$inferInsert;
+
+/**
+ * Creator Payouts - tracks payout requests and Stripe Connect transfers
+ */
+export const creatorPayouts = mysqlTable("creatorPayouts", {
+  id: int("id").autoincrement().primaryKey(),
+  creatorId: int("creatorId").notNull(),
+  /** Amount in cents to be paid out */
+  amountInCents: int("amountInCents").notNull(),
+  /** Platform fee deducted in cents */
+  platformFeeInCents: int("platformFeeInCents").default(0),
+  /** Net payout amount in cents */
+  netPayoutInCents: int("netPayoutInCents").notNull(),
+  /** Stripe Connect account ID */
+  stripeConnectAccountId: varchar("stripeConnectAccountId", { length: 255 }),
+  /** Stripe Transfer ID */
+  stripeTransferId: varchar("stripeTransferId", { length: 255 }),
+  /** Payout status */
+  status: mysqlEnum("status", ["pending", "processing", "completed", "failed", "cancelled"]).default("pending").notNull(),
+  /** Currency */
+  currency: varchar("currency", { length: 10 }).default("usd").notNull(),
+  /** Failure reason if failed */
+  failureReason: text("failureReason"),
+  /** Period start (earnings from) */
+  periodStart: timestamp("periodStart"),
+  /** Period end (earnings to) */
+  periodEnd: timestamp("periodEnd"),
+  requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+  processedAt: timestamp("processedAt"),
+  completedAt: timestamp("completedAt"),
+});
+export type CreatorPayout = typeof creatorPayouts.$inferSelect;
+export type InsertCreatorPayout = typeof creatorPayouts.$inferInsert;
+
+/**
+ * User Learning History - tracks what users have watched/completed
+ */
+export const userLearningHistory = mysqlTable("userLearningHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  listingId: int("listingId").notNull(),
+  /** Progress percentage 0-100 */
+  progressPercent: int("progressPercent").default(0),
+  /** Total watch time in seconds */
+  watchTimeSec: int("watchTimeSec").default(0),
+  /** Last position in seconds */
+  lastPositionSec: int("lastPositionSec").default(0),
+  /** Whether completed */
+  isCompleted: boolean("isCompleted").default(false),
+  completedAt: timestamp("completedAt"),
+  /** Number of times accessed */
+  accessCount: int("accessCount").default(1),
+  lastAccessedAt: timestamp("lastAccessedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type UserLearningHistory = typeof userLearningHistory.$inferSelect;
+export type InsertUserLearningHistory = typeof userLearningHistory.$inferInsert;
+
+/**
+ * User Preferences - interests and preferences for recommendations
+ */
+export const userPreferences = mysqlTable("userPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Preferred categories (JSON array) */
+  preferredCategories: text("preferredCategories"),
+  /** Preferred languages (JSON array) */
+  preferredLanguages: text("preferredLanguages"),
+  /** Preferred difficulty level */
+  preferredDifficulty: mysqlEnum("preferredDifficulty", ["beginner", "intermediate", "advanced", "all"]).default("all"),
+  /** Favorite creator IDs (JSON array) */
+  favoriteCreators: text("favoriteCreators"),
+  /** Topics of interest (JSON array) */
+  interests: text("interests"),
+  /** Learning goal */
+  learningGoal: text("learningGoal"),
+  /** Weekly learning time target in minutes */
+  weeklyTargetMinutes: int("weeklyTargetMinutes").default(120),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type InsertUserPreference = typeof userPreferences.$inferInsert;
+
+/**
+ * Recommendation Cache - cached personalized recommendations
+ */
+export const recommendationCache = mysqlTable("recommendationCache", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Recommendation type */
+  type: mysqlEnum("type", ["personalized", "trending", "similar", "new_releases"]).notNull(),
+  /** Source listing ID (for similar recommendations) */
+  sourceListingId: int("sourceListingId"),
+  /** Recommended listing IDs (JSON array with scores) */
+  recommendations: text("recommendations").notNull(),
+  /** Algorithm version used */
+  algorithmVersion: varchar("algorithmVersion", { length: 50 }).default("v1"),
+  /** Score/confidence of recommendations */
+  confidenceScore: int("confidenceScore").default(0),
+  /** Cache expiry */
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type RecommendationCacheEntry = typeof recommendationCache.$inferSelect;
+export type InsertRecommendationCacheEntry = typeof recommendationCache.$inferInsert;

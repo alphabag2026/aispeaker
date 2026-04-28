@@ -64,6 +64,7 @@ const ScormExport = lazy(() => import("./pages/ScormExport"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const MarketplaceDetail = lazy(() => import("./pages/MarketplaceDetail"));
 const CreatorDashboard = lazy(() => import("./pages/CreatorDashboard"));
+const Recommendations = lazy(() => import("./pages/Recommendations"));
 
 // AkoolStudio sub-pages
 const AkoolStudio = lazy(() => import("./pages/AkoolStudio").then(m => ({ default: m.default })));
@@ -167,6 +168,7 @@ function Router() {
         <Route path="/marketplace" component={Marketplace} />
         <Route path="/marketplace/:id" component={MarketplaceDetail} />
         <Route path="/creator-dashboard" component={CreatorDashboard} />
+        <Route path="/recommendations" component={Recommendations} />
 
         {/* Community Gallery */}
         <Route path="/community" component={CommunityGallery} />

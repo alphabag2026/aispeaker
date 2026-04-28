@@ -74,6 +74,10 @@ import {
   marketplaceListings, InsertMarketplaceListing,
   marketplacePurchases, InsertMarketplacePurchase,
   marketplaceReviews, InsertMarketplaceReview,
+  creatorPayouts, InsertCreatorPayout,
+  userLearningHistory, InsertUserLearningHistory,
+  userPreferences, InsertUserPreference,
+  recommendationCache, InsertRecommendationCacheEntry,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3519,4 +3523,113 @@ export async function createMarketplaceReview(data: InsertMarketplaceReview) {
 export async function getListingReviews(listingId: number) {
   const db = await getDb(); if (!db) throw new Error("DB not available");
   return db.select().from(marketplaceReviews).where(eq(marketplaceReviews.listingId, listingId)).orderBy(desc(marketplaceReviews.createdAt));
+}
+
+
+// ============ Creator Payouts / Stripe Connect (v10.3) ============
+export async function getCreatorPayouts(creatorId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(creatorPayouts).where(eq(creatorPayouts.creatorId, creatorId)).orderBy(desc(creatorPayouts.requestedAt));
+}
+export async function createPayout(data: InsertCreatorPayout) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(creatorPayouts).values(data).$returningId();
+  return result;
+}
+export async function updatePayoutStatus(id: number, status: "pending" | "processing" | "completed" | "failed" | "cancelled", extra?: { stripeTransferId?: string; failureReason?: string; processedAt?: Date; completedAt?: Date }) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(creatorPayouts).set({ status, ...extra }).where(eq(creatorPayouts.id, id));
+}
+export async function getPayoutById(id: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(creatorPayouts).where(eq(creatorPayouts.id, id));
+  return rows[0];
+}
+export async function getPendingPayoutTotal(creatorId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select({ total: sql<number>`COALESCE(SUM(${creatorPayouts.netPayoutInCents}), 0)` }).from(creatorPayouts).where(and(eq(creatorPayouts.creatorId, creatorId), or(eq(creatorPayouts.status, "pending"), eq(creatorPayouts.status, "processing"))));
+  return rows[0]?.total || 0;
+}
+export async function updateCreatorConnectAccount(creatorId: number, accountId: string, status: "not_started" | "pending" | "active" | "restricted") {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  await db.update(creatorProfiles).set({ stripeConnectAccountId: accountId, stripeConnectStatus: status }).where(eq(creatorProfiles.id, creatorId));
+}
+export async function getCreatorProfileByUserId(userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(creatorProfiles).where(eq(creatorProfiles.userId, userId));
+  return rows[0];
+}
+
+// ============ User Learning History (v10.4) ============
+export async function trackLearningProgress(data: InsertUserLearningHistory) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  // Upsert: update if exists, insert if not
+  const existing = await db.select().from(userLearningHistory).where(and(eq(userLearningHistory.userId, data.userId), eq(userLearningHistory.listingId, data.listingId)));
+  if (existing.length > 0) {
+    await db.update(userLearningHistory).set({
+      progressPercent: data.progressPercent,
+      watchTimeSec: sql`${userLearningHistory.watchTimeSec} + ${data.watchTimeSec || 0}`,
+      lastPositionSec: data.lastPositionSec,
+      isCompleted: data.isCompleted,
+      completedAt: data.isCompleted ? new Date() : undefined,
+      accessCount: sql`${userLearningHistory.accessCount} + 1`,
+      lastAccessedAt: new Date(),
+    }).where(eq(userLearningHistory.id, existing[0].id));
+    return existing[0].id;
+  }
+  const [result] = await db.insert(userLearningHistory).values(data).$returningId();
+  return result.id;
+}
+export async function getUserLearningHistoryList(userId: number, limit = 20) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(userLearningHistory).where(eq(userLearningHistory.userId, userId)).orderBy(desc(userLearningHistory.lastAccessedAt)).limit(limit);
+}
+export async function getUserCompletedListings(userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(userLearningHistory).where(and(eq(userLearningHistory.userId, userId), eq(userLearningHistory.isCompleted, true)));
+}
+
+// ============ User Preferences (v10.4) ============
+export async function getUserPreferences(userId: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+  return rows[0];
+}
+export async function upsertUserPreferences(userId: number, data: Partial<InsertUserPreference>) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const existing = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+  if (existing.length > 0) {
+    await db.update(userPreferences).set(data).where(eq(userPreferences.id, existing[0].id));
+    return existing[0].id;
+  }
+  const [result] = await db.insert(userPreferences).values({ userId, ...data }).$returningId();
+  return result.id;
+}
+
+// ============ Recommendation Cache (v10.4) ============
+export async function getCachedRecommendations(userId: number, type: "personalized" | "trending" | "similar" | "new_releases", sourceListingId?: number) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  const conditions = [eq(recommendationCache.userId, userId), eq(recommendationCache.type, type), gte(recommendationCache.expiresAt, new Date())];
+  if (sourceListingId) conditions.push(eq(recommendationCache.sourceListingId, sourceListingId));
+  const rows = await db.select().from(recommendationCache).where(and(...conditions)).orderBy(desc(recommendationCache.createdAt)).limit(1);
+  return rows[0];
+}
+export async function setCachedRecommendations(data: InsertRecommendationCacheEntry) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  // Delete old cache for same user+type
+  await db.delete(recommendationCache).where(and(eq(recommendationCache.userId, data.userId), eq(recommendationCache.type, data.type)));
+  const [result] = await db.insert(recommendationCache).values(data).$returningId();
+  return result.id;
+}
+export async function getPopularListings(limit = 10) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(marketplaceListings).where(eq(marketplaceListings.status, "active")).orderBy(desc(marketplaceListings.totalPurchases)).limit(limit);
+}
+export async function getRecentListings(limit = 10) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(marketplaceListings).where(eq(marketplaceListings.status, "active")).orderBy(desc(marketplaceListings.createdAt)).limit(limit);
+}
+export async function getListingsByCategory(category: string, limit = 10) {
+  const db = await getDb(); if (!db) throw new Error("DB not available");
+  return db.select().from(marketplaceListings).where(and(eq(marketplaceListings.status, "active"), eq(marketplaceListings.category, category as any))).orderBy(desc(marketplaceListings.totalPurchases)).limit(limit);
 }

@@ -7675,6 +7675,141 @@ Return a JSON object with a "sections" array. Each section has:
         return db.upsertCreatorProfile(ctx.user.id, input);
       }),
   }),
+
+  // ============ Payout / Stripe Connect (v10.3) ============
+  payout: router({
+    connectOnboard: protectedProcedure
+      .input(z.object({ returnUrl: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await db.getCreatorProfileByUserId(ctx.user.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Creator profile not found. Please create one first." });
+        // In test/sandbox mode, simulate Connect onboarding
+        const mockAccountId = `acct_test_${ctx.user.id}_${Date.now()}`;
+        await db.updateCreatorConnectAccount(profile.id, mockAccountId, "pending");
+        const onboardingUrl = `https://connect.stripe.com/setup/s/${mockAccountId}`;
+        return { url: onboardingUrl, accountId: mockAccountId };
+      }),
+    connectStatus: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await db.getCreatorProfileByUserId(ctx.user.id);
+      if (!profile) return { status: "no_profile" as const, accountId: null };
+      return { status: profile.stripeConnectStatus || "not_started", accountId: profile.stripeConnectAccountId || null };
+    }),
+    requestPayout: protectedProcedure
+      .input(z.object({ amountInCents: z.number().min(1000) }))
+      .mutation(async ({ ctx, input }) => {
+        const profile = await db.getCreatorProfileByUserId(ctx.user.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Creator profile not found" });
+        if (profile.stripeConnectStatus !== "active") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Stripe Connect account not active. Complete onboarding first." });
+        // Check available balance
+        const earnings = await db.getSellerEarnings(ctx.user.id);
+        const pendingPayouts = await db.getPendingPayoutTotal(profile.id);
+        const availableBalance = (earnings.total || 0) - pendingPayouts;
+        if (input.amountInCents > availableBalance) throw new TRPCError({ code: "BAD_REQUEST", message: "Insufficient balance" });
+        const platformFee = Math.round(input.amountInCents * 0.2);
+        const netPayout = input.amountInCents - platformFee;
+        const result = await db.createPayout({
+          creatorId: profile.id,
+          amountInCents: input.amountInCents,
+          platformFeeInCents: platformFee,
+          netPayoutInCents: netPayout,
+          stripeConnectAccountId: profile.stripeConnectAccountId || undefined,
+          status: "pending",
+          currency: "usd",
+        });
+        return { payoutId: result.id, netPayout, platformFee };
+      }),
+    payoutHistory: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await db.getCreatorProfileByUserId(ctx.user.id);
+      if (!profile) return [];
+      return db.getCreatorPayouts(profile.id);
+    }),
+    earnings: protectedProcedure.query(async ({ ctx }) => {
+      const profile = await db.getCreatorProfileByUserId(ctx.user.id);
+      if (!profile) return { totalEarnings: 0, pendingPayouts: 0, availableBalance: 0, completedPayouts: 0 };
+      const earnings = await db.getSellerEarnings(ctx.user.id);
+      const pendingPayouts = await db.getPendingPayoutTotal(profile.id);
+      const payouts = await db.getCreatorPayouts(profile.id);
+      const completedPayouts = payouts.filter(p => p.status === "completed").reduce((sum, p) => sum + p.netPayoutInCents, 0);
+      return {
+        totalEarnings: earnings.total || 0,
+        pendingPayouts,
+        availableBalance: (earnings.total || 0) - pendingPayouts - completedPayouts,
+        completedPayouts,
+      };
+    }),
+  }),
+
+  // ============ AI Recommendations (v10.4) ============
+  recommendation: router({
+    getPersonalized: protectedProcedure.query(async ({ ctx }) => {
+      // Check cache first
+      const cached = await db.getCachedRecommendations(ctx.user.id, "personalized");
+      if (cached) return { recommendations: JSON.parse(cached.recommendations), fromCache: true };
+      // Get user history and preferences
+      const history = await db.getUserLearningHistoryList(ctx.user.id, 50);
+      const prefs = await db.getUserPreferences(ctx.user.id);
+      // Collaborative filtering: get popular items user hasn't seen
+      const viewedIds = history.map(h => h.listingId);
+      const popular = await db.getPopularListings(20);
+      let recommendations = popular.filter(p => !viewedIds.includes(p.id));
+      // Content-based: if user has preferences, boost matching categories
+      if (prefs?.preferredCategories) {
+        const cats = JSON.parse(prefs.preferredCategories) as string[];
+        recommendations.sort((a, b) => {
+          const aMatch = cats.includes(a.category || "") ? 1 : 0;
+          const bMatch = cats.includes(b.category || "") ? 1 : 0;
+          return bMatch - aMatch;
+        });
+      }
+      const result = recommendations.slice(0, 10).map(r => ({ id: r.id, title: r.title, category: r.category, price: r.priceInCents, rating: r.avgRating, totalPurchases: r.totalPurchases }));
+      // Cache for 1 hour
+      await db.setCachedRecommendations({ userId: ctx.user.id, type: "personalized", recommendations: JSON.stringify(result), expiresAt: new Date(Date.now() + 3600000) });
+      return { recommendations: result, fromCache: false };
+    }),
+    getTrending: publicProcedure.query(async () => {
+      const popular = await db.getPopularListings(10);
+      return popular.map(r => ({ id: r.id, title: r.title, category: r.category, price: r.priceInCents, rating: r.avgRating, totalPurchases: r.totalPurchases, thumbnailUrl: r.thumbnailUrl }));
+    }),
+    getSimilar: publicProcedure
+      .input(z.object({ listingId: z.number() }))
+      .query(async ({ input }) => {
+        const listings = await db.getMarketplaceListings({ category: "" }); const listing = listings.find(l => l.id === input.listingId);
+        if (!listing) return [];
+        // Get listings in same category
+        const similar = await db.getListingsByCategory(listing.category || "general", 10);
+        return similar.filter(s => s.id !== input.listingId).map(r => ({ id: r.id, title: r.title, category: r.category, price: r.priceInCents, rating: r.avgRating, totalPurchases: r.totalPurchases, thumbnailUrl: r.thumbnailUrl }));
+      }),
+    trackProgress: protectedProcedure
+      .input(z.object({ listingId: z.number(), progressPercent: z.number().min(0).max(100), watchTimeSec: z.number().min(0).optional(), lastPositionSec: z.number().min(0).optional(), isCompleted: z.boolean().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        return db.trackLearningProgress({ userId: ctx.user.id, ...input });
+      }),
+    getHistory: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserLearningHistoryList(ctx.user.id);
+    }),
+    getPreferences: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserPreferences(ctx.user.id);
+    }),
+    updatePreferences: protectedProcedure
+      .input(z.object({
+        preferredCategories: z.array(z.string()).optional(),
+        preferredLanguages: z.array(z.string()).optional(),
+        preferredDifficulty: z.enum(["beginner", "intermediate", "advanced", "all"]).optional(),
+        interests: z.array(z.string()).optional(),
+        learningGoal: z.string().optional(),
+        weeklyTargetMinutes: z.number().min(0).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const data: any = {};
+        if (input.preferredCategories) data.preferredCategories = JSON.stringify(input.preferredCategories);
+        if (input.preferredLanguages) data.preferredLanguages = JSON.stringify(input.preferredLanguages);
+        if (input.preferredDifficulty) data.preferredDifficulty = input.preferredDifficulty;
+        if (input.interests) data.interests = JSON.stringify(input.interests);
+        if (input.learningGoal) data.learningGoal = input.learningGoal;
+        if (input.weeklyTargetMinutes !== undefined) data.weeklyTargetMinutes = input.weeklyTargetMinutes;
+        return db.upsertUserPreferences(ctx.user.id, data);
+      }),
+  }),
 });
 
 // SRT time formatter

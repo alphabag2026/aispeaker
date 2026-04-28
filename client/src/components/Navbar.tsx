@@ -303,6 +303,17 @@ export default function Navbar() {
             </Button>
           </Link>
 
+          {/* AI Recommendations */}
+          <Link href="/recommendations">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`gap-1.5 text-sm font-medium ${location === '/recommendations' ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}
+            >
+              AI추천
+            </Button>
+          </Link>
+
           {/* Pricing with badge */}
           <Link href="/pricing">
             <Button
@@ -505,6 +516,11 @@ export default function Navbar() {
               <Link href="/marketplace" onClick={() => setMobileOpen(false)}>
                 <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
                   <Store className="h-4 w-4" /> 마켓플레이스 <span className="badge-new ml-auto">NEW</span>
+                </Button>
+              </Link>
+              <Link href="/recommendations" onClick={() => setMobileOpen(false)}>
+                <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
+                  <Sparkles className="h-4 w-4" /> AI추천
                 </Button>
               </Link>
               <Link href="/pricing" onClick={() => setMobileOpen(false)}>
