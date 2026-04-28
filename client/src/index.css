@@ -90,14 +90,14 @@
   --sidebar-primary-foreground: oklch(0.98 0.005 280);
   --background: oklch(0.06 0.015 280);
   --foreground: oklch(0.96 0.008 280);
-  --card: oklch(0.10 0.02 280);
+  --card: oklch(0.14 0.02 280);
   --card-foreground: oklch(0.96 0.008 280);
   --popover: oklch(0.10 0.02 280);
   --popover-foreground: oklch(0.96 0.008 280);
   --secondary: oklch(0.14 0.02 280);
   --secondary-foreground: oklch(0.94 0.008 280);
   --muted: oklch(0.12 0.018 280);
-  --muted-foreground: oklch(0.55 0.025 280);
+  --muted-foreground: oklch(0.62 0.025 280);
   --accent: oklch(0.72 0.2 195);
   --accent-foreground: oklch(0.06 0.015 195);
   --destructive: oklch(0.6 0.22 25);
@@ -172,16 +172,26 @@
 
   /* ── Glassmorphism Card ── */
   .glass-card {
-    background: oklch(0.12 0.02 280 / 0.6);
+    background: oklch(0.97 0.005 260 / 0.85);
     backdrop-filter: blur(20px);
-    border: 1px solid oklch(0.25 0.03 280 / 0.4);
+    border: 1px solid oklch(0.88 0.01 260 / 0.6);
     border-radius: 1rem;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: oklch(0.15 0.015 260);
   }
   .glass-card:hover {
-    border-color: oklch(0.72 0.25 280 / 0.5);
-    box-shadow: 0 0 30px oklch(0.72 0.25 280 / 0.1);
+    border-color: oklch(0.55 0.2 250 / 0.5);
+    box-shadow: 0 0 30px oklch(0.55 0.2 250 / 0.1);
     transform: translateY(-2px);
+  }
+  :is(.dark) .glass-card {
+    background: oklch(0.16 0.02 280 / 0.75);
+    border: 1px solid oklch(0.28 0.03 280 / 0.5);
+    color: oklch(0.96 0.008 280);
+  }
+  :is(.dark) .glass-card:hover {
+    border-color: oklch(0.72 0.25 280 / 0.5);
+    box-shadow: 0 0 30px oklch(0.72 0.25 280 / 0.15);
   }
 
   /* ── Neon Border Glow ── */
@@ -322,10 +332,15 @@
 
   /* ── Mega Menu ── */
   .mega-menu {
-    background: oklch(0.08 0.018 280 / 0.98);
+    background: oklch(0.99 0.003 260 / 0.98);
     backdrop-filter: blur(30px);
-    border: 1px solid oklch(0.2 0.02 280);
+    border: 1px solid oklch(0.88 0.01 260);
     border-radius: 1rem;
+    box-shadow: 0 25px 50px oklch(0 0 0 / 0.1);
+  }
+  :is(.dark) .mega-menu {
+    background: oklch(0.08 0.018 280 / 0.98);
+    border: 1px solid oklch(0.2 0.02 280);
     box-shadow: 0 25px 50px oklch(0 0 0 / 0.5);
   }
 }
