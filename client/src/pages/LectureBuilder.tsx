@@ -442,7 +442,10 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
   const [avatarRole, setAvatarRole] = useState<string>("instructor");
   const [avatarVoice, setAvatarVoice] = useState("Kore");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [addTab, setAddTab] = useState<"preset" | "my" | "upload">("preset");
+  const [addTab, setAddTab] = useState<"preset" | "my" | "upload" | "ai">("preset");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiPreview, setAiPreview] = useState<string | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -455,9 +458,27 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
   const deleteUserAvatar = trpc.userAvatar.delete.useMutation({
     onSuccess: () => { myAvatarsQuery.refetch(); toast.success(t("lectureBuilder.avatar.deleted")); }
   });
+  const generateFace = trpc.userAvatar.generateFace.useMutation({
+    onSuccess: (data) => {
+      myAvatarsQuery.refetch();
+      setAiPreview(data.imageUrl);
+      setSelectedMyAvatarUrl(data.imageUrl);
+      setSelectedFaceId(null);
+      setAiGenerating(false);
+      toast.success(t("lectureBuilder.avatar.aiGenerated"));
+    },
+    onError: (e) => { setAiGenerating(false); toast.error(e.message); }
+  });
+  const updateUserAvatar = trpc.userAvatar.update.useMutation({
+    onSuccess: () => { myAvatarsQuery.refetch(); toast.success(t("lectureBuilder.avatar.updated")); },
+    onError: (e) => toast.error(e.message)
+  });
   const [selectedMyAvatarUrl, setSelectedMyAvatarUrl] = useState<string | null>(null);
   const [showKlingDialog, setShowKlingDialog] = useState(false);
   const [editingAvatar, setEditingAvatar] = useState<any | null>(null);
+  const [editingUserAvatar, setEditingUserAvatar] = useState<any | null>(null);
+  const [editUserAvatarName, setEditUserAvatarName] = useState("");
+  const [editUserAvatarDesc, setEditUserAvatarDesc] = useState("");
 
   const addAvatar = trpc.lectureBuilder.addAvatar.useMutation({
     onSuccess: () => {
@@ -505,11 +526,12 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
             </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{t("lectureBuilder.jsxText57")}</DialogTitle></DialogHeader>
-            <Tabs value={addTab} onValueChange={(v) => { setAddTab(v as any); setSelectedFaceId(null); setSelectedMyAvatarUrl(null); setUploadPreview(null); setUploadFile(null); }} className="mt-4">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs value={addTab} onValueChange={(v) => { setAddTab(v as any); setSelectedFaceId(null); setSelectedMyAvatarUrl(null); setUploadPreview(null); setUploadFile(null); setAiPreview(null); setAiPrompt(""); }} className="mt-4">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="preset" className="gap-1.5"><Users className="w-4 h-4" />{t("lectureBuilder.avatarTab.preset")}</TabsTrigger>
                 <TabsTrigger value="my" className="gap-1.5"><UserCircle2 className="w-4 h-4" />{t("lectureBuilder.avatarTab.myAvatars")}</TabsTrigger>
                 <TabsTrigger value="upload" className="gap-1.5"><Camera className="w-4 h-4" />{t("lectureBuilder.avatarTab.upload")}</TabsTrigger>
+                <TabsTrigger value="ai" className="gap-1.5"><Sparkles className="w-4 h-4" />{t("lectureBuilder.avatarTab.aiGenerate")}</TabsTrigger>
               </TabsList>
 
               {/* Tab 1: Preset Faces */}
@@ -562,10 +584,16 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
                             <span className="text-[10px] text-white truncate block">{av.name}</span>
                           </div>
                         </button>
-                        <button className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground rounded-full p-0.5 z-10"
-                          onClick={() => { if (confirm(t("lectureBuilder.avatar.deleteConfirm"))) deleteUserAvatar.mutate({ id: av.id }); }}>
-                          <X className="w-3 h-3" />
-                        </button>
+                        <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 z-10">
+                          <button className="bg-primary text-primary-foreground rounded-full p-0.5"
+                            onClick={(e) => { e.stopPropagation(); setEditingUserAvatar(av); setEditUserAvatarName(av.name); setEditUserAvatarDesc(av.description || ""); }}>
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button className="bg-destructive text-destructive-foreground rounded-full p-0.5"
+                            onClick={(e) => { e.stopPropagation(); if (confirm(t("lectureBuilder.avatar.deleteConfirm"))) deleteUserAvatar.mutate({ id: av.id }); }}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>)}
                   </div>
                 )}
@@ -634,6 +662,65 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
                     <span className="text-xs text-muted-foreground">{t("lectureBuilder.avatar.uploadHint")}</span>
                   </button>
                 )}
+              </TabsContent>
+              {/* Tab 4: AI Face Generation */}
+              <TabsContent value="ai" className="space-y-4 pt-2">
+                <div className="text-center">
+                  <p className="text-sm font-medium mb-1">{t("lectureBuilder.avatar.aiTitle")}</p>
+                  <p className="text-xs text-muted-foreground mb-4">{t("lectureBuilder.avatar.aiDesc")}</p>
+                </div>
+                <div className="space-y-3">
+                  <textarea
+                    className="w-full min-h-[80px] p-3 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background"
+                    placeholder={t("lectureBuilder.avatar.aiPlaceholder")}
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    maxLength={500}
+                  />
+                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                    <span>{aiPrompt.length}/500</span>
+                  </div>
+                </div>
+                {aiPreview ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-primary/30 shadow-lg">
+                      <img src={aiPreview} alt="AI generated" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => { setAiPreview(null); setSelectedMyAvatarUrl(null); }}>
+                        <Wand2 className="w-4 h-4 mr-1" />{t("lectureBuilder.avatar.aiRegenerate")}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-green-600 font-medium">{t("lectureBuilder.avatar.aiSavedToMyAvatars")}</p>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full gap-2"
+                    disabled={!aiPrompt.trim() || aiGenerating || !avatarName.trim()}
+                    onClick={() => {
+                      setAiGenerating(true);
+                      generateFace.mutate({ prompt: aiPrompt.trim(), name: avatarName.trim() || "AI Avatar" });
+                    }}
+                  >
+                    {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {aiGenerating ? t("lectureBuilder.avatar.aiGenerating") : t("lectureBuilder.avatar.aiGenerateBtn")}
+                  </Button>
+                )}
+                {/* Example prompts */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground">{t("lectureBuilder.avatar.aiExamples")}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: t("lectureBuilder.avatar.aiEx1"), prompt: "a young Korean female professor in her 30s with glasses" },
+                      { label: t("lectureBuilder.avatar.aiEx2"), prompt: "a middle-aged Caucasian male business executive with gray hair" },
+                      { label: t("lectureBuilder.avatar.aiEx3"), prompt: "a young Indian female tech entrepreneur with confident smile" },
+                      { label: t("lectureBuilder.avatar.aiEx4"), prompt: "a friendly Japanese male teacher in his 40s" },
+                    ].map((ex) => (
+                      <button key={ex.prompt} className="text-xs px-2.5 py-1 rounded-full border hover:bg-primary/10 hover:border-primary/30 transition-colors"
+                        onClick={() => setAiPrompt(ex.prompt)}>{ex.label}</button>
+                    ))}
+                  </div>
+                </div>
               </TabsContent>
             </Tabs>
 
@@ -735,6 +822,38 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
         })}
         </div>
       }
+
+      {/* User Avatar Edit Dialog */}
+      <Dialog open={!!editingUserAvatar} onOpenChange={(open) => { if (!open) setEditingUserAvatar(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>{t("lectureBuilder.avatar.editTitle")}</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            {editingUserAvatar?.imageUrl && (
+              <div className="flex justify-center">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary/30">
+                  <img src={editingUserAvatar.imageUrl} alt={editUserAvatarName} className="w-full h-full object-cover" />
+                </div>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>{t("lectureBuilder.avatar.editName")}</Label>
+              <Input value={editUserAvatarName} onChange={(e) => setEditUserAvatarName(e.target.value)} maxLength={100} />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("lectureBuilder.avatar.editDesc")}</Label>
+              <Textarea value={editUserAvatarDesc} onChange={(e) => setEditUserAvatarDesc(e.target.value)} maxLength={500} rows={3} />
+            </div>
+            <Button className="w-full" disabled={!editUserAvatarName.trim() || updateUserAvatar.isPending}
+              onClick={() => {
+                updateUserAvatar.mutate({ id: editingUserAvatar.id, name: editUserAvatarName.trim(), description: editUserAvatarDesc.trim() || undefined },
+                  { onSuccess: () => setEditingUserAvatar(null) });
+              }}>
+              {updateUserAvatar.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+              {t("lectureBuilder.avatar.editSave")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Avatar Settings Dialog */}
       {editingAvatar &&
