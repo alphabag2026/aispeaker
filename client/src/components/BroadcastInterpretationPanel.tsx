@@ -17,7 +17,7 @@ import {
   Languages, Volume2, VolumeX, Loader2, Globe, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import "@/lib/broadcastInterpretationPanel.ts";
+import "@/i18n/components/BroadcastInterpretationPanel";
 
 // Supported languages for broadcast interpretation
 const BROADCAST_LANGUAGES = [
