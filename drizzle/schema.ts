@@ -2361,3 +2361,40 @@ export const userAvatars = mysqlTable("userAvatars", {
 });
 export type UserAvatar = typeof userAvatars.$inferSelect;
 export type InsertUserAvatar = typeof userAvatars.$inferInsert;
+
+/**
+ * D-ID Video History - stores generated D-ID talking avatar videos for reuse
+ */
+export const didVideoHistory = mysqlTable("didVideoHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Avatar image URL used for generation */
+  avatarImageUrl: text("avatarImageUrl").notNull(),
+  /** Avatar name for display */
+  avatarName: varchar("avatarName", { length: 255 }),
+  /** Text that was spoken */
+  spokenText: text("spokenText").notNull(),
+  /** Voice ID used */
+  voiceId: varchar("voiceId", { length: 128 }).notNull(),
+  /** Voice provider (microsoft/amazon) */
+  voiceProvider: varchar("voiceProvider", { length: 32 }).default("microsoft").notNull(),
+  /** D-ID talk ID */
+  didTalkId: varchar("didTalkId", { length: 128 }),
+  /** S3 video URL */
+  videoUrl: text("videoUrl"),
+  /** S3 video file key */
+  videoFileKey: text("videoFileKey"),
+  /** Status: pending, processing, done, error */
+  status: mysqlEnum("status", ["pending", "processing", "done", "error"]).default("pending").notNull(),
+  /** Error message if failed */
+  errorMessage: text("errorMessage"),
+  /** Duration in seconds */
+  durationSec: int("durationSec"),
+  /** Optional: linked to a lecture script section */
+  scriptId: int("scriptId"),
+  sectionIndex: int("sectionIndex"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type DidVideoHistory = typeof didVideoHistory.$inferSelect;
+export type InsertDidVideoHistory = typeof didVideoHistory.$inferInsert;

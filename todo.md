@@ -2123,3 +2123,18 @@
 - [x] 프론트엔드 UI - 영상 재생 + 다운로드 + 재생성
 - [x] i18n 번역 키 추가 (20개 언어, 18개 키)
 - [x] 테스트 작성 (35개 테스트 전체 통과) 및 프로덕션 빌드 성공
+## 아바타 추가 다이얼로그 탭 UI 버그 수정
+- [x] 탭(내 아바타, 사진 업로드, AI 생성, DID 미리보기) - 코드 정상, 배포 버전 미스매치 (Publish 후 해결)
+## DID 영상 히스토리 갤러리
+- [x] DB 테이블 - didVideoHistory (userId, avatarName, avatarImageUrl, voiceId, inputText, didTalkId, videoUrl, status)
+- [x] 백엔드 - DID 영상 히스토리 CRUD (didHistory.list/delete/checkStatus)
+- [x] 프론트엔드 UI - DID 영상 갤러리 페이지 (/did-gallery) + Navbar 링크
+- [x] 프론트엔드 UI - 영상 재생/다운로드/삭제 + 상태 폴링
+## DID 자동 강의 영상 제작
+- [x] 백엔드 - 스크립트 섹션별 DID 영상 일괄 생성 (didPipeline.generateAll/getByScript)
+- [x] 프론트엔드 UI - 자동 강의 제작 탭 (스크립트 선택 + 아바타 + 음성 + 전체 생성)
+## 즐겨찾기/고정 기능 UI 확인
+- [x] 아바타 목록에서 즐겨찾기/고정 기능 코드 정상 확인 (Publish 후 정상 동작)
+## i18n + 테스트
+- [x] 새 기능 번역 키 추가 (20개 언어 - LectureBuilder + Navbar)
+- [x] 테스트 1311개 전체 통과 + 프로덕션 빌드 성공

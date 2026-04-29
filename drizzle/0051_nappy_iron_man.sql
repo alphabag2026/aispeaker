@@ -1,0 +1,20 @@
+CREATE TABLE `didVideoHistory` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`userId` int NOT NULL,
+	`avatarImageUrl` text NOT NULL,
+	`avatarName` varchar(255),
+	`spokenText` text NOT NULL,
+	`voiceId` varchar(128) NOT NULL,
+	`voiceProvider` varchar(32) NOT NULL DEFAULT 'microsoft',
+	`didTalkId` varchar(128),
+	`videoUrl` text,
+	`videoFileKey` text,
+	`status` enum('pending','processing','done','error') NOT NULL DEFAULT 'pending',
+	`errorMessage` text,
+	`durationSec` int,
+	`scriptId` int,
+	`sectionIndex` int,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `didVideoHistory_id` PRIMARY KEY(`id`)
+);
