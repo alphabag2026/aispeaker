@@ -84,6 +84,7 @@ const AkoolLiveCamera = lazy(() => import("./pages/AkoolStudio").then(m => ({ de
 const AkoolStreamingAvatar = lazy(() => import("./pages/AkoolStudio").then(m => ({ default: m.AkoolStreamingAvatar })));
 const AkoolModels = lazy(() => import("./pages/AkoolStudio").then(m => ({ default: m.AkoolModels })));
 const AkoolEffects = lazy(() => import("./pages/AkoolStudio").then(m => ({ default: m.AkoolEffects })));
+const DidVideoGallery = lazy(() => import("./pages/DidVideoGallery"));
 
 // Loading fallback
 function PageLoader() {
@@ -187,6 +188,7 @@ function Router() {
         {/* Profile, AI History, Admin Analytics */}
         <Route path="/profile" component={UserProfile} />
         <Route path="/ai-history" component={AiHistory} />
+        <Route path="/did-gallery" component={DidVideoGallery} />
         <Route path="/admin/analytics" component={AdminAnalytics} />
 
         <Route path="/404" component={NotFound} />

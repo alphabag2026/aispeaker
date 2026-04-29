@@ -8862,6 +8862,236 @@ Return a JSON object with a "sections" array. Each section has:
         }
       }),
   }),
+  // ========== D-ID Video History ==========
+  didHistory: router({
+    /** List all DID videos for the current user */
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(50) }).optional())
+      .query(async ({ ctx, input }) => {
+        return db.listDidVideoHistory(ctx.user.id, input?.limit || 50);
+      }),
+    /** Get a single DID video by ID */
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getDidVideoById(input.id, ctx.user.id);
+      }),
+    /** Create a DID video and start generation */
+    create: protectedProcedure
+      .input(z.object({
+        avatarImageUrl: z.string().url(),
+        avatarName: z.string().optional(),
+        spokenText: z.string().min(1).max(2000),
+        voiceId: z.string().default("en-US-JennyNeural"),
+        voiceProvider: z.enum(["microsoft", "amazon"]).default("microsoft"),
+        scriptId: z.number().optional(),
+        sectionIndex: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const didApiKey = process.env.DID_API_KEY;
+        if (!didApiKey) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "D-ID API key is not configured." });
+        }
+        // Create DB record first
+        const recordId = await db.createDidVideoRecord({
+          userId: ctx.user.id,
+          avatarImageUrl: input.avatarImageUrl,
+          avatarName: input.avatarName || null,
+          spokenText: input.spokenText,
+          voiceId: input.voiceId,
+          voiceProvider: input.voiceProvider,
+          status: "pending",
+          scriptId: input.scriptId || null,
+          sectionIndex: input.sectionIndex ?? null,
+        });
+        if (!recordId) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create record" });
+        // Call D-ID API
+        try {
+          const didResponse = await fetch("https://api.d-id.com/talks", {
+            method: "POST",
+            headers: {
+              "Authorization": `Basic ${didApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              source_url: input.avatarImageUrl,
+              script: {
+                type: "text",
+                input: input.spokenText,
+                provider: { type: input.voiceProvider, voice_id: input.voiceId },
+              },
+              config: { stitch: true, result_format: "mp4" },
+            }),
+          });
+          if (!didResponse.ok) {
+            const errBody = await didResponse.text();
+            console.error("[D-ID History] Create talk failed:", errBody);
+            await db.updateDidVideoRecord(recordId, ctx.user.id, { status: "error", errorMessage: `D-ID API error: ${didResponse.status}` });
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `D-ID API error: ${didResponse.status}` });
+          }
+          const didData = await didResponse.json() as any;
+          await db.updateDidVideoRecord(recordId, ctx.user.id, { didTalkId: didData.id, status: "processing" });
+          return { id: recordId, talkId: didData.id, status: "processing" };
+        } catch (error: any) {
+          if (error instanceof TRPCError) throw error;
+          await db.updateDidVideoRecord(recordId, ctx.user.id, { status: "error", errorMessage: error.message });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create D-ID video" });
+        }
+      }),
+    /** Poll status and finalize video */
+    pollStatus: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const record = await db.getDidVideoById(input.id, ctx.user.id);
+        if (!record) throw new TRPCError({ code: "NOT_FOUND" });
+        if (record.status === "done" || record.status === "error") return record;
+        if (!record.didTalkId) return record;
+        const didApiKey = process.env.DID_API_KEY;
+        if (!didApiKey) return record;
+        try {
+          const response = await fetch(`https://api.d-id.com/talks/${record.didTalkId}`, {
+            headers: { "Authorization": `Basic ${didApiKey}` },
+          });
+          if (!response.ok) return record;
+          const data = await response.json() as any;
+          if (data.status === "done" && data.result_url) {
+            let videoUrl = data.result_url;
+            let videoFileKey: string | null = null;
+            try {
+              const videoResponse = await fetch(data.result_url);
+              if (videoResponse.ok) {
+                const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+                const key = `did-history/${ctx.user.id}/${record.didTalkId}-${Date.now()}.mp4`;
+                const { url: s3Url } = await storagePut(key, videoBuffer, "video/mp4");
+                videoUrl = s3Url;
+                videoFileKey = key;
+              }
+            } catch { /* fallback to D-ID URL */ }
+            await db.updateDidVideoRecord(record.id, ctx.user.id, {
+              status: "done",
+              videoUrl,
+              videoFileKey,
+              durationSec: data.duration ? Math.round(data.duration) : null,
+            });
+            return { ...record, status: "done" as const, videoUrl, videoFileKey, durationSec: data.duration ? Math.round(data.duration) : null };
+          } else if (data.status === "error" || data.status === "rejected") {
+            const errMsg = data.error?.description || "D-ID generation failed";
+            await db.updateDidVideoRecord(record.id, ctx.user.id, { status: "error", errorMessage: errMsg });
+            return { ...record, status: "error" as const, errorMessage: errMsg };
+          }
+          return record;
+        } catch {
+          return record;
+        }
+      }),
+    /** Delete a DID video record */
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteDidVideo(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+  // ========== DID Auto Lecture Pipeline ==========
+  didPipeline: router({
+    /** Generate DID videos for all sections of a script */
+    generateAll: protectedProcedure
+      .input(z.object({
+        scriptId: z.number(),
+        avatarImageUrl: z.string().url(),
+        avatarName: z.string().optional(),
+        voiceId: z.string().default("ko-KR-SunHiNeural"),
+        voiceProvider: z.enum(["microsoft", "amazon"]).default("microsoft"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const didApiKey = process.env.DID_API_KEY;
+        if (!didApiKey) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "D-ID API key is not configured." });
+        }
+        // Fetch script sections
+        const script = await db.getLectureScriptById(input.scriptId);
+        if (!script || script.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Script not found" });
+        }
+        let sections: Array<{ title?: string; content: string }> = [];
+        try {
+          // Use script.sections (JSON array) or fall back to scriptContent (full text)
+          const rawSections = script.sections;
+          if (rawSections) {
+            const parsed = typeof rawSections === "string" ? JSON.parse(rawSections) : rawSections;
+            if (Array.isArray(parsed)) {
+              sections = parsed.map((s: any) => ({ title: s.title || s.heading, content: s.content || s.text || s.script || "" }));
+            }
+          }
+          if (sections.length === 0 && script.scriptContent) {
+            // Fall back to full script content as single section
+            sections = [{ title: script.title || "Section 1", content: script.scriptContent }];
+          }
+        } catch {
+          if (script.scriptContent) {
+            sections = [{ title: script.title || "Section 1", content: script.scriptContent }];
+          }
+        }
+        if (sections.length === 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Script has no sections" });
+        }
+        // Create records and start generation for each section
+        const results: Array<{ id: number; sectionIndex: number; talkId: string | null; status: string }> = [];
+        for (let i = 0; i < sections.length; i++) {
+          const section = sections[i];
+          const text = section.content.substring(0, 2000); // D-ID text limit
+          if (!text.trim()) continue;
+          const recordId = await db.createDidVideoRecord({
+            userId: ctx.user.id,
+            avatarImageUrl: input.avatarImageUrl,
+            avatarName: input.avatarName || null,
+            spokenText: text,
+            voiceId: input.voiceId,
+            voiceProvider: input.voiceProvider,
+            status: "pending",
+            scriptId: input.scriptId,
+            sectionIndex: i,
+          });
+          if (!recordId) continue;
+          try {
+            const didResponse = await fetch("https://api.d-id.com/talks", {
+              method: "POST",
+              headers: {
+                "Authorization": `Basic ${didApiKey}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                source_url: input.avatarImageUrl,
+                script: {
+                  type: "text",
+                  input: text,
+                  provider: { type: input.voiceProvider, voice_id: input.voiceId },
+                },
+                config: { stitch: true, result_format: "mp4" },
+              }),
+            });
+            if (didResponse.ok) {
+              const didData = await didResponse.json() as any;
+              await db.updateDidVideoRecord(recordId, ctx.user.id, { didTalkId: didData.id, status: "processing" });
+              results.push({ id: recordId, sectionIndex: i, talkId: didData.id, status: "processing" });
+            } else {
+              await db.updateDidVideoRecord(recordId, ctx.user.id, { status: "error", errorMessage: `API error: ${didResponse.status}` });
+              results.push({ id: recordId, sectionIndex: i, talkId: null, status: "error" });
+            }
+          } catch (error: any) {
+            await db.updateDidVideoRecord(recordId, ctx.user.id, { status: "error", errorMessage: error.message });
+            results.push({ id: recordId, sectionIndex: i, talkId: null, status: "error" });
+          }
+        }
+        return { scriptId: input.scriptId, totalSections: sections.length, results };
+      }),
+    /** Get all DID videos for a specific script */
+    getByScript: protectedProcedure
+      .input(z.object({ scriptId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.listDidVideosByScript(input.scriptId, ctx.user.id);
+      }),
+  }),
 });
 
 // SRT time formatter

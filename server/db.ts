@@ -87,6 +87,7 @@ import {
   broadcastRecordings, InsertBroadcastRecording,
   broadcastAnalytics, InsertBroadcastAnalytic,
   userAvatars, InsertUserAvatar,
+  didVideoHistory, InsertDidVideoHistory,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -4036,4 +4037,32 @@ export async function listUserAvatarsSorted(userId: number, sortBy: "favorite" |
       break;
   }
   return db.select().from(userAvatars).where(eq(userAvatars.userId, userId)).orderBy(...orderClauses);
+}
+
+// ========== D-ID Video History ==========
+export async function createDidVideoRecord(data: InsertDidVideoHistory) {
+  const db = await getDb(); if (!db) return null;
+  const [result] = await db.insert(didVideoHistory).values(data).$returningId();
+  return result?.id ?? null;
+}
+export async function updateDidVideoRecord(id: number, userId: number, data: Partial<InsertDidVideoHistory>) {
+  const db = await getDb(); if (!db) return;
+  await db.update(didVideoHistory).set(data).where(and(eq(didVideoHistory.id, id), eq(didVideoHistory.userId, userId)));
+}
+export async function listDidVideoHistory(userId: number, limit = 50) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(didVideoHistory).where(eq(didVideoHistory.userId, userId)).orderBy(desc(didVideoHistory.createdAt)).limit(limit);
+}
+export async function getDidVideoById(id: number, userId: number) {
+  const db = await getDb(); if (!db) return null;
+  const rows = await db.select().from(didVideoHistory).where(and(eq(didVideoHistory.id, id), eq(didVideoHistory.userId, userId))).limit(1);
+  return rows[0] ?? null;
+}
+export async function deleteDidVideo(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(didVideoHistory).where(and(eq(didVideoHistory.id, id), eq(didVideoHistory.userId, userId)));
+}
+export async function listDidVideosByScript(scriptId: number, userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(didVideoHistory).where(and(eq(didVideoHistory.scriptId, scriptId), eq(didVideoHistory.userId, userId))).orderBy(asc(didVideoHistory.sectionIndex));
 }

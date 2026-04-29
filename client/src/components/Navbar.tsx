@@ -97,6 +97,7 @@ const productCategories = [
       { label: "스크립트 에디터", href: "/script-templates", icon: FileVideo, badge: null },
       { label: "프로덕션 스튜디오", href: "/studio", icon: Play, badge: null },
       { label: "화이트보드 협업", href: "/lecture-builder", icon: MessageSquare, badge: "new" as const },
+      { label: "DID 영상 갤러리", href: "/did-gallery", icon: Video, badge: "new" as const },
     ],
   },
 ];
@@ -170,6 +171,7 @@ export default function Navbar() {
       "스크립트 에디터": "navbar.products.lecture.scriptEditor",
       "프로덕션 스튜디오": "navbar.products.lecture.productionStudio",
       "화이트보드 협업": "navbar.products.lecture.whiteboardCollaboration",
+      "DID 영상 갤러리": "navbar.products.lecture.didVideoGallery",
       "AI 강의 빌더": "navbar.featured.aiLectureBuilder",
       "효과 프리셋": "navbar.featured.effectsPreset",
     };
