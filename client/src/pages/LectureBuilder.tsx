@@ -442,7 +442,12 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
   const [avatarRole, setAvatarRole] = useState<string>("instructor");
   const [avatarVoice, setAvatarVoice] = useState("Kore");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [addTab, setAddTab] = useState<"preset" | "my" | "upload" | "ai">("preset");
+  const [addTab, setAddTab] = useState<"preset" | "my" | "upload" | "ai" | "did">("preset");
+  const [didText, setDidText] = useState("");
+  const [didTalkId, setDidTalkId] = useState<string | null>(null);
+  const [didVideoUrl, setDidVideoUrl] = useState<string | null>(null);
+  const [didGenerating, setDidGenerating] = useState(false);
+  const [didVoiceId, setDidVoiceId] = useState("en-US-JennyNeural");
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiPreview, setAiPreview] = useState<string | null>(null);
@@ -480,6 +485,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
     onError: (e) => toast.error(e.message)
   });
   const [selectedMyAvatarUrl, setSelectedMyAvatarUrl] = useState<string | null>(null);
+  const createDidPreview = trpc.userAvatar.createDidPreview.useMutation();
   const [showKlingDialog, setShowKlingDialog] = useState(false);
   const [editingAvatar, setEditingAvatar] = useState<any | null>(null);
   const [editingUserAvatar, setEditingUserAvatar] = useState<any | null>(null);
@@ -533,11 +539,12 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{t("lectureBuilder.jsxText57")}</DialogTitle></DialogHeader>
             <Tabs value={addTab} onValueChange={(v) => { setAddTab(v as any); setSelectedFaceId(null); setSelectedMyAvatarUrl(null); setUploadPreview(null); setUploadFile(null); setAiPreview(null); setAiPrompt(""); }} className="mt-4">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="preset" className="gap-1.5"><Users className="w-4 h-4" />{t("lectureBuilder.avatarTab.preset")}</TabsTrigger>
                 <TabsTrigger value="my" className="gap-1.5"><UserCircle2 className="w-4 h-4" />{t("lectureBuilder.avatarTab.myAvatars")}</TabsTrigger>
                 <TabsTrigger value="upload" className="gap-1.5"><Camera className="w-4 h-4" />{t("lectureBuilder.avatarTab.upload")}</TabsTrigger>
                 <TabsTrigger value="ai" className="gap-1.5"><Sparkles className="w-4 h-4" />{t("lectureBuilder.avatarTab.aiGenerate")}</TabsTrigger>
+                <TabsTrigger value="did" className="gap-1.5"><Video className="w-4 h-4" />{t("lectureBuilder.avatarTab.didPreview")}</TabsTrigger>
               </TabsList>
 
               {/* Tab 1: Preset Faces */}
@@ -759,6 +766,132 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
                     ))}
                   </div>
                 </div>
+              </TabsContent>
+              {/* Tab 5: D-ID Preview */}
+              <TabsContent value="did" className="space-y-4 pt-2">
+                <div className="text-center">
+                  <p className="text-sm font-medium mb-1">{t("lectureBuilder.avatar.didTitle")}</p>
+                  <p className="text-xs text-muted-foreground mb-4">{t("lectureBuilder.avatar.didDesc")}</p>
+                </div>
+                {/* Step 1: Select avatar image */}
+                <div className="space-y-3">
+                  <Label className="text-xs font-medium">{t("lectureBuilder.avatar.didStep1")}</Label>
+                  {(selectedMyAvatarUrl || selectedFaceId) ? (
+                    <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                      <img src={selectedMyAvatarUrl || faces.find(f => f.id === selectedFaceId)?.imageUrl || ""} alt="selected" className="w-12 h-12 rounded-full object-cover border-2 border-primary/30" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{avatarName || t("lectureBuilder.avatar.didSelectedAvatar")}</p>
+                        <p className="text-xs text-muted-foreground">{t("lectureBuilder.avatar.didAvatarReady")}</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => setAddTab("my")}>{t("lectureBuilder.avatar.didChangeAvatar")}</Button>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-lg border-2 border-dashed border-muted-foreground/30 text-center">
+                      <p className="text-sm text-muted-foreground mb-2">{t("lectureBuilder.avatar.didNoAvatar")}</p>
+                      <div className="flex gap-2 justify-center">
+                        <Button variant="outline" size="sm" onClick={() => setAddTab("my")}>{t("lectureBuilder.avatarTab.myAvatars")}</Button>
+                        <Button variant="outline" size="sm" onClick={() => setAddTab("preset")}>{t("lectureBuilder.avatarTab.preset")}</Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* Step 2: Voice selection */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">{t("lectureBuilder.avatar.didStep2")}</Label>
+                  <Select value={didVoiceId} onValueChange={setDidVoiceId}>
+                    <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en-US-JennyNeural">Jenny (English, Female)</SelectItem>
+                      <SelectItem value="en-US-GuyNeural">Guy (English, Male)</SelectItem>
+                      <SelectItem value="ko-KR-SunHiNeural">SunHi (Korean, Female)</SelectItem>
+                      <SelectItem value="ko-KR-InJoonNeural">InJoon (Korean, Male)</SelectItem>
+                      <SelectItem value="ja-JP-NanamiNeural">Nanami (Japanese, Female)</SelectItem>
+                      <SelectItem value="zh-CN-XiaoxiaoNeural">Xiaoxiao (Chinese, Female)</SelectItem>
+                      <SelectItem value="es-ES-ElviraNeural">Elvira (Spanish, Female)</SelectItem>
+                      <SelectItem value="fr-FR-DeniseNeural">Denise (French, Female)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Step 3: Text input */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">{t("lectureBuilder.avatar.didStep3")}</Label>
+                  <textarea
+                    className="w-full min-h-[80px] p-3 border rounded-lg text-sm resize-none focus:ring-2 focus:ring-primary/50 focus:border-primary bg-background"
+                    placeholder={t("lectureBuilder.avatar.didPlaceholder")}
+                    value={didText}
+                    onChange={(e) => setDidText(e.target.value)}
+                    maxLength={1000}
+                  />
+                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                    <span>{didText.length}/1000</span>
+                  </div>
+                </div>
+                {/* Generate button or video result */}
+                {didVideoUrl ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-full max-w-sm rounded-xl overflow-hidden border shadow-lg">
+                      <video src={didVideoUrl} controls autoPlay className="w-full" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => { setDidVideoUrl(null); setDidTalkId(null); }}>
+                        <Wand2 className="w-4 h-4 mr-1" />{t("lectureBuilder.avatar.didRegenerate")}
+                      </Button>
+                      <a href={didVideoUrl} download target="_blank" rel="noreferrer">
+                        <Button variant="outline" size="sm"><Download className="w-4 h-4 mr-1" />{t("lectureBuilder.avatar.didDownload")}</Button>
+                      </a>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full gap-2"
+                    disabled={!(selectedMyAvatarUrl || selectedFaceId) || !didText.trim() || didGenerating}
+                    onClick={async () => {
+                      const imageUrl = selectedMyAvatarUrl || faces.find(f => f.id === selectedFaceId)?.imageUrl;
+                      if (!imageUrl) return;
+                      setDidGenerating(true);
+                      setDidVideoUrl(null);
+                      try {
+                        const result = await createDidPreview.mutateAsync({
+                          imageUrl,
+                          text: didText.trim(),
+                          voiceId: didVoiceId,
+                        });
+                        setDidTalkId(result.talkId);
+                        // Poll for completion
+                        let attempts = 0;
+                        const poll = async () => {
+                          if (attempts >= 30) { setDidGenerating(false); toast.error(t("lectureBuilder.avatar.didTimeout")); return; }
+                          attempts++;
+                          try {
+                            const statusRes = await fetch(`/api/trpc/userAvatar.getDidPreviewStatus?input=${encodeURIComponent(JSON.stringify({ talkId: result.talkId }))}`, { credentials: "include" });
+                            const statusJson = await statusRes.json() as any;
+                            const statusData = statusJson?.result?.data;
+                            if (statusData?.status === "done" && statusData?.videoUrl) {
+                              setDidVideoUrl(statusData.videoUrl);
+                              setDidGenerating(false);
+                              toast.success(t("lectureBuilder.avatar.didSuccess"));
+                            } else if (statusData?.status === "error") {
+                              setDidGenerating(false);
+                              toast.error(statusData.error || t("lectureBuilder.avatar.didError"));
+                            } else {
+                              setTimeout(poll, 2000);
+                            }
+                          } catch { setTimeout(poll, 2000); }
+                        };
+                        setTimeout(poll, 3000);
+                      } catch (err: any) {
+                        setDidGenerating(false);
+                        toast.error(err.message || t("lectureBuilder.avatar.didError"));
+                      }
+                    }}
+                  >
+                    {didGenerating ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" />{t("lectureBuilder.avatar.didGenerating")}</>
+                    ) : (
+                      <><Video className="w-4 h-4" />{t("lectureBuilder.avatar.didGenerateBtn")}</>
+                    )}
+                  </Button>
+                )}
               </TabsContent>
             </Tabs>
 

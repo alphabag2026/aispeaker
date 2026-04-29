@@ -8758,6 +8758,109 @@ Return a JSON object with a "sections" array. Each section has:
         });
         return { id, imageUrl: url };
       }),
+    /** Create a D-ID talking avatar preview video */
+    createDidPreview: protectedProcedure
+      .input(z.object({
+        imageUrl: z.string().url(),
+        text: z.string().min(1).max(1000),
+        voiceId: z.string().default("en-US-JennyNeural"),
+        voiceProvider: z.enum(["microsoft", "amazon"]).default("microsoft"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const didApiKey = process.env.DID_API_KEY;
+        if (!didApiKey) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "D-ID API key is not configured. Please contact the administrator." });
+        }
+        try {
+          const didResponse = await fetch("https://api.d-id.com/talks", {
+            method: "POST",
+            headers: {
+              "Authorization": `Basic ${didApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              source_url: input.imageUrl,
+              script: {
+                type: "text",
+                input: input.text,
+                provider: {
+                  type: input.voiceProvider,
+                  voice_id: input.voiceId,
+                },
+              },
+              config: { stitch: true, result_format: "mp4" },
+            }),
+          });
+          if (!didResponse.ok) {
+            const errBody = await didResponse.text();
+            console.error("[D-ID] Create talk failed:", errBody);
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `D-ID API error: ${didResponse.status}` });
+          }
+          const didData = await didResponse.json() as any;
+          return { talkId: didData.id, status: didData.status };
+        } catch (error: any) {
+          if (error instanceof TRPCError) throw error;
+          console.error("[D-ID] API error:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create D-ID video" });
+        }
+      }),
+    /** Poll D-ID talk status and get result video URL */
+    getDidPreviewStatus: protectedProcedure
+      .input(z.object({ talkId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const didApiKey = process.env.DID_API_KEY;
+        if (!didApiKey) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "D-ID API key is not configured." });
+        }
+        try {
+          const response = await fetch(`https://api.d-id.com/talks/${input.talkId}`, {
+            headers: { "Authorization": `Basic ${didApiKey}` },
+          });
+          if (!response.ok) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `D-ID status check failed: ${response.status}` });
+          }
+          const data = await response.json() as any;
+          let videoUrl: string | null = null;
+          if (data.status === "done" && data.result_url) {
+            // Upload to S3 to prevent D-ID URL expiration
+            try {
+              const videoResponse = await fetch(data.result_url);
+              if (videoResponse.ok) {
+                const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
+                const videoKey = `did-previews/${ctx.user.id}/${input.talkId}-${Date.now()}.mp4`;
+                const { url: s3Url } = await storagePut(videoKey, videoBuffer, "video/mp4");
+                videoUrl = s3Url;
+              } else {
+                videoUrl = data.result_url;
+              }
+            } catch {
+              videoUrl = data.result_url;
+            }
+          }
+          return { status: data.status as string, videoUrl, error: data.error?.description || null };
+        } catch (error: any) {
+          if (error instanceof TRPCError) throw error;
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to check D-ID status" });
+        }
+      }),
+    /** Check D-ID API key validity and remaining credits */
+    checkDidCredits: protectedProcedure
+      .query(async () => {
+        const didApiKey = process.env.DID_API_KEY;
+        if (!didApiKey) return { available: false, credits: 0 };
+        try {
+          const response = await fetch("https://api.d-id.com/credits", {
+            headers: { "Authorization": `Basic ${didApiKey}` },
+          });
+          if (response.ok) {
+            const data = await response.json() as any;
+            return { available: true, credits: data.remaining || 0 };
+          }
+          return { available: false, credits: 0 };
+        } catch {
+          return { available: false, credits: 0 };
+        }
+      }),
   }),
 });
 

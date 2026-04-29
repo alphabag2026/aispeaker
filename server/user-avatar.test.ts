@@ -353,3 +353,106 @@ describe("Avatar Favorite & Sort Feature", () => {
     expect(matches!.length).toBeGreaterThanOrEqual(20);
   });
 });
+
+describe("D-ID Avatar Preview Feature", () => {
+  // Test: Router includes D-ID preview procedures
+  it("should have createDidPreview procedure in userAvatar router", () => {
+    const routers = fs.readFileSync(
+      path.join(__dirname, "routers.ts"),
+      "utf-8"
+    );
+    expect(routers).toContain("createDidPreview:");
+    expect(routers).toContain("getDidPreviewStatus:");
+    expect(routers).toContain("checkDidCredits:");
+  });
+
+  // Test: D-ID createDidPreview accepts correct input schema
+  it("should accept imageUrl, text, voiceId, voiceProvider in createDidPreview", () => {
+    const routers = fs.readFileSync(
+      path.join(__dirname, "routers.ts"),
+      "utf-8"
+    );
+    expect(routers).toContain("imageUrl: z.string().url()");
+    expect(routers).toContain('text: z.string().min(1).max(1000)');
+    expect(routers).toContain('voiceId: z.string().default("en-US-JennyNeural")');
+    expect(routers).toContain('voiceProvider: z.enum(["microsoft", "amazon"])');
+  });
+
+  // Test: D-ID API endpoint is correct
+  it("should call correct D-ID API endpoint", () => {
+    const routers = fs.readFileSync(
+      path.join(__dirname, "routers.ts"),
+      "utf-8"
+    );
+    expect(routers).toContain("https://api.d-id.com/talks");
+    expect(routers).toContain("https://api.d-id.com/credits");
+  });
+
+  // Test: D-ID videos are uploaded to S3
+  it("should upload D-ID video to S3 for persistence", () => {
+    const routers = fs.readFileSync(
+      path.join(__dirname, "routers.ts"),
+      "utf-8"
+    );
+    expect(routers).toContain("did-previews/");
+    expect(routers).toContain("storagePut(videoKey, videoBuffer");
+  });
+
+  // Test: getDidPreviewStatus returns status and videoUrl
+  it("should return status, videoUrl, and error from getDidPreviewStatus", () => {
+    const routers = fs.readFileSync(
+      path.join(__dirname, "routers.ts"),
+      "utf-8"
+    );
+    expect(routers).toContain("status: data.status as string");
+    expect(routers).toContain("videoUrl");
+    expect(routers).toContain("error: data.error?.description");
+  });
+
+  // Test: ENV includes DID_API_KEY
+  it("should have DID_API_KEY in env configuration", () => {
+    const env = fs.readFileSync(
+      path.join(__dirname, "_core/env.ts"),
+      "utf-8"
+    );
+    expect(env).toContain("didApiKey");
+    expect(env).toContain("DID_API_KEY");
+  });
+
+  // Test: Frontend includes DID preview tab
+  it("should have DID preview tab in LectureBuilder", () => {
+    const builder = fs.readFileSync(
+      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
+      "utf-8"
+    );
+    expect(builder).toContain('value="did"');
+    expect(builder).toContain("createDidPreview");
+    expect(builder).toContain("didVideoUrl");
+    expect(builder).toContain("didVoiceId");
+  });
+
+  // Test: i18n includes DID translation keys
+  it("should have DID i18n translation keys for all 20 languages", () => {
+    const i18n = fs.readFileSync(
+      path.join(__dirname, "../client/src/i18n/pages/LectureBuilder.ts"),
+      "utf-8"
+    );
+    const count = (i18n.match(/lectureBuilder\.avatarTab\.didPreview/g) || []).length;
+    expect(count).toBe(20);
+    expect(i18n).toContain("lectureBuilder.avatar.didTitle");
+    expect(i18n).toContain("lectureBuilder.avatar.didGenerateBtn");
+    expect(i18n).toContain("lectureBuilder.avatar.didSuccess");
+  });
+
+  // Test: D-ID voice options are available
+  it("should include multiple voice options for D-ID", () => {
+    const builder = fs.readFileSync(
+      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
+      "utf-8"
+    );
+    expect(builder).toContain("en-US-JennyNeural");
+    expect(builder).toContain("ko-KR-SunHiNeural");
+    expect(builder).toContain("ja-JP-NanamiNeural");
+    expect(builder).toContain("zh-CN-XiaoxiaoNeural");
+  });
+});
