@@ -560,6 +560,20 @@ export const scriptTemplates = mysqlTable("scriptTemplates", {
   tags: text("tags"),
   /** Usage count */
   usageCount: int("usageCount").default(0),
+  /** Template type for format selector: PERSONNEL, STYLE, INSERT */
+  type: varchar("type", { length: 20 }).default("GENERAL"),
+  /** Lucide icon name */
+  icon: varchar("icon", { length: 50 }),
+  /** Theme color for card display */
+  themeColor: varchar("themeColor", { length: 20 }),
+  /** Whether this template is recommended */
+  isRecommended: boolean("isRecommended").default(false),
+  /** Personnel configuration JSON */
+  personnelConfig: text("personnelConfig"),
+  /** Style configuration JSON */
+  styleConfig: text("styleConfig"),
+  /** Insert elements JSON */
+  insertElements: text("insertElements"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
