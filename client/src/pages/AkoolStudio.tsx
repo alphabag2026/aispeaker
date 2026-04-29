@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
-import "@/translations/akoolStudio";
+import "@/i18n/pages/AkoolStudio";
 import StudioLayout from "@/components/StudioLayout";
 import ModelCarousel from "@/components/ModelCarousel";
 import EffectsGallery from "@/components/EffectsGallery";

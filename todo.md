@@ -2073,3 +2073,8 @@
 - [x] 잘못된 import 경로 수정 (@/locales → @/i18n)
 - [x] 언어 코드 매핑 복원 (ko-KR, zh-CN, ja-JP, en-US)
 - [ ] 프로덕션 배포
+
+## 프로덕션 빌드 에러 수정
+- [x] BUG FIX: 잘못된 import 경로 수정 - translations/akoolStudio → i18n/pages/AkoolStudio
+- [x] BUG FIX: 잘못된 import 경로 수정 - lib/broadcastInterpretationPanel → i18n/components/BroadcastInterpretationPanel
+- [ ] alphabag.net 서버 502 에러 진단 및 수정
