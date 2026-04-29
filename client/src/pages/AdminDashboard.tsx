@@ -15,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 function ApiMonitoringPanel() {
   const { t } = useTranslation();
@@ -36,8 +37,8 @@ function ApiMonitoringPanel() {
       <Card className="border-border/50">
         <CardContent className="p-8 text-center text-muted-foreground">
           <Cpu className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>{t("ad.noApiUsageData")}</p>
-          <p className="text-xs mt-1">{t("ad.runAiOrTtsToLogData")}</p>
+          <p>{"ad.noApiUsageData"}</p>
+          <p className="text-xs mt-1">{"ad.runAiOrTtsToLogData"}</p>
         </CardContent>
       </Card>
     );
@@ -47,7 +48,7 @@ function ApiMonitoringPanel() {
     <div className="space-y-6">
       {/* Period Selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">{t("ad.period")}</span>
+        <span className="text-sm text-muted-foreground">{"ad.period"}</span>
         {[7, 14, 30, 90].map(d => (
           <Button key={d} size="sm" variant={days === d ? "default" : "outline"} onClick={() => setDays(d)}>
             {t("ad.days", { days: d })}
@@ -65,7 +66,7 @@ function ApiMonitoringPanel() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.totalCalls}</p>
-                <p className="text-xs text-muted-foreground">{t("ad.totalApiCalls")}</p>
+                <p className="text-xs text-muted-foreground">{"ad.totalApiCalls"}</p>
               </div>
             </div>
           </CardContent>
@@ -78,7 +79,7 @@ function ApiMonitoringPanel() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.llmCalls}</p>
-                <p className="text-xs text-muted-foreground">{t("ad.llmCalls")}</p>
+                <p className="text-xs text-muted-foreground">{"ad.llmCalls"}</p>
               </div>
             </div>
           </CardContent>
@@ -91,7 +92,7 @@ function ApiMonitoringPanel() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{stats.ttsCalls}</p>
-                <p className="text-xs text-muted-foreground">{t("ad.ttsCalls")}</p>
+                <p className="text-xs text-muted-foreground">{"ad.ttsCalls"}</p>
               </div>
             </div>
           </CardContent>
@@ -119,39 +120,39 @@ function ApiMonitoringPanel() {
       <div className="grid md:grid-cols-2 gap-4">
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="text-base">{t("ad.tokenUsage")}</CardTitle>
+            <CardTitle className="text-base">{"ad.tokenUsage"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">{t("ad.inputTokens")}</span>
+              <span className="text-sm text-muted-foreground">{"ad.inputTokens"}</span>
               <span className="font-mono font-medium">{stats.totalInputTokens.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">{t("ad.outputTokens")}</span>
+              <span className="text-sm text-muted-foreground">{"ad.outputTokens"}</span>
               <span className="font-mono font-medium">{stats.totalOutputTokens.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center border-t border-border/50 pt-3">
-              <span className="text-sm font-medium">{t("ad.totalTokens")}</span>
+              <span className="text-sm font-medium">{"ad.totalTokens"}</span>
               <span className="font-mono font-bold">{(stats.totalInputTokens + stats.totalOutputTokens).toLocaleString()}</span>
             </div>
           </CardContent>
         </Card>
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="text-base">{t("ad.performanceMetrics")}</CardTitle>
+            <CardTitle className="text-base">{"ad.performanceMetrics"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">{t("ad.avgResponseTime")}</span>
+              <span className="text-sm text-muted-foreground">{"ad.avgResponseTime"}</span>
               <span className="font-mono font-medium">
                 <Clock className="w-3 h-3 inline mr-1" />
-                {stats.avgDurationMs > 1000 ? `${(stats.avgDurationMs / 1000).toFixed(1)}${t("ad.seconds")}` : `${stats.avgDurationMs}ms`}
+                {stats.avgDurationMs > 1000 ? `${(stats.avgDurationMs / 1000).toFixed(1)}${"ad.seconds"}` : `${stats.avgDurationMs}ms`}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">{t("ad.avgDailyCalls")}</span>
+              <span className="text-sm text-muted-foreground">{"ad.avgDailyCalls"}</span>
               <span className="font-mono font-medium">
-                {stats.dailyBreakdown.length > 0 ? Math.round(stats.totalCalls / stats.dailyBreakdown.length) : 0}{t("ad.calls")}
+                {stats.dailyBreakdown.length > 0 ? Math.round(stats.totalCalls / stats.dailyBreakdown.length) : 0}{"ad.calls"}
               </span>
             </div>
           </CardContent>
@@ -162,7 +163,7 @@ function ApiMonitoringPanel() {
       {stats.dailyBreakdown.length > 0 && (
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="text-base">{t("ad.dailyApiCallTrend")}</CardTitle>
+            <CardTitle className="text-base">{"ad.dailyApiCallTrend"}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -177,7 +178,7 @@ function ApiMonitoringPanel() {
                       <div className="h-full bg-violet-500/60 transition-all" style={{ width: `${maxCalls > 0 ? (day.llm / maxCalls) * 100 : 0}%` }} />
                       <div className="h-full bg-emerald-500/60 transition-all" style={{ width: `${maxCalls > 0 ? (day.tts / maxCalls) * 100 : 0}%` }} />
                     </div>
-                    <span className="text-xs font-mono w-12 text-right">{total}{t("ad.calls")}</span>
+                    <span className="text-xs font-mono w-12 text-right">{total}{"ad.calls"}</span>
                     {day.errors > 0 && (
                       <Badge variant="destructive" className="text-[10px] px-1.5">{day.errors} err</Badge>
                     )}
@@ -197,19 +198,19 @@ function ApiMonitoringPanel() {
       {stats.recentLogs && stats.recentLogs.length > 0 && (
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="text-base">{t("ad.recentApiCallLogs")}</CardTitle>
+            <CardTitle className="text-base">{"ad.recentApiCallLogs"}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/50">
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{t("ad.time")}</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{t("ad.type")}</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{t("ad.model")}</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{t("ad.status")}</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{t("ad.duration")}</th>
-                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{t("ad.tokens")}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{"ad.time"}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{"ad.type"}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{"ad.model"}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{"ad.status"}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{"ad.duration"}</th>
+                    <th className="text-left py-2 px-3 text-muted-foreground font-medium">{"ad.tokens"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -226,9 +227,9 @@ function ApiMonitoringPanel() {
                       <td className="py-2 px-3 text-xs font-mono">{log.model || '-'}</td>
                       <td className="py-2 px-3">
                         {log.status === 'success' ? (
-                          <Badge className="bg-green-500/10 text-green-500 border-0 text-[10px]">{t("ad.success")}</Badge>
+                          <Badge className="bg-green-500/10 text-green-500 border-0 text-[10px]">{"ad.success"}</Badge>
                         ) : (
-                          <Badge variant="destructive" className="text-[10px]">{t("ad.failure")}</Badge>
+                          <Badge variant="destructive" className="text-[10px]">{"ad.failure"}</Badge>
                         )}
                       </td>
                       <td className="py-2 px-3 text-xs font-mono">{log.durationMs}ms</td>
@@ -301,10 +302,10 @@ export default function AdminDashboard() {
           <TabsList className="grid w-full grid-cols-8 border-b border-border/50 rounded-none bg-transparent px-0 pb-2 mb-6">
             <TabsTrigger value="users" className="rounded-none"><Users className="w-4 h-4 mr-2" />{t("ad.users")}</TabsTrigger>
             <TabsTrigger value="stats" className="rounded-none"><BarChart3 className="w-4 h-4 mr-2" />통계</TabsTrigger>
-            <TabsTrigger value="presetRank" className="rounded-none"><TrendingUp className="w-4 h-4 mr-2" />프리셋 순위</TabsTrigger>
+            <TabsTrigger value="presetRank" className="rounded-none"><TrendingUp className="w-4 h-4 mr-2" />{t("ad.tabs.presetRank")}</TabsTrigger>
             <TabsTrigger value="revenue" className="rounded-none"><CreditCard className="w-4 h-4 mr-2" />{t("ad.revenue")}</TabsTrigger>
             <TabsTrigger value="samples" className="rounded-none"><Image className="w-4 h-4 mr-2" />{t("ad.samples")}</TabsTrigger>
-            <TabsTrigger value="reports" className="rounded-none relative"><Flag className="w-4 h-4 mr-2" />신고 관리</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-none relative"><Flag className="w-4 h-4 mr-2" />{t("ad.tabs.reportManagement")}</TabsTrigger>
             <TabsTrigger value="api" className="rounded-none"><Cpu className="w-4 h-4 mr-2" />{t("ad.api")}</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-none"><Settings className="w-4 h-4 mr-2" />{t("ad.settings")}</TabsTrigger>
           </TabsList>
@@ -432,7 +433,7 @@ export default function AdminDashboard() {
                       {face.isPremium && <Badge className="bg-amber-500/10 text-amber-500 border-0 text-[10px]">PRO</Badge>}
                     </div>
                   ))}
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info("오픈 준비중입니다. 관리자 얼굴 프리셋 추가 기능은 곧 제공됩니다.")}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info(t("ad.facePresetComingSoon"))}>
                     {t("ad.addNewFace")}
                   </Button>
                 </CardContent>
@@ -462,7 +463,7 @@ export default function AdminDashboard() {
                       {voice.isPremium && <Badge className="bg-amber-500/10 text-amber-500 border-0 text-[10px]">PRO</Badge>}
                     </div>
                   ))}
-                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info("오픈 준비중입니다. 관리자 음성 프리셋 추가 기능은 곧 제공됩니다.")}>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => toast.info(t("ad.voicePresetComingSoon"))}>
                     {t("ad.addNewVoice")}
                   </Button>
                 </CardContent>
@@ -519,13 +520,13 @@ export default function AdminDashboard() {
 
               <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-base">강의 포맷 템플릿 관리</CardTitle>
+                  <CardTitle className="text-base">{t("ad.formatTemplates.title")}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">강의 포맷 템플릿을 추가, 수정, 삭제할 수 있습니다.</p>
+                  <p className="text-sm text-muted-foreground mb-4">{t("ad.formatTemplates.description")}</p>
                   <a href="/admin/format-templates">
                     <Button variant="outline" className="gap-2">
-                      <Settings className="w-4 h-4" /> 포맷 템플릿 관리 페이지
+                      <Settings className="w-4 h-4" /> {t("ad.formatTemplates.button")}
                     </Button>
                   </a>
                 </CardContent>
@@ -560,6 +561,7 @@ export default function AdminDashboard() {
 
 /* Report Management Panel */
 function ReportManagementPanel() {
+  const { t } = useLanguage();
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const { data, isLoading } = trpc.adminReport.list.useQuery({
     status: statusFilter,
@@ -570,27 +572,27 @@ function ReportManagementPanel() {
   const updateStatus = trpc.adminReport.updateStatus.useMutation({
     onSuccess: () => {
       utils.adminReport.list.invalidate();
-      toast.success("신고 상태가 업데이트되었습니다.");
+      toast.success(t("ad.report.updateSuccess"));
     },
   });
 
   const statusBadge = (status: string) => {
     switch (status) {
-      case "pending": return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">대기</Badge>;
-      case "reviewed": return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">검토</Badge>;
-      case "blocked": return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/30">차단</Badge>;
-      case "dismissed": return <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/30">기각</Badge>;
+      case "pending": return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/30">{t("ad.report.status.pending")}</Badge>;
+      case "reviewed": return <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">{t("ad.report.status.reviewed")}</Badge>;
+      case "blocked": return <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/30">{t("ad.report.status.blocked")}</Badge>;
+      case "dismissed": return <Badge variant="outline" className="bg-gray-500/10 text-gray-500 border-gray-500/30">{t("ad.report.status.dismissed")}</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   const reasonLabel = (reason: string) => {
     const map: Record<string, string> = {
-      spam: "스팸/광고",
-      inappropriate: "부적절한 콘텐츠",
-      copyright: "저작권 침해",
-      misleading: "오해 소지 정보",
-      other: "기타",
+      spam: t("ad.report.reason.spam"),
+      inappropriate: t("ad.report.reason.inappropriate"),
+      copyright: t("ad.report.reason.copyright"),
+      misleading: t("ad.report.reason.misleading"),
+      other: t("ad.report.reason.other"),
     };
     return map[reason] || reason;
   };
@@ -609,21 +611,21 @@ function ReportManagementPanel() {
         <Card className="border-border/50">
           <CardContent className="p-5">
             <div className="text-2xl font-bold">{data?.totalAll || 0}</div>
-            <div className="text-sm text-muted-foreground">전체 신고</div>
+            <div className="text-sm text-muted-foreground">{t("ad.report.totalReports")}</div>
           </CardContent>
         </Card>
         <Card className="border-border/50 border-yellow-500/30">
           <CardContent className="p-5">
             <div className="text-2xl font-bold text-yellow-500">{data?.totalPending || 0}</div>
-            <div className="text-sm text-muted-foreground">대기 중</div>
+            <div className="text-sm text-muted-foreground">{t("ad.report.pendingReports")}</div>
           </CardContent>
         </Card>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">상태:</span>
+        <span className="text-sm text-muted-foreground">{t("ad.report.filter.status")}</span>
         {([undefined, "pending", "reviewed", "blocked", "dismissed"] as const).map(s => (
           <Button key={s || "all"} size="sm" variant={statusFilter === s ? "default" : "outline"} onClick={() => setStatusFilter(s as any)}>
-            {s === undefined ? "전체" : s === "pending" ? "대기" : s === "reviewed" ? "검토" : s === "blocked" ? "차단" : "기각"}
+            {s === undefined ? t("ad.report.filter.all") : s === "pending" ? t("ad.report.status.pending") : s === "reviewed" ? t("ad.report.status.reviewed") : s === "blocked" ? t("ad.report.status.blocked") : t("ad.report.status.dismissed")}
           </Button>
         ))}
       </div>
@@ -633,13 +635,13 @@ function ReportManagementPanel() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/50 text-muted-foreground">
-                  <th className="text-left p-3">ID</th>
-                  <th className="text-left p-3">프리셋</th>
-                  <th className="text-left p-3">신고 사유</th>
-                  <th className="text-left p-3">신고자</th>
-                  <th className="text-left p-3">상태</th>
-                  <th className="text-left p-3">날짜</th>
-                  <th className="text-left p-3">액션</th>
+                  <th className="text-left p-3">{t("ad.report.table.id")}</th>
+                  <th className="text-left p-3">{t("ad.report.table.preset")}</th>
+                  <th className="text-left p-3">{t("ad.report.table.reason")}</th>
+                  <th className="text-left p-3">{t("ad.report.table.reporter")}</th>
+                  <th className="text-left p-3">{t("ad.report.table.status")}</th>
+                  <th className="text-left p-3">{t("ad.report.table.date")}</th>
+                  <th className="text-left p-3">{t("ad.report.table.action")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -647,7 +649,7 @@ function ReportManagementPanel() {
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       <Flag className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                      신고 내역이 없습니다
+                      {t("ad.report.noReports")}
                     </td>
                   </tr>
                 ) : (
@@ -655,24 +657,24 @@ function ReportManagementPanel() {
                     <tr key={item.report.id} className="border-b border-border/30 hover:bg-accent/30">
                       <td className="p-3 font-mono text-xs">#{item.report.id}</td>
                       <td className="p-3">
-                        <Badge variant="outline" className="text-xs">{item.report.presetType === "avatar" ? "아바타" : "자막"}</Badge>
+                        <Badge variant="outline" className="text-xs">{item.report.presetType === "avatar" ? t("ad.report.presetType.avatar") : t("ad.report.presetType.subtitle")}</Badge>
                         <span className="ml-1 text-xs">#{item.report.presetId}</span>
                       </td>
                       <td className="p-3">{reasonLabel(item.report.reason)}</td>
-                      <td className="p-3">{item.reporterName || "알 수 없음"}</td>
+                      <td className="p-3">{item.reporterName || t("ad.report.unknownUser")}</td>
                       <td className="p-3">{statusBadge(item.report.status)}</td>
                       <td className="p-3 text-xs text-muted-foreground">{new Date(item.report.createdAt).toLocaleDateString("ko-KR")}</td>
                       <td className="p-3">
                         {item.report.status === "pending" && (
                           <div className="flex gap-1">
                             <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => updateStatus.mutate({ id: item.report.id, status: "reviewed" })}>
-                              <Eye className="h-3 w-3" /> 검토
+                              <Eye className="h-3 w-3" /> {t("ad.report.status.reviewed")}
                             </Button>
                             <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-red-500 hover:text-red-400" onClick={() => updateStatus.mutate({ id: item.report.id, status: "blocked" })}>
-                              <Ban className="h-3 w-3" /> 차단
+                              <Ban className="h-3 w-3" /> {t("ad.report.status.blocked")}
                             </Button>
                             <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => updateStatus.mutate({ id: item.report.id, status: "dismissed" })}>
-                              <XCircle className="h-3 w-3" /> 기각
+                              <XCircle className="h-3 w-3" /> {t("ad.report.status.dismissed")}
                             </Button>
                           </div>
                         )}
@@ -692,6 +694,7 @@ function ReportManagementPanel() {
 
 /* ── v9.3: User Statistics Panel ── */
 function UserStatsPanel() {
+  const { t } = useLanguage();
   const [days, setDays] = useState(30);
   const { data: totals } = trpc.adminStats.userTotals.useQuery();
   const { data: signups } = trpc.adminStats.userSignups.useQuery({ days });
@@ -710,25 +713,25 @@ function UserStatsPanel() {
         <Card className="border-border/50">
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold">{totals?.total || 0}</p>
-            <p className="text-xs text-muted-foreground">전체 사용자</p>
+            <p className="text-xs text-muted-foreground">{t("ad.stats.totalUsers")}</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-violet-400">{totals?.instructors || 0}</p>
-            <p className="text-xs text-muted-foreground">강사</p>
+            <p className="text-xs text-muted-foreground">{t("ad.stats.instructors")}</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-blue-400">{totals?.students || 0}</p>
-            <p className="text-xs text-muted-foreground">수강생</p>
+            <p className="text-xs text-muted-foreground">{t("ad.stats.students")}</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
           <CardContent className="pt-4 text-center">
             <p className="text-2xl font-bold text-amber-400">{totals?.admins || 0}</p>
-            <p className="text-xs text-muted-foreground">관리자</p>
+            <p className="text-xs text-muted-foreground">{t("ad.stats.admins")}</p>
           </CardContent>
         </Card>
       </div>
@@ -745,7 +748,7 @@ function UserStatsPanel() {
       {/* Signup Chart */}
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Users className="w-4 h-4" /> 가입 추이 ({days}일)</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><Users className="w-4 h-4" /> {t("ad.stats.signupTrend")} ({days}일)</CardTitle>
         </CardHeader>
         <CardContent>
           {Recharts && signups && signups.length > 0 ? (
@@ -755,11 +758,11 @@ function UserStatsPanel() {
                 <Recharts.XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.4)" />
                 <Recharts.YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.4)" />
                 <Recharts.Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
-                <Recharts.Area type="monotone" dataKey="count" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} name="가입자 수" />
+                <Recharts.Area type="monotone" dataKey="count" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.2} name={t("ad.stats.signupCount")} />
               </Recharts.AreaChart>
             </Recharts.ResponsiveContainer>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">데이터가 없습니다.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t("ad.stats.noData")}</p>
           )}
         </CardContent>
       </Card>
@@ -767,7 +770,7 @@ function UserStatsPanel() {
       {/* Activity Chart */}
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4" /> 활동 추이 ({days}일)</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4" /> {t("ad.stats.activityTrend")} ({days}일)</CardTitle>
         </CardHeader>
         <CardContent>
           {Recharts && activity && activity.length > 0 ? (
@@ -777,11 +780,11 @@ function UserStatsPanel() {
                 <Recharts.XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.4)" />
                 <Recharts.YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.4)" />
                 <Recharts.Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
-                <Recharts.Bar dataKey="count" fill="#3b82f6" name="활동 사용자" radius={[4, 4, 0, 0]} />
+                <Recharts.Bar dataKey="count" fill="#3b82f6" name={t("ad.stats.activeUsers")} radius={[4, 4, 0, 0]} />
               </Recharts.BarChart>
             </Recharts.ResponsiveContainer>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-8">데이터가 없습니다.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t("ad.stats.noData")}</p>
           )}
         </CardContent>
       </Card>
@@ -791,6 +794,7 @@ function UserStatsPanel() {
 
 /* ── v9.3: Preset Rank Panel ── */
 function PresetRankPanel() {
+  const { t } = useLanguage();
   const [sortBy, setSortBy] = useState<"likes" | "downloads">("likes");
   const [type, setType] = useState<"avatar" | "subtitle">("avatar");
   const { data: topPresets } = trpc.adminStats.topPresets.useQuery({ limit: 10, sortBy, type });
@@ -803,8 +807,8 @@ function PresetRankPanel() {
   });
 
   const pieData = categories ? [
-    { name: "아바타 프리셋", value: categories.avatar, fill: "#8b5cf6" },
-    { name: "자막 프리셋", value: categories.subtitle, fill: "#06b6d4" },
+    { name: t("ad.preset.avatarPresets"), value: categories.avatar, fill: "#8b5cf6" },
+    { name: t("ad.preset.subtitlePresets"), value: categories.subtitle, fill: "#06b6d4" },
   ] : [];
 
   return (
@@ -813,7 +817,7 @@ function PresetRankPanel() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="text-base">카테고리별 분포</CardTitle>
+            <CardTitle className="text-base">{t("ad.preset.categoryDistribution")}</CardTitle>
           </CardHeader>
           <CardContent>
             {Recharts && pieData.length > 0 ? (
@@ -829,14 +833,14 @@ function PresetRankPanel() {
                 </Recharts.PieChart>
               </Recharts.ResponsiveContainer>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">데이터가 없습니다.</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t("ad.stats.noData")}</p>
             )}
           </CardContent>
         </Card>
 
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="text-base">프리셋 생성 추이 (30일)</CardTitle>
+            <CardTitle className="text-base">{t("ad.preset.creationTrend")}</CardTitle>
           </CardHeader>
           <CardContent>
             {Recharts && growth && growth.length > 0 ? (
@@ -846,11 +850,11 @@ function PresetRankPanel() {
                   <Recharts.XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="rgba(255,255,255,0.4)" />
                   <Recharts.YAxis tick={{ fontSize: 10 }} stroke="rgba(255,255,255,0.4)" />
                   <Recharts.Tooltip contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }} />
-                  <Recharts.Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} dot={false} name="생성 수" />
+                  <Recharts.Line type="monotone" dataKey="count" stroke="#8b5cf6" strokeWidth={2} dot={false} name={t("ad.preset.creationCount")} />
                 </Recharts.LineChart>
               </Recharts.ResponsiveContainer>
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">데이터가 없습니다.</p>
+              <p className="text-sm text-muted-foreground text-center py-8">{t("ad.stats.noData")}</p>
             )}
           </CardContent>
         </Card>
@@ -860,13 +864,13 @@ function PresetRankPanel() {
       <Card className="border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">TOP 10 인기 프리셋</CardTitle>
+            <CardTitle className="text-base">{t("ad.preset.top10")}</CardTitle>
             <div className="flex gap-2">
-              <Button size="sm" variant={type === "avatar" ? "default" : "outline"} onClick={() => setType("avatar")}>아바타</Button>
-              <Button size="sm" variant={type === "subtitle" ? "default" : "outline"} onClick={() => setType("subtitle")}>자막</Button>
+              <Button size="sm" variant={type === "avatar" ? "default" : "outline"} onClick={() => setType("avatar")}>{t("ad.report.presetType.avatar")}</Button>
+              <Button size="sm" variant={type === "subtitle" ? "default" : "outline"} onClick={() => setType("subtitle")}>{t("ad.report.presetType.subtitle")}</Button>
               <span className="mx-2 text-border">|</span>
-              <Button size="sm" variant={sortBy === "likes" ? "default" : "outline"} onClick={() => setSortBy("likes")}>좋아요순</Button>
-              <Button size="sm" variant={sortBy === "downloads" ? "default" : "outline"} onClick={() => setSortBy("downloads")}>다운로드순</Button>
+              <Button size="sm" variant={sortBy === "likes" ? "default" : "outline"} onClick={() => setSortBy("likes")}>{t("ad.preset.sortByLikes")}</Button>
+              <Button size="sm" variant={sortBy === "downloads" ? "default" : "outline"} onClick={() => setSortBy("downloads")}>{t("ad.preset.sortByDownloads")}</Button>
             </div>
           </div>
         </CardHeader>
@@ -876,11 +880,11 @@ function PresetRankPanel() {
               <thead>
                 <tr className="border-b border-border/50 text-muted-foreground">
                   <th className="text-left py-2 px-2">#</th>
-                  <th className="text-left py-2 px-2">이름</th>
-                  <th className="text-left py-2 px-2">작성자</th>
-                  <th className="text-right py-2 px-2">좋아요</th>
-                  <th className="text-right py-2 px-2">다운로드</th>
-                  <th className="text-right py-2 px-2">생성일</th>
+                  <th className="text-left py-2 px-2">{t("ad.preset.table.name")}</th>
+                  <th className="text-left py-2 px-2">{t("ad.preset.table.author")}</th>
+                  <th className="text-right py-2 px-2">{t("ad.preset.table.likes")}</th>
+                  <th className="text-right py-2 px-2">{t("ad.preset.table.downloads")}</th>
+                  <th className="text-right py-2 px-2">{t("ad.preset.table.createdAt")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -895,7 +899,7 @@ function PresetRankPanel() {
                   </tr>
                 ))}
                 {(!topPresets || topPresets.length === 0) && (
-                  <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">프리셋 데이터가 없습니다.</td></tr>
+                  <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">{t("ad.preset.noPresets")}</td></tr>
                 )}
               </tbody>
             </table>

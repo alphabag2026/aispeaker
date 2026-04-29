@@ -59,8 +59,8 @@ import { useLocation } from "wouter";
 function useGalleryShare() {
   const { t } = useLanguage();
   const shareMut = trpc.community.create.useMutation({
-    onSuccess: () => toast.success(t("akoolStudio.share.success")),
-    onError: (err: any) => toast.error(err.message || "공유 실패"),
+    onSuccess: () => toast.success("akoolStudio.share.success"),
+    onError: (err: any) => toast.error(err.message || "akoolStudio.share.error"),
   });
   return shareMut;
 }
@@ -85,17 +85,17 @@ function ShareToGalleryButton({ mediaUrl, mediaType, toolUsed }: { mediaUrl: str
       }}
     >
       <Share2 className="h-4 w-4" />
-      {shared ? "공유 완료" : "갤러리 공유"}
+      {shared ? "akoolStudio.share.shared" : "akoolStudio.share.share"}
     </Button>
   );
 }
 
 /* ── Status helpers ── */
 const statusMap: Record<number, { label: string; icon: typeof Clock; color: string }> = {
-  1: { label: "대기 중", icon: Clock, color: "text-yellow-500" },
-  2: { label: "처리 중", icon: Loader2, color: "text-blue-500" },
-  3: { label: "완료", icon: CheckCircle2, color: "text-green-500" },
-  4: { label: "실패", icon: XCircle, color: "text-red-500" },
+  1: { label: "akoolStudio.status.waiting", icon: Clock, color: "text-yellow-500" },
+  2: { label: "akoolStudio.status.processing", icon: Loader2, color: "text-blue-500" },
+  3: { label: "akoolStudio.status.completed", icon: CheckCircle2, color: "text-green-500" },
+  4: { label: "akoolStudio.status.failed", icon: XCircle, color: "text-red-500" },
 };
 
 function StatusBadge({ status }: { status: number }) {
@@ -127,7 +127,7 @@ function ImageToVideoTab() {
   const i2vMut = trpc.akool.imageToVideo.useMutation({
     onSuccess: (data: any) => {
       setResultId(data._id || data.id);
-      toast.success(t("akoolStudio.imageToVideo.requestSuccess"));
+      toast.success("akoolStudio.imageToVideo.requestSuccess");
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -149,16 +149,16 @@ function ImageToVideoTab() {
     if (!d) return;
     if (d.status === 3 && (d.videoUrl || d.video_url)) {
       setResultUrl(d.videoUrl || d.video_url);
-      toast.success(t("akoolStudio.imageToVideo.createSuccess"));
+      toast.success("akoolStudio.imageToVideo.createSuccess");
       setPollId(null);
     } else if (d.status === 4) {
-      toast.error(t("akoolStudio.imageToVideo.createError"));
+      toast.error("akoolStudio.imageToVideo.createError");
       setPollId(null);
     }
   }, [pollQuery.data]);
 
   const effects = [
-    { id: "none", label: "없음" },
+    { id: "none", label: "akoolStudio.imageToVideo.effectNone" },
     { id: "kiss_screen", label: "Kiss Screen" },
     { id: "catwalk", label: "Catwalk" },
     { id: "360_orbit", label: "360° Orbit" },
@@ -174,21 +174,21 @@ function ImageToVideoTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Clapperboard className="h-5 w-5 text-violet-400" />
-            이미지 → 비디오
+            {"akoolStudio.main.tabs.imageToVideo"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.bgRemove.imageUrlLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.bgRemove.imageUrlLabel"}</Label>
             <Input placeholder="https://example.com/image.jpg" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="mt-1.5 bg-background/50" />
           </div>
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.imageToVideo.promptLabel")}</Label>
-            <Textarea placeholder={t("akoolStudio.imageToVideo.promptPlaceholder")} value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} className="mt-1.5 bg-background/50" />
+            <Label className="text-sm font-medium">{"akoolStudio.imageToVideo.promptLabel"}</Label>
+            <Textarea placeholder={"akoolStudio.imageToVideo.promptPlaceholder"} value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} className="mt-1.5 bg-background/50" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium">{t("akoolStudio.imageToVideo.resolutionLabel")}</Label>
+              <Label className="text-sm font-medium">{"akoolStudio.imageToVideo.resolutionLabel"}</Label>
               <Select value={resolution} onValueChange={setResolution}>
                 <SelectTrigger className="mt-1.5 bg-background/50"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -199,21 +199,21 @@ function ImageToVideoTab() {
               </Select>
             </div>
             <div>
-              <Label className="text-sm font-medium">{t("akoolStudio.imageToVideo.durationLabel")}</Label>
+              <Label className="text-sm font-medium">{"akoolStudio.imageToVideo.durationLabel"}</Label>
               <Select value={duration} onValueChange={setDuration}>
                 <SelectTrigger className="mt-1.5 bg-background/50"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="3">{t("akoolStudio.imageToVideo.duration3")}</SelectItem>
-                  <SelectItem value="5">{t("akoolStudio.imageToVideo.duration5")}</SelectItem>
-                  <SelectItem value="10">{t("akoolStudio.imageToVideo.duration10")}</SelectItem>
+                  <SelectItem value="3">{"akoolStudio.imageToVideo.duration3"}</SelectItem>
+                  <SelectItem value="5">{"akoolStudio.imageToVideo.duration5"}</SelectItem>
+                  <SelectItem value="10">{"akoolStudio.imageToVideo.duration10"}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.imageToVideo.effectPresetLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.imageToVideo.effectPresetLabel"}</Label>
             <Select value={selectedEffect} onValueChange={setSelectedEffect}>
-              <SelectTrigger className="mt-1.5 bg-background/50"><SelectValue placeholder={t("akoolStudio.imageToVideo.effectSelectPlaceholder")} /></SelectTrigger>
+              <SelectTrigger className="mt-1.5 bg-background/50"><SelectValue placeholder={"akoolStudio.imageToVideo.effectSelectPlaceholder"} /></SelectTrigger>
               <SelectContent>
                 {effects.map((e) => (
                   <SelectItem key={e.id} value={e.id}>{t(e.label)}</SelectItem>
@@ -227,7 +227,7 @@ function ImageToVideoTab() {
             onClick={() => deductAndRun("image_to_video", () => i2vMut.mutate({ imageUrl, prompt, duration: parseInt(duration), resolution, effect: selectedEffect === "none" ? undefined : selectedEffect } as any))}
           >
             {i2vMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-            비디오 생성
+            {"akoolStudio.imageToVideo.createButton"}
           </Button>
         </CardContent>
       </Card>
@@ -236,7 +236,7 @@ function ImageToVideoTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Video className="h-5 w-5 text-cyan-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -246,13 +246,13 @@ function ImageToVideoTab() {
                 <video src={resultUrl} controls className="w-full h-full object-contain" />
               </div>
               <Button variant="outline" className="w-full gap-2" onClick={() => window.open(resultUrl, "_blank")}>
-                <Download className="h-4 w-4" /> 다운로드
+                <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
               </Button>
             </div>
           ) : resultId ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
-              <p className="text-sm text-muted-foreground">{t("akoolStudio.imageToVideo.creating")}</p>
+              <p className="text-sm text-muted-foreground">{"akoolStudio.imageToVideo.creating"}</p>
               <Button variant="outline" size="sm" className="gap-2" onClick={() => setPollId(resultId)} disabled={pollQuery.isFetching}>
                 <RefreshCw className={`h-3.5 w-3.5 ${pollQuery.isFetching ? 'animate-spin' : ''}`} />
                 상태 확인
@@ -261,7 +261,7 @@ function ImageToVideoTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Video className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">{t("akoolStudio.imageToVideo.placeholder")}</p>
+              <p className="text-sm">{"akoolStudio.imageToVideo.placeholder"}</p>
             </div>
           )}
         </CardContent>
@@ -354,7 +354,7 @@ function FaceSwapTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <CheckCircle2 className="h-5 w-5 text-green-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -368,7 +368,7 @@ function FaceSwapTab() {
                 )}
               </div>
               <Button variant="outline" className="w-full gap-2" onClick={() => window.open(resultUrl, "_blank")}>
-                <Download className="h-4 w-4" /> 다운로드
+                <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
               </Button>
             </div>
           ) : resultId ? (
@@ -408,7 +408,7 @@ function TalkingAvatarTab() {
   const avatarMut = trpc.akool.createTalkingAvatar.useMutation({
     onSuccess: (data: any) => {
       setResultId(data._id || data.id);
-      toast.success(t("akoolStudio.talkingAvatar.requestSuccess"));
+      toast.success("akoolStudio.talkingAvatar.requestSuccess");
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -430,7 +430,7 @@ function TalkingAvatarTab() {
     if (!d) return;
     if (d.status === 3 && d.videoUrl) {
       setResultUrl(d.videoUrl);
-      toast.success(t("akoolStudio.talkingAvatar.createSuccess"));
+      toast.success("akoolStudio.talkingAvatar.createSuccess");
       setAvatarPollId(null);
     } else if (d.status === 4) {
       toast.error("생성 실패");
@@ -459,15 +459,15 @@ function TalkingAvatarTab() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.talkingAvatar.avatarUrlLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.talkingAvatar.avatarUrlLabel"}</Label>
             <Input placeholder="https://example.com/avatar.jpg" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} className="mt-1.5 bg-background/50" />
           </div>
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.talkingAvatar.scriptLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.talkingAvatar.scriptLabel"}</Label>
             <Textarea placeholder="아바타가 말할 내용을 입력하세요..." value={script} onChange={(e) => setScript(e.target.value)} rows={4} className="mt-1.5 bg-background/50" />
           </div>
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.tts.voiceLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.tts.voiceLabel"}</Label>
             <Select value={voiceId} onValueChange={setVoiceId}>
               <SelectTrigger className="mt-1.5 bg-background/50"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -483,7 +483,7 @@ function TalkingAvatarTab() {
             onClick={() => deductAndRun("talking_avatar", () => avatarMut.mutate({ avatarUrl, inputText: script, voiceId } as any))}
           >
             {avatarMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-            아바타 비디오 생성
+            {"akoolStudio.talkingAvatar.createButton"}
           </Button>
         </CardContent>
       </Card>
@@ -492,7 +492,7 @@ function TalkingAvatarTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Video className="h-5 w-5 text-cyan-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -502,13 +502,13 @@ function TalkingAvatarTab() {
                 <video src={resultUrl} controls className="w-full h-full object-contain" />
               </div>
               <Button variant="outline" className="w-full gap-2" onClick={() => window.open(resultUrl, "_blank")}>
-                <Download className="h-4 w-4" /> 다운로드
+                <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
               </Button>
             </div>
           ) : resultId ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
-              <p className="text-sm text-muted-foreground">{t("akoolStudio.talkingAvatar.creating")}</p>
+              <p className="text-sm text-muted-foreground">{"akoolStudio.talkingAvatar.creating"}</p>
               <Button variant="outline" size="sm" className="gap-2" onClick={() => setAvatarPollId(resultId)} disabled={avatarPollQuery.isFetching}>
                 <RefreshCw className={`h-3.5 w-3.5 ${avatarPollQuery.isFetching ? 'animate-spin' : ''}`} />
                 상태 확인
@@ -517,7 +517,7 @@ function TalkingAvatarTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Brain className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">{t("akoolStudio.talkingAvatar.placeholder")}</p>
+              <p className="text-sm">{"akoolStudio.talkingAvatar.placeholder"}</p>
             </div>
           )}
         </CardContent>
@@ -540,7 +540,7 @@ function VideoTranslationTab() {
   const translateMut = trpc.akool.translateVideo.useMutation({
     onSuccess: (data: any) => {
       setResultId(data._id || data.id);
-      toast.success(t("akoolStudio.videoTranslation.requestSuccess"));
+      toast.success("akoolStudio.videoTranslation.requestSuccess");
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -562,16 +562,16 @@ function VideoTranslationTab() {
     if (!d) return;
     if (d.status === 3 && d.videoUrl) {
       setResultUrl(d.videoUrl);
-      toast.success(t("akoolStudio.videoTranslation.translateSuccess"));
+      toast.success("akoolStudio.videoTranslation.translateSuccess");
       setTransPollId(null);
     } else if (d.status === 4) {
-      toast.error(t("akoolStudio.videoTranslation.translateError"));
+      toast.error("akoolStudio.videoTranslation.translateError");
       setTransPollId(null);
     }
   }, [transPollQuery.data]);
 
   const languages = [
-    { code: "ko", label: "한국어" }, { code: "en", label: "English" }, { code: "ja", label: "日本語" },
+    { code: "ko", label: "akoolStudio.videoTranslation.langKorean" }, { code: "en", label: "English" }, { code: "ja", label: "日本語" },
     { code: "zh", label: "中文" }, { code: "es", label: "Español" }, { code: "fr", label: "Français" },
     { code: "de", label: "Deutsch" }, { code: "pt", label: "Português" }, { code: "ru", label: "Русский" },
     { code: "ar", label: "العربية" }, { code: "hi", label: "हिन्दी" }, { code: "vi", label: "Tiếng Việt" },
@@ -584,16 +584,16 @@ function VideoTranslationTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Languages className="h-5 w-5 text-amber-400" />
-            비디오 번역
+            {"akoolStudio.main.tabs.videoTranslation"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.videoTranslation.videoUrlLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.videoTranslation.videoUrlLabel"}</Label>
             <Input placeholder="https://example.com/video.mp4" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} className="mt-1.5 bg-background/50" />
           </div>
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.videoTranslation.targetLangLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.videoTranslation.targetLangLabel"}</Label>
             <Select value={targetLang} onValueChange={setTargetLang}>
               <SelectTrigger className="mt-1.5 bg-background/50"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -605,7 +605,7 @@ function VideoTranslationTab() {
           </div>
           <Button className="w-full glow-button" disabled={!videoUrl || translateMut.isPending || isDeducting} onClick={() => deductAndRun("video_translate", () => translateMut.mutate({ videoUrl, targetLang } as any))}>
             {translateMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Languages className="h-4 w-4 mr-2" />}
-            번역 시작
+            {"akoolStudio.videoTranslation.translateButton"}
           </Button>
         </CardContent>
       </Card>
@@ -614,7 +614,7 @@ function VideoTranslationTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Video className="h-5 w-5 text-amber-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -624,13 +624,13 @@ function VideoTranslationTab() {
                 <video src={resultUrl} controls className="w-full h-full object-contain" />
               </div>
               <Button variant="outline" className="w-full gap-2" onClick={() => window.open(resultUrl, "_blank")}>
-                <Download className="h-4 w-4" /> 다운로드
+                <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
               </Button>
             </div>
           ) : resultId ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
-              <p className="text-sm text-muted-foreground">{t("akoolStudio.videoTranslation.translating")}</p>
+              <p className="text-sm text-muted-foreground">{"akoolStudio.videoTranslation.translating"}</p>
                <Button variant="outline" size="sm" className="gap-2" onClick={() => setTransPollId(resultId)} disabled={transPollQuery.isFetching}>
                 <RefreshCw className={`h-3.5 w-3.5 ${transPollQuery.isFetching ? 'animate-spin' : ''}`} />
                 상태 확인
@@ -639,7 +639,7 @@ function VideoTranslationTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Globe className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">{t("akoolStudio.videoTranslation.placeholder")}</p>
+              <p className="text-sm">{"akoolStudio.videoTranslation.placeholder"}</p>
             </div>
           )}
         </CardContent>
@@ -697,14 +697,14 @@ function TTSTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Volume2 className="h-5 w-5 text-green-400" />
-            텍스트 → 음성
+            {"akoolStudio.tts.title"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.tts.textLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.tts.textLabel"}</Label>
             <Textarea
-              placeholder={t("akoolStudio.tts.textPlaceholder")}
+              placeholder={"akoolStudio.tts.textPlaceholder"}
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={5}
@@ -713,7 +713,7 @@ function TTSTab() {
             <p className="text-xs text-muted-foreground mt-1">{text.length}/5000</p>
           </div>
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.tts.voiceLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.tts.voiceLabel"}</Label>
             <Select value={voiceId} onValueChange={setVoiceId}>
               <SelectTrigger className="mt-1.5 bg-background/50"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -727,7 +727,7 @@ function TTSTab() {
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <Label className="text-sm font-medium">{t("akoolStudio.tts.speedLabel")}</Label>
+              <Label className="text-sm font-medium">{"akoolStudio.tts.speedLabel"}</Label>
               <span className="text-xs text-muted-foreground">{speed.toFixed(1)}x</span>
             </div>
             <Slider
@@ -750,7 +750,7 @@ function TTSTab() {
             }}
           >
             {ttsMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Volume2 className="h-4 w-4 mr-2" />}
-            음성 생성
+            {"akoolStudio.tts.createButton"}
           </Button>
         </CardContent>
       </Card>
@@ -759,7 +759,7 @@ function TTSTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Headphones className="h-5 w-5 text-emerald-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -781,7 +781,7 @@ function TTSTab() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(audioUrl, "_blank")}>
-                  <Download className="h-4 w-4" /> 다운로드
+                  <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
                 </Button>
                 <ShareToGalleryButton mediaUrl={audioUrl} mediaType="audio" toolUsed="tts" />
               </div>
@@ -865,7 +865,7 @@ function VoiceCloneTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Headphones className="h-5 w-5 text-indigo-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -893,7 +893,7 @@ function VoiceCloneTab() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(audioUrl, "_blank")}>
-                  <Download className="h-4 w-4" /> 다운로드
+                  <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
                 </Button>
                 <ShareToGalleryButton mediaUrl={audioUrl} mediaType="audio" toolUsed="voice-clone" />
               </div>
@@ -943,16 +943,16 @@ function VoiceChangeTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Headphones className="h-5 w-5 text-purple-400" />
-            음성 변환
+            {"akoolStudio.main.tabs.voiceChange"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">원본 음성 URL</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.voiceChange.sourceAudioLabel"} URL</Label>
             <Input placeholder="https://example.com/original-voice.mp3" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} className="mt-1.5 bg-background/50" />
           </div>
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.voiceChange.targetVoiceLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.voiceChange.targetVoiceLabel"}</Label>
             <Select value={targetVoice} onValueChange={setTargetVoice}>
               <SelectTrigger className="mt-1.5 bg-background/50"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -987,7 +987,7 @@ function VoiceChangeTab() {
             }}
           >
             {changeMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Headphones className="h-4 w-4 mr-2" />}
-            음성 변환
+            {"akoolStudio.main.tabs.voiceChange"}
           </Button>
         </CardContent>
       </Card>
@@ -996,7 +996,7 @@ function VoiceChangeTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <CheckCircle2 className="h-5 w-5 text-purple-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -1025,7 +1025,7 @@ function VoiceChangeTab() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(audioUrl, "_blank")}>
-                  <Download className="h-4 w-4" /> 다운로드
+                  <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
                 </Button>
                 <ShareToGalleryButton mediaUrl={audioUrl} mediaType="audio" toolUsed="voice-change" />
               </div>
@@ -1033,7 +1033,7 @@ function VoiceChangeTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Headphones className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">{t("akoolStudio.voiceChange.placeholder")}</p>
+              <p className="text-sm">{"akoolStudio.voiceChange.placeholder"}</p>
             </div>
           )}
         </CardContent>
@@ -1055,20 +1055,20 @@ function ImageGenTab() {
   const genMut = trpc.akool.imageGen.useMutation({
     onSuccess: (data) => {
       setImageUrl(data.imageUrl || null);
-      if (data.imageUrl) toast.success(t("akoolStudio.imageGen.createSuccess"));
-      else toast.error(t("akoolStudio.imageGen.createError"));
+      if (data.imageUrl) toast.success("akoolStudio.imageGen.createSuccess");
+      else toast.error("akoolStudio.imageGen.createError");
     },
     onError: (err: any) => toast.error(err.message),
   });
 
   const styles = [
-    { id: "realistic", label: "사실적", icon: "📷" },
-    { id: "illustration", label: "일러스트", icon: "🎨" },
-    { id: "cartoon", label: "카툰", icon: "🖌️" },
-    { id: "sketch", label: "스케치", icon: "✏️" },
-    { id: "3d", label: "3D 렌더", icon: "🧊" },
-    { id: "anime", label: "애니메이션", icon: "🌸" },
-    { id: "watercolor", label: "수채화", icon: "💧" },
+    { id: "realistic", label: "akoolStudio.imageGen.styleRealistic", icon: "📷" },
+    { id: "illustration", label: "akoolStudio.imageGen.styleIllustration", icon: "🎨" },
+    { id: "cartoon", label: "akoolStudio.imageGen.styleCartoon", icon: "🖌️" },
+    { id: "sketch", label: "akoolStudio.imageGen.styleSketch", icon: "✏️" },
+    { id: "3d", label: "akoolStudio.imageGen.style3d", icon: "🧊" },
+    { id: "anime", label: "akoolStudio.imageGen.styleAnime", icon: "🌸" },
+    { id: "watercolor", label: "akoolStudio.imageGen.styleWatercolor", icon: "💧" },
   ];
 
   return (
@@ -1077,14 +1077,14 @@ function ImageGenTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <ImageIcon className="h-5 w-5 text-rose-400" />
-            이미지 생성
+            {"akoolStudio.main.tabs.imageGen"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.imageGen.promptLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.imageGen.promptLabel"}</Label>
             <Textarea
-              placeholder={t("akoolStudio.imageGen.promptPlaceholder")}
+              placeholder={"akoolStudio.imageGen.promptPlaceholder"}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={4}
@@ -1092,7 +1092,7 @@ function ImageGenTab() {
             />
           </div>
           <div>
-            <Label className="text-sm font-medium mb-3 block">{t("akoolStudio.imageGen.styleLabel")}</Label>
+            <Label className="text-sm font-medium mb-3 block">{"akoolStudio.imageGen.styleLabel"}</Label>
             <div className="grid grid-cols-4 gap-2">
               {styles.map((s) => (
                 <button
@@ -1119,7 +1119,7 @@ function ImageGenTab() {
             }}
           >
             {genMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-            이미지 생성
+            {"akoolStudio.main.tabs.imageGen"}
           </Button>
         </CardContent>
       </Card>
@@ -1128,14 +1128,14 @@ function ImageGenTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <ImageIcon className="h-5 w-5 text-rose-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {genMut.isPending ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
-              <p className="text-sm text-muted-foreground">{t("akoolStudio.imageGen.creating")}</p>
+              <p className="text-sm text-muted-foreground">{"akoolStudio.imageGen.creating"}</p>
             </div>
           ) : imageUrl ? (
             <div className="space-y-4">
@@ -1144,7 +1144,7 @@ function ImageGenTab() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(imageUrl, "_blank")}>
-                  <Download className="h-4 w-4" /> 다운로드
+                  <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
                 </Button>
                 <ShareToGalleryButton mediaUrl={imageUrl} mediaType="image" toolUsed="image-gen" />
               </div>
@@ -1152,8 +1152,8 @@ function ImageGenTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <ImageIcon className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">{t("akoolStudio.imageGen.placeholder")}</p>
-              <p className="text-xs mt-2 opacity-60">{t("akoolStudio.imageGen.stylesSupported")}</p>
+              <p className="text-sm">{"akoolStudio.imageGen.placeholder"}</p>
+              <p className="text-xs mt-2 opacity-60">{"akoolStudio.imageGen.stylesSupported"}</p>
             </div>
           )}
         </CardContent>
@@ -1176,8 +1176,8 @@ function BgRemoveTab() {
   const bgMut = trpc.akool.bgRemove.useMutation({
     onSuccess: (data) => {
       setResultUrl(data.imageUrl || null);
-      if (data.imageUrl) toast.success(t("akoolStudio.bgRemove.processSuccess"));
-      else toast.error(t("akoolStudio.bgRemove.processError"));
+      if (data.imageUrl) toast.success("akoolStudio.bgRemove.processSuccess");
+      else toast.error("akoolStudio.bgRemove.processError");
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -1188,26 +1188,26 @@ function BgRemoveTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Eraser className="h-5 w-5 text-teal-400" />
-            배경 변경
+            {"akoolStudio.bgRemove.title"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
             <Button variant={mode === "remove" ? "default" : "outline"} size="sm" onClick={() => setMode("remove")} className={mode === "remove" ? "bg-gradient-to-r from-teal-600 to-cyan-600 border-0" : ""}>
-              <Eraser className="h-3.5 w-3.5 mr-1.5" /> 배경 제거
+              <Eraser className="h-3.5 w-3.5 mr-1.5" /> {"akoolStudio.main.tabs.bgRemove"}
             </Button>
             <Button variant={mode === "change" ? "default" : "outline"} size="sm" onClick={() => setMode("change")} className={mode === "change" ? "bg-gradient-to-r from-violet-600 to-blue-600 border-0" : ""}>
-              <Palette className="h-3.5 w-3.5 mr-1.5" /> 배경 교체
+              <Palette className="h-3.5 w-3.5 mr-1.5" /> {"akoolStudio.bgRemove.changeMode"}
             </Button>
           </div>
           <div>
-            <Label className="text-sm font-medium">{t("akoolStudio.bgRemove.imageUrlLabel")}</Label>
+            <Label className="text-sm font-medium">{"akoolStudio.bgRemove.imageUrlLabel"}</Label>
             <Input placeholder="https://example.com/photo.jpg" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="mt-1.5 bg-background/50" />
           </div>
           {mode === "change" && (
             <div>
-              <Label className="text-sm font-medium">{t("akoolStudio.bgRemove.newBgLabel")}</Label>
-              <Textarea placeholder={t("akoolStudio.bgRemove.newBgPlaceholder")} value={newBg} onChange={(e) => setNewBg(e.target.value)} rows={3} className="mt-1.5 bg-background/50" />
+              <Label className="text-sm font-medium">{"akoolStudio.bgRemove.newBgLabel"}</Label>
+              <Textarea placeholder={"akoolStudio.bgRemove.newBgPlaceholder"} value={newBg} onChange={(e) => setNewBg(e.target.value)} rows={3} className="mt-1.5 bg-background/50" />
             </div>
           )}
           <Button
@@ -1222,7 +1222,7 @@ function BgRemoveTab() {
             }}
           >
             {bgMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
-            {mode === "remove" ? "배경 제거" : "배경 교체"}
+            {mode === "remove" ? "akoolStudio.main.tabs.bgRemove" : "akoolStudio.bgRemove.changeMode"}
           </Button>
         </CardContent>
       </Card>
@@ -1231,14 +1231,14 @@ function BgRemoveTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <CheckCircle2 className="h-5 w-5 text-teal-400" />
-            결과
+            {"akoolStudio.common.result"}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {bgMut.isPending ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
-              <p className="text-sm text-muted-foreground">{t("akoolStudio.bgRemove.processing")}</p>
+              <p className="text-sm text-muted-foreground">{"akoolStudio.bgRemove.processing"}</p>
             </div>
           ) : resultUrl ? (
             <div className="space-y-4">
@@ -1247,7 +1247,7 @@ function BgRemoveTab() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(resultUrl, "_blank")}>
-                  <Download className="h-4 w-4" /> 다운로드
+                  <Download className="h-4 w-4" /> {"akoolStudio.common.download"}
                 </Button>
                 <ShareToGalleryButton mediaUrl={resultUrl} mediaType="image" toolUsed="bg-remove" />
               </div>
@@ -1356,19 +1356,19 @@ function StreamingAvatarTab() {
 function StudioOverview() {
   const { t } = useLanguage();
   const tools = [
-    { label: "이미지 → 비디오", href: "/ai-studio/image-to-video", icon: Clapperboard, color: "from-violet-600 to-blue-600", desc: "정적 이미지를 생동감 있는 비디오로 변환", badge: "hot" },
+    { label: "akoolStudio.main.tabs.imageToVideo", href: "/ai-studio/image-to-video", icon: Clapperboard, color: "from-violet-600 to-blue-600", desc: "정적 이미지를 생동감 있는 비디오로 변환", badge: "hot" },
     { label: "얼굴 교환", href: "/ai-studio/face-swap", icon: User2, color: "from-pink-600 to-rose-600", desc: "AI 기반 정밀 얼굴 교환", badge: "hot" },
     { label: "아바타 비디오", href: "/ai-studio/talking-avatar", icon: Brain, color: "from-cyan-600 to-teal-600", desc: "텍스트로 말하는 아바타 생성", badge: "" },
-    { label: "비디오 번역", href: "/ai-studio/video-translate", icon: Languages, color: "from-amber-600 to-orange-600", desc: "15+ 언어로 비디오 자동 번역", badge: "" },
-    { label: "텍스트 → 음성", href: "/ai-studio/tts", icon: Volume2, color: "from-green-600 to-emerald-600", desc: "30종 AI 음성 합성", badge: "new" },
+    { label: "akoolStudio.main.tabs.videoTranslation", href: "/ai-studio/video-translate", icon: Languages, color: "from-amber-600 to-orange-600", desc: "15+ 언어로 비디오 자동 번역", badge: "" },
+    { label: "akoolStudio.tts.title", href: "/ai-studio/tts", icon: Volume2, color: "from-green-600 to-emerald-600", desc: "30종 AI 음성 합성", badge: "new" },
     { label: "음성 복제", href: "/ai-studio/voice-clone", icon: Mic, color: "from-indigo-600 to-violet-600", desc: "목소리를 복제하여 콘텐츠 제작", badge: "new" },
-    { label: "음성 변환", href: "/ai-studio/voice-change", icon: Headphones, color: "from-purple-600 to-pink-600", desc: "음성을 다른 목소리로 변환", badge: "new" },
-    { label: "이미지 생성", href: "/ai-studio/image-gen", icon: ImageIcon, color: "from-rose-600 to-orange-600", desc: "텍스트로 고품질 이미지 생성", badge: "new" },
-    { label: "배경 변경", href: "/ai-studio/bg-remove", icon: Eraser, color: "from-teal-600 to-cyan-600", desc: "AI 배경 제거 및 교체", badge: "new" },
+    { label: "akoolStudio.main.tabs.voiceChange", href: "/ai-studio/voice-change", icon: Headphones, color: "from-purple-600 to-pink-600", desc: "음성을 다른 목소리로 변환", badge: "new" },
+    { label: "akoolStudio.main.tabs.imageGen", href: "/ai-studio/image-gen", icon: ImageIcon, color: "from-rose-600 to-orange-600", desc: "텍스트로 고품질 이미지 생성", badge: "new" },
+    { label: "akoolStudio.bgRemove.title", href: "/ai-studio/bg-remove", icon: Eraser, color: "from-teal-600 to-cyan-600", desc: "AI 배경 제거 및 교체", badge: "new" },
     { label: "라이브 카메라", href: "/ai-studio/live-camera", icon: Camera, color: "from-sky-600 to-blue-600", desc: "실시간 AI 카메라 효과", badge: "" },
     { label: "스트리밍 아바타", href: "/ai-studio/streaming-avatar", icon: Radio, color: "from-fuchsia-600 to-violet-600", desc: "실시간 대화형 AI 아바타", badge: "" },
     { label: "AI 모델 비교", href: "/ai-studio/models", icon: Sparkles, color: "from-fuchsia-600 to-pink-600", desc: "10+ AI 모델 성능 비교", badge: "" },
-    { label: "효과 프리셋", href: "/ai-studio/effects", icon: Zap, color: "from-yellow-600 to-amber-600", desc: "12종 비디오 효과 프리셋", badge: "" },
+    { label: "akoolStudio.imageToVideo.effectPresetLabel", href: "/ai-studio/effects", icon: Zap, color: "from-yellow-600 to-amber-600", desc: "12종 비디오 효과 프리셋", badge: "" },
   ];
 
   const badgeColors: Record<string, string> = {
@@ -1414,7 +1414,7 @@ function StudioOverview() {
 export function AkoolImageToVideo() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="이미지 → 비디오" subtitle="정적 이미지를 생동감 있는 비디오로 변환합니다">
+    <StudioLayout title={t("akoolStudio.main.tabs.imageToVideo")} subtitle="정적 이미지를 생동감 있는 비디오로 변환합니다">
       <ImageToVideoTab />
     </StudioLayout>
   );
@@ -1441,7 +1441,7 @@ export function AkoolTalkingAvatar() {
 export function AkoolVideoTranslate() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="비디오 번역" subtitle="15+ 언어로 비디오를 자동 번역합니다">
+    <StudioLayout title={t("akoolStudio.main.tabs.videoTranslation")} subtitle="15+ 언어로 비디오를 자동 번역합니다">
       <VideoTranslationTab />
     </StudioLayout>
   );
@@ -1450,7 +1450,7 @@ export function AkoolVideoTranslate() {
 export function AkoolTTS() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="텍스트 → 음성" subtitle="30종 AI 음성으로 자연스러운 음성 합성">
+    <StudioLayout title={t("akoolStudio.tts.title")} subtitle="30종 AI 음성으로 자연스러운 음성 합성">
       <TTSTab />
     </StudioLayout>
   );
@@ -1468,7 +1468,7 @@ export function AkoolVoiceClone() {
 export function AkoolVoiceChange() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="음성 변환" subtitle="음성을 다른 목소리로 변환합니다">
+    <StudioLayout title={t("akoolStudio.main.tabs.voiceChange")} subtitle="음성을 다른 목소리로 변환합니다">
       <VoiceChangeTab />
     </StudioLayout>
   );
@@ -1477,7 +1477,7 @@ export function AkoolVoiceChange() {
 export function AkoolImageGen() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="이미지 생성" subtitle="텍스트 프롬프트로 7종 스타일 이미지 생성">
+    <StudioLayout title={t("akoolStudio.main.tabs.imageGen")} subtitle="텍스트 프롬프트로 7종 스타일 이미지 생성">
       <ImageGenTab />
     </StudioLayout>
   );
@@ -1486,7 +1486,7 @@ export function AkoolImageGen() {
 export function AkoolBgRemove() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="배경 변경" subtitle="AI 기반 배경 제거 및 교체">
+    <StudioLayout title={t("akoolStudio.bgRemove.title")} subtitle="AI 기반 배경 제거 및 교체">
       <BgRemoveTab />
     </StudioLayout>
   );

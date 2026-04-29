@@ -17,13 +17,13 @@ import "@/i18n/pages/Recommendations";
 const CATEGORIES = [
   { value: "web3", label: "Web3" },
   { value: "ai", label: "AI" },
-  { value: "blockchain", label: "블록체인" },
+  { value: "blockchain", label: "recommendations.category.blockchain" },
   { value: "defi", label: "DeFi" },
   { value: "nft", label: "NFT" },
-  { value: "metaverse", label: "메타버스" },
-  { value: "programming", label: "프로그래밍" },
-  { value: "business", label: "비즈니스" },
-  { value: "design", label: "디자인" },
+  { value: "metaverse", label: "recommendations.category.metaverse" },
+  { value: "programming", label: "recommendations.category.programming" },
+  { value: "business", label: "recommendations.category.business" },
+  { value: "design", label: "recommendations.category.design" },
 ];
 
 export default function Recommendations() {
@@ -65,11 +65,11 @@ export default function Recommendations() {
 
   const translatedCategories = CATEGORIES.map(c => {
     switch (c.label) {
-        case '블록체인': return { ...c, label: t('recommendations.category.blockchain') };
-        case '메타버스': return { ...c, label: t('recommendations.category.metaverse') };
-        case '프로그래밍': return { ...c, label: t('recommendations.category.programming') };
-        case '비즈니스': return { ...c, label: t('recommendations.category.business') };
-        case '디자인': return { ...c, label: t('recommendations.category.design') };
+        case t("recommendations.category.blockchain"): return { ...c, label: t('recommendations.category.blockchain') };
+        case t("recommendations.category.metaverse"): return { ...c, label: t('recommendations.category.metaverse') };
+        case t("recommendations.category.programming"): return { ...c, label: t('recommendations.category.programming') };
+        case t("recommendations.category.business"): return { ...c, label: t('recommendations.category.business') };
+        case t("recommendations.category.design"): return { ...c, label: t('recommendations.category.design') };
         default: return c;
     }
   });

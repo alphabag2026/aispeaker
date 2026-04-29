@@ -18,6 +18,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useWhiteboardCollab } from "@/hooks/useWhiteboardCollab";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // --- Types ---
 type Tool = "select" | "pen" | "eraser" | "text" | "image" | "shape";
@@ -102,44 +103,44 @@ interface WbTemplate {
 
 const WHITEBOARD_TEMPLATES: WbTemplate[] = [
   {
-    id: "blank", name: "빈 화이트보드", desc: "깨끗한 백지", icon: FileText,
+    id: "blank", name: "whiteboardEditor.blankBoard", desc: "whiteboardEditor.blankBoardDesc", icon: FileText,
     bgColor: "#ffffff", texts: [], shapes: [],
   },
   {
-    id: "blackboard", name: "칠판", desc: "어두운 배경의 교실 칠판", icon: Calculator,
+    id: "blackboard", name: "whiteboardEditor.blackboard", desc: "whiteboardEditor.blackboardDesc", icon: Calculator,
     bgColor: "#1a1a2e", texts: [
-      { id: "t1", x: 40, y: 30, text: "제목을 입력하세요", fontSize: 48, color: "#FFFFFF", fontFamily: "sans-serif" },
+      { id: "t1", x: 40, y: 30, text: "whiteboardEditor.enterTitle", fontSize: 48, color: "#FFFFFF", fontFamily: "sans-serif" },
     ], shapes: [
       { id: "s1", type: "line", x: 40, y: 90, width: 880, height: 0, color: "#FFFFFF", strokeWidth: 2, fill: false },
     ],
   },
   {
-    id: "comparison", name: "비교표", desc: "좌우 2칸 비교 레이아웃", icon: Table2,
+    id: "comparison", name: "whiteboardEditor.comparisonTable", desc: "whiteboardEditor.comparisonTableDesc", icon: Table2,
     bgColor: "#ffffff", texts: [
-      { id: "t1", x: 160, y: 30, text: "A 항목", fontSize: 36, color: "#0066FF", fontFamily: "sans-serif" },
-      { id: "t2", x: 600, y: 30, text: "B 항목", fontSize: 36, color: "#FF0000", fontFamily: "sans-serif" },
-      { id: "t3", x: 60, y: 110, text: "• 특징 1", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t4", x: 60, y: 160, text: "• 특징 2", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t5", x: 60, y: 210, text: "• 특징 3", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t6", x: 510, y: 110, text: "• 특징 1", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t7", x: 510, y: 160, text: "• 특징 2", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t8", x: 510, y: 210, text: "• 특징 3", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t1", x: 160, y: 30, text: "whiteboardEditor.itemA", fontSize: 36, color: "#0066FF", fontFamily: "sans-serif" },
+      { id: "t2", x: 600, y: 30, text: "whiteboardEditor.itemB", fontSize: 36, color: "#FF0000", fontFamily: "sans-serif" },
+      { id: "t3", x: 60, y: 110, text: "whiteboardEditor.feature1", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t4", x: 60, y: 160, text: "whiteboardEditor.feature2", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t5", x: 60, y: 210, text: "whiteboardEditor.feature3", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t6", x: 510, y: 110, text: "whiteboardEditor.feature1", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t7", x: 510, y: 160, text: "whiteboardEditor.feature2", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t8", x: 510, y: 210, text: "whiteboardEditor.feature3", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
     ], shapes: [
       { id: "s1", type: "line", x: 480, y: 20, width: 0, height: 500, color: "#CCCCCC", strokeWidth: 2, fill: false },
       { id: "s2", type: "line", x: 40, y: 90, width: 880, height: 0, color: "#CCCCCC", strokeWidth: 1, fill: false },
     ],
   },
   {
-    id: "timeline", name: "타임라인", desc: "시간순 흐름 레이아웃", icon: GitBranch,
+    id: "timeline", name: "whiteboardEditor.timeline", desc: "whiteboardEditor.timelineDesc", icon: GitBranch,
     bgColor: "#f0f8ff", texts: [
       { id: "t1", x: 100, y: 240, text: "Step 1", fontSize: 20, color: "#0066FF", fontFamily: "sans-serif" },
       { id: "t2", x: 300, y: 240, text: "Step 2", fontSize: 20, color: "#0066FF", fontFamily: "sans-serif" },
       { id: "t3", x: 500, y: 240, text: "Step 3", fontSize: 20, color: "#0066FF", fontFamily: "sans-serif" },
       { id: "t4", x: 700, y: 240, text: "Step 4", fontSize: 20, color: "#0066FF", fontFamily: "sans-serif" },
-      { id: "t5", x: 100, y: 280, text: "설명", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
-      { id: "t6", x: 300, y: 280, text: "설명", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
-      { id: "t7", x: 500, y: 280, text: "설명", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
-      { id: "t8", x: 700, y: 280, text: "설명", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t5", x: 100, y: 280, text: "whiteboardEditor.description", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t6", x: 300, y: 280, text: "whiteboardEditor.description", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t7", x: 500, y: 280, text: "whiteboardEditor.description", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t8", x: 700, y: 280, text: "whiteboardEditor.description", fontSize: 16, color: "#666666", fontFamily: "sans-serif" },
     ], shapes: [
       { id: "s1", type: "line", x: 80, y: 220, width: 800, height: 0, color: "#0066FF", strokeWidth: 3, fill: false },
       { id: "s2", type: "circle", x: 115, y: 210, width: 20, height: 20, color: "#0066FF", strokeWidth: 2, fill: true },
@@ -149,13 +150,13 @@ const WHITEBOARD_TEMPLATES: WbTemplate[] = [
     ],
   },
   {
-    id: "mindmap", name: "마인드맵", desc: "중앙 주제 + 가지 구조", icon: Brain,
+    id: "mindmap", name: "whiteboardEditor.mindmap", desc: "whiteboardEditor.mindmapDesc", icon: Brain,
     bgColor: "#ffffff", texts: [
-      { id: "t1", x: 400, y: 240, text: "주제", fontSize: 36, color: "#0066FF", fontFamily: "sans-serif" },
-      { id: "t2", x: 140, y: 100, text: "항목 1", fontSize: 24, color: "#FF6600", fontFamily: "sans-serif" },
-      { id: "t3", x: 660, y: 100, text: "항목 2", fontSize: 24, color: "#00AA00", fontFamily: "sans-serif" },
-      { id: "t4", x: 140, y: 380, text: "항목 3", fontSize: 24, color: "#9933CC", fontFamily: "sans-serif" },
-      { id: "t5", x: 660, y: 380, text: "항목 4", fontSize: 24, color: "#FF0000", fontFamily: "sans-serif" },
+      { id: "t1", x: 400, y: 240, text: "whiteboardEditor.topic", fontSize: 36, color: "#0066FF", fontFamily: "sans-serif" },
+      { id: "t2", x: 140, y: 100, text: "whiteboardEditor.item1", fontSize: 24, color: "#FF6600", fontFamily: "sans-serif" },
+      { id: "t3", x: 660, y: 100, text: "whiteboardEditor.item2", fontSize: 24, color: "#00AA00", fontFamily: "sans-serif" },
+      { id: "t4", x: 140, y: 380, text: "whiteboardEditor.item3", fontSize: 24, color: "#9933CC", fontFamily: "sans-serif" },
+      { id: "t5", x: 660, y: 380, text: "whiteboardEditor.item4", fontSize: 24, color: "#FF0000", fontFamily: "sans-serif" },
     ], shapes: [
       { id: "s1", type: "circle", x: 370, y: 220, width: 140, height: 70, color: "#0066FF", strokeWidth: 3, fill: false },
       { id: "s2", type: "rect", x: 100, y: 85, width: 140, height: 50, color: "#FF6600", strokeWidth: 2, fill: false },
@@ -165,39 +166,39 @@ const WHITEBOARD_TEMPLATES: WbTemplate[] = [
     ],
   },
   {
-    id: "bullet", name: "핵심 포인트", desc: "번호 매긴 포인트 목록", icon: FileText,
+    id: "bullet", name: "whiteboardEditor.bulletPoints", desc: "whiteboardEditor.bulletPointsDesc", icon: FileText,
     bgColor: "#ffffff", texts: [
-      { id: "t1", x: 60, y: 30, text: "제목", fontSize: 40, color: "#1a1a2e", fontFamily: "sans-serif" },
-      { id: "t2", x: 80, y: 120, text: "1. 첫 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t3", x: 80, y: 180, text: "2. 두 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t4", x: 80, y: 240, text: "3. 세 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t5", x: 80, y: 300, text: "4. 네 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t6", x: 80, y: 360, text: "5. 다섯 번째 포인트", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t1", x: 60, y: 30, text: "whiteboardEditor.title", fontSize: 40, color: "#1a1a2e", fontFamily: "sans-serif" },
+      { id: "t2", x: 80, y: 120, text: "whiteboardEditor.firstPoint", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t3", x: 80, y: 180, text: "whiteboardEditor.secondPoint", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t4", x: 80, y: 240, text: "whiteboardEditor.thirdPoint", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t5", x: 80, y: 300, text: "whiteboardEditor.fourthPoint", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t6", x: 80, y: 360, text: "whiteboardEditor.fifthPoint", fontSize: 28, color: "#333333", fontFamily: "sans-serif" },
     ], shapes: [
       { id: "s1", type: "line", x: 60, y: 85, width: 840, height: 0, color: "#0066FF", strokeWidth: 3, fill: false },
     ],
   },
   {
-    id: "chart_area", name: "차트 영역", desc: "차트/그래프 영역 표시", icon: BarChart3,
+    id: "chart_area", name: "whiteboardEditor.chartArea", desc: "whiteboardEditor.chartAreaDesc", icon: BarChart3,
     bgColor: "#ffffff", texts: [
-      { id: "t1", x: 60, y: 20, text: "데이터 분석", fontSize: 36, color: "#1a1a2e", fontFamily: "sans-serif" },
-      { id: "t2", x: 580, y: 100, text: "핵심 인사이트", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
-      { id: "t3", x: 580, y: 150, text: "• 포인트 1", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
-      { id: "t4", x: 580, y: 190, text: "• 포인트 2", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
-      { id: "t5", x: 580, y: 230, text: "• 포인트 3", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t1", x: 60, y: 20, text: "whiteboardEditor.dataAnalysis", fontSize: 36, color: "#1a1a2e", fontFamily: "sans-serif" },
+      { id: "t2", x: 580, y: 100, text: "whiteboardEditor.keyInsights", fontSize: 24, color: "#333333", fontFamily: "sans-serif" },
+      { id: "t3", x: 580, y: 150, text: "whiteboardEditor.point1", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t4", x: 580, y: 190, text: "whiteboardEditor.point2", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
+      { id: "t5", x: 580, y: 230, text: "whiteboardEditor.point3", fontSize: 20, color: "#666666", fontFamily: "sans-serif" },
     ], shapes: [
       { id: "s1", type: "rect", x: 60, y: 80, width: 480, height: 400, color: "#E0E0E0", strokeWidth: 2, fill: false },
       { id: "s2", type: "line", x: 60, y: 70, width: 880, height: 0, color: "#CCCCCC", strokeWidth: 1, fill: false },
     ],
   },
   {
-    id: "dark_modern", name: "다크 모던", desc: "어두운 배경의 모던 레이아웃", icon: LayoutTemplate,
+    id: "dark_modern", name: "whiteboardEditor.darkModern", desc: "whiteboardEditor.darkModernDesc", icon: LayoutTemplate,
     bgColor: "#16213e", texts: [
-      { id: "t1", x: 60, y: 40, text: "프레젠테이션 제목", fontSize: 44, color: "#FFFFFF", fontFamily: "sans-serif" },
-      { id: "t2", x: 60, y: 120, text: "부제목 또는 설명", fontSize: 24, color: "#88AACC", fontFamily: "sans-serif" },
-      { id: "t3", x: 60, y: 200, text: "▸ 핵심 내용 1", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
-      { id: "t4", x: 60, y: 260, text: "▸ 핵심 내용 2", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
-      { id: "t5", x: 60, y: 320, text: "▸ 핵심 내용 3", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
+      { id: "t1", x: 60, y: 40, text: "whiteboardEditor.presentationTitle", fontSize: 44, color: "#FFFFFF", fontFamily: "sans-serif" },
+      { id: "t2", x: 60, y: 120, text: "whiteboardEditor.subtitleOrDescription", fontSize: 24, color: "#88AACC", fontFamily: "sans-serif" },
+      { id: "t3", x: 60, y: 200, text: "whiteboardEditor.coreContent1", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
+      { id: "t4", x: 60, y: 260, text: "whiteboardEditor.coreContent2", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
+      { id: "t5", x: 60, y: 320, text: "whiteboardEditor.coreContent3", fontSize: 28, color: "#00DDFF", fontFamily: "sans-serif" },
     ], shapes: [
       { id: "s1", type: "line", x: 60, y: 105, width: 400, height: 0, color: "#00DDFF", strokeWidth: 2, fill: false },
     ],
@@ -205,6 +206,7 @@ const WHITEBOARD_TEMPLATES: WbTemplate[] = [
 ];
 
 export default function WhiteboardEditor({ initialData, onSave, onExportMp4, width = 960, height = 540, language = "ko", projectId, insertContentId }: WhiteboardEditorProps) {
+  const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -680,7 +682,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
     setIsRecording(true);
     recordedStrokes.current = [];
     recordStartTime.current = Date.now();
-    toast.info("펜 애니메이션 녹화 시작! 그리기를 시작하세요.");
+    toast.info(t("whiteboardEditor.recordingStart"));
   };
 
   const stopRecording = () => {
@@ -693,7 +695,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
   const playAnimation = async () => {
     const recorded = recordedStrokes.current;
     if (recorded.length === 0) {
-      toast.error("녹화된 애니메이션이 없습니다");
+      toast.error(t("whiteboardEditor.noAnimation"));
       return;
     }
     setIsPlaying(true);
@@ -729,7 +731,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
     // Restore
     setStrokes(savedStrokes);
     setIsPlaying(false);
-    toast.success("애니메이션 재생 완료");
+    toast.success(t("whiteboardEditor.playbackComplete"));
   };
 
   // --- Undo/Redo ---
@@ -752,7 +754,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
   // --- Apply template ---
   const applyTemplate = (tmpl: WbTemplate) => {
     if (strokes.length > 0 || texts.length > 0 || shapes.length > 0 || images.length > 0) {
-      if (!confirm("현재 화이트보드 내용이 사라집니다. 템플릿을 적용하시겠습니까?")) return;
+      if (!confirm(t("whiteboardEditor.confirmApplyTemplate"))) return;
     }
     const ts = Date.now();
     setStrokes([]);
@@ -774,7 +776,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
         : undefined,
     };
     onSave?.(data);
-    toast.success("화이트보드가 저장되었습니다");
+    toast.success(t("whiteboardEditor.saved"));
   };
 
   // --- Delete selected ---
@@ -803,11 +805,11 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
   };
 
   const toolButtons: { id: Tool; icon: any; label: string }[] = [
-    { id: "select", icon: MousePointer, label: "선택" },
+    { id: "select", icon: MousePointer, label: t("whiteboardEditor.toolSelect") },
     { id: "pen", icon: Pen, label: "펜" },
-    { id: "eraser", icon: Eraser, label: "지우개" },
-    { id: "text", icon: Type, label: "텍스트" },
-    { id: "image", icon: ImageIcon, label: "이미지" },
+    { id: "eraser", icon: Eraser, label: t("whiteboardEditor.toolEraser") },
+    { id: "text", icon: Type, label: t("whiteboardEditor.toolText") },
+    { id: "image", icon: ImageIcon, label: t("whiteboardEditor.toolImage") },
   ];
 
   return (
@@ -839,7 +841,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
         {/* Pen width */}
         {(tool === "pen" || tool === "eraser") && (
           <div className="flex items-center gap-2 border-r pr-2 mr-1">
-            <span className="text-xs text-muted-foreground">{tool === "pen" ? "굵기" : "크기"}</span>
+            <span className="text-xs text-muted-foreground">{tool === "pen" ? t("whiteboardEditor.width") : t("whiteboardEditor.size")}</span>
             <Slider
               value={[tool === "pen" ? penWidth : eraserWidth]}
               onValueChange={v => tool === "pen" ? setPenWidth(v[0]) : setEraserWidth(v[0])}
@@ -853,7 +855,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
         {/* Text size */}
         {tool === "text" && (
           <div className="flex items-center gap-2 border-r pr-2 mr-1">
-            <span className="text-xs text-muted-foreground">크기</span>
+            <span className="text-xs text-muted-foreground">{t("whiteboardEditor.size")}</span>
             <Select value={fontSize.toString()} onValueChange={v => setFontSize(parseInt(v))}>
               <SelectTrigger className="h-7 w-16 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -877,22 +879,22 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
 
         {/* Actions */}
         <div className="flex items-center gap-1 ml-auto">
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={undo} title="실행 취소">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={undo} title={t("whiteboardEditor.undo")}>
             <Undo2 className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearAll} title="전체 삭제">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={clearAll} title={t("whiteboardEditor.clearAll")}>
             <Trash2 className="w-4 h-4" />
           </Button>
           {selectedElement && (
             <Button variant="ghost" size="sm" className="h-8 text-xs text-destructive" onClick={deleteSelected}>
-              선택 삭제
+              {t("whiteboardEditor.deleteSelected")}
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={exportImage} title="이미지 저장">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={exportImage} title={t("whiteboardEditor.saveImage")}>
             <Download className="w-4 h-4" />
           </Button>
           <Button variant="default" size="sm" className="h-8 gap-1" onClick={handleSave}>
-            <Save className="w-3 h-3" /> 저장
+            <Save className="w-3 h-3" /> {t("whiteboardEditor.save")}
           </Button>
         </div>
       </div>
@@ -901,34 +903,34 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
       {projectId && (
         <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
           <Users className="w-4 h-4 text-blue-600 shrink-0" />
-          <span className="text-xs font-medium text-blue-700 dark:text-blue-300">실시간 협업:</span>
+          <span className="text-xs font-medium text-blue-700 dark:text-blue-300">{t("whiteboardEditor.realtimeCollab")}</span>
           {!collabMode ? (
             <>
               <Button variant="outline" size="sm" className="h-7 text-xs gap-1 border-blue-300 text-blue-700 hover:bg-blue-100"
                 onClick={handleCreateSession}
                 disabled={createSessionMut.isPending}>
                 {createSessionMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
-                세션 생성
+                {t("whiteboardEditor.createSession")}
               </Button>
-              <span className="text-xs text-muted-foreground">또는</span>
+              <span className="text-xs text-muted-foreground">{t("whiteboardEditor.or")}</span>
               <Input
                 value={joinCode}
                 onChange={e => setJoinCode(e.target.value)}
-                placeholder="세션 코드 입력..."
+                placeholder={t("whiteboardEditor.enterSessionCode")}
                 className="h-7 text-xs w-32"
                 onKeyDown={e => { if (e.key === "Enter") handleJoinSession(); }}
               />
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleJoinSession}
                 disabled={!joinCode.trim()}>
-                참여
+                {t("whiteboardEditor.join")}
               </Button>
             </>
           ) : (
             <>
               {collab.isConnected ? (
-                <Badge className="bg-green-500 text-white text-xs gap-1"><Wifi className="w-3 h-3" /> 연결됨</Badge>
+                <Badge className="bg-green-500 text-white text-xs gap-1"><Wifi className="w-3 h-3" /> {t("whiteboardEditor.connected")}</Badge>
               ) : (
-                <Badge variant="destructive" className="text-xs gap-1"><WifiOff className="w-3 h-3" /> 연결 중...</Badge>
+                <Badge variant="destructive" className="text-xs gap-1"><WifiOff className="w-3 h-3" /> {t("whiteboardEditor.connecting")}</Badge>
               )}
               <Badge variant="outline" className="text-xs">
                 {collab.participants.length}명 참여 중
@@ -953,14 +955,14 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
                 <code className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{sessionCode}</code>
                 <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
                   navigator.clipboard.writeText(sessionCode);
-                  toast.success("세션 코드가 복사되었습니다");
+                  toast.success(t("whiteboardEditor.sessionCodeCopied"));
                 }}>
                   <Copy className="w-3 h-3" />
                 </Button>
               </div>
               <Button variant="outline" size="sm" className="h-7 text-xs text-red-600 border-red-300 hover:bg-red-50"
                 onClick={handleLeaveSession}>
-                나가기
+                {t("whiteboardEditor.leave")}
               </Button>
             </>
           )}
@@ -969,20 +971,20 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
 
       {/* Recording toolbar */}
       <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border border-dashed">
-        <span className="text-xs font-medium text-muted-foreground">펜 애니메이션:</span>
+        <span className="text-xs font-medium text-muted-foreground">{t("whiteboardEditor.penAnimation")}</span>
         {!isRecording ? (
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-red-500 border-red-300" onClick={startRecording}>
-            <Circle className="w-3 h-3 fill-red-500" /> 녹화 시작
+            <Circle className="w-3 h-3 fill-red-500" /> {t("whiteboardEditor.startRecording")}
           </Button>
         ) : (
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-red-500 border-red-500 animate-pulse" onClick={stopRecording}>
-            <Square className="w-3 h-3 fill-red-500" /> 녹화 중지
+            <Square className="w-3 h-3 fill-red-500" /> {t("whiteboardEditor.stopRecording")}
           </Button>
         )}
         <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={playAnimation}
           disabled={isPlaying || recordedStrokes.current.length === 0}>
           {isPlaying ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
-          재생
+          {t("whiteboardEditor.play")}
         </Button>
         {recordedStrokes.current.length > 0 && (
           <Badge variant="outline" className="text-xs">{recordedStrokes.current.length}개 스트로크</Badge>
@@ -993,7 +995,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
               disabled={isExportingMp4}
               onClick={handleExportMp4}>
               {isExportingMp4 ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-              MP4 내보내기
+              {t("whiteboardEditor.exportMp4")}
             </Button>
           </div>
         )}
@@ -1003,7 +1005,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
       <div className="space-y-2">
         <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1 justify-between"
           onClick={() => setShowTemplates(!showTemplates)}>
-          <span className="flex items-center gap-1"><LayoutTemplate className="w-3.5 h-3.5" /> 템플릿 라이브러리</span>
+          <span className="flex items-center gap-1"><LayoutTemplate className="w-3.5 h-3.5" /> {t("whiteboardEditor.templateLibrary")}</span>
           {showTemplates ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </Button>
         {showTemplates && (
@@ -1029,11 +1031,11 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
         <Select value={aiContentType} onValueChange={v => setAiContentType(v as any)}>
           <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="text">텍스트</SelectItem>
-            <SelectItem value="bullet_points">핵심 포인트</SelectItem>
+            <SelectItem value="text">{t("whiteboardEditor.toolText")}</SelectItem>
+            <SelectItem value="bullet_points">{t("whiteboardEditor.bulletPoints")}</SelectItem>
             <SelectItem value="diagram">다이어그램</SelectItem>
             <SelectItem value="equation">수식</SelectItem>
-            <SelectItem value="timeline">타임라인</SelectItem>
+            <SelectItem value="timeline">{t("whiteboardEditor.timeline")}</SelectItem>
           </SelectContent>
         </Select>
         <Input
@@ -1051,7 +1053,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
           disabled={!aiPrompt.trim() || generateWb.isPending}
           onClick={() => generateWb.mutate({ prompt: aiPrompt.trim(), contentType: aiContentType, language })}>
           {generateWb.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-          생성
+          {t("whiteboardEditor.aiGenerate")}
         </Button>
       </div>
 
@@ -1085,7 +1087,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
           disabled={!aiImagePrompt.trim() || generateAiImage.isPending}
           onClick={() => generateAiImage.mutate({ prompt: aiImagePrompt.trim(), style: aiImageStyle, language })}>
           {generateAiImage.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
-          이미지 생성
+          {t("whiteboardEditor.toolImage")} 생성
         </Button>
       </div>
 
@@ -1124,7 +1126,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
                 autoFocus
               />
               <div className="flex gap-1">
-                <Button size="sm" className="h-7 text-xs" onClick={confirmText}>확인</Button>
+                <Button size="sm" className="h-7 text-xs" onClick={confirmText}>{t("whiteboardEditor.confirmText")}</Button>
                 <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingText(null)}>취소</Button>
               </div>
             </div>

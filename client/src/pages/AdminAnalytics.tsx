@@ -10,6 +10,7 @@ import {
   BarChart3, Users, Zap, TrendingUp, ArrowLeft,
   Shield, Activity, UserPlus, Mic, Image, Video, Wand2,
 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TOOL_ICONS: Record<string, any> = {
   tts: Mic, voice_clone: Mic, voice_change: Mic,
@@ -26,6 +27,7 @@ const TOOL_NAMES: Record<string, string> = {
 };
 
 export default function AdminAnalytics() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
 
@@ -77,28 +79,28 @@ export default function AdminAnalytics() {
             <CardContent className="pt-5 pb-4 text-center">
               <Activity className="h-6 w-6 mx-auto text-green-500 mb-2" />
               <p className="text-2xl font-bold">{userStats.dau}</p>
-              <p className="text-xs text-muted-foreground">DAU (오늘)</p>
+              <p className="text-xs text-muted-foreground">{t("adminAnalytics.dau")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5 pb-4 text-center">
               <Activity className="h-6 w-6 mx-auto text-yellow-500 mb-2" />
               <p className="text-2xl font-bold">{userStats.wau}</p>
-              <p className="text-xs text-muted-foreground">WAU (7일)</p>
+              <p className="text-xs text-muted-foreground">{t("adminAnalytics.wau")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5 pb-4 text-center">
               <TrendingUp className="h-6 w-6 mx-auto text-purple-500 mb-2" />
               <p className="text-2xl font-bold">{userStats.mau}</p>
-              <p className="text-xs text-muted-foreground">MAU (30일)</p>
+              <p className="text-xs text-muted-foreground">{t("adminAnalytics.mau")}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-5 pb-4 text-center">
               <UserPlus className="h-6 w-6 mx-auto text-pink-500 mb-2" />
               <p className="text-2xl font-bold">{userStats.newToday}</p>
-              <p className="text-xs text-muted-foreground">오늘 가입</p>
+              <p className="text-xs text-muted-foreground">{t("adminAnalytics.newToday")}</p>
             </CardContent>
           </Card>
         </div>
@@ -110,23 +112,23 @@ export default function AdminAnalytics() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Zap className="h-5 w-5 text-yellow-500" />
-                  크레딧 판매 현황
+                  {t("adminAnalytics.creditSalesTitle")}
                 </CardTitle>
                 <Select value={period} onValueChange={(v: any) => setPeriod(v)}>
                   <SelectTrigger className="w-[100px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="day">일별</SelectItem>
-                    <SelectItem value="week">주별</SelectItem>
-                    <SelectItem value="month">월별</SelectItem>
+                    <SelectItem value="day">{t("adminAnalytics.daily")}</SelectItem>
+                    <SelectItem value="week">{t("adminAnalytics.weekly")}</SelectItem>
+                    <SelectItem value="month">{t("adminAnalytics.monthly")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardHeader>
             <CardContent>
               {sales.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">판매 데이터 없음</p>
+                <p className="text-center text-muted-foreground py-8">{t("adminAnalytics.noSalesData")}</p>
               ) : (
                 <div className="space-y-3 max-h-[400px] overflow-y-auto">
                   {sales.slice(0, 15).map((row: any, i: number) => (
@@ -151,12 +153,12 @@ export default function AdminAnalytics() {
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-violet-500" />
-                인기 도구 순위
+                {t("adminAnalytics.toolRankingTitle")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               {tools.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">사용 데이터 없음</p>
+                <p className="text-center text-muted-foreground py-8">{t("adminAnalytics.noToolData")}</p>
               ) : (
                 <div className="space-y-4">
                   {tools.map((tool: any, i: number) => {

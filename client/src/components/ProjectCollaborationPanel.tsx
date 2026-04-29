@@ -14,9 +14,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const ROLE_LABELS: Record<string, { label: string; icon: any; color: string }> = {
   owner: { label: "소유자", icon: Crown, color: "text-amber-500" },
-  presenter: { label: "발표자", icon: User, color: "text-blue-500" },
-  editor: { label: "편집자", icon: User, color: "text-green-500" },
-  viewer: { label: "뷰어", icon: User, color: "text-gray-500" },
+  presenter: { label: "projectCollaborationPanel.rolePresenter", icon: User, color: "text-blue-500" },
+  editor: { label: "projectCollaborationPanel.roleEditor", icon: User, color: "text-green-500" },
+  viewer: { label: "projectCollaborationPanel.roleViewer", icon: User, color: "text-gray-500" },
 };
 
 export function ProjectCollaborationPanel({ projectId }: { projectId: string }) {

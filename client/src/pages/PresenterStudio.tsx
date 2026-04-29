@@ -58,7 +58,7 @@ export default function PresenterStudio() {
   });
 
   const startBroadcast = trpc.broadcast.start.useMutation({
-    onSuccess: () => { toast.success("방송이 시작되었습니다!"); broadcastByRoom.refetch(); },
+    onSuccess: () => { toast.success(t("presenterStudio.toast.broadcastStarted")); broadcastByRoom.refetch(); },
     onError: (err) => toast.error(err.message),
   });
   const pauseBroadcast = trpc.broadcast.pause.useMutation({
@@ -68,7 +68,7 @@ export default function PresenterStudio() {
     onSuccess: () => { broadcastByRoom.refetch(); },
   });
   const endBroadcast = trpc.broadcast.end.useMutation({
-    onSuccess: () => { toast.success("방송이 종료되었습니다"); navigate("/"); },
+    onSuccess: () => { toast.success(t("presenterStudio.toast.broadcastEnded")); navigate("/"); },
     onError: (err) => toast.error(err.message),
   });
   const updateSlide = trpc.broadcast.updateSlide.useMutation();
@@ -145,7 +145,7 @@ export default function PresenterStudio() {
 
   const playCurrentAudio = () => {
     const url = audioUrls[currentSlide];
-    if (!url) { toast.error("이 섹션에 오디오가 없습니다"); return; }
+    if (!url) { toast.error(t("presenterStudio.toast.noAudioInSection")); return; }
     if (audioRef.current) {
       audioRef.current.src = url;
       audioRef.current.muted = isMuted;
@@ -212,7 +212,7 @@ export default function PresenterStudio() {
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-3" />
-          <p className="text-gray-400">방송 정보를 불러오는 중...</p>
+          <p className="text-gray-400">{t("presenterStudio.loading.broadcastInfo")}</p>
         </div>
       </div>
     );
@@ -223,8 +223,8 @@ export default function PresenterStudio() {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-400 mb-4">방송을 찾을 수 없습니다</p>
-          <Button variant="outline" onClick={() => navigate("/")}>홈으로 돌아가기</Button>
+          <p className="text-gray-400 mb-4">{t("presenterStudio.notFound.title")}</p>
+          <Button variant="outline" onClick={() => navigate("/")}>{t("presenterStudio.button.goHome")}</Button>
         </div>
       </div>
     );
@@ -241,12 +241,12 @@ export default function PresenterStudio() {
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center max-w-md">
           <Shield className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white mb-2">접근 권한이 없습니다</h2>
+          <h2 className="text-xl font-bold text-white mb-2">{t("presenterStudio.permission.title")}</h2>
           <p className="text-gray-400 mb-6">
-            이 방송의 발표자(Presenter) 권한이 필요합니다.
+            {t("presenterStudio.permission.description")}
             프로젝트 소유자에게 발표자 역할로 초대를 요청하세요.
           </p>
-          <Button variant="outline" onClick={() => navigate("/")}>홈으로 돌아가기</Button>
+          <Button variant="outline" onClick={() => navigate("/")}>{t("presenterStudio.button.goHome")}</Button>
         </div>
       </div>
     );
@@ -266,8 +266,8 @@ export default function PresenterStudio() {
           </Button>
           <div className="flex items-center gap-2">
             {isLive && <Badge className="bg-red-500 text-white animate-pulse"><Radio className="w-3 h-3 mr-1" />LIVE</Badge>}
-            {isPaused && <Badge className="bg-yellow-500 text-black"><Pause className="w-3 h-3 mr-1" />일시정지</Badge>}
-            {!isLive && !isPaused && <Badge variant="outline" className="text-gray-400">대기 중</Badge>}
+            {isPaused && <Badge className="bg-yellow-500 text-black"><Pause className="w-3 h-3 mr-1" />{t("presenterStudio.status.paused")}</Badge>}
+            {!isLive && !isPaused && <Badge variant="outline" className="text-gray-400">{t("presenterStudio.status.waiting")}</Badge>}
             <span className="font-semibold text-sm truncate max-w-[120px] sm:max-w-[300px]">{broadcastByRoom.data.title}</span>
             <Badge className="bg-violet-500/20 text-violet-400 border-violet-500/30 text-xs gap-1">
               <Shield className="w-3 h-3" /> Presenter
@@ -277,11 +277,11 @@ export default function PresenterStudio() {
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400 flex items-center gap-1">
             <Users className="w-4 h-4" />
-            시청자 {viewers.data?.length || 0}명
+            {t("presenterStudio.viewers.viewer")} {viewers.data?.length || 0}명
           </span>
           <Button variant="ghost" size="sm" className="text-gray-400 gap-1" onClick={() => {
             navigator.clipboard.writeText(roomCode);
-            toast.success("방 코드가 복사되었습니다");
+            toast.success(t("presenterStudio.toast.roomCodeCopied"));
           }}>
             <Copy className="w-3 h-3" />
             {roomCode}
@@ -318,7 +318,7 @@ export default function PresenterStudio() {
               </div>
             ) : (
               <div className="text-center text-gray-500">
-                <p className="text-sm">슬라이드가 없습니다</p>
+                <p className="text-sm">{t("presenterStudio.slide.noSlides")}</p>
               </div>
             )}
             <Button
@@ -353,11 +353,11 @@ export default function PresenterStudio() {
             <div className="flex items-center gap-3">
               {isPlaying ? (
                 <Button onClick={pauseAudio} variant="outline" size="lg" className="gap-2 border-yellow-500 text-yellow-500">
-                  <Pause className="w-5 h-5" /> 일시정지
+                  <Pause className="w-5 h-5" /> {t("presenterStudio.status.paused")}
                 </Button>
               ) : (
                 <Button onClick={playCurrentAudio} variant="outline" size="lg" className="gap-2 border-green-500 text-green-500">
-                  <Play className="w-5 h-5" /> 재생
+                  <Play className="w-5 h-5" /> {t("presenterStudio.controls.play")}
                 </Button>
               )}
               <Button variant="ghost" size="icon" onClick={() => {
@@ -372,30 +372,30 @@ export default function PresenterStudio() {
             <div className="flex items-center gap-2">
               {!isLive && !isPaused && (
                 <Button onClick={() => startBroadcast.mutate({ broadcastId })} className="gap-2 bg-red-600 hover:bg-red-700">
-                  <Radio className="w-4 h-4" /> 방송 시작
+                  <Radio className="w-4 h-4" /> {t("presenterStudio.controls.startBroadcast")}
                 </Button>
               )}
               {isLive && (
                 <>
                   <Button onClick={() => pauseBroadcast.mutate({ broadcastId })} variant="outline" className="gap-2 border-yellow-500 text-yellow-500">
-                    <Pause className="w-4 h-4" /> 일시정지
+                    <Pause className="w-4 h-4" /> {t("presenterStudio.status.paused")}
                   </Button>
                   <Button onClick={() => {
-                    if (confirm("방송을 종료하시겠습니까?")) endBroadcast.mutate({ broadcastId });
+                    if (confirm(t("presenterStudio.confirm.endBroadcast"))) endBroadcast.mutate({ broadcastId });
                   }} variant="destructive" className="gap-2">
-                    <Square className="w-4 h-4" /> 방송 종료
+                    <Square className="w-4 h-4" /> {t("presenterStudio.controls.endBroadcast")}
                   </Button>
                 </>
               )}
               {isPaused && (
                 <>
                   <Button onClick={() => resumeBroadcast.mutate({ broadcastId })} className="gap-2 bg-green-600 hover:bg-green-700">
-                    <Play className="w-4 h-4" /> 재개
+                    <Play className="w-4 h-4" /> {t("presenterStudio.controls.resume")}
                   </Button>
                   <Button onClick={() => {
-                    if (confirm("방송을 종료하시겠습니까?")) endBroadcast.mutate({ broadcastId });
+                    if (confirm(t("presenterStudio.confirm.endBroadcast"))) endBroadcast.mutate({ broadcastId });
                   }} variant="destructive" className="gap-2">
-                    <Square className="w-4 h-4" /> 종료
+                    <Square className="w-4 h-4" /> {t("presenterStudio.controls.end")}
                   </Button>
                 </>
               )}
@@ -407,7 +407,7 @@ export default function PresenterStudio() {
         <div className="w-full lg:w-80 bg-gray-900 border-t lg:border-t-0 lg:border-l border-gray-800 flex flex-col max-h-[35vh] lg:max-h-none">
           <div className="h-12 flex items-center px-4 border-b border-gray-800">
             <MessageSquare className="w-4 h-4 mr-2 text-gray-400" />
-            <span className="text-sm font-medium">채팅</span>
+            <span className="text-sm font-medium">{t("presenterStudio.chat.title")}</span>
             <Badge variant="secondary" className="ml-auto text-xs">{chatMessages.length}</Badge>
           </div>
 
@@ -436,7 +436,7 @@ export default function PresenterStudio() {
           <div className="p-3 border-t border-gray-800">
             <div className="flex gap-2">
               <Input
-                placeholder="메시지를 입력하세요..."
+                placeholder={t("presenterStudio.chat.placeholder")}
                 value={chatMessage}
                 onChange={(e) => setChatMessage(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
@@ -450,12 +450,12 @@ export default function PresenterStudio() {
 
           <div className="border-t border-gray-800 p-3">
             <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-              <Users className="w-3 h-3" /> 시청자 {viewers.data?.length || 0}명
+              <Users className="w-3 h-3" /> {t("presenterStudio.viewers.viewer")} {viewers.data?.length || 0}명
             </p>
             <div className="flex flex-wrap gap-1">
               {viewers.data?.slice(0, 20).map((v: any) => (
                 <Badge key={v.id} variant="secondary" className="text-[10px]">
-                  {v.displayName || "시청자"}
+                  {v.displayName || t("presenterStudio.viewers.viewer")}
                 </Badge>
               ))}
               {(viewers.data?.length || 0) > 20 && (
