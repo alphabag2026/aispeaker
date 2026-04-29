@@ -20,7 +20,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus } from
+  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown } from
 "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -450,7 +450,13 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const myAvatarsQuery = trpc.userAvatar.list.useQuery(undefined, { enabled: showAddDialog });
+  const [avatarSortBy, setAvatarSortBy] = useState<"favorite" | "recent" | "name" | "created">("favorite");
+  const myAvatarsQuery = trpc.userAvatar.list.useQuery({ sortBy: avatarSortBy }, { enabled: showAddDialog });
+  const toggleFavorite = trpc.userAvatar.toggleFavorite.useMutation({
+    onSuccess: () => { myAvatarsQuery.refetch(); },
+    onError: (e) => toast.error(e.message)
+  });
+  const recordUsage = trpc.userAvatar.recordUsage.useMutation();
   const createUserAvatar = trpc.userAvatar.create.useMutation({
     onSuccess: () => { myAvatarsQuery.refetch(); toast.success(t("lectureBuilder.avatar.uploaded")); },
     onError: (e) => toast.error(e.message)
@@ -568,34 +574,66 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
-                    {myAvatarsQuery.data.map((av) =>
-                      <div key={av.id} className="relative group">
-                        <button
-                          className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square w-full ${
-                          selectedMyAvatarUrl === av.imageUrl ? "border-primary ring-2 ring-primary/30 scale-105" : "border-transparent hover:border-muted-foreground/30"}`}
-                          onClick={() => { setSelectedMyAvatarUrl(av.imageUrl); setSelectedFaceId(null); if (!avatarName) setAvatarName(av.name); }}>
-                          <img src={av.imageUrl} alt={av.name} className="w-full h-full object-cover" />
-                          {selectedMyAvatarUrl === av.imageUrl &&
-                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                            <Check className="w-6 h-6 text-primary-foreground bg-primary rounded-full p-1" />
-                          </div>}
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 px-1 py-0.5">
-                            <span className="text-[10px] text-white truncate block">{av.name}</span>
+                  <>
+                    {/* Sort dropdown */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{myAvatarsQuery.data.length} {t("lectureBuilder.avatar.avatarCount")}</span>
+                      <Select value={avatarSortBy} onValueChange={(v) => setAvatarSortBy(v as any)}>
+                        <SelectTrigger className="w-[160px] h-8 text-xs">
+                          <ArrowUpDown className="w-3 h-3 mr-1" />
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="favorite">{t("lectureBuilder.avatar.sortFavorite")}</SelectItem>
+                          <SelectItem value="recent">{t("lectureBuilder.avatar.sortRecent")}</SelectItem>
+                          <SelectItem value="name">{t("lectureBuilder.avatar.sortName")}</SelectItem>
+                          <SelectItem value="created">{t("lectureBuilder.avatar.sortCreated")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                      {myAvatarsQuery.data.map((av) =>
+                        <div key={av.id} className="relative group">
+                          <button
+                            className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square w-full ${
+                            selectedMyAvatarUrl === av.imageUrl ? "border-primary ring-2 ring-primary/30 scale-105" : "border-transparent hover:border-muted-foreground/30"}`}
+                            onClick={() => {
+                              setSelectedMyAvatarUrl(av.imageUrl); setSelectedFaceId(null);
+                              if (!avatarName) setAvatarName(av.name);
+                              recordUsage.mutate({ id: av.id });
+                            }}>
+                            <img src={av.imageUrl} alt={av.name} className="w-full h-full object-cover" />
+                            {selectedMyAvatarUrl === av.imageUrl &&
+                            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                              <Check className="w-6 h-6 text-primary-foreground bg-primary rounded-full p-1" />
+                            </div>}
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 px-1 py-0.5">
+                              <span className="text-[10px] text-white truncate block">{av.name}</span>
+                            </div>
+                            {/* Favorite star badge */}
+                            {av.isFavorite && (
+                              <div className="absolute top-0.5 left-0.5">
+                                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 drop-shadow" />
+                              </div>
+                            )}
+                          </button>
+                          <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 z-10">
+                            <button className={`rounded-full p-0.5 transition-colors ${av.isFavorite ? "bg-yellow-400 text-yellow-900" : "bg-muted text-muted-foreground hover:bg-yellow-400 hover:text-yellow-900"}`}
+                              onClick={(e) => { e.stopPropagation(); toggleFavorite.mutate({ id: av.id }); }}>
+                              <Star className={`w-3 h-3 ${av.isFavorite ? "fill-current" : ""}`} />
+                            </button>
+                            <button className="bg-primary text-primary-foreground rounded-full p-0.5"
+                              onClick={(e) => { e.stopPropagation(); setEditingUserAvatar(av); setEditUserAvatarName(av.name); setEditUserAvatarDesc(av.description || ""); }}>
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                            <button className="bg-destructive text-destructive-foreground rounded-full p-0.5"
+                              onClick={(e) => { e.stopPropagation(); if (confirm(t("lectureBuilder.avatar.deleteConfirm"))) deleteUserAvatar.mutate({ id: av.id }); }}>
+                              <X className="w-3 h-3" />
+                            </button>
                           </div>
-                        </button>
-                        <div className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5 z-10">
-                          <button className="bg-primary text-primary-foreground rounded-full p-0.5"
-                            onClick={(e) => { e.stopPropagation(); setEditingUserAvatar(av); setEditUserAvatarName(av.name); setEditUserAvatarDesc(av.description || ""); }}>
-                            <Pencil className="w-3 h-3" />
-                          </button>
-                          <button className="bg-destructive text-destructive-foreground rounded-full p-0.5"
-                            onClick={(e) => { e.stopPropagation(); if (confirm(t("lectureBuilder.avatar.deleteConfirm"))) deleteUserAvatar.mutate({ id: av.id }); }}>
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>)}
-                  </div>
+                        </div>)}
+                    </div>
+                  </>
                 )}
               </TabsContent>
 

@@ -2350,6 +2350,12 @@ export const userAvatars = mysqlTable("userAvatars", {
   description: text("description"),
   /** Whether this is the user's default avatar */
   isDefault: boolean("isDefault").default(false),
+  /** Whether this avatar is favorited (pinned to top) */
+  isFavorite: boolean("isFavorite").default(false),
+  /** Last time this avatar was used in a project */
+  lastUsedAt: timestamp("lastUsedAt"),
+  /** Number of times this avatar has been used */
+  useCount: int("useCount").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
