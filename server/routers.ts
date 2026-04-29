@@ -8713,6 +8713,34 @@ Return a JSON object with a "sections" array. Each section has:
         await db.deleteUserAvatar(input.id, ctx.user.id);
         return { success: true };
       }),
+    /** Generate AI avatar face from text prompt */
+    generateFace: protectedProcedure
+      .input(z.object({
+        prompt: z.string().min(1).max(500),
+        name: z.string().min(1).max(100),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const fullPrompt = `Professional headshot portrait photo of ${input.prompt}. Clean background, high quality, photorealistic, suitable for use as a video presenter avatar. Front-facing, well-lit, neutral expression, shoulders visible.`;
+        const { url: generatedUrl } = await generateImage({ prompt: fullPrompt });
+        if (!generatedUrl) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Image generation failed. Please try again." });
+        }
+        // Download generated image and save to S3
+        const response = await fetch(generatedUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const fileKey = `user-avatars/${ctx.user.id}/ai-${nanoid()}.png`;
+        const { url } = await storagePut(fileKey, buffer, "image/png");
+        const id = await db.createUserAvatar({
+          userId: ctx.user.id,
+          name: input.name,
+          imageUrl: url,
+          fileKey,
+          type: "ai",
+          description: input.prompt,
+        });
+        return { id, imageUrl: url };
+      }),
   }),
 });
 
