@@ -2328,3 +2328,30 @@ export const broadcastAnalytics = mysqlTable("broadcastAnalytics", {
 });
 export type BroadcastAnalytic = typeof broadcastAnalytics.$inferSelect;
 export type InsertBroadcastAnalytic = typeof broadcastAnalytics.$inferInsert;
+
+
+/**
+ * User Custom Avatars - user-uploaded or AI-generated avatar faces
+ * Users can upload their own face photos or any custom images to use as avatars
+ * These are reusable across multiple projects
+ */
+export const userAvatars = mysqlTable("userAvatars", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Display name for this avatar */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** CDN URL to avatar face image */
+  imageUrl: text("imageUrl").notNull(),
+  /** S3 file key for the image */
+  fileKey: text("fileKey"),
+  /** Type: photo (uploaded photo), ai (AI generated), custom (other image) */
+  type: mysqlEnum("type", ["photo", "ai", "custom"]).default("photo").notNull(),
+  /** Optional description or tags */
+  description: text("description"),
+  /** Whether this is the user's default avatar */
+  isDefault: boolean("isDefault").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type UserAvatar = typeof userAvatars.$inferSelect;
+export type InsertUserAvatar = typeof userAvatars.$inferInsert;

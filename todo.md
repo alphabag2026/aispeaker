@@ -2077,4 +2077,13 @@
 ## 프로덕션 빌드 에러 수정
 - [x] BUG FIX: 잘못된 import 경로 수정 - translations/akoolStudio → i18n/pages/AkoolStudio
 - [x] BUG FIX: 잘못된 import 경로 수정 - lib/broadcastInterpretationPanel → i18n/components/BroadcastInterpretationPanel
-- [ ] alphabag.net 서버 502 에러 진단 및 수정
+- [x] alphabag.net 서버 502 에러 진단 및 수정 (자동 복구 확인 - 컨테이너 재시작으로 정상화)
+
+## 아바타 직접 생성 기능
+- [x] DB 스키마 - 커스텀 아바타 테이블 추가 (userAvatars - 사용자별 아바타 저장)
+- [x] 서버 라우터 - 커스텀 아바타 CRUD API (userAvatar.list/create/delete)
+- [x] 프론트엔드 UI - 아바타 추가 다이얼로그에 3개 탭 (프리셋/내 아바타/사진 업로드)
+- [x] 프론트엔드 UI - 사진 업로드(얼굴/원하는 이미지)로 커스텀 아바타 생성 + S3 저장
+- [x] 프론트엔드 UI - 미리 등록한 커스텀 아바타 목록에서 선택/삭제
+- [x] i18n 번역 키 추가 (20개 언어)
+- [x] 테스트 작성 및 빌드 확인 (8개 테스트, 1283개 전체 통과)

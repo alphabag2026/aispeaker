@@ -86,6 +86,7 @@ import {
   voiceClones, InsertVoiceClone,
   broadcastRecordings, InsertBroadcastRecording,
   broadcastAnalytics, InsertBroadcastAnalytic,
+  userAvatars, InsertUserAvatar,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -3967,4 +3968,33 @@ export async function generateBroadcastAnalytics(broadcastId: number) {
     const result = await db.insert(broadcastAnalytics).values(analyticsData);
     return { id: result[0].insertId, ...analyticsData };
   }
+}
+
+
+// ============ User Custom Avatars ============
+export async function listUserAvatars(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(userAvatars).where(eq(userAvatars.userId, userId)).orderBy(desc(userAvatars.createdAt));
+}
+
+export async function createUserAvatar(data: InsertUserAvatar) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const result = await db.insert(userAvatars).values(data);
+  return result[0].insertId;
+}
+
+export async function getUserAvatar(id: number, userId: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(userAvatars).where(and(eq(userAvatars.id, id), eq(userAvatars.userId, userId))).limit(1);
+  return result[0];
+}
+
+export async function updateUserAvatar(id: number, userId: number, data: Partial<InsertUserAvatar>) {
+  const db = await getDb(); if (!db) return;
+  await db.update(userAvatars).set(data).where(and(eq(userAvatars.id, id), eq(userAvatars.userId, userId)));
+}
+
+export async function deleteUserAvatar(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(userAvatars).where(and(eq(userAvatars.id, id), eq(userAvatars.userId, userId)));
 }
