@@ -8663,6 +8663,57 @@ Return a JSON object with a "sections" array. Each section has:
         return { audioUrl: url, voiceName: clone.name };
       }),
   }),
+  // ========== User Custom Avatars ==========
+  userAvatar: router({
+    /** List all custom avatars for the current user */
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.listUserAvatars(ctx.user.id);
+    }),
+    /** Create a new custom avatar (upload photo or AI-generated) */
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        imageData: z.string(), // base64
+        fileName: z.string(),
+        mimeType: z.string().default("image/png"),
+        type: z.enum(["photo", "ai", "custom"]).default("photo"),
+        description: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.imageData, "base64");
+        const fileKey = `user-avatars/${ctx.user.id}/${nanoid()}-${input.fileName}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+        const id = await db.createUserAvatar({
+          userId: ctx.user.id,
+          name: input.name,
+          imageUrl: url,
+          fileKey,
+          type: input.type,
+          description: input.description || null,
+        });
+        return { id, imageUrl: url };
+      }),
+    /** Update a custom avatar */
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).max(100).optional(),
+        description: z.string().optional(),
+        isDefault: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateUserAvatar(id, ctx.user.id, data);
+        return { success: true };
+      }),
+    /** Delete a custom avatar */
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteUserAvatar(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
 });
 
 // SRT time formatter

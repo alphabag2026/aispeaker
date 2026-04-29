@@ -20,8 +20,9 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages, Headphones } from
+  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus } from
 "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import KlingAvatarCreator from "@/components/KlingAvatarCreator";
@@ -441,6 +442,20 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
   const [avatarRole, setAvatarRole] = useState<string>("instructor");
   const [avatarVoice, setAvatarVoice] = useState("Kore");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [addTab, setAddTab] = useState<"preset" | "my" | "upload">("preset");
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const myAvatarsQuery = trpc.userAvatar.list.useQuery(undefined, { enabled: showAddDialog });
+  const createUserAvatar = trpc.userAvatar.create.useMutation({
+    onSuccess: () => { myAvatarsQuery.refetch(); toast.success(t("lectureBuilder.avatar.uploaded")); },
+    onError: (e) => toast.error(e.message)
+  });
+  const deleteUserAvatar = trpc.userAvatar.delete.useMutation({
+    onSuccess: () => { myAvatarsQuery.refetch(); toast.success(t("lectureBuilder.avatar.deleted")); }
+  });
+  const [selectedMyAvatarUrl, setSelectedMyAvatarUrl] = useState<string | null>(null);
   const [showKlingDialog, setShowKlingDialog] = useState(false);
   const [editingAvatar, setEditingAvatar] = useState<any | null>(null);
 
@@ -490,35 +505,141 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
             </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{t("lectureBuilder.jsxText57")}</DialogTitle></DialogHeader>
-            <div className="space-y-6 pt-4">
-              {/* Face Gallery */}
-              <div>
-                <Label className="text-base font-semibold mb-3 block">{t("lectureBuilder.jsxText58")}</Label>
+            <Tabs value={addTab} onValueChange={(v) => { setAddTab(v as any); setSelectedFaceId(null); setSelectedMyAvatarUrl(null); setUploadPreview(null); setUploadFile(null); }} className="mt-4">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="preset" className="gap-1.5"><Users className="w-4 h-4" />{t("lectureBuilder.avatarTab.preset")}</TabsTrigger>
+                <TabsTrigger value="my" className="gap-1.5"><UserCircle2 className="w-4 h-4" />{t("lectureBuilder.avatarTab.myAvatars")}</TabsTrigger>
+                <TabsTrigger value="upload" className="gap-1.5"><Camera className="w-4 h-4" />{t("lectureBuilder.avatarTab.upload")}</TabsTrigger>
+              </TabsList>
+
+              {/* Tab 1: Preset Faces */}
+              <TabsContent value="preset" className="space-y-4 pt-2">
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
                   {faces.filter((f) => f.isActive).map((face) =>
                     <button key={face.id}
                     className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square ${
-                    selectedFaceId === face.id ? "border-primary ring-2 ring-primary/30 scale-105" : "border-transparent hover:border-muted-foreground/30"}`
-                    }
-                    onClick={() => {setSelectedFaceId(face.id);if (!avatarName) setAvatarName(face.name);}}>
-                      
+                    selectedFaceId === face.id ? "border-primary ring-2 ring-primary/30 scale-105" : "border-transparent hover:border-muted-foreground/30"}`}
+                    onClick={() => {setSelectedFaceId(face.id); setSelectedMyAvatarUrl(null); if (!avatarName) setAvatarName(face.name);}}>
                       <img src={face.imageUrl} alt={face.name} className="w-full h-full object-cover" />
                       {selectedFaceId === face.id &&
                       <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
                           <Check className="w-6 h-6 text-primary-foreground bg-primary rounded-full p-1" />
-                        </div>
-                      }
+                        </div>}
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 px-1 py-0.5">
                         <span className="text-[10px] text-white truncate block">{face.name}</span>
                       </div>
-                    </button>
-                    )}
+                    </button>)}
                 </div>
-              </div>
+              </TabsContent>
 
-              <Separator />
+              {/* Tab 2: My Avatars */}
+              <TabsContent value="my" className="space-y-4 pt-2">
+                {myAvatarsQuery.isLoading ? (
+                  <div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+                ) : !myAvatarsQuery.data?.length ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <UserCircle2 className="w-12 h-12 text-muted-foreground/40 mb-3" />
+                    <p className="font-medium text-muted-foreground">{t("lectureBuilder.avatar.myAvatarsEmpty")}</p>
+                    <p className="text-sm text-muted-foreground/70 mt-1">{t("lectureBuilder.avatar.myAvatarsEmptyDesc")}</p>
+                    <Button variant="outline" className="mt-4 gap-2" onClick={() => setAddTab("upload")}>
+                      <Upload className="w-4 h-4" />{t("lectureBuilder.avatarTab.upload")}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                    {myAvatarsQuery.data.map((av) =>
+                      <div key={av.id} className="relative group">
+                        <button
+                          className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square w-full ${
+                          selectedMyAvatarUrl === av.imageUrl ? "border-primary ring-2 ring-primary/30 scale-105" : "border-transparent hover:border-muted-foreground/30"}`}
+                          onClick={() => { setSelectedMyAvatarUrl(av.imageUrl); setSelectedFaceId(null); if (!avatarName) setAvatarName(av.name); }}>
+                          <img src={av.imageUrl} alt={av.name} className="w-full h-full object-cover" />
+                          {selectedMyAvatarUrl === av.imageUrl &&
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                            <Check className="w-6 h-6 text-primary-foreground bg-primary rounded-full p-1" />
+                          </div>}
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 px-1 py-0.5">
+                            <span className="text-[10px] text-white truncate block">{av.name}</span>
+                          </div>
+                        </button>
+                        <button className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground rounded-full p-0.5 z-10"
+                          onClick={() => { if (confirm(t("lectureBuilder.avatar.deleteConfirm"))) deleteUserAvatar.mutate({ id: av.id }); }}>
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>)}
+                  </div>
+                )}
+              </TabsContent>
 
-              {/* Avatar Settings */}
+              {/* Tab 3: Upload Photo */}
+              <TabsContent value="upload" className="space-y-4 pt-2">
+                <div className="text-center">
+                  <p className="text-sm font-medium mb-1">{t("lectureBuilder.avatar.uploadTitle")}</p>
+                  <p className="text-xs text-muted-foreground mb-4">{t("lectureBuilder.avatar.uploadDesc")}</p>
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 5 * 1024 * 1024) { toast.error(t("lectureBuilder.avatar.fileTooLarge")); return; }
+                  setUploadFile(file);
+                  const reader = new FileReader();
+                  reader.onload = (ev) => setUploadPreview(ev.target?.result as string);
+                  reader.readAsDataURL(file);
+                }} />
+                {uploadPreview ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="relative w-40 h-40 rounded-full overflow-hidden border-4 border-primary/30">
+                      <img src={uploadPreview} alt="preview" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => { setUploadPreview(null); setUploadFile(null); }}>
+                        <X className="w-4 h-4 mr-1" />{t("lectureBuilder.avatar.changePhoto")}
+                      </Button>
+                      <Button size="sm" disabled={isUploading || !avatarName.trim()} onClick={async () => {
+                        if (!uploadFile) return;
+                        setIsUploading(true);
+                        try {
+                          const reader = new FileReader();
+                          reader.onload = async (ev) => {
+                            const base64 = (ev.target?.result as string).split(",")[1];
+                            const result = await createUserAvatar.mutateAsync({
+                              name: avatarName.trim() || uploadFile.name.replace(/\.[^.]+$/, ""),
+                              imageData: base64,
+                              fileName: uploadFile.name,
+                              mimeType: uploadFile.type,
+                              type: "photo",
+                            });
+                            setSelectedMyAvatarUrl(result.imageUrl);
+                            setSelectedFaceId(null);
+                            setUploadPreview(null);
+                            setUploadFile(null);
+                            setAddTab("my");
+                          };
+                          reader.readAsDataURL(uploadFile);
+                        } catch (err) { /* handled by mutation */ }
+                        finally { setIsUploading(false); }
+                      }}>
+                        {isUploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Upload className="w-4 h-4 mr-1" />}
+                        {t("lectureBuilder.avatar.saveAndRegister")}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button className="w-full border-2 border-dashed border-muted-foreground/30 rounded-xl py-12 flex flex-col items-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition-all"
+                    onClick={() => fileInputRef.current?.click()}>
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <ImagePlus className="w-8 h-8 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">{t("lectureBuilder.avatar.clickToUpload")}</span>
+                    <span className="text-xs text-muted-foreground">{t("lectureBuilder.avatar.uploadHint")}</span>
+                  </button>
+                )}
+              </TabsContent>
+            </Tabs>
+
+            <Separator className="my-2" />
+            {/* Avatar Settings - shared across all tabs */}
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>{t("lectureBuilder.jsxText59")}</Label>
@@ -530,13 +651,11 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {AVATAR_ROLES.map((r: any) =>
-                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                        )}
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-
               <div>
                 <Label>{t("lectureBuilder.jsxText62")}</Label>
                 <div className="flex items-center gap-2">
@@ -544,26 +663,22 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
                     <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {voices.map((v) =>
-                        <SelectItem key={v.id} value={v.id}>{v.name} ({v.desc})</SelectItem>
-                        )}
+                        <SelectItem key={v.id} value={v.id}>{v.name} ({v.desc})</SelectItem>)}
                     </SelectContent>
                   </Select>
                   <VoicePreviewButton voiceId={avatarVoice} size="default" variant="outline" />
                 </div>
               </div>
-
-              <Button className="w-full" disabled={!selectedFaceId || !avatarName.trim() || addAvatar.isPending}
-                onClick={() => addAvatar.mutate({
-                  projectId,
-                  sampleFaceId: selectedFaceId!,
-                  name: avatarName.trim(),
-                  role: avatarRole as any,
-                  ttsVoiceId: avatarVoice,
-                  sortOrder: avatars.length
-                })}>
+              <Button className="w-full" disabled={(!selectedFaceId && !selectedMyAvatarUrl) || !avatarName.trim() || addAvatar.isPending}
+                onClick={() => {
+                  if (selectedMyAvatarUrl) {
+                    addAvatar.mutate({ projectId, customFaceUrl: selectedMyAvatarUrl, name: avatarName.trim(), role: avatarRole as any, ttsVoiceId: avatarVoice, sortOrder: avatars.length });
+                  } else {
+                    addAvatar.mutate({ projectId, sampleFaceId: selectedFaceId!, name: avatarName.trim(), role: avatarRole as any, ttsVoiceId: avatarVoice, sortOrder: avatars.length });
+                  }
+                }}>
                 {addAvatar.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}{t("lectureBuilder.jsxText63")}
-
-                </Button>
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
