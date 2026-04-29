@@ -11,4 +11,5 @@ export const ENV = {
   geminiApiKey: process.env.GEMINI_API_KEY ?? "",
   klingAccessKey: process.env.KLING_ACCESS_KEY ?? "",
   klingSecretKey: process.env.KLING_SECRET_KEY ?? "",
+  didApiKey: process.env.DID_API_KEY ?? "",
 };
