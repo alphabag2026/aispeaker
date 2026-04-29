@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AvatarData {
   id: number;
@@ -33,20 +34,21 @@ interface Props {
 }
 
 const AVATAR_ROLES = [
-  { value: "instructor", label: "강사", color: "bg-blue-500/20 text-blue-400", desc: "메인 강의 진행" },
-  { value: "host", label: "사회자", color: "bg-purple-500/20 text-purple-400", desc: "진행/MC 역할" },
-  { value: "guest", label: "게스트", color: "bg-green-500/20 text-green-400", desc: "초대 출연자" },
-  { value: "narrator", label: "내레이터", color: "bg-orange-500/20 text-orange-400", desc: "나레이션 전담" },
+  { value: "instructor", label: "avatarSettingsDialog.instructor", color: "bg-blue-500/20 text-blue-400", desc: "avatarSettingsDialog.mainLecture" },
+  { value: "host", label: "avatarSettingsDialog.host", color: "bg-purple-500/20 text-purple-400", desc: "avatarSettingsDialog.mcRole" },
+  { value: "guest", label: "avatarSettingsDialog.guest", color: "bg-green-500/20 text-green-400", desc: "avatarSettingsDialog.guestAppearance" },
+  { value: "narrator", label: "avatarSettingsDialog.narrator", color: "bg-orange-500/20 text-orange-400", desc: "avatarSettingsDialog.narrationRole" },
 ];
 
 const AI_STYLES = [
-  { value: "realistic", label: "실사", desc: "사실적인 인물 사진" },
-  { value: "anime", label: "애니메이션", desc: "애니메이션 스타일" },
-  { value: "3d", label: "3D 렌더링", desc: "픽사 스타일 3D" },
-  { value: "illustration", label: "일러스트", desc: "디지털 일러스트" },
+  { value: "realistic", label: "avatarSettingsDialog.realistic", desc: "avatarSettingsDialog.realisticPhoto" },
+  { value: "anime", label: "avatarSettingsDialog.animation", desc: "avatarSettingsDialog.animationStyle" },
+  { value: "3d", label: "avatarSettingsDialog.3dRendering", desc: "avatarSettingsDialog.pixarStyle3d" },
+  { value: "illustration", label: "avatarSettingsDialog.illustration", desc: "avatarSettingsDialog.digitalIllustration" },
 ];
 
 export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces, voices, onUpdated }: Props) {
+  const { t } = useLanguage();
   const [name, setName] = useState(avatar.name);
   const [role, setRole] = useState(avatar.role);
   const [ttsVoiceId, setTtsVoiceId] = useState(avatar.ttsVoiceId || "Kore");
@@ -75,7 +77,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [cloneDesc, setCloneDesc] = useState("");
   const [isPlayingClone, setIsPlayingClone] = useState(false);
   const [selectedCloneId, setSelectedCloneId] = useState<number | null>(null);
-  const [previewText, setPreviewText] = useState("안녕하세요, AI 강의 플랫폼에 오신 것을 환영합니다.");
+  const [previewText, setPreviewText] = useState(t("avatarSettingsDialog.welcomeMessage"));
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -112,7 +114,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
 
   const updateMut = trpc.lectureBuilder.updateAvatar.useMutation({
     onSuccess: () => {
-      toast.success("아바타 설정이 저장되었습니다");
+      toast.success(t("avatarSettingsDialog.settingsSaved"));
       onUpdated();
       onOpenChange(false);
     },
@@ -126,7 +128,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
       setAiGeneratedUrl(data.imageUrl);
       setCustomFaceUrl(data.imageUrl);
       setFaceTab("ai");
-      toast.success("AI 얼굴이 생성되었습니다! 마음에 들면 저장하세요.");
+      toast.success(t("avatarSettingsDialog.aiFaceGenerated"));
     },
     onError: (e) => toast.error(e.message),
   });
@@ -135,7 +137,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const voiceClones = trpc.voiceClone.list.useQuery(undefined, { enabled: open });
   const createClone = trpc.voiceClone.create.useMutation({
     onSuccess: () => {
-      toast.success("음성 클론이 생성되었습니다!");
+      toast.success(t("avatarSettingsDialog.voiceCloneCreated"));
       voiceClones.refetch();
       setRecordedBlob(null);
       setRecordedUrl(null);
@@ -147,7 +149,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   });
   const deleteClone = trpc.voiceClone.delete.useMutation({
     onSuccess: () => {
-      toast.success("음성 클론이 삭제되었습니다");
+      toast.success(t("avatarSettingsDialog.voiceCloneDeleted"));
       voiceClones.refetch();
       if (selectedCloneId) setSelectedCloneId(null);
     },
@@ -179,8 +181,8 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { toast.error("이미지 파일만 업로드 가능합니다"); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error("5MB 이하 파일만 업로드 가능합니다"); return; }
+    if (!file.type.startsWith("image/")) { toast.error(t("avatarSettingsDialog.imageOnly")); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error(t("avatarSettingsDialog.max5mb")); return; }
     setUploading(true);
     try {
       const reader = new FileReader();
@@ -193,18 +195,18 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
         });
         setCustomFaceUrl(result.url);
         setFaceTab("custom");
-        toast.success("얼굴 이미지가 업로드되었습니다");
+        toast.success(t("avatarSettingsDialog.faceImageUploaded"));
         setUploading(false);
       };
       reader.readAsDataURL(file);
     } catch {
-      toast.error("업로드에 실패했습니다");
+      toast.error(t("avatarSettingsDialog.uploadFailed"));
       setUploading(false);
     }
   };
 
   const handleGenerateAiFace = () => {
-    if (!aiPrompt.trim()) { toast.error("얼굴 특징을 설명해주세요"); return; }
+    if (!aiPrompt.trim()) { toast.error(t("avatarSettingsDialog.pleaseDescribeFace")); return; }
     generateFace.mutate({
       prompt: aiPrompt.trim(),
       style: aiStyle as any,
@@ -243,7 +245,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
         });
       }, 1000);
     } catch {
-      toast.error("마이크 접근이 거부되었습니다. 브라우저 설정을 확인해주세요.");
+      toast.error(t("avatarSettingsDialog.micAccessDenied"));
     }
   };
 
@@ -265,9 +267,9 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   };
 
   const handleCreateClone = async () => {
-    if (!recordedBlob) { toast.error("먼저 음성을 녹음해주세요"); return; }
-    if (!cloneName.trim()) { toast.error("음성 클론 이름을 입력해주세요"); return; }
-    if (recordDuration < 3) { toast.error("최소 3초 이상 녹음해주세요"); return; }
+    if (!recordedBlob) { toast.error(t("avatarSettingsDialog.recordFirst")); return; }
+    if (!cloneName.trim()) { toast.error(t("avatarSettingsDialog.enterCloneName")); return; }
+    if (recordDuration < 3) { toast.error(t("avatarSettingsDialog.recordAtLeast3Seconds")); return; }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -327,13 +329,13 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
             <Tabs value={faceTab} onValueChange={setFaceTab}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="gallery" className="gap-1 text-xs">
-                  <Sparkles className="w-3.5 h-3.5" /> 샘플 갤러리
+                  <Sparkles className="w-3.5 h-3.5" /> 샘플 {t("avatarSettingsDialog.gallery")}
                 </TabsTrigger>
                 <TabsTrigger value="custom" className="gap-1 text-xs">
-                  <Upload className="w-3.5 h-3.5" /> 내 얼굴 업로드
+                  <Upload className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.myFace")} 업로드
                 </TabsTrigger>
                 <TabsTrigger value="ai" className="gap-1 text-xs">
-                  <Wand2 className="w-3.5 h-3.5" /> AI 생성
+                  <Wand2 className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.aiGenerated")}
                 </TabsTrigger>
               </TabsList>
 
@@ -363,7 +365,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   ))}
                 </div>
                 {faces.filter((f) => f.isActive).length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">등록된 샘플 얼굴이 없습니다</p>
+                  <p className="text-sm text-muted-foreground text-center py-8">{t("avatarSettingsDialog.noSampleFaces")}</p>
                 )}
               </TabsContent>
 
@@ -372,7 +374,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-dashed border-muted-foreground/30 relative">
                     {customFaceUrl ? (
-                      <img src={customFaceUrl} alt="내 얼굴" className="w-full h-full object-cover" />
+                      <img src={customFaceUrl} alt={t("avatarSettingsDialog.myFace")} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
                         <User className="w-10 h-10 text-muted-foreground/50" />
@@ -383,9 +385,9 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   <div className="text-center space-y-2">
                     <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
                       {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                      {customFaceUrl ? "다른 사진으로 변경" : "내 얼굴 사진 업로드"}
+                      {customFaceUrl ? t("avatarSettingsDialog.changePhoto") : t("avatarSettingsDialog.uploadMyFace")}
                     </Button>
-                    <p className="text-xs text-muted-foreground">JPG, PNG (최대 5MB)</p>
+                    <p className="text-xs text-muted-foreground">{t("avatarSettingsDialog.jpgPngMax5mb")}</p>
                   </div>
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                 </div>
@@ -399,14 +401,14 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                       {generateFace.isPending ? (
                         <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
                           <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                          <span className="text-[10px] text-muted-foreground mt-2">생성 중...</span>
+                          <span className="text-[10px] text-muted-foreground mt-2">{t("avatarSettingsDialog.generating")}</span>
                         </div>
                       ) : aiGeneratedUrl ? (
                         <img src={aiGeneratedUrl} alt="AI 생성 얼굴" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
                           <Wand2 className="w-8 h-8 text-muted-foreground/50" />
-                          <span className="text-[10px] text-muted-foreground mt-1">AI 생성</span>
+                          <span className="text-[10px] text-muted-foreground mt-1">{t("avatarSettingsDialog.aiGenerated")}</span>
                         </div>
                       )}
                     </div>
@@ -414,7 +416,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
 
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label className="text-xs mb-1 block">스타일</Label>
+                      <Label className="text-xs mb-1 block">{t("avatarSettingsDialog.style")}</Label>
                       <Select value={aiStyle} onValueChange={setAiStyle}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -425,24 +427,24 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs mb-1 block">성별</Label>
+                      <Label className="text-xs mb-1 block">{t("avatarSettingsDialog.gender")}</Label>
                       <Select value={aiGender} onValueChange={setAiGender}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male"><span className="text-xs">남성</span></SelectItem>
-                          <SelectItem value="female"><span className="text-xs">여성</span></SelectItem>
-                          <SelectItem value="neutral"><span className="text-xs">중성</span></SelectItem>
+                          <SelectItem value="male"><span className="text-xs">{t("avatarSettingsDialog.male")}</span></SelectItem>
+                          <SelectItem value="female"><span className="text-xs">{t("avatarSettingsDialog.female")}</span></SelectItem>
+                          <SelectItem value="neutral"><span className="text-xs">{t("avatarSettingsDialog.neutral")}</span></SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label className="text-xs mb-1 block">연령대</Label>
+                      <Label className="text-xs mb-1 block">{t("avatarSettingsDialog.ageRange")}</Label>
                       <Select value={aiAge} onValueChange={setAiAge}>
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="young"><span className="text-xs">20대</span></SelectItem>
-                          <SelectItem value="middle"><span className="text-xs">30~40대</span></SelectItem>
-                          <SelectItem value="senior"><span className="text-xs">50~60대</span></SelectItem>
+                          <SelectItem value="young"><span className="text-xs">{t("avatarSettingsDialog.twenties")}</span></SelectItem>
+                          <SelectItem value="middle"><span className="text-xs">{t("avatarSettingsDialog.thirtiesForties")}</span></SelectItem>
+                          <SelectItem value="senior"><span className="text-xs">{t("avatarSettingsDialog.fiftiesSixties")}</span></SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -451,7 +453,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   <div>
                     <Label className="text-xs mb-1 block">얼굴 특징 설명</Label>
                     <Textarea
-                      placeholder="예: 친근한 미소를 짓고 있는 한국인, 안경 착용, 짧은 머리, 정장 차림"
+                      placeholder={t("avatarSettingsDialog.facePromptPlaceholder")}
                       value={aiPrompt}
                       onChange={(e) => setAiPrompt(e.target.value)}
                       className="h-20 text-sm resize-none"
@@ -461,7 +463,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   <div className="flex gap-2">
                     <Button onClick={handleGenerateAiFace} disabled={generateFace.isPending || !aiPrompt.trim()} className="flex-1 gap-2">
                       {generateFace.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                      {generateFace.isPending ? "생성 중..." : "AI 얼굴 생성"}
+                      {generateFace.isPending ? t("avatarSettingsDialog.generating") : t("avatarSettingsDialog.generateAiFace")}
                     </Button>
                     {aiGeneratedUrl && (
                       <Button variant="outline" onClick={handleGenerateAiFace} disabled={generateFace.isPending} className="gap-1">
@@ -482,11 +484,11 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
           {/* Name & Role */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="mb-1.5 block">이름</Label>
+              <Label className="mb-1.5 block">{t("avatarSettingsDialog.name")}</Label>
               <Input placeholder="아바타 이름" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
-              <Label className="mb-1.5 block">역할</Label>
+              <Label className="mb-1.5 block">{t("avatarSettingsDialog.role")}</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -508,15 +510,15 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
           {/* Voice Selection - 2 modes: preset & clone */}
           <div>
             <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
-              <Mic className="w-4 h-4" /> 목소리 설정
+              <Mic className="w-4 h-4" /> {t("avatarSettingsDialog.voiceSettings")}
             </Label>
             <Tabs value={voiceMode} onValueChange={setVoiceMode}>
               <TabsList className="grid w-full grid-cols-2 mb-3">
                 <TabsTrigger value="preset" className="gap-1 text-xs">
-                  <Volume2 className="w-3.5 h-3.5" /> 기본 음성
+                  <Volume2 className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.defaultVoice")}
                 </TabsTrigger>
                 <TabsTrigger value="clone" className="gap-1 text-xs">
-                  <MicVocal className="w-3.5 h-3.5" /> 내 목소리 클론
+                  <MicVocal className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.myVoiceClone")}
                 </TabsTrigger>
               </TabsList>
 
@@ -540,7 +542,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                     <VoicePreviewButton voiceId={ttsVoiceId} size="default" variant="outline" />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    선택한 음성으로 강의 TTS가 생성됩니다. 미리듣기 버튼으로 음성을 확인하세요.
+                    {t("avatarSettingsDialog.voicePreviewDescription")}
                   </p>
                 </div>
               </TabsContent>
@@ -551,7 +553,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   {/* Existing Clones List */}
                   {voiceClones.data && voiceClones.data.length > 0 && (
                     <div>
-                      <Label className="text-xs mb-2 block text-muted-foreground">내 음성 클론 목록</Label>
+                      <Label className="text-xs mb-2 block text-muted-foreground">{t("avatarSettingsDialog.myVoiceCloneList")}</Label>
                       <div className="space-y-2 max-h-[160px] overflow-y-auto">
                         {voiceClones.data.map((clone) => (
                           <div
@@ -572,7 +574,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium truncate">{clone.name}</span>
                                 <Badge variant={clone.status === "ready" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0 shrink-0">
-                                  {clone.status === "ready" ? "사용 가능" : clone.status === "processing" ? "처리 중" : "대기"}
+                                  {clone.status === "ready" ? t("avatarSettingsDialog.available") : clone.status === "processing" ? t("avatarSettingsDialog.processing") : t("avatarSettingsDialog.pending")}
                                 </Badge>
                               </div>
                               {clone.description && (
@@ -604,7 +606,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                                 className="h-7 w-7 text-destructive hover:text-destructive"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm("이 음성 클론을 삭제하시겠습니까?")) {
+                                  if (confirm(t("avatarSettingsDialog.confirmDeleteClone"))) {
                                     deleteClone.mutate({ id: clone.id });
                                   }
                                 }}
@@ -621,17 +623,17 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   {/* Record New Clone */}
                   <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
                     <Label className="text-sm font-medium flex items-center gap-2">
-                      <MicVocal className="w-4 h-4 text-primary" /> 새 음성 클론 만들기
+                      <MicVocal className="w-4 h-4 text-primary" /> {t("avatarSettingsDialog.createNewClone")}
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      마이크로 5~30초 분량의 음성을 녹음하면 AI가 당신의 목소리를 학습합니다.
+                      {t("avatarSettingsDialog.recordCloneDescription")}
                     </p>
 
                     {/* Recording Controls */}
                     <div className="flex items-center gap-3">
                       {!isRecording && !recordedBlob && (
                         <Button onClick={startRecording} variant="outline" className="gap-2 flex-1">
-                          <Mic className="w-4 h-4 text-red-500" /> 녹음 시작
+                          <Mic className="w-4 h-4 text-red-500" /> {t("avatarSettingsDialog.startRecording")}
                         </Button>
                       )}
                       {isRecording && (
@@ -647,7 +649,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                             </div>
                           </div>
                           <Button onClick={stopRecording} variant="destructive" size="sm" className="gap-1">
-                            <Square className="w-3 h-3" /> 중지
+                            <Square className="w-3 h-3" /> {t("avatarSettingsDialog.stop")}
                           </Button>
                         </div>
                       )}
@@ -655,10 +657,10 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                         <div className="flex items-center gap-2 flex-1">
                           <Badge variant="secondary" className="text-xs">{recordDuration}초 녹음됨</Badge>
                           <Button onClick={playRecordedAudio} variant="ghost" size="sm" className="gap-1">
-                            <Play className="w-3 h-3" /> 재생
+                            <Play className="w-3 h-3" /> {t("avatarSettingsDialog.play")}
                           </Button>
                           <Button onClick={() => { setRecordedBlob(null); setRecordedUrl(null); setRecordDuration(0); }} variant="ghost" size="sm" className="gap-1 text-destructive">
-                            <Trash2 className="w-3 h-3" /> 삭제
+                            <Trash2 className="w-3 h-3" /> {t("avatarSettingsDialog.delete")}
                           </Button>
                         </div>
                       )}
@@ -668,13 +670,13 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                     {recordedBlob && (
                       <div className="space-y-2 pt-2">
                         <Input
-                          placeholder="음성 클론 이름 (예: 내 목소리)"
+                          placeholder={t("avatarSettingsDialog.cloneNamePlaceholder")}
                           value={cloneName}
                           onChange={(e) => setCloneName(e.target.value)}
                           className="text-sm"
                         />
                         <Input
-                          placeholder="설명 (선택사항)"
+                          placeholder={t("avatarSettingsDialog.descriptionOptional")}
                           value={cloneDesc}
                           onChange={(e) => setCloneDesc(e.target.value)}
                           className="text-sm"
@@ -689,7 +691,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                           ) : (
                             <MicVocal className="w-4 h-4" />
                           )}
-                          {createClone.isPending ? "음성 클론 생성 중..." : "음성 클론 생성"}
+                          {createClone.isPending ? t("avatarSettingsDialog.creatingVoiceClone") : t("avatarSettingsDialog.createVoiceClone")}
                         </Button>
                       </div>
                     )}
@@ -698,11 +700,11 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   {/* Preview text for clone */}
                   {voiceClones.data && voiceClones.data.length > 0 && (
                     <div>
-                      <Label className="text-xs mb-1 block text-muted-foreground">미리듣기 텍스트</Label>
+                      <Label className="text-xs mb-1 block text-muted-foreground">{t("avatarSettingsDialog.previewText")}</Label>
                       <Input
                         value={previewText}
                         onChange={(e) => setPreviewText(e.target.value)}
-                        placeholder="미리듣기에 사용할 텍스트"
+                        placeholder={t("avatarSettingsDialog.previewTextPlaceholder")}
                         className="text-xs"
                       />
                     </div>
@@ -716,10 +718,10 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
 
           {/* Save Button */}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>취소</Button>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>{t("avatarSettingsDialog.cancel")}</Button>
             <Button onClick={handleSave} disabled={updateMut.isPending}>
               {updateMut.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-              저장
+              {t("avatarSettingsDialog.save")}
             </Button>
           </div>
         </div>

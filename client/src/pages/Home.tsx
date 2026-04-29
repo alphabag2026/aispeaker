@@ -604,7 +604,7 @@ export default function Home() {
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-extrabold mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              <span className="gradient-text">핵심 기능</span>
+              <span className="gradient-text">{t("home.section.features.title")}</span>
             </h2>
           </div>
           <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -639,8 +639,8 @@ export default function Home() {
               <span className="badge-hot">30% OFF</span>
             </div>
             <h2 className="text-3xl md:text-5xl font-extrabold mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              <span className="gradient-text">합리적인 가격</span>
-              <span className="text-foreground">, 무한한 가능성</span>
+              <span className="gradient-text">{t("home.section.pricing.title1")}</span>
+              <span className="text-foreground">{t("home.section.pricing.title2")}</span>
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -726,7 +726,7 @@ export default function Home() {
                 AI Speaker
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-                Akool API 기반 AI 강의 자동화 플랫폼. 25+ AI 도구, 10+ AI 모델, 155+ 언어 지원.
+                {t("home.footer.desc")}
               </p>
             </div>
             <div>

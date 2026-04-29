@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { AlertTriangle, CreditCard, ArrowRight, Zap } from "lucide-react";
 import { useLocation } from "wouter";
 import { AI_FEATURE_COSTS } from "@/hooks/useCreditDeduction";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface InsufficientCreditsDialogProps {
   open: boolean;
@@ -28,6 +29,7 @@ export default function InsufficientCreditsDialog({
   currentCredits,
   requiredCredits,
 }: InsufficientCreditsDialogProps) {
+  const { t } = useLanguage();
   const [, navigate] = useLocation();
   const featureInfo = AI_FEATURE_COSTS[feature];
   const featureName = featureInfo?.label || feature;
@@ -44,9 +46,9 @@ export default function InsufficientCreditsDialog({
               <AlertTriangle className="w-5 h-5 text-amber-500" />
             </div>
             <div>
-              <DialogTitle className="text-lg">크레딧 부족</DialogTitle>
+              <DialogTitle className="text-lg">{t("insufficientCreditsDialog.title")}</DialogTitle>
               <DialogDescription className="text-xs">
-                이 기능을 사용하려면 추가 크레딧이 필요합니다
+                {t("insufficientCreditsDialog.description")}
               </DialogDescription>
             </div>
           </div>
@@ -60,7 +62,7 @@ export default function InsufficientCreditsDialog({
               <span className="font-medium">{featureName}</span>
             </div>
             <Badge variant="secondary" className="font-mono">
-              {requiredCredits} 크레딧 필요
+              {t("insufficientCreditsDialog.requiredCredits")}
             </Badge>
           </div>
 
@@ -68,7 +70,7 @@ export default function InsufficientCreditsDialog({
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>보유: <span className="text-foreground font-medium">{currentCredits}</span> 크레딧</span>
-              <span className="text-red-400">부족: {deficit} 크레딧</span>
+              <span className="text-red-400">{t("insufficientCreditsDialog.deficit")}</span>
             </div>
             <Progress value={percentage} className="h-2" />
           </div>
@@ -78,7 +80,7 @@ export default function InsufficientCreditsDialog({
         <div className="space-y-2">
           <p className="text-sm font-medium flex items-center gap-1">
             <Zap className="w-4 h-4 text-cyan-500" />
-            빠른 충전
+            {t("insufficientCreditsDialog.quickCharge")}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {[
@@ -98,7 +100,7 @@ export default function InsufficientCreditsDialog({
               >
                 {pkg.best && (
                   <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-cyan-500 text-[10px] px-1.5 py-0">
-                    인기
+                    {t("insufficientCreditsDialog.popular")}
                   </Badge>
                 )}
                 <div className="text-lg font-bold">{pkg.credits}</div>
@@ -110,7 +112,7 @@ export default function InsufficientCreditsDialog({
 
         <DialogFooter className="flex gap-2 sm:gap-2">
           <Button variant="outline" onClick={onClose} className="flex-1">
-            나중에
+            {t("insufficientCreditsDialog.later")}
           </Button>
           <Button
             onClick={() => {
@@ -120,7 +122,7 @@ export default function InsufficientCreditsDialog({
             className="flex-1 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
           >
             <CreditCard className="w-4 h-4 mr-1" />
-            충전하기
+            {t("insufficientCreditsDialog.chargeNow")}
             <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </DialogFooter>

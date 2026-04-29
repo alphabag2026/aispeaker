@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { Link } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TutorialStep {
   id: number;
@@ -48,119 +49,120 @@ interface TutorialStep {
 const tutorialSteps: TutorialStep[] = [
   {
     id: 1,
-    title: "AI 얼굴 선택하기",
-    subtitle: "강의에 사용할 AI 강사 페르소나를 선택하세요",
+    title: "onboardingTutorial.step1Title",
+    subtitle: "onboardingTutorial.step1Subtitle",
     description:
-      "5종의 프리셋 AI 얼굴 중 강의 주제와 대상에 맞는 페르소나를 선택합니다. 각 얼굴은 전문적인 외모와 다양한 연령대, 성별을 제공합니다.",
+      "onboardingTutorial.step1Desc",
     icon: <UserCircle className="w-8 h-8" />,
     details: [
-      "AI 얼굴 갤러리에서 5종의 프리셋 확인",
-      "강의 주제에 맞는 성별, 연령대 선택",
-      "미리보기로 실제 영상 모습 확인",
-      "커스텀 얼굴 업로드도 가능 (Professional 이상)",
+      "onboardingTutorial.step1Detail1",
+      "onboardingTutorial.step1Detail2",
+      "onboardingTutorial.step1Detail3",
+      "onboardingTutorial.step1Detail4",
     ],
-    actionLabel: "AI 얼굴 갤러리 보기",
+    actionLabel: "onboardingTutorial.step1Action",
     actionLink: "/face-gallery",
-    tip: "비즈니스/금융 강의에는 30~40대 전문가 얼굴, 기술/코딩 강의에는 20~30대 얼굴이 효과적입니다.",
-    estimatedTime: "약 2분",
+    tip: "onboardingTutorial.step1Tip",
+    estimatedTime: "onboardingTutorial.step6Time",
   },
   {
     id: 2,
-    title: "AI 음성 설정하기",
-    subtitle: "강의 음성 스타일과 언어를 설정하세요",
+    title: "onboardingTutorial.step2Title",
+    subtitle: "onboardingTutorial.step2Subtitle",
     description:
-      "6종의 AI 음성 프리셋에서 강의에 적합한 음성을 선택합니다. 음성 속도, 톤, 피치를 세밀하게 조절할 수 있습니다.",
+      "onboardingTutorial.step2Desc",
     icon: <Mic className="w-8 h-8" />,
     details: [
-      "AI 음성 갤러리에서 6종 음성 미리듣기",
-      "음성 속도 (0.5x ~ 2.0x) 조절",
-      "피치, 톤 커스터마이징",
-      "한국어, 영어, 중국어, 일본어 등 다국어 지원",
+      "onboardingTutorial.step2Detail1",
+      "onboardingTutorial.step2Detail2",
+      "onboardingTutorial.step2Detail3",
+      "onboardingTutorial.step2Detail4",
     ],
-    actionLabel: "AI 음성 갤러리 보기",
+    actionLabel: "onboardingTutorial.step2Action",
     actionLink: "/voice-gallery",
-    tip: "강의 시작 전 30초 분량의 테스트 음성을 생성해보세요. 실제 강의와 동일한 환경에서 음질을 확인할 수 있습니다.",
-    estimatedTime: "약 3분",
+    tip: "onboardingTutorial.step2Tip",
+    estimatedTime: "onboardingTutorial.step2Time",
   },
   {
     id: 3,
-    title: "강의 스크립트 작성",
-    subtitle: "AI가 강의 대본을 자동으로 생성합니다",
+    title: "onboardingTutorial.step3Title",
+    subtitle: "onboardingTutorial.step3Subtitle",
     description:
-      "강의 주제와 핵심 키워드만 입력하면 AI가 구조화된 강의 스크립트를 자동으로 생성합니다. 섹션별 편집, 재배치, AI 재생성이 가능합니다.",
+      "onboardingTutorial.step3Desc",
     icon: <FileText className="w-8 h-8" />,
     details: [
-      "주제 입력 → AI 자동 스크립트 생성",
-      "도입-본론-결론 구조 자동 구성",
-      "섹션별 드래그 앤 드롭 재배치",
-      "템플릿 라이브러리에서 구조 선택 가능",
-      "버전 관리로 이전 버전 복원 가능",
+      "onboardingTutorial.step3Detail1",
+      "onboardingTutorial.step3Detail2",
+      "onboardingTutorial.step3Detail3",
+      "onboardingTutorial.step3Detail4",
+      "onboardingTutorial.step3Detail5",
     ],
-    actionLabel: "스크립트 작성 시작",
+    actionLabel: "onboardingTutorial.step3Action",
     actionLink: "/studio",
-    tip: "스크립트 템플릿 라이브러리에 5종의 기본 템플릿이 있습니다. 처음이라면 '도입-본론-결론' 템플릿을 추천합니다.",
-    estimatedTime: "약 5~10분",
+    tip: "onboardingTutorial.step3Tip",
+    estimatedTime: "onboardingTutorial.step3Time",
   },
   {
     id: 4,
-    title: "영상 제작 파이프라인",
-    subtitle: "원클릭으로 AI 강의 영상을 제작하세요",
+    title: "onboardingTutorial.step4Title",
+    subtitle: "onboardingTutorial.step4Subtitle",
     description:
-      "스크립트, AI 얼굴, AI 음성을 조합하여 원클릭으로 완성된 강의 영상을 제작합니다. 자동 자막 생성과 썸네일 생성도 포함됩니다.",
+      "onboardingTutorial.step4Desc",
     icon: <Wand2 className="w-8 h-8" />,
     details: [
-      "스크립트 선택 → 얼굴/음성 설정 → 제작 시작",
-      "D-ID API 기반 고품질 아바타 영상 생성",
-      "자동 자막(SRT) 생성 및 다운로드",
-      "AI 썸네일 자동 생성",
-      "배치 처리로 최대 10개 동시 제작",
+      "onboardingTutorial.step4Detail1",
+      "onboardingTutorial.step4Detail2",
+      "onboardingTutorial.step4Detail3",
+      "onboardingTutorial.step4Detail4",
+      "onboardingTutorial.step4Detail5",
     ],
-    actionLabel: "제작 스튜디오 열기",
+    actionLabel: "onboardingTutorial.step4Action",
     actionLink: "/studio",
-    tip: "5분 강의 기준 약 20~40 크레딧이 소요됩니다. 먼저 1분짜리 테스트 영상을 만들어보세요.",
-    estimatedTime: "약 3~10분 (영상 길이에 따라)",
+    tip: "onboardingTutorial.step4Tip",
+    estimatedTime: "onboardingTutorial.step4Time",
   },
   {
     id: 5,
-    title: "라이브 방송 시작",
-    subtitle: "Zoom, Google Meet에서 AI 강사로 실시간 강의하세요",
+    title: "onboardingTutorial.step5Title",
+    subtitle: "onboardingTutorial.step5Subtitle",
     description:
-      "제작된 AI 강의를 OBS 가상 카메라를 통해 Zoom, Google Meet, Tencent Meeting 등 외부 플랫폼에서 실시간 방송할 수 있습니다.",
+      "onboardingTutorial.step5Desc",
     icon: <Radio className="w-8 h-8" />,
     details: [
-      "OBS Studio 가상 카메라 설정 (튜토리얼 제공)",
-      "Zoom, Google Meet, Tencent Meeting 연동",
-      "실시간 슬라이드 제어 및 TTS 오디오",
-      "시청자 채팅 및 Q&A 기능",
-      "방송 녹화 및 VOD 자동 아카이브",
+      "onboardingTutorial.step5Detail1",
+      "onboardingTutorial.step5Detail2",
+      "onboardingTutorial.step5Detail3",
+      "onboardingTutorial.step5Detail4",
+      "onboardingTutorial.step5Detail5",
     ],
-    actionLabel: "방송 관리 페이지",
+    actionLabel: "onboardingTutorial.step5Action",
     actionLink: "/broadcasts",
-    tip: "첫 방송 전 OBS 튜토리얼 페이지를 반드시 확인하세요. 가상 카메라 설정이 핵심입니다.",
-    estimatedTime: "초기 설정 약 15분",
+    tip: "onboardingTutorial.step5Tip",
+    estimatedTime: "onboardingTutorial.step5Time",
   },
   {
     id: 6,
-    title: "크레딧 관리 및 최적화",
-    subtitle: "효율적인 크레딧 사용으로 비용을 절감하세요",
+    title: "onboardingTutorial.step6Title",
+    subtitle: "onboardingTutorial.step6Subtitle",
     description:
-      "크레딧 사용량을 모니터링하고, 기능별 크레딧 소비를 최적화하여 비용 대비 최대 효과를 얻으세요.",
+      "onboardingTutorial.step6Desc",
     icon: <CreditCard className="w-8 h-8" />,
     details: [
-      "내 구독 페이지에서 크레딧 잔액 확인",
-      "기능별 크레딧 소비량 분석",
-      "크레딧 패키지 추가 구매 (최대 40% 할인)",
-      "월간 사용량 리포트 확인",
-      "자동 충전 알림 설정",
+      "onboardingTutorial.step6Detail1",
+      "onboardingTutorial.step6Detail2",
+      "onboardingTutorial.step6Detail3",
+      "onboardingTutorial.step6Detail4",
+      "onboardingTutorial.step6Detail5",
     ],
-    actionLabel: "크레딧 관리",
+    actionLabel: "onboardingTutorial.step6Action",
     actionLink: "/my-subscription",
-    tip: "연간 구독 시 20% 할인, 대량 크레딧 패키지 구매 시 최대 40% 할인이 적용됩니다.",
-    estimatedTime: "약 2분",
+    tip: "onboardingTutorial.step6Tip",
+    estimatedTime: "onboardingTutorial.step6Time",
   },
 ];
 
 export default function OnboardingTutorial() {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(() => {
     try {
@@ -214,11 +216,11 @@ export default function OnboardingTutorial() {
               <Rocket className="w-6 h-6 text-purple-400" />
             </div>
             <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-              결제 완료
+              {t("onboardingTutorial.paymentComplete")}
             </Badge>
           </div>
           <h1 className="text-3xl font-bold mb-2">
-            시작 가이드
+            {t("onboardingTutorial.gettingStarted")}
           </h1>
           <p className="text-muted-foreground max-w-2xl">
             AI 강의 플랫폼의 핵심 기능을 단계별로 안내합니다.
@@ -230,7 +232,7 @@ export default function OnboardingTutorial() {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/25">
               <Clock className="w-4 h-4 text-amber-400" />
               <span className="text-sm font-medium text-amber-400">
-                전체 예상 소요 시간: 약 30~42분
+                {t("onboardingTutorial.totalEstimatedTime")}
               </span>
             </div>
           </div>
@@ -238,7 +240,7 @@ export default function OnboardingTutorial() {
           {/* Progress Bar */}
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-muted-foreground">진행률</span>
+              <span className="text-muted-foreground">{t("onboardingTutorial.progress")}</span>
               <span className="font-mono font-bold text-foreground">{progress}%</span>
             </div>
             <div className="h-2.5 bg-muted/50 rounded-full overflow-hidden">
@@ -254,7 +256,7 @@ export default function OnboardingTutorial() {
             <p className="text-xs text-muted-foreground mt-1">
               {completedSteps.size}/{tutorialSteps.length} 단계 완료
               {allCompleted && (
-                <span className="ml-2 text-green-400 font-semibold">모든 단계 완료!</span>
+                <span className="ml-2 text-green-400 font-semibold">{t("onboardingTutorial.allStepsCompleted")}</span>
               )}
             </p>
           </div>
@@ -263,7 +265,7 @@ export default function OnboardingTutorial() {
 
       <div className="container py-8 max-w-4xl">
         <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8">
-          {/* Step Navigation Sidebar */}
+          {/* {t("onboardingTutorial.step")} Navigation Sidebar */}
           <div className="lg:sticky lg:top-4 lg:self-start">
             <div className="space-y-1">
               {tutorialSteps.map((step, index) => (
@@ -307,7 +309,7 @@ export default function OnboardingTutorial() {
             </div>
           </div>
 
-          {/* Step Content */}
+          {/* {t("onboardingTutorial.step")} Content */}
           <div>
             {tutorialSteps.map((step, index) => {
               if (index !== currentStep) return null;
@@ -315,11 +317,11 @@ export default function OnboardingTutorial() {
 
               return (
                 <div key={step.id} className="space-y-6">
-                  {/* Step Header */}
+                  {/* {t("onboardingTutorial.step")} Header */}
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="secondary" className="text-xs">
-                        Step {step.id}
+                        {t("onboardingTutorial.step")} {step.id}
                       </Badge>
                       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/25">
                         <Clock className="w-3.5 h-3.5 text-amber-400" />
@@ -365,7 +367,7 @@ export default function OnboardingTutorial() {
                         <Sparkles className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
                         <div>
                           <span className="text-xs font-bold text-blue-400 block mb-1">
-                            PRO TIP
+                            {t("onboardingTutorial.proTip")}
                           </span>
                           <p className="text-sm text-blue-300/80">{step.tip}</p>
                         </div>
@@ -388,12 +390,12 @@ export default function OnboardingTutorial() {
                       {isCompleted ? (
                         <>
                           <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
-                          완료됨
+                          {t("onboardingTutorial.completed")}
                         </>
                       ) : (
                         <>
                           <Circle className="w-4 h-4 mr-2" />
-                          완료로 표시
+                          {t("onboardingTutorial.markAsCompleted")}
                         </>
                       )}
                     </Button>
@@ -408,7 +410,7 @@ export default function OnboardingTutorial() {
                       onClick={() => setCurrentStep(index - 1)}
                     >
                       <ArrowLeft className="w-4 h-4 mr-1" />
-                      이전 단계
+                      {t("onboardingTutorial.prevStep")}
                     </Button>
                     {index < tutorialSteps.length - 1 ? (
                       <Button
@@ -416,14 +418,14 @@ export default function OnboardingTutorial() {
                         size="sm"
                         onClick={() => setCurrentStep(index + 1)}
                       >
-                        다음 단계
+                        {t("onboardingTutorial.nextStep")}
                         <ArrowRight className="w-4 h-4 ml-1" />
                       </Button>
                     ) : (
                       <Link href="/studio">
                         <Button size="sm" className="bg-green-600 hover:bg-green-700">
                           <Rocket className="w-4 h-4 mr-1" />
-                          제작 시작하기
+                          {t("onboardingTutorial.startCreating")}
                         </Button>
                       </Link>
                     )}
@@ -436,15 +438,15 @@ export default function OnboardingTutorial() {
 
         {/* Quick Links */}
         <div className="mt-12 border-t border-border/30 pt-8">
-          <h3 className="text-lg font-bold mb-4">빠른 링크</h3>
+          <h3 className="text-lg font-bold mb-4">{t("onboardingTutorial.quickLinks")}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { icon: <Palette className="w-4 h-4" />, label: "AI 얼굴 갤러리", href: "/face-gallery" },
-              { icon: <Volume2 className="w-4 h-4" />, label: "AI 음성 갤러리", href: "/voice-gallery" },
-              { icon: <Video className="w-4 h-4" />, label: "제작 스튜디오", href: "/studio" },
-              { icon: <Layers className="w-4 h-4" />, label: "스크립트 템플릿", href: "/script-templates" },
-              { icon: <Monitor className="w-4 h-4" />, label: "OBS 튜토리얼", href: "/obs-tutorial" },
-              { icon: <Zap className="w-4 h-4" />, label: "요금제 보기", href: "/pricing" },
+              { icon: <Palette className="w-4 h-4" />, label: t("onboardingTutorial.faceGallery"), href: "/face-gallery" },
+              { icon: <Volume2 className="w-4 h-4" />, label: t("onboardingTutorial.voiceGallery"), href: "/voice-gallery" },
+              { icon: <Video className="w-4 h-4" />, label: t("onboardingTutorial.studio"), href: "/studio" },
+              { icon: <Layers className="w-4 h-4" />, label: t("onboardingTutorial.scriptTemplates"), href: "/script-templates" },
+              { icon: <Monitor className="w-4 h-4" />, label: t("onboardingTutorial.obsTutorial"), href: "/obs-tutorial" },
+              { icon: <Zap className="w-4 h-4" />, label: t("onboardingTutorial.pricing"), href: "/pricing" },
             ].map((link) => (
               <Link key={link.href} href={link.href}>
                 <div className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors cursor-pointer">
@@ -460,17 +462,17 @@ export default function OnboardingTutorial() {
         {/* Help Section */}
         <div className="mt-8 text-center pb-8">
           <p className="text-sm text-muted-foreground mb-3">
-            도움이 필요하신가요?
+            {t("onboardingTutorial.needHelp")}
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link href="/payment-troubleshooting">
               <Button variant="outline" size="sm">
-                결제 문제 해결
+                {t("onboardingTutorial.paymentTroubleshooting")}
               </Button>
             </Link>
             <Link href="/pricing">
               <Button variant="outline" size="sm">
-                요금제 FAQ
+                {t("onboardingTutorial.pricingFaq")}
               </Button>
             </Link>
           </div>
@@ -505,9 +507,9 @@ export default function OnboardingTutorial() {
               ))}
             </div>
 
-            <h2 className="text-2xl font-bold mb-2">축하합니다!</h2>
+            <h2 className="text-2xl font-bold mb-2">{t("onboardingTutorial.congratulations")}</h2>
             <p className="text-lg text-purple-400 font-semibold mb-3">
-              모든 온보딩 단계를 완료했습니다
+              {t("onboardingTutorial.allOnboardingCompleted")}
             </p>
             <p className="text-sm text-muted-foreground mb-6">
               이제 AI Speaker의 모든 기능을 활용할 준비가 되었습니다.
@@ -518,7 +520,7 @@ export default function OnboardingTutorial() {
               <Link href="/studio">
                 <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                   <Rocket className="w-4 h-4 mr-2" />
-                  제작 스튜디오로 이동
+                  {t("onboardingTutorial.goToStudio")}
                 </Button>
               </Link>
               <Button
@@ -526,7 +528,7 @@ export default function OnboardingTutorial() {
                 onClick={() => setShowCelebration(false)}
                 className="text-muted-foreground"
               >
-                계속 둘러보기
+                {t("onboardingTutorial.keepExploring")}
               </Button>
             </div>
           </div>

@@ -18,7 +18,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const TOOL_FILTERS = [
-  { value: "", label: "전체" },
+  { value: "", label: "communityGallery.toolFilter.all" },
   { value: "tts", label: "TTS" },
   { value: "voice-clone", label: "Voice Clone" },
   { value: "image-gen", label: "Image Gen" },

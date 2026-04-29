@@ -27,7 +27,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 
 const LANGUAGES = [
-  { code: "ko", label: "한국어", flag: "🇰🇷" },
+  { code: "ko", label: "vod.lang.ko", flag: "🇰🇷" },
   { code: "en", label: "English", flag: "🇺🇸" },
   { code: "zh", label: "中文", flag: "🇨🇳" },
   { code: "ja", label: "日本語", flag: "🇯🇵" },

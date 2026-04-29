@@ -13,17 +13,17 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import "@/i18n/pages/Marketplace";
 
 const CATEGORIES = [
-  { value: "all", label: "전체" },
-  { value: "web3", label: "Web3" },
-  { value: "ai", label: "AI" },
-  { value: "blockchain", label: "블록체인" },
-  { value: "defi", label: "DeFi" },
-  { value: "nft", label: "NFT" },
-  { value: "metaverse", label: "메타버스" },
-  { value: "programming", label: "프로그래밍" },
-  { value: "business", label: "비즈니스" },
-  { value: "design", label: "디자인" },
-  { value: "other", label: "기타" },
+  { value: "all", label: "marketplace.category.all" },
+  { value: "web3", label: "marketplace.category.web3" },
+  { value: "ai", label: "marketplace.category.ai" },
+  { value: "blockchain", label: "marketplace.category.blockchain" },
+  { value: "defi", label: "marketplace.category.defi" },
+  { value: "nft", label: "marketplace.category.nft" },
+  { value: "metaverse", label: "marketplace.category.metaverse" },
+  { value: "programming", label: "marketplace.category.programming" },
+  { value: "business", label: "marketplace.category.business" },
+  { value: "design", label: "marketplace.category.design" },
+  { value: "other", label: "marketplace.category.other" },
 ];
 
 export default function Marketplace() {

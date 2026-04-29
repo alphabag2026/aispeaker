@@ -56,58 +56,58 @@ import { trpc } from "@/lib/trpc";
 
 const productCategories = [
   {
-    title: "동영상",
+    title: "navbar.products.video.title",
     items: [
-      { label: "이미지 → 비디오", href: "/ai-studio", icon: Clapperboard, badge: "hot" as const },
-      { label: "텍스트 → 비디오", href: "/ai-studio", icon: FileVideo, badge: null },
-      { label: "얼굴 교환", href: "/ai-studio", icon: Users, badge: "new" as const },
-      { label: "아바타 비디오", href: "/ai-studio", icon: Brain, badge: "unlimited" as const },
-      { label: "비디오 번역", href: "/ai-studio", icon: Languages, badge: null },
-      { label: "PPT → 비디오", href: "/lecture-builder", icon: Monitor, badge: "unlimited" as const },
+      { label: "navbar.products.video.imageToVideo", href: "/ai-studio", icon: Clapperboard, badge: "hot" as const },
+      { label: "navbar.products.video.textToVideo", href: "/ai-studio", icon: FileVideo, badge: null },
+      { label: "navbar.featured.faceSwap", href: "/ai-studio", icon: Users, badge: "new" as const },
+      { label: "navbar.products.video.avatarVideo", href: "/ai-studio", icon: Brain, badge: "unlimited" as const },
+      { label: "navbar.featured.videoTranslation", href: "/ai-studio", icon: Languages, badge: null },
+      { label: "navbar.products.video.pptToVideo", href: "/lecture-builder", icon: Monitor, badge: "unlimited" as const },
     ],
   },
   {
-    title: "이미지",
+    title: "navbar.products.image.title",
     items: [
-      { label: "이미지 생성기", href: "/ai-studio", icon: Image, badge: null },
-      { label: "얼굴 교환 (이미지)", href: "/ai-studio", icon: Wand2, badge: "new" as const },
-      { label: "배경 변경", href: "/ai-studio", icon: Palette, badge: null },
+      { label: "navbar.products.image.imageGenerator", href: "/ai-studio", icon: Image, badge: null },
+      { label: "navbar.products.image.faceSwapImage", href: "/ai-studio", icon: Wand2, badge: "new" as const },
+      { label: "navbar.products.image.backgroundChange", href: "/ai-studio", icon: Palette, badge: null },
     ],
   },
   {
-    title: "오디오",
+    title: "navbar.products.audio.title",
     items: [
-      { label: "텍스트 → 음성", href: "/voices", icon: Volume2, badge: null },
-      { label: "음성 복제", href: "/voices", icon: Mic, badge: null },
-      { label: "음성 변환기", href: "/voices", icon: Headphones, badge: null },
+      { label: "navbar.products.audio.textToSpeech", href: "/voices", icon: Volume2, badge: null },
+      { label: "navbar.products.audio.voiceCloning", href: "/voices", icon: Mic, badge: null },
+      { label: "navbar.products.audio.voiceChanger", href: "/voices", icon: Headphones, badge: null },
     ],
   },
   {
-    title: "실시간",
+    title: "navbar.products.live.title",
     items: [
-      { label: "라이브 카메라", href: "/browser-studio", icon: Camera, badge: null },
-      { label: "스트리밍 아바타", href: "/broadcasts", icon: Radio, badge: null },
-      { label: "AI 강의 라이브", href: "/broadcasts", icon: Tv, badge: "hot" as const },
+      { label: "navbar.products.live.liveCamera", href: "/browser-studio", icon: Camera, badge: null },
+      { label: "navbar.featured.streamingAvatar", href: "/broadcasts", icon: Radio, badge: null },
+      { label: "navbar.products.live.aiLectureLive", href: "/broadcasts", icon: Tv, badge: "hot" as const },
     ],
   },
   {
-    title: "강의 제작",
+    title: "navbar.links.lectureCreation",
     items: [
-      { label: "5단계 강의 빌더", href: "/lecture-builder", icon: BookOpen, badge: "hot" as const },
-      { label: "스크립트 에디터", href: "/script-templates", icon: FileVideo, badge: null },
-      { label: "프로덕션 스튜디오", href: "/studio", icon: Play, badge: null },
-      { label: "화이트보드 협업", href: "/lecture-builder", icon: MessageSquare, badge: "new" as const },
-      { label: "DID 영상 갤러리", href: "/did-gallery", icon: Video, badge: "new" as const },
+      { label: "navbar.products.lecture.lectureBuilder", href: "/lecture-builder", icon: BookOpen, badge: "hot" as const },
+      { label: "navbar.products.lecture.scriptEditor", href: "/script-templates", icon: FileVideo, badge: null },
+      { label: "navbar.products.lecture.productionStudio", href: "/studio", icon: Play, badge: null },
+      { label: "navbar.products.lecture.whiteboardCollaboration", href: "/lecture-builder", icon: MessageSquare, badge: "new" as const },
+      { label: "navbar.products.lecture.didVideoGallery", href: "/did-gallery", icon: Video, badge: "new" as const },
     ],
   },
 ];
 
 const featuredProducts = [
-  { label: "AI 강의 빌더", href: "/lecture-builder", badge: "hot" as const },
-  { label: "스트리밍 아바타", href: "/broadcasts", badge: null },
-  { label: "비디오 번역", href: "/ai-studio", badge: null },
-  { label: "얼굴 교환", href: "/ai-studio", badge: "new" as const },
-  { label: "효과 프리셋", href: "/ai-studio", badge: null },
+  { label: "navbar.featured.aiLectureBuilder", href: "/lecture-builder", badge: "hot" as const },
+  { label: "navbar.featured.streamingAvatar", href: "/broadcasts", badge: null },
+  { label: "navbar.featured.videoTranslation", href: "/ai-studio", badge: null },
+  { label: "navbar.featured.faceSwap", href: "/ai-studio", badge: "new" as const },
+  { label: "navbar.featured.effectsPreset", href: "/ai-studio", badge: null },
 ];
 
 export default function Navbar() {
@@ -145,38 +145,6 @@ export default function Navbar() {
     return "";
   };
 
-  const getTranslationKey = (label: string) => {
-    const mapping: { [key: string]: string } = {
-      "동영상": "navbar.products.video.title",
-      "이미지 → 비디오": "navbar.products.video.imageToVideo",
-      "텍스트 → 비디오": "navbar.products.video.textToVideo",
-      "얼굴 교환": "navbar.products.video.faceSwap",
-      "아바타 비디오": "navbar.products.video.avatarVideo",
-      "비디오 번역": "navbar.products.video.videoTranslation",
-      "PPT → 비디오": "navbar.products.video.pptToVideo",
-      "이미지": "navbar.products.image.title",
-      "이미지 생성기": "navbar.products.image.imageGenerator",
-      "얼굴 교환 (이미지)": "navbar.products.image.faceSwapImage",
-      "배경 변경": "navbar.products.image.backgroundChange",
-      "오디오": "navbar.products.audio.title",
-      "텍스트 → 음성": "navbar.products.audio.textToSpeech",
-      "음성 복제": "navbar.products.audio.voiceCloning",
-      "음성 변환기": "navbar.products.audio.voiceChanger",
-      "실시간": "navbar.products.live.title",
-      "라이브 카메라": "navbar.products.live.liveCamera",
-      "스트리밍 아바타": "navbar.products.live.streamingAvatar",
-      "AI 강의 라이브": "navbar.products.live.aiLectureLive",
-      "강의 제작": "navbar.products.lecture.title",
-      "5단계 강의 빌더": "navbar.products.lecture.lectureBuilder",
-      "스크립트 에디터": "navbar.products.lecture.scriptEditor",
-      "프로덕션 스튜디오": "navbar.products.lecture.productionStudio",
-      "화이트보드 협업": "navbar.products.lecture.whiteboardCollaboration",
-      "DID 영상 갤러리": "navbar.products.lecture.didVideoGallery",
-      "AI 강의 빌더": "navbar.featured.aiLectureBuilder",
-      "효과 프리셋": "navbar.featured.effectsPreset",
-    };
-    return mapping[label] || label;
-  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/70 backdrop-blur-2xl">
@@ -226,7 +194,7 @@ export default function Navbar() {
                           onClick={() => setMegaMenuOpen(false)}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors"
                         >
-                          {t(getTranslationKey(item.label))}
+                          {t(item.label)}
                           {item.badge && <span className={badgeClass(item.badge)}>{item.badge}</span>}
                         </Link>
                       ))}
@@ -237,7 +205,7 @@ export default function Navbar() {
                   <div className="flex-1 grid grid-cols-3 gap-5">
                     {productCategories.map((cat) => (
                       <div key={cat.title}>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t(getTranslationKey(cat.title))}</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t(cat.title)}</p>
                         <div className="space-y-0.5">
                           {cat.items.map((item) => (
                             <Link
@@ -247,7 +215,7 @@ export default function Navbar() {
                               className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-accent/10 transition-colors group/item"
                             >
                               <item.icon className="h-4 w-4 text-muted-foreground group-hover/item:text-primary transition-colors shrink-0" />
-                              <span className="truncate">{t(getTranslationKey(item.label))}</span>
+                              <span className="truncate">{t(item.label)}</span>
                               {item.badge && <span className={badgeClass(item.badge)}>{item.badge}</span>}
                             </Link>
                           ))}
@@ -463,7 +431,7 @@ export default function Navbar() {
 
             {productCategories.map((cat) => (
               <div key={cat.title} className="py-1">
-                <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t(getTranslationKey(cat.title))}</p>
+                <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{t(cat.title)}</p>
                 <div className="space-y-1">
                   {cat.items.map((item) => (
                     <Link
@@ -473,7 +441,7 @@ export default function Navbar() {
                     >
                       <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-xs h-9">
                         <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span className="truncate">{t(getTranslationKey(item.label))}</span>
+                        <span className="truncate">{t(item.label)}</span>
                         {item.badge && <span className={`${badgeClass(item.badge)} ml-auto`}>{item.badge}</span>}
                       </Button>
                     </Link>

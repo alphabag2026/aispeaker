@@ -12,8 +12,10 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Package, Download, FileText, Clock, CheckCircle, XCircle, Loader2, ArrowLeft, RefreshCw, Settings2 } from "lucide-react";
 import { Link } from "wouter";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ScormExport() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   // Using sonner toast
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -30,7 +32,7 @@ export default function ScormExport() {
   const pipelinesQuery = trpc.pipeline.list.useQuery(undefined, { enabled: !!user });
   const generateMutation = trpc.scorm.generate.useMutation({
     onSuccess: () => {
-      toast.success("SCORM 패키지 생성 시작: 패키지가 생성되고 있습니다.");
+      toast.success(t("scormExport.generationStart"));
       setIsDialogOpen(false);
       packagesQuery.refetch();
     },
@@ -56,7 +58,7 @@ export default function ScormExport() {
 
   const handleGenerate = () => {
     if (!selectedPipelineId || !title.trim()) {
-      toast.error("파이프라인과 제목을 입력해주세요.");
+      toast.error(t("scormExport.errorPipelineAndTitle"));
       return;
     }
     generateMutation.mutate({
@@ -73,9 +75,9 @@ export default function ScormExport() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "ready": return <Badge className="bg-green-500/20 text-green-400 border-green-500/30"><CheckCircle className="w-3 h-3 mr-1" />완료</Badge>;
-      case "generating": return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30"><Loader2 className="w-3 h-3 mr-1 animate-spin" />생성 중</Badge>;
-      case "failed": return <Badge className="bg-red-500/20 text-red-400 border-red-500/30"><XCircle className="w-3 h-3 mr-1" />실패</Badge>;
+      case "ready": return <Badge className="bg-green-500/20 text-green-400 border-green-500/30"><CheckCircle className="w-3 h-3 mr-1" />{t("scormExport.statusReady")}</Badge>;
+      case "generating": return <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30"><Loader2 className="w-3 h-3 mr-1 animate-spin" />{t("scormExport.statusGenerating")}</Badge>;
+      case "failed": return <Badge className="bg-red-500/20 text-red-400 border-red-500/30"><XCircle className="w-3 h-3 mr-1" />{t("scormExport.statusFailed")}</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -100,41 +102,41 @@ export default function ScormExport() {
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Package className="w-7 h-7 text-purple-400" />
-                SCORM/xAPI 내보내기
+                {t("scormExport.headerTitle")}
               </h1>
-              <p className="text-gray-400 mt-1">LMS에 업로드할 수 있는 SCORM 패키지를 생성합니다</p>
+              <p className="text-gray-400 mt-1">{t("scormExport.headerDescription")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <Button variant="outline" size="sm" onClick={() => packagesQuery.refetch()} className="border-gray-700 text-gray-300 hover:text-white">
-              <RefreshCw className="w-4 h-4 mr-1" /><span className="hidden sm:inline">새로고침</span>
+              <RefreshCw className="w-4 h-4 mr-1" /><span className="hidden sm:inline">{t("scormExport.buttonRefresh")}</span>
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Package className="w-4 h-4 mr-2" />새 패키지 생성
+                  <Package className="w-4 h-4 mr-2" />{t("scormExport.buttonNewPackage")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-[#1a1a2e] border-gray-700 text-white max-w-[95vw] sm:max-w-lg">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Settings2 className="w-5 h-5 text-purple-400" />
-                    SCORM 패키지 생성
+                    {t("scormExport.dialogTitle")}
                   </DialogTitle>
                   <DialogDescription className="text-gray-400">
-                    완료된 파이프라인을 선택하고 내보내기 옵션을 설정하세요.
+                    {t("scormExport.dialogDescription")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label>파이프라인 선택</Label>
+                    <Label>{t("scormExport.labelPipeline")}</Label>
                     <Select onValueChange={(v) => {
                       setSelectedPipelineId(Number(v));
                       const pl = completedPipelines.find((p: any) => String(p.pipeline?.id || p.id) === v);
                       if (pl) setTitle((pl as any).pipeline?.title || (pl as any).title || "");
                     }}>
                       <SelectTrigger className="bg-[#16213e] border-gray-600">
-                        <SelectValue placeholder="파이프라인 선택..." />
+                        <SelectValue placeholder={t("scormExport.placeholderPipeline")} />
                       </SelectTrigger>
                       <SelectContent className="bg-[#1a1a2e] border-gray-700">
                         {completedPipelines.map((p: any) => {
@@ -147,62 +149,62 @@ export default function ScormExport() {
                           );
                         })}
                         {completedPipelines.length === 0 && (
-                          <div className="px-3 py-2 text-gray-500 text-sm">완료된 파이프라인이 없습니다</div>
+                          <div className="px-3 py-2 text-gray-500 text-sm">{t("scormExport.noCompletedPipelines")}</div>
                         )}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>패키지 제목</Label>
-                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="SCORM 패키지 제목" className="bg-[#16213e] border-gray-600" />
+                    <Label>{t("scormExport.labelPackageTitle")}</Label>
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("scormExport.placeholderPackageTitle")} className="bg-[#16213e] border-gray-600" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>SCORM 버전</Label>
+                      <Label>{t("scormExport.labelScormVersion")}</Label>
                       <Select value={scormVersion} onValueChange={(v) => setScormVersion(v as "1.2" | "2004")}>
                         <SelectTrigger className="bg-[#16213e] border-gray-600">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a1a2e] border-gray-700">
-                          <SelectItem value="2004">SCORM 2004 (권장)</SelectItem>
-                          <SelectItem value="1.2">SCORM 1.2</SelectItem>
+                          <SelectItem value="2004">{t("scormExport.optionScorm2004")}</SelectItem>
+                          <SelectItem value="1.2">{t("scormExport.optionScorm12")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>완료 기준</Label>
+                      <Label>{t("scormExport.completionCriteriaLabel")}</Label>
                       <Select value={completionCriteria} onValueChange={(v) => setCompletionCriteria(v as any)}>
                         <SelectTrigger className="bg-[#16213e] border-gray-600">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent className="bg-[#1a1a2e] border-gray-700">
-                          <SelectItem value="slide_view">슬라이드 조회</SelectItem>
-                          <SelectItem value="quiz_pass">퀴즈 통과</SelectItem>
-                          <SelectItem value="time_spent">최소 시간</SelectItem>
+                          <SelectItem value="slide_view">{t("scormExport.optionSlideView")}</SelectItem>
+                          <SelectItem value="quiz_pass">{t("scormExport.optionQuizPass")}</SelectItem>
+                          <SelectItem value="time_spent">{t("scormExport.optionMinTime")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   {completionCriteria === "time_spent" && (
                     <div className="space-y-2">
-                      <Label>최소 시간 (초)</Label>
+                      <Label>{t("scormExport.labelMinTime")}</Label>
                       <Input type="number" value={minTimeSec} onChange={(e) => setMinTimeSec(Number(e.target.value))} className="bg-[#16213e] border-gray-600" />
                     </div>
                   )}
                   <div className="flex items-center justify-between">
-                    <Label>자막 포함</Label>
+                    <Label>{t("scormExport.labelIncludeSubtitles")}</Label>
                     <Switch checked={includeSubtitles} onCheckedChange={setIncludeSubtitles} />
                   </div>
                   <div className="flex items-center justify-between">
-                    <Label>썸네일 포함</Label>
+                    <Label>{t("scormExport.labelIncludeThumbnail")}</Label>
                     <Switch checked={includeThumbnail} onCheckedChange={setIncludeThumbnail} />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="border-gray-600">취소</Button>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="border-gray-600">{t("scormExport.buttonCancel")}</Button>
                   <Button onClick={handleGenerate} disabled={generateMutation.isPending} className="bg-purple-600 hover:bg-purple-700">
                     {generateMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Package className="w-4 h-4 mr-2" />}
-                    생성
+                    {t("scormExport.buttonGenerate")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -218,7 +220,7 @@ export default function ScormExport() {
                 <FileText className="w-6 h-6 text-purple-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg mb-1">SCORM 패키지란?</h3>
+                <h3 className="font-semibold text-lg mb-1">{t("scormExport.infoBannerTitle")}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   SCORM(Sharable Content Object Reference Model)은 e-러닝 콘텐츠의 국제 표준입니다. 
                   생성된 패키지를 Moodle, Canvas, Blackboard 등 LMS에 업로드하면 학습 진행률, 완료 여부, 
@@ -240,9 +242,9 @@ export default function ScormExport() {
             <CardContent className="flex flex-col items-center justify-center py-20">
               <Package className="w-16 h-16 text-gray-600 mb-4" />
               <h3 className="text-lg font-medium text-gray-400 mb-2">아직 생성된 패키지가 없습니다</h3>
-              <p className="text-gray-500 text-sm mb-4">완료된 파이프라인에서 SCORM 패키지를 생성해보세요.</p>
+              <p className="text-gray-500 text-sm mb-4">완료된 파이프라인에서 SCORM 패키지를 {t("scormExport.buttonGenerate")}해보세요.</p>
               <Button onClick={() => setIsDialogOpen(true)} className="bg-purple-600 hover:bg-purple-700">
-                <Package className="w-4 h-4 mr-2" />첫 패키지 생성
+                <Package className="w-4 h-4 mr-2" />{t("scormExport.buttonFirstPackage")}
               </Button>
             </CardContent>
           </Card>
@@ -261,7 +263,7 @@ export default function ScormExport() {
                         <div className="flex items-center gap-3 mt-1 text-sm text-gray-400">
                           <span>SCORM {pkg.scormVersion}</span>
                           <span>·</span>
-                          <span>{pkg.language === "ko" ? "한국어" : pkg.language}</span>
+                          <span>{pkg.language === "ko" ? t("scormExport.langKorean") : pkg.language}</span>
                           {pkg.fileSizeBytes > 0 && (
                             <>
                               <span>·</span>
@@ -271,7 +273,7 @@ export default function ScormExport() {
                           {pkg.downloadCount > 0 && (
                             <>
                               <span>·</span>
-                              <span>다운로드 {pkg.downloadCount}회</span>
+                              <span>{t("scormExport.buttonDownload")} {pkg.downloadCount}회</span>
                             </>
                           )}
                           <span>·</span>
@@ -288,7 +290,7 @@ export default function ScormExport() {
                           disabled={downloadMutation.isPending}
                           className="bg-green-600 hover:bg-green-700"
                         >
-                          <Download className="w-4 h-4 mr-1" />다운로드
+                          <Download className="w-4 h-4 mr-1" />{t("scormExport.buttonDownload")}
                         </Button>
                       )}
                       {pkg.status === "failed" && (
@@ -300,10 +302,10 @@ export default function ScormExport() {
                   <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      완료 기준: {pkg.completionCriteria === "slide_view" ? "슬라이드 조회" : pkg.completionCriteria === "quiz_pass" ? "퀴즈 통과" : `최소 ${pkg.minTimeSec}초`}
+                      {t("scormExport.completionCriteriaLabel")}: {pkg.completionCriteria === "slide_view" ? t("scormExport.optionSlideView") : pkg.completionCriteria === "quiz_pass" ? t("scormExport.optionQuizPass") : `최소 ${pkg.minTimeSec}초`}
                     </span>
                     {pkg.includeSubtitles && <span>자막 포함</span>}
-                    {pkg.includeThumbnail && <span>썸네일 포함</span>}
+                    {pkg.includeThumbnail && <span>{t("scormExport.labelIncludeThumbnail")}</span>}
                   </div>
                 </CardContent>
               </Card>

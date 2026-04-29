@@ -142,8 +142,8 @@ export default function LectureBuilder() {
   });
 
   const handleCloneProject = (id: number, title: string) => {
-    if (confirm(`"${title}" 프로젝트를 복제하시겠습니까?`)) {
-      cloneProjectMut.mutate({ sourceProjectId: id, newTitle: `${title} (복사본)` });
+    if (confirm(t("lectureBuilder.hardcoded.cloneConfirm", { title }))) {
+      cloneProjectMut.mutate({ sourceProjectId: id, newTitle: `${title} ${t("lectureBuilder.hardcoded.cloneSuffix")}` });
     }
   };
 
@@ -201,7 +201,7 @@ export default function LectureBuilder() {
                     <LectureFormatSelector
                     onApply={(formats, templates) => {
                       setSelectedFormats({ formats, templates });
-                      toast.success(`${templates.length}개 포맷이 선택되었습니다. 아바타와 스크립트가 자동 구성됩니다.`);
+                      toast.success(t("lectureBuilder.hardcoded.formatsSelected", { count: String(templates.length) }));
                       createProject.mutate({
                         title: newTitle.trim(),
                         description: newDesc.trim() || undefined,
@@ -269,7 +269,7 @@ export default function LectureBuilder() {
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                         <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${p.currentStep / 5 * 100}%` }} />
                       </div>
-                      <span className="text-xs">{new Date(p.updatedAt).toLocaleDateString("ko-KR")}</span>
+                      <span className="text-xs">{new Date(p.updatedAt).toLocaleDateString()}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -1134,7 +1134,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
         };
       });
       setSections(newSections);
-      toast.success(`${newSections.length}개 섹션이 생성되었습니다`);
+      toast.success(t("lectureBuilder.hardcoded.sectionsCreated", { count: String(newSections.length) }));
     },
     onError: (e) => toast.error(e.message)
   });
@@ -1147,7 +1147,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
         text: s.text
       }));
       setSections(newSections);
-      toast.success(`${newSections.length}개 섹션으로 분류되었습니다`);
+      toast.success(t("lectureBuilder.hardcoded.sectionsClassified", { count: String(newSections.length) }));
     },
     onError: (e) => toast.error(e.message)
   });
@@ -1166,7 +1166,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       }
       setProofreadingIdx(null);
     },
-    onError: (e: any) => {toast.error(`AI 교정 실패: ${e.message}`);setProofreadingIdx(null);}
+    onError: (e: any) => {toast.error(t("lectureBuilder.hardcoded.aiProofreadFailed", { error: e.message }));setProofreadingIdx(null);}
   });
   const handleProofread = (idx: number) => {
     const sec = sections[idx];
@@ -1195,7 +1195,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       setImprovingIdx(null);
     },
     onError: (e: any) => {
-      toast.error(`AI 개선 실패: ${e.message}`);
+      toast.error(t("lectureBuilder.hardcoded.aiImproveFailed", { error: e.message }));
       setImprovingIdx(null);
     }
   });
@@ -1249,12 +1249,12 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       setBatchImproving(false);
       setBatchProgress(100);
       setBatchResults(data.results);
-      toast.success(`${data.improved}/${data.total}개 섹션이 개선되었습니다`);
+      toast.success(t("lectureBuilder.hardcoded.batchImproveResult", { improved: String(data.improved), total: String(data.total) }));
     },
     onError: (e: any) => {
       setBatchImproving(false);
       setBatchProgress(0);
-      toast.error(`전체 개선 실패: ${e.message}`);
+      toast.error(t("lectureBuilder.hardcoded.batchImproveFailed", { error: e.message }));
     }
   });
 
@@ -1376,20 +1376,20 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
         <div className="flex items-center gap-3">
             {autoSaveStatus === "saving" &&
           <span className="text-xs text-muted-foreground flex items-center gap-1">
-                <Loader2 className="w-3 h-3 animate-spin" /> \uc790\ub3d9 \uc800\uc7a5 \uc911...
+                <Loader2 className="w-3 h-3 animate-spin" /> {t("lectureBuilder.hardcoded.autoSaving")}
               </span>
           }
             {autoSaveStatus === "saved" && lastSavedAt &&
           <span className="text-xs text-green-500 flex items-center gap-1">
-                <Check className="w-3 h-3" /> \uc790\ub3d9 \uc800\uc7a5\ub428 {lastSavedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+                <Check className="w-3 h-3" /> {t("lectureBuilder.hardcoded.autoSaved")} {lastSavedAt.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
               </span>
           }
-            <Button onClick={async () => {await saveAllScripts();saveVersionMut.mutate({ projectId, changeDescription: `수동 저장 (${sections.length}개 섹션)`, changeType: "manual" });}} disabled={setScriptMut.isPending} className="gap-2">
+            <Button onClick={async () => {await saveAllScripts();saveVersionMut.mutate({ projectId, changeDescription: t("lectureBuilder.hardcoded.manualSave", { count: String(sections.length) }), changeType: "manual" });}} disabled={setScriptMut.isPending} className="gap-2">
               {setScriptMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              \uc2a4\ud06c\ub9bd\ud2b8 \uc800\uc7a5 ({sections.length}\uac1c)
+              {t("lectureBuilder.hardcoded.saveScript", { count: String(sections.length) })}
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowVersionPanel(!showVersionPanel)} className="gap-1">
-              <History className="w-4 h-4" /> \ubc84\uc804
+              <History className="w-4 h-4" /> {t("lectureBuilder.hardcoded.version")}
             </Button>
           </div>
         }
@@ -1463,7 +1463,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
             <Button variant="outline" className="w-full" disabled={!prompt.trim() || generateScript.isPending}
             onClick={() => {
               if (confirm(t("lectureBuilder.stringLiteral96"))) {
-                generateScript.mutate({ projectId, prompt: `기존 스크립트에 추가할 내용: ${prompt.trim()}`, language, slideCount, useFormatContext: true });
+                generateScript.mutate({ projectId, prompt: t("lectureBuilder.hardcoded.addToExistingScript", { content: prompt.trim() }), language, slideCount, useFormatContext: true });
               }
             }}>
                   <Plus className="w-4 h-4 mr-2" />{t("lectureBuilder.jsxText97")}
@@ -1555,7 +1555,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
                     <Textarea
                   value={sec.text}
                   onChange={(e) => updateSection(idx, e.target.value)}
-                  placeholder={`섹션 ${idx + 1} 스크립트를 입력하세요...`}
+                  placeholder={t("lectureBuilder.hardcoded.sectionPlaceholder", { idx: String(idx + 1) })}
                   rows={3}
                   className="resize-none" />
                 
@@ -1798,19 +1798,19 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
                 <History className="w-5 h-5 text-blue-500" />
-                \uc2a4\ud06c\ub9bd\ud2b8 \ubc84\uc804 \uc774\ub825
+                {t("lectureBuilder.hardcoded.scriptVersionHistory")}
               </CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setShowVersionPanel(false)}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            <CardDescription>\uc218\ub3d9 \uc800\uc7a5 \uc2dc \uc790\ub3d9\uc73c\ub85c \ubc84\uc804\uc774 \uc0dd\uc131\ub429\ub2c8\ub2e4. \uc774\uc804 \ubc84\uc804\uc73c\ub85c \ub3cc\uc544\uac08 \uc218 \uc788\uc2b5\ub2c8\ub2e4.</CardDescription>
+            <CardDescription>{t("lectureBuilder.hardcoded.versionDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             {versionsQuery.isLoading ?
           <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div> :
           !versionsQuery.data?.length ?
-          <p className="text-center text-muted-foreground py-6">\uc800\uc7a5\ub41c \ubc84\uc804\uc774 \uc5c6\uc2b5\ub2c8\ub2e4. \uc2a4\ud06c\ub9bd\ud2b8\ub97c \uc800\uc7a5\ud558\uba74 \uc790\ub3d9\uc73c\ub85c \ubc84\uc804\uc774 \uc0dd\uc131\ub429\ub2c8\ub2e4.</p> :
+          <p className="text-center text-muted-foreground py-6">{t("lectureBuilder.hardcoded.noVersions")}</p> :
 
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
                 {versionsQuery.data.map((v: any) =>
@@ -1821,11 +1821,11 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
                         <span className={`text-xs px-1.5 py-0.5 rounded ${v.changeType === "manual" ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}>
                           {v.changeType === "manual" ? t("lectureBuilder.stringLiteral158") : t("lectureBuilder.stringLiteral159")}
                         </span>
-                        <span className="text-xs text-muted-foreground">{v.sectionCount}\uac1c \uc139\uc158</span>
+                        <span className="text-xs text-muted-foreground">{t("lectureBuilder.hardcoded.nSections", { count: String(v.sectionCount) })}</span>
                       </div>
                       <p className="text-sm text-muted-foreground mt-0.5">{v.changeDescription}</p>
                       <p className="text-xs text-muted-foreground/60 mt-0.5">
-                        {new Date(v.createdAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        {new Date(v.createdAt).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
                     <Button
@@ -1834,12 +1834,12 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
                 className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950"
                 disabled={restoreVersionMut.isPending}
                 onClick={() => {
-                  if (confirm(`\uBC84\uC804 ${v.versionNumber}\uC73C\uB85C \uBCF5\uC6D0\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C? \uD604\uC7AC \uC2A4\uD06C\uB9BD\uD2B8\uAC00 \uB300\uCCB4\uB429\uB2C8\uB2E4.`)) {
+                  if (confirm(t("lectureBuilder.hardcoded.restoreVersionConfirm", { version: String(v.versionNumber) }))) {
                     restoreVersionMut.mutate({ projectId, versionId: v.id });
                   }
                 }}>
                 
-                      <Undo2 className="w-3.5 h-3.5" /> \ubcf5\uc6d0
+                      <Undo2 className="w-3.5 h-3.5" /> {t("lectureBuilder.hardcoded.restore")}
                     </Button>
                   </div>
             )}
@@ -1871,11 +1871,11 @@ function ImprovementHistoryPanel({ projectId, sections, setSections
         return reverted ? { ...sec, text: reverted.originalText } : sec;
       });
       setSections(newSections);
-      toast.success(`${data.sections.length}\uac1c \uc139\uc158\uc774 \uc774\uc804 \ubc84\uc804\uc73c\ub85c \ub418\ub3cc\ub824\uc84c\uc2b5\ub2c8\ub2e4`);
+      toast.success(t("lectureBuilder.hardcoded.sectionsReverted", { count: String(data.sections.length) }));
       historyQuery.refetch();
       setDetailGroup(null);
     },
-    onError: (e: any) => toast.error(`\ub418\ub3cc\ub9ac\uae30 \uc2e4\ud328: ${e.message}`)
+    onError: (e: any) => toast.error(t("lectureBuilder.hardcoded.revertFailed", { error: e.message }))
   });
 
   const groupedHistory = useMemo(() => {
@@ -1902,13 +1902,13 @@ function ImprovementHistoryPanel({ projectId, sections, setSections
         onClick={() => setShowHistory(!showHistory)}>
         
         <History className="w-4 h-4" />
-        AI \uac1c\uc120 \uc774\ub825 {showHistory ? "\u25b2" : "\u25bc"}
+        {t("lectureBuilder.hardcoded.aiImprovementHistory")} {showHistory ? "\u25b2" : "\u25bc"}
       </button>
       {showHistory &&
       <div className="space-y-2">
-          {historyQuery.isLoading && <p className="text-sm text-muted-foreground">\ub85c\ub529 \uc911...</p>}
+          {historyQuery.isLoading && <p className="text-sm text-muted-foreground">{t("lectureBuilder.hardcoded.loading")}</p>}
           {groupedHistory.length === 0 && !historyQuery.isLoading &&
-        <p className="text-sm text-muted-foreground">\uc544\uc9c1 AI \uac1c\uc120 \uc774\ub825\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.</p>
+        <p className="text-sm text-muted-foreground">{t("lectureBuilder.hardcoded.noImprovementHistory")}</p>
         }
           {groupedHistory.map((group) =>
         <div
@@ -1919,10 +1919,10 @@ function ImprovementHistoryPanel({ projectId, sections, setSections
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">{styleLabels[group.style] || group.style}</Badge>
-                  <span className="text-sm font-medium">{group.count}\uac1c \uc139\uc158 \uac1c\uc120</span>
+                  <span className="text-sm font-medium">{t("lectureBuilder.hardcoded.sectionsImproved", { count: String(group.count) })}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(group.createdAt).toLocaleString("ko-KR")}
+                  {new Date(group.createdAt).toLocaleString()}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -1932,7 +1932,7 @@ function ImprovementHistoryPanel({ projectId, sections, setSections
               className="gap-1 text-muted-foreground"
               onClick={(e) => {e.stopPropagation();setDetailGroup(group);}}>
               
-                  <Eye className="w-3.5 h-3.5" /> \uc0c1\uc138
+                  <Eye className="w-3.5 h-3.5" /> {t("lectureBuilder.hardcoded.detail")}
                 </Button>
                 <Button
               variant="outline"
@@ -1948,7 +1948,7 @@ function ImprovementHistoryPanel({ projectId, sections, setSections
               }}
               disabled={revertMut.isPending}>
               
-                  <Undo2 className="w-3.5 h-3.5" /> \ub418\ub3cc\ub9ac\uae30
+                  <Undo2 className="w-3.5 h-3.5" /> {t("lectureBuilder.hardcoded.revert")}
                 </Button>
               </div>
             </div>
@@ -1964,10 +1964,10 @@ function ImprovementHistoryPanel({ projectId, sections, setSections
               <div className="flex items-center gap-3">
                 <History className="w-5 h-5 text-primary" />
                 <div>
-                  <h3 className="font-semibold">AI \uac1c\uc120 \uc0c1\uc138 \ube44\uad50</h3>
+                  <h3 className="font-semibold">{t("lectureBuilder.hardcoded.aiImprovementDetailComparison")}</h3>
                   <p className="text-xs text-muted-foreground">
                     <Badge variant="outline" className="text-xs mr-2">{styleLabels[detailGroup.style] || detailGroup.style}</Badge>
-                    {detailGroup.count}\uac1c \uc139\uc158 \u00b7 {new Date(detailGroup.createdAt).toLocaleString("ko-KR")}
+                    {t("lectureBuilder.hardcoded.sectionsImproved", { count: String(detailGroup.count) })} \u00b7 {new Date(detailGroup.createdAt).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -1980,7 +1980,7 @@ function ImprovementHistoryPanel({ projectId, sections, setSections
                 onClick={() => revertMut.mutate({ batchId: detailGroup.batchId })}
                 disabled={revertMut.isPending}>
                 
-                    <Undo2 className="w-3.5 h-3.5" /> \ub418\ub3cc\ub9ac\uae30
+                    <Undo2 className="w-3.5 h-3.5" /> {t("lectureBuilder.hardcoded.revert")}
                   </Button>
               }
                 <Button variant="ghost" size="sm" onClick={() => setDetailGroup(null)}>
@@ -1994,20 +1994,20 @@ function ImprovementHistoryPanel({ projectId, sections, setSections
               return (
                 <div key={item.id || idx} className="border rounded-lg overflow-hidden">
                     <div className="bg-muted/30 px-4 py-2 border-b flex items-center gap-2">
-                      <span className="text-sm font-medium">\uc139\uc158 {idx + 1}</span>
+                      <span className="text-sm font-medium">{t("lectureBuilder.hardcoded.section", { idx: String(idx + 1) })}</span>
                       {hasChange ?
-                    <Badge className="bg-green-500/10 text-green-500 text-xs">\uac1c\uc120\ub428</Badge> :
+                    <Badge className="bg-green-500/10 text-green-500 text-xs">{t("lectureBuilder.hardcoded.improved")}</Badge> :
 
-                    <Badge variant="outline" className="text-xs text-muted-foreground">\ubcc0\uacbd\uc5c6\uc74c</Badge>
+                    <Badge variant="outline" className="text-xs text-muted-foreground">{t("lectureBuilder.hardcoded.noChange")}</Badge>
                     }
                     </div>
                     <div className="grid grid-cols-2 divide-x">
                       <div className="p-4">
-                        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">\uc6d0\ubcf8</p>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">{t("lectureBuilder.hardcoded.original")}</p>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">{item.originalText || t("lectureBuilder.stringLiteral165")}</p>
                       </div>
                       <div className="p-4">
-                        <p className="text-xs font-medium text-primary mb-2 uppercase tracking-wider">\uac1c\uc120</p>
+                        <p className="text-xs font-medium text-primary mb-2 uppercase tracking-wider">{t("lectureBuilder.hardcoded.improvementResult")}</p>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{item.improvedText || t("lectureBuilder.stringLiteral166")}</p>
                       </div>
                     </div>
@@ -2071,7 +2071,7 @@ function Step3Slides({ projectId, slides, onRefresh
       let currentOrder = slides.length;
       for (const file of Array.from(files)) {
         if (file.size > 50 * 1024 * 1024) {
-          toast.error(`${file.name}: 파일 크기가 50MB를 초과합니다`);
+          toast.error(t("lectureBuilder.hardcoded.fileSizeExceeded", { name: file.name }));
           continue;
         }
 
@@ -2080,7 +2080,7 @@ function Step3Slides({ projectId, slides, onRefresh
         if (isPptOrPdf(file)) {
           // PPT/PDF → 서버에서 이미지로 변환
           setConverting(true);
-          setConversionStatus(`${file.name} 변환 중...`);
+          setConversionStatus(t("lectureBuilder.hardcoded.converting", { name: file.name }));
           try {
             const result = await convertFileMut.mutateAsync({
               projectId,
@@ -2092,9 +2092,9 @@ function Step3Slides({ projectId, slides, onRefresh
             if (result.extractedTexts && result.extractedTexts.length > 0) {
               setExtractedTexts(result.extractedTexts);
             }
-            toast.success(`${file.name}: ${result.count}개 슬라이드로 변환 완료${result.extractedTexts?.length ? t("lectureBuilder.stringLiteral168") : ""}`);
+            toast.success(t("lectureBuilder.hardcoded.slidesConverted", { name: file.name, count: String(result.count) }) + (result.extractedTexts?.length ? t("lectureBuilder.stringLiteral168") : ""));
           } catch (err: any) {
-            toast.error(`${file.name} 변환 실패: ${err.message}`);
+            toast.error(t("lectureBuilder.hardcoded.conversionFailed", { name: file.name, error: err.message }));
           } finally {
             setConverting(false);
             setConversionStatus("");
@@ -2108,7 +2108,7 @@ function Step3Slides({ projectId, slides, onRefresh
             mimeType: file.type || "image/png",
             slideOrder: currentOrder++
           });
-          toast.success(`${file.name} 업로드 완료`);
+          toast.success(t("lectureBuilder.hardcoded.uploadComplete", { name: file.name }));
         }
       }
       onRefresh();
@@ -2216,7 +2216,7 @@ function Step3Slides({ projectId, slides, onRefresh
                       projectId,
                       slideTextPairs: pairs
                     });
-                    toast.success(`${result.created}개 스크립트 초안이 생성되었습니다`);
+                    toast.success(t("lectureBuilder.hardcoded.scriptDraftsCreated", { count: String(result.created) }));
                     setExtractedTexts([]);
                     onRefresh();
                   } catch (err: any) {
@@ -2264,7 +2264,7 @@ function Step3Slides({ projectId, slides, onRefresh
           {slides.map((slide: any, idx: number) =>
         <div key={slide.id} className="group relative">
               <div className="aspect-video rounded-lg overflow-hidden border bg-muted">
-                <img src={slide.imageUrl} alt={`슬라이드 ${idx + 1}`} className="w-full h-full object-contain" />
+                <img src={slide.imageUrl} alt={t("lectureBuilder.hardcoded.slideAlt", { idx: String(idx + 1) })} className="w-full h-full object-contain" />
               </div>
               <div className="absolute top-1 left-1">
                 <Badge className="text-xs bg-black/60 text-white">{idx + 1}</Badge>
@@ -2379,7 +2379,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   });
   const autoTranslateSlidesMut = trpc.lectureBuilder.autoTranslateSlides.useMutation({
     onSuccess: (data) => {
-      toast.success(`${data.count}개 슬라이드 번역 완료`);
+      toast.success(t("lectureBuilder.hardcoded.slidesTranslated", { count: String(data.count) }));
       const newTexts: Record<number, string> = {};
       data.translations.forEach((t: any) => {newTexts[t.slideId] = t.text;});
       setInterpreterTexts((prev) => ({ ...prev, ...newTexts }));
@@ -2393,13 +2393,13 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
 
   const voicesQuery = trpc.tts.voices.useQuery(undefined, { enabled: !!projectId });
   const generateAllTtsMut = trpc.lectureBuilder.generateAllInterpreterTts.useMutation({
-    onSuccess: (data) => toast.success(`${data.generated}/${data.total}개 통역 오디오 생성 완료`),
+    onSuccess: (data) => toast.success(t("lectureBuilder.hardcoded.interpreterTtsGenerated", { generated: String(data.generated), total: String(data.total) })),
     onError: (e: any) => toast.error(e.message)
   });
   const exportSrtMut = trpc.lectureBuilder.exportInterpreterSrt.useMutation({
     onSuccess: (data) => {
       window.open(data.srtUrl, "_blank");
-      toast.success(`SRT 파일 다운로드 (${data.subtitleCount}개 자막)`);
+      toast.success(t("lectureBuilder.hardcoded.srtDownload", { count: String(data.subtitleCount) }));
     },
     onError: (e: any) => toast.error(e.message)
   });
@@ -2480,7 +2480,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
     onError: (e: any) => toast.error(e.message)
   });
   const setAllTransitionsMut = trpc.lectureBuilder.setAllTransitions.useMutation({
-    onSuccess: (data) => {toast.success(`전체 ${data.count}개 슬라이드에 전환 효과 적용`);onRefresh();},
+    onSuccess: (data) => {toast.success(t("lectureBuilder.hardcoded.transitionsApplied", { count: String(data.count) }));onRefresh();},
     onError: (e: any) => toast.error(e.message)
   });
 
@@ -3672,7 +3672,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   const recommendLayoutMut = trpc.slideLayout.recommend.useMutation({
     onSuccess: (data) => {
       layoutsQuery.refetch();
-      toast.success(`${data.count}개 슬라이드에 대한 레이아웃이 추천되었습니다`);
+      toast.success(t("lectureBuilder.hardcoded.layoutsRecommended", { count: String(data.count) }));
     },
     onError: (err) => toast.error(err.message || t("lectureBuilder.stringLiteral297"))
   });
@@ -3837,7 +3837,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       data.results.forEach((r: any) => {
         setInterpreterAudioUrls((prev) => ({ ...prev, [r.scriptId]: r.audioUrl }));
       });
-      toast.success(`${data.generated}/${data.total}개 통역 오디오 생성 완료`);
+      toast.success(t("lectureBuilder.hardcoded.interpreterTtsGenerated", { generated: String(data.generated), total: String(data.total) }));
     },
     onError: (e: any) => toast.error(e.message)
   });
@@ -4381,7 +4381,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                     setGeneratedVideoUrl(result.videoUrl);
                     setExportProgress(100);
                     setExportStep(t("lectureBuilder.stringLiteral381"));
-                    toast.success(`MP4 내보내기 완료! (${(result.fileSize / 1024 / 1024).toFixed(1)}MB)`);
+                    toast.success(t("lectureBuilder.hardcoded.mp4ExportComplete", { size: (result.fileSize / 1024 / 1024).toFixed(1) }));
                     onRefresh();
                   } catch (err: any) {
                     toast.error(err.message || t("lectureBuilder.stringLiteral382"));

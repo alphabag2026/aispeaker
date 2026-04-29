@@ -328,7 +328,7 @@ export default function VideoEffectsStudio() {
                         onClick={() => window.open(resultUrl, "_blank")}
                       >
                         <Download className="h-3.5 w-3.5" />
-                        다운로드
+                        {t("videoEffectsStudio.download")}
                       </Button>
                       <Button
                         variant="outline"
