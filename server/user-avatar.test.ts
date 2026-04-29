@@ -249,3 +249,107 @@ describe("Avatar Edit Feature", () => {
     expect(matches!.length).toBeGreaterThanOrEqual(20);
   });
 });
+
+describe("Avatar Favorite & Sort Feature", () => {
+  // Test 19: DB schema includes favorite/usage columns
+  it("should have isFavorite, lastUsedAt, useCount in userAvatars schema", () => {
+    const schema = fs.readFileSync(
+      path.join(__dirname, "../drizzle/schema.ts"),
+      "utf-8"
+    );
+    expect(schema).toContain("isFavorite");
+    expect(schema).toContain("lastUsedAt");
+    expect(schema).toContain("useCount");
+  });
+
+  // Test 20: DB helpers include favorite/usage functions
+  it("should have toggleFavorite, recordUsage, listSorted helpers in db.ts", () => {
+    const db = fs.readFileSync(path.join(__dirname, "db.ts"), "utf-8");
+    expect(db).toContain("toggleUserAvatarFavorite");
+    expect(db).toContain("recordUserAvatarUsage");
+    expect(db).toContain("listUserAvatarsSorted");
+  });
+
+  // Test 21: listUserAvatarsSorted supports 4 sort modes
+  it("should support favorite, recent, name, created sort modes", () => {
+    const db = fs.readFileSync(path.join(__dirname, "db.ts"), "utf-8");
+    expect(db).toContain('"favorite"');
+    expect(db).toContain('"recent"');
+    expect(db).toContain('"name"');
+    expect(db).toContain('"created"');
+    // Check that asc is imported for name sorting
+    expect(db).toContain("asc");
+  });
+
+  // Test 22: Router includes toggleFavorite and recordUsage procedures
+  it("should have toggleFavorite and recordUsage procedures in router", () => {
+    const routers = fs.readFileSync(
+      path.join(__dirname, "routers.ts"),
+      "utf-8"
+    );
+    expect(routers).toContain("toggleFavorite:");
+    expect(routers).toContain("recordUsage:");
+    expect(routers).toContain("toggleUserAvatarFavorite");
+    expect(routers).toContain("recordUserAvatarUsage");
+  });
+
+  // Test 23: Router list procedure accepts sortBy parameter
+  it("should accept sortBy parameter in list procedure", () => {
+    const routers = fs.readFileSync(
+      path.join(__dirname, "routers.ts"),
+      "utf-8"
+    );
+    expect(routers).toContain("sortBy");
+    expect(routers).toContain("listUserAvatarsSorted");
+  });
+
+  // Test 24: LectureBuilder has favorite toggle and sort UI
+  it("should have favorite toggle and sort dropdown in LectureBuilder", () => {
+    const lb = fs.readFileSync(
+      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
+      "utf-8"
+    );
+    // Sort state
+    expect(lb).toContain("avatarSortBy");
+    // Favorite toggle mutation
+    expect(lb).toContain("trpc.userAvatar.toggleFavorite.useMutation");
+    // Record usage mutation
+    expect(lb).toContain("trpc.userAvatar.recordUsage.useMutation");
+    // Star icon for favorites
+    expect(lb).toContain("Star");
+    // ArrowUpDown icon for sort
+    expect(lb).toContain("ArrowUpDown");
+    // Sort select options
+    expect(lb).toContain("sortFavorite");
+    expect(lb).toContain("sortRecent");
+    expect(lb).toContain("sortName");
+    expect(lb).toContain("sortCreated");
+  });
+
+  // Test 25: Favorite star badge shows on favorited avatars
+  it("should show star badge on favorited avatars", () => {
+    const lb = fs.readFileSync(
+      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
+      "utf-8"
+    );
+    expect(lb).toContain("av.isFavorite");
+    expect(lb).toContain("fill-yellow-400");
+  });
+
+  // Test 26: i18n keys for sort options exist in all 20 languages
+  it("should have sort i18n keys for all 20 languages", () => {
+    const i18n = fs.readFileSync(
+      path.join(__dirname, "../client/src/i18n/pages/LectureBuilder.ts"),
+      "utf-8"
+    );
+    expect(i18n).toContain("lectureBuilder.avatar.avatarCount");
+    expect(i18n).toContain("lectureBuilder.avatar.sortFavorite");
+    expect(i18n).toContain("lectureBuilder.avatar.sortRecent");
+    expect(i18n).toContain("lectureBuilder.avatar.sortName");
+    expect(i18n).toContain("lectureBuilder.avatar.sortCreated");
+    // Verify all 20 languages have the key
+    const matches = i18n.match(/lectureBuilder\.avatar\.sortFavorite/g);
+    expect(matches).toBeTruthy();
+    expect(matches!.length).toBeGreaterThanOrEqual(20);
+  });
+});

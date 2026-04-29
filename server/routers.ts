@@ -8665,10 +8665,27 @@ Return a JSON object with a "sections" array. Each section has:
   }),
   // ========== User Custom Avatars ==========
   userAvatar: router({
-    /** List all custom avatars for the current user */
-    list: protectedProcedure.query(async ({ ctx }) => {
-      return db.listUserAvatars(ctx.user.id);
-    }),
+    /** List all custom avatars for the current user (with sort option) */
+    list: protectedProcedure
+      .input(z.object({ sortBy: z.enum(["favorite", "recent", "name", "created"]).default("favorite") }).optional())
+      .query(async ({ ctx, input }) => {
+        const sortBy = input?.sortBy || "favorite";
+        return db.listUserAvatarsSorted(ctx.user.id, sortBy);
+      }),
+    /** Toggle favorite status of a custom avatar */
+    toggleFavorite: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const newVal = await db.toggleUserAvatarFavorite(input.id, ctx.user.id);
+        return { isFavorite: newVal };
+      }),
+    /** Record avatar usage (called when avatar is selected for a project) */
+    recordUsage: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.recordUserAvatarUsage(input.id, ctx.user.id);
+        return { success: true };
+      }),
     /** Create a new custom avatar (upload photo or AI-generated) */
     create: protectedProcedure
       .input(z.object({

@@ -1,4 +1,4 @@
-import { eq, desc, and, like, sql, gte, or } from "drizzle-orm";
+import { eq, desc, asc, and, like, sql, gte, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -3997,4 +3997,43 @@ export async function updateUserAvatar(id: number, userId: number, data: Partial
 export async function deleteUserAvatar(id: number, userId: number) {
   const db = await getDb(); if (!db) return;
   await db.delete(userAvatars).where(and(eq(userAvatars.id, id), eq(userAvatars.userId, userId)));
+}
+
+export async function toggleUserAvatarFavorite(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  const [row] = await db.select({ isFavorite: userAvatars.isFavorite }).from(userAvatars)
+    .where(and(eq(userAvatars.id, id), eq(userAvatars.userId, userId))).limit(1);
+  if (!row) return;
+  const newVal = !row.isFavorite;
+  await db.update(userAvatars).set({ isFavorite: newVal }).where(and(eq(userAvatars.id, id), eq(userAvatars.userId, userId)));
+  return newVal;
+}
+
+export async function recordUserAvatarUsage(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.update(userAvatars).set({
+    lastUsedAt: new Date(),
+    useCount: sql`useCount + 1`,
+  }).where(and(eq(userAvatars.id, id), eq(userAvatars.userId, userId)));
+}
+
+export async function listUserAvatarsSorted(userId: number, sortBy: "favorite" | "recent" | "name" | "created") {
+  const db = await getDb(); if (!db) return [];
+  let orderClauses;
+  switch (sortBy) {
+    case "favorite":
+      orderClauses = [desc(userAvatars.isFavorite), desc(userAvatars.lastUsedAt), desc(userAvatars.createdAt)];
+      break;
+    case "recent":
+      orderClauses = [desc(userAvatars.lastUsedAt), desc(userAvatars.createdAt)];
+      break;
+    case "name":
+      orderClauses = [asc(userAvatars.name), desc(userAvatars.createdAt)];
+      break;
+    case "created":
+    default:
+      orderClauses = [desc(userAvatars.createdAt)];
+      break;
+  }
+  return db.select().from(userAvatars).where(eq(userAvatars.userId, userId)).orderBy(...orderClauses);
 }

@@ -351,6 +351,13 @@
       "when": 1777442065321,
       "tag": "0049_slimy_molten_man",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1777449957785,
+      "tag": "0050_cute_korvac",
+      "breakpoints": true
     }
   ]
 }

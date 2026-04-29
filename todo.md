@@ -2099,4 +2099,16 @@
 - [x] i18n 번역 키 추가 (20개 언어)
 - [x] 테스트 작성 (18개 테스트 전체 통과)
 ## 배포
-- [ ] 체크포인트 저장 및 Publish 안내
+- [x] 체크포인트 저장 (v12.9 - dc1993cb)
+- [ ] Publish 배포
+## 아바타 즐겨찾기/정렬 기능
+- [x] DB 스키마 - userAvatars 테이블에 isFavorite, lastUsedAt, useCount 컨럼 추가
+- [x] 서버 라우터 - 즐겨찾기 토글 API (userAvatar.toggleFavorite)
+- [x] 서버 라우터 - 사용 시 lastUsedAt/useCount 자동 업데이트 (userAvatar.recordUsage)
+- [x] 서버 라우터 - 정렬된 목록 조회 (listUserAvatarsSorted - 4가지 정렬 모드)
+- [x] 프론트엔드 UI - 내 아바타 탭에 즐겨찾기 별표 버튼 추가 (Star 아이콘, 노란색 토글)
+- [x] 프론트엔드 UI - 정렬 드롭다운 (즐겨찾기 우선 / 최근 사용순 / 이름순 / 등록순)
+- [x] 프론트엔드 UI - 즐겨찾기 아바타 상단 고정 + 별표 배지 표시
+- [x] 프론트엔드 UI - 아바타 선택 시 사용 기록 자동 기록
+- [x] i18n 번역 키 추가 (20개 언어, 5개 키)
+- [x] 테스트 작성 (26개 테스트 전체 통과) 및 프로덕션 빌드 성공

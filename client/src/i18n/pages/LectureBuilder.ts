@@ -456,6 +456,11 @@ registerTranslations("ko", {
   "lectureBuilder.avatar.editDesc": "설명",
   "lectureBuilder.avatar.editSave": "저장",
   "lectureBuilder.avatar.updated": "아바타가 수정되었습니다",
+  "lectureBuilder.avatar.avatarCount": "개의 아바타",
+  "lectureBuilder.avatar.sortFavorite": "즐겨찾기 우선",
+  "lectureBuilder.avatar.sortRecent": "최근 사용순",
+  "lectureBuilder.avatar.sortName": "이름순",
+  "lectureBuilder.avatar.sortCreated": "등록순",
 });
 registerTranslations("en", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -913,6 +918,11 @@ registerTranslations("en", {
   "lectureBuilder.avatar.editDesc": "Description",
   "lectureBuilder.avatar.editSave": "Save",
   "lectureBuilder.avatar.updated": "Avatar updated successfully",
+  "lectureBuilder.avatar.avatarCount": "avatars",
+  "lectureBuilder.avatar.sortFavorite": "Favorites first",
+  "lectureBuilder.avatar.sortRecent": "Recently used",
+  "lectureBuilder.avatar.sortName": "By name",
+  "lectureBuilder.avatar.sortCreated": "By date added",
 });
 registerTranslations("zh", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -1370,6 +1380,11 @@ registerTranslations("zh", {
   "lectureBuilder.avatar.editDesc": "描述",
   "lectureBuilder.avatar.editSave": "保存",
   "lectureBuilder.avatar.updated": "头像修改成功",
+  "lectureBuilder.avatar.avatarCount": "个头像",
+  "lectureBuilder.avatar.sortFavorite": "收藏优先",
+  "lectureBuilder.avatar.sortRecent": "最近使用",
+  "lectureBuilder.avatar.sortName": "按名称",
+  "lectureBuilder.avatar.sortCreated": "按添加时间",
 });
 registerTranslations("ja", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -1827,6 +1842,11 @@ registerTranslations("ja", {
   "lectureBuilder.avatar.editDesc": "説明",
   "lectureBuilder.avatar.editSave": "保存",
   "lectureBuilder.avatar.updated": "アバターが更新されました",
+  "lectureBuilder.avatar.avatarCount": "個のアバター",
+  "lectureBuilder.avatar.sortFavorite": "お気に入り優先",
+  "lectureBuilder.avatar.sortRecent": "最近使用順",
+  "lectureBuilder.avatar.sortName": "名前順",
+  "lectureBuilder.avatar.sortCreated": "登録順",
 });
 registerTranslations("vi", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -2284,6 +2304,11 @@ registerTranslations("vi", {
   "lectureBuilder.avatar.editDesc": "Mô tả",
   "lectureBuilder.avatar.editSave": "Lưu",
   "lectureBuilder.avatar.updated": "Avatar đã được cập nhật",
+  "lectureBuilder.avatar.avatarCount": "avatar",
+  "lectureBuilder.avatar.sortFavorite": "Yêu thích trước",
+  "lectureBuilder.avatar.sortRecent": "Dùng gần đây",
+  "lectureBuilder.avatar.sortName": "Theo tên",
+  "lectureBuilder.avatar.sortCreated": "Theo ngày thêm",
 });
 registerTranslations("th", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -2741,6 +2766,11 @@ registerTranslations("th", {
   "lectureBuilder.avatar.editDesc": "คำอธิบาย",
   "lectureBuilder.avatar.editSave": "บันทึก",
   "lectureBuilder.avatar.updated": "อัปเดตอวาตาร์สำเร็จ",
+  "lectureBuilder.avatar.avatarCount": "อวาตาร์",
+  "lectureBuilder.avatar.sortFavorite": "รายการโปรดก่อน",
+  "lectureBuilder.avatar.sortRecent": "ใช้ล่าสุด",
+  "lectureBuilder.avatar.sortName": "ตามชื่อ",
+  "lectureBuilder.avatar.sortCreated": "ตามวันที่เพิ่ม",
 });
 registerTranslations("id", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -3198,6 +3228,11 @@ registerTranslations("id", {
   "lectureBuilder.avatar.editDesc": "Deskripsi",
   "lectureBuilder.avatar.editSave": "Simpan",
   "lectureBuilder.avatar.updated": "Avatar berhasil diperbarui",
+  "lectureBuilder.avatar.avatarCount": "avatar",
+  "lectureBuilder.avatar.sortFavorite": "Favorit dulu",
+  "lectureBuilder.avatar.sortRecent": "Terakhir digunakan",
+  "lectureBuilder.avatar.sortName": "Berdasarkan nama",
+  "lectureBuilder.avatar.sortCreated": "Berdasarkan tanggal",
 });
 registerTranslations("ms", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -3655,6 +3690,11 @@ registerTranslations("ms", {
   "lectureBuilder.avatar.editDesc": "Penerangan",
   "lectureBuilder.avatar.editSave": "Simpan",
   "lectureBuilder.avatar.updated": "Avatar berjaya dikemas kini",
+  "lectureBuilder.avatar.avatarCount": "avatar",
+  "lectureBuilder.avatar.sortFavorite": "Kegemaran dahulu",
+  "lectureBuilder.avatar.sortRecent": "Baru digunakan",
+  "lectureBuilder.avatar.sortName": "Mengikut nama",
+  "lectureBuilder.avatar.sortCreated": "Mengikut tarikh",
 });
 registerTranslations("es", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -4112,6 +4152,11 @@ registerTranslations("es", {
   "lectureBuilder.avatar.editDesc": "Descripción",
   "lectureBuilder.avatar.editSave": "Guardar",
   "lectureBuilder.avatar.updated": "Avatar actualizado exitosamente",
+  "lectureBuilder.avatar.avatarCount": "avatares",
+  "lectureBuilder.avatar.sortFavorite": "Favoritos primero",
+  "lectureBuilder.avatar.sortRecent": "Usados recientemente",
+  "lectureBuilder.avatar.sortName": "Por nombre",
+  "lectureBuilder.avatar.sortCreated": "Por fecha",
 });
 registerTranslations("fr", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -4569,6 +4614,11 @@ registerTranslations("fr", {
   "lectureBuilder.avatar.editDesc": "Description",
   "lectureBuilder.avatar.editSave": "Enregistrer",
   "lectureBuilder.avatar.updated": "Avatar mis à jour avec succès",
+  "lectureBuilder.avatar.avatarCount": "avatars",
+  "lectureBuilder.avatar.sortFavorite": "Favoris d'abord",
+  "lectureBuilder.avatar.sortRecent": "Récemment utilisés",
+  "lectureBuilder.avatar.sortName": "Par nom",
+  "lectureBuilder.avatar.sortCreated": "Par date d'ajout",
 });
 registerTranslations("de", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -5026,6 +5076,11 @@ registerTranslations("de", {
   "lectureBuilder.avatar.editDesc": "Beschreibung",
   "lectureBuilder.avatar.editSave": "Speichern",
   "lectureBuilder.avatar.updated": "Avatar erfolgreich aktualisiert",
+  "lectureBuilder.avatar.avatarCount": "Avatare",
+  "lectureBuilder.avatar.sortFavorite": "Favoriten zuerst",
+  "lectureBuilder.avatar.sortRecent": "Zuletzt verwendet",
+  "lectureBuilder.avatar.sortName": "Nach Name",
+  "lectureBuilder.avatar.sortCreated": "Nach Datum",
 });
 registerTranslations("pt", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -5483,6 +5538,11 @@ registerTranslations("pt", {
   "lectureBuilder.avatar.editDesc": "Descrição",
   "lectureBuilder.avatar.editSave": "Salvar",
   "lectureBuilder.avatar.updated": "Avatar atualizado com sucesso",
+  "lectureBuilder.avatar.avatarCount": "avatares",
+  "lectureBuilder.avatar.sortFavorite": "Favoritos primeiro",
+  "lectureBuilder.avatar.sortRecent": "Usados recentemente",
+  "lectureBuilder.avatar.sortName": "Por nome",
+  "lectureBuilder.avatar.sortCreated": "Por data",
 });
 registerTranslations("ru", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -5940,6 +6000,11 @@ registerTranslations("ru", {
   "lectureBuilder.avatar.editDesc": "Описание",
   "lectureBuilder.avatar.editSave": "Сохранить",
   "lectureBuilder.avatar.updated": "Аватар успешно обновлён",
+  "lectureBuilder.avatar.avatarCount": "аватаров",
+  "lectureBuilder.avatar.sortFavorite": "Избранные первыми",
+  "lectureBuilder.avatar.sortRecent": "Недавно использованные",
+  "lectureBuilder.avatar.sortName": "По имени",
+  "lectureBuilder.avatar.sortCreated": "По дате добавления",
 });
 registerTranslations("ar", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -6397,6 +6462,11 @@ registerTranslations("ar", {
   "lectureBuilder.avatar.editDesc": "الوصف",
   "lectureBuilder.avatar.editSave": "حفظ",
   "lectureBuilder.avatar.updated": "تم تحديث الأفاتار بنجاح",
+  "lectureBuilder.avatar.avatarCount": "صور رمزية",
+  "lectureBuilder.avatar.sortFavorite": "المفضلة أولاً",
+  "lectureBuilder.avatar.sortRecent": "المستخدمة مؤخراً",
+  "lectureBuilder.avatar.sortName": "حسب الاسم",
+  "lectureBuilder.avatar.sortCreated": "حسب التاريخ",
 });
 registerTranslations("hi", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -6854,6 +6924,11 @@ registerTranslations("hi", {
   "lectureBuilder.avatar.editDesc": "विवरण",
   "lectureBuilder.avatar.editSave": "सहेजें",
   "lectureBuilder.avatar.updated": "अवतार सफलतापूर्वक अपडेट किया गया",
+  "lectureBuilder.avatar.avatarCount": "अवतार",
+  "lectureBuilder.avatar.sortFavorite": "पसंदीदा पहले",
+  "lectureBuilder.avatar.sortRecent": "हाल ही में उपयोग किया गया",
+  "lectureBuilder.avatar.sortName": "नाम से",
+  "lectureBuilder.avatar.sortCreated": "तारीख से",
 });
 registerTranslations("it", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -7311,6 +7386,11 @@ registerTranslations("it", {
   "lectureBuilder.avatar.editDesc": "Descrizione",
   "lectureBuilder.avatar.editSave": "Salva",
   "lectureBuilder.avatar.updated": "Avatar aggiornato con successo",
+  "lectureBuilder.avatar.avatarCount": "অবতার",
+  "lectureBuilder.avatar.sortFavorite": "পছন্দের আগে",
+  "lectureBuilder.avatar.sortRecent": "সম্প্রতি ব্যবহৃত",
+  "lectureBuilder.avatar.sortName": "নাম অনুসারে",
+  "lectureBuilder.avatar.sortCreated": "তারিখ অনুসারে",
 });
 registerTranslations("nl", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -7768,6 +7848,11 @@ registerTranslations("nl", {
   "lectureBuilder.avatar.editDesc": "Beschrijving",
   "lectureBuilder.avatar.editSave": "Opslaan",
   "lectureBuilder.avatar.updated": "Avatar succesvol bijgewerkt",
+  "lectureBuilder.avatar.avatarCount": "avatar",
+  "lectureBuilder.avatar.sortFavorite": "Favoriler önce",
+  "lectureBuilder.avatar.sortRecent": "Son kullanılan",
+  "lectureBuilder.avatar.sortName": "Ada göre",
+  "lectureBuilder.avatar.sortCreated": "Tarihe göre",
 });
 registerTranslations("pl", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -8225,6 +8310,11 @@ registerTranslations("pl", {
   "lectureBuilder.avatar.editDesc": "Opis",
   "lectureBuilder.avatar.editSave": "Zapisz",
   "lectureBuilder.avatar.updated": "Awatar zaktualizowany pomyślnie",
+  "lectureBuilder.avatar.avatarCount": "avatar",
+  "lectureBuilder.avatar.sortFavorite": "Preferiti prima",
+  "lectureBuilder.avatar.sortRecent": "Usati di recente",
+  "lectureBuilder.avatar.sortName": "Per nome",
+  "lectureBuilder.avatar.sortCreated": "Per data",
 });
 registerTranslations("sv", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -8682,6 +8772,11 @@ registerTranslations("sv", {
   "lectureBuilder.avatar.editDesc": "Beskrivning",
   "lectureBuilder.avatar.editSave": "Spara",
   "lectureBuilder.avatar.updated": "Avatar uppdaterad framgångsrikt",
+  "lectureBuilder.avatar.avatarCount": "awatarów",
+  "lectureBuilder.avatar.sortFavorite": "Ulubione najpierw",
+  "lectureBuilder.avatar.sortRecent": "Ostatnio używane",
+  "lectureBuilder.avatar.sortName": "Wg nazwy",
+  "lectureBuilder.avatar.sortCreated": "Wg daty",
 });
 registerTranslations("tr", {
   "lectureBuilder.stringLiteral0": "TBD: 아바타 선택",
@@ -9139,4 +9234,9 @@ registerTranslations("tr", {
   "lectureBuilder.avatar.editDesc": "Açıklama",
   "lectureBuilder.avatar.editSave": "Kaydet",
   "lectureBuilder.avatar.updated": "Avatar başarıyla güncellendi",
+  "lectureBuilder.avatar.avatarCount": "avatars",
+  "lectureBuilder.avatar.sortFavorite": "Favorieten eerst",
+  "lectureBuilder.avatar.sortRecent": "Recent gebruikt",
+  "lectureBuilder.avatar.sortName": "Op naam",
+  "lectureBuilder.avatar.sortCreated": "Op datum",
 });
