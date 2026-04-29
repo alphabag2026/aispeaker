@@ -2173,3 +2173,10 @@
 - [x] TypeScript 에러 149개 수정 (placeholder= 패턴, 모듈 레벨 t() 호출, import 위치 등)
 - [x] TypeScript 빌드 0 에러 달성
 - [ ] 남은 288줄 한국어 하드코딩 i18n 변환 (toast, confirm, 중첩 데이터 등)
+
+## v4.4 버그 수정 및 UI 개선
+- [x] XPLAY 예시 텍스트를 AI Speaker로 변경
+- [x] 강의 포맷 선택 화면 UI 버그 수정 (선택 불가 문제) - scriptTemplates에 type/icon/themeColor 등 컬럼 추가 및 시드 데이터 삽입
+- [x] 공동작업자 초대 버튼 추가 - listByProject에서 소유자 정보 포함하도록 수정
+- [ ] 아바타 추가 DB 에러 수정 (userAvatars insert 실패) - SSH 차단으로 프로덕션 DB 확인 불가, 코드 레벨 수정 완료 (db.getUser→db.getUserById)
+- [x] Manus 단어 전체 제거 - ProductionStudio에서 Manus AI 참조 제거

@@ -8471,7 +8471,23 @@ Return a JSON object with a "sections" array. Each section has:
         const isOwner = project.userId === ctx.user.id;
         const isCollab = await db.isProjectCollaborator(input.projectId, ctx.user.id);
         if (!isOwner && !isCollab) throw new TRPCError({ code: "FORBIDDEN" });
-        return db.getProjectCollaborators(input.projectId);
+        const collaborators = await db.getProjectCollaborators(input.projectId);
+        // Include owner as first entry with isMe flag
+        const ownerUser = await db.getUserById(project.userId);
+        const ownerEntry = {
+          id: 0,
+          projectId: input.projectId,
+          userId: project.userId,
+          role: "owner" as const,
+          inviteStatus: "accepted" as const,
+          inviteEmail: ownerUser?.email || null,
+          createdAt: project.createdAt,
+          userName: ownerUser?.name || "Owner",
+          userEmail: ownerUser?.email || null,
+          userAvatar: ownerUser?.avatarUrl || null,
+          isMe: project.userId === ctx.user.id,
+        };
+        return [ownerEntry, ...collaborators.map(c => ({ ...c, isMe: c.userId === ctx.user.id }))];
       }),
 
     // 내가 참여 중인 협업 프로젝트 목록
