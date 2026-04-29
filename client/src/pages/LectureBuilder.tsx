@@ -106,8 +106,8 @@ export default function LectureBuilder() {
     { id: projectId! },
     { enabled: !!projectId }
   );
-  const facesQuery = trpc.sampleFace.list.useQuery({});
-  const voicesQuery = trpc.tts.voices.useQuery();
+  const facesQuery = trpc.sampleFace.list.useQuery({}, { enabled: !!projectId });
+  const voicesQuery = trpc.tts.voices.useQuery(undefined, { enabled: !!projectId });
 
   // Mutations
   const createProject = trpc.lectureBuilder.createProject.useMutation({
@@ -222,7 +222,18 @@ export default function LectureBuilder() {
           <PendingInvitationsPanel />
 
           {projectsQuery.isLoading ?
-          <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> :
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1,2,3].map(i => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6 space-y-3">
+                  <div className="h-5 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                  <div className="h-3 bg-muted rounded w-full" />
+                  <div className="h-3 bg-muted rounded w-2/3" />
+                </CardContent>
+              </Card>
+            ))}
+          </div> :
           !projectsQuery.data?.length ?
           <Card className="border-dashed border-2 py-20">
               <CardContent className="flex flex-col items-center text-center">
@@ -336,7 +347,19 @@ export default function LectureBuilder() {
       {/* Step Content */}
       <div className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full">
         {fullProjectQuery.isLoading ?
-        <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> :
+        <div className="space-y-6 animate-pulse">
+          <div className="flex gap-4">
+            <div className="w-32 h-32 bg-muted rounded-xl" />
+            <div className="flex-1 space-y-3">
+              <div className="h-6 bg-muted rounded w-1/3" />
+              <div className="h-4 bg-muted rounded w-2/3" />
+              <div className="h-4 bg-muted rounded w-1/2" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {[1,2,3].map(i => <div key={i} className="h-40 bg-muted rounded-xl" />)}
+          </div>
+        </div> :
 
         <>
             {currentStep === 1 &&
@@ -2368,7 +2391,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
     onError: (e: any) => toast.error(e.message)
   });
 
-  const voicesQuery = trpc.tts.voices.useQuery();
+  const voicesQuery = trpc.tts.voices.useQuery(undefined, { enabled: !!projectId });
   const generateAllTtsMut = trpc.lectureBuilder.generateAllInterpreterTts.useMutation({
     onSuccess: (data) => toast.success(`${data.generated}/${data.total}개 통역 오디오 생성 완료`),
     onError: (e: any) => toast.error(e.message)
