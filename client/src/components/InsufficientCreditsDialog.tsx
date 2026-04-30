@@ -69,7 +69,7 @@ export default function InsufficientCreditsDialog({
           {/* Credit bar */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>보유: <span className="text-foreground font-medium">{currentCredits}</span> 크레딧</span>
+              <span>{t("insufficientCreditsDialog.hardcoded1")}: <span className="text-foreground font-medium">{currentCredits}</span></span>
               <span className="text-red-400">{t("insufficientCreditsDialog.deficit")}</span>
             </div>
             <Progress value={percentage} className="h-2" />

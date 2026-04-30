@@ -13,7 +13,7 @@ import { Badge } from "./ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const ROLE_LABELS: Record<string, { label: string; icon: any; color: string }> = {
-  owner: { label: "소유자", icon: Crown, color: "text-amber-500" },
+  owner: { label: t("projectCollaborationPanel.hardcoded1"), icon: Crown, color: "text-amber-500" },
   presenter: { label: "projectCollaborationPanel.rolePresenter", icon: User, color: "text-blue-500" },
   editor: { label: "projectCollaborationPanel.roleEditor", icon: User, color: "text-green-500" },
   viewer: { label: "projectCollaborationPanel.roleViewer", icon: User, color: "text-gray-500" },
@@ -24,15 +24,15 @@ export function ProjectCollaborationPanel({ projectId }: { projectId: string }) 
   const utils = trpc.useUtils();
   const collaborators = trpc.collaboration.listByProject.useQuery({ projectId: parseInt(projectId) });
   const inviteMut = trpc.collaboration.invite.useMutation({
-    onSuccess: () => { utils.collaboration.listByProject.invalidate({ projectId: parseInt(projectId) }); setOpen(false); setEmail(""); toast.success("초대가 전송되었습니다."); },
+    onSuccess: () => { utils.collaboration.listByProject.invalidate({ projectId: parseInt(projectId) }); setOpen(false); setEmail(""); toast.success(t("projectCollaborationPanel.hardcoded2")); },
     onError: (err: any) => { toast.error(err.message); },
   });
   const removeMut = trpc.collaboration.remove.useMutation({
-    onSuccess: () => { utils.collaboration.listByProject.invalidate({ projectId: parseInt(projectId) }); toast.success("제거되었습니다."); },
+    onSuccess: () => { utils.collaboration.listByProject.invalidate({ projectId: parseInt(projectId) }); toast.success(t("projectCollaborationPanel.hardcoded3")); },
     onError: (err: any) => { toast.error(err.message); },
   });
   const updateRoleMut = trpc.collaboration.updateRole.useMutation({
-    onSuccess: () => { utils.collaboration.listByProject.invalidate({ projectId: parseInt(projectId) }); toast.success("역할이 업데이트되었습니다."); },
+    onSuccess: () => { utils.collaboration.listByProject.invalidate({ projectId: parseInt(projectId) }); toast.success(t("projectCollaborationPanel.hardcoded4")); },
     onError: (err: any) => { toast.error(err.message); },
   });
 
@@ -56,7 +56,7 @@ export function ProjectCollaborationPanel({ projectId }: { projectId: string }) 
   };
 
   const handleInvite = () => {
-    if (!email) return toast.error("이메일을 입력해주세요.");
+    if (!email) return toast.error(t("projectCollaborationPanel.hardcoded5"));
     inviteMut.mutate({ projectId: parseInt(projectId), email, role });
   };
 

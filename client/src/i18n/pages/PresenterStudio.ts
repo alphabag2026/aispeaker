@@ -23,6 +23,7 @@ registerTranslations("ko", {
   "presenterStudio.chat.title": "채팅",
   "presenterStudio.chat.placeholder": "메시지를 입력하세요...",
   "presenterStudio.viewers.viewer": "시청자",
+  "presenterStudio.hardcoded1": "프로젝트 소유자에게 발표자 역할로 초대를 요청하세요.",
 });
 
 registerTranslations("en", {

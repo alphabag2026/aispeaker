@@ -301,7 +301,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-8 border-b border-border/50 rounded-none bg-transparent px-0 pb-2 mb-6">
             <TabsTrigger value="users" className="rounded-none"><Users className="w-4 h-4 mr-2" />{t("ad.users")}</TabsTrigger>
-            <TabsTrigger value="stats" className="rounded-none"><BarChart3 className="w-4 h-4 mr-2" />통계</TabsTrigger>
+            <TabsTrigger value="stats" className="rounded-none"><BarChart3 className="w-4 h-4 mr-2" />{t("adminDashboard.hardcoded1")}</TabsTrigger>
             <TabsTrigger value="presetRank" className="rounded-none"><TrendingUp className="w-4 h-4 mr-2" />{t("ad.tabs.presetRank")}</TabsTrigger>
             <TabsTrigger value="revenue" className="rounded-none"><CreditCard className="w-4 h-4 mr-2" />{t("ad.revenue")}</TabsTrigger>
             <TabsTrigger value="samples" className="rounded-none"><Image className="w-4 h-4 mr-2" />{t("ad.samples")}</TabsTrigger>
@@ -740,7 +740,7 @@ function UserStatsPanel() {
       <div className="flex gap-2">
         {[7, 30, 90].map(d => (
           <Button key={d} size="sm" variant={days === d ? "default" : "outline"} onClick={() => setDays(d)}>
-            {d}일
+            {d}d
           </Button>
         ))}
       </div>
@@ -748,7 +748,7 @@ function UserStatsPanel() {
       {/* Signup Chart */}
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Users className="w-4 h-4" /> {t("ad.stats.signupTrend")} ({days}일)</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><Users className="w-4 h-4" /> {t("ad.stats.signupTrend")} ({days}d)</CardTitle>
         </CardHeader>
         <CardContent>
           {Recharts && signups && signups.length > 0 ? (
@@ -770,7 +770,7 @@ function UserStatsPanel() {
       {/* Activity Chart */}
       <Card className="border-border/50">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4" /> {t("ad.stats.activityTrend")} ({days}일)</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4" /> {t("ad.stats.activityTrend")} ({days}d)</CardTitle>
         </CardHeader>
         <CardContent>
           {Recharts && activity && activity.length > 0 ? (

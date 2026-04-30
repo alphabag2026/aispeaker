@@ -98,7 +98,7 @@ export default function PaymentSuccess() {
               <Link href="/onboarding">
                 <Button className="w-full bg-purple-600 hover:bg-purple-700">
                   <Rocket className="w-4 h-4 mr-2" />
-                  {t("ps.gettingStarted")} {/* 시작 가이드 */}
+                  {t("ps.gettingStarted")}
                 </Button>
               </Link>
               <div className="flex flex-col sm:flex-row gap-3">

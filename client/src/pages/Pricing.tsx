@@ -92,15 +92,15 @@ export default function Pricing() {
     { action: t("pp.ci.voice_mod"), credits: 5, description: t("pp.ci.voice_mod_desc") },
     { action: t("pp.ci.live"), credits: 10, description: t("pp.ci.live_desc") },
     // v8.1 AI Studio features
-    { action: "AI 이미지 생성", credits: 5, description: "AI Studio 이미지 생성 1건" },
-    { action: "배경 제거/교체", credits: 3, description: "AI 배경 제거 또는 교체 1건" },
-    { action: "음성 복제", credits: 5, description: "음성 복제(Voice Clone) 1건" },
-    { action: "음성 변환", credits: 3, description: "음성 변환(Voice Change) 1건" },
-    { action: "비디오 이펙트", credits: 15, description: "V2V 스타일 변환 1건" },
-    { action: "이미지→비디오", credits: 20, description: "Kling I2V 생성 1건" },
-    { action: "페이스 스왑", credits: 25, description: "AI 얼굴 변환 1건" },
-    { action: "토킹 아바타", credits: 20, description: "AI 토킹 아바타 1건" },
-    { action: "비디오 번역", credits: 30, description: "AI 비디오 번역 1건" },
+    { action: t("pricing.credit.image"), credits: 5, description: t("pricing.credit.image_desc") },
+    { action: t("pricing.credit.background"), credits: 3, description: t("pricing.credit.background_desc") },
+    { action: t("pricing.credit.voice_clone"), credits: 5, description: t("pricing.credit.voice_clone_desc") },
+    { action: t("pricing.credit.voice_change"), credits: 3, description: t("pricing.credit.voice_change_desc") },
+    { action: t("pricing.credit.video_effect"), credits: 15, description: t("pricing.credit.video_effect_desc") },
+    { action: t("pricing.credit.i2v"), credits: 20, description: t("pricing.credit.i2v_desc") },
+    { action: t("pricing.credit.face_swap"), credits: 25, description: t("pricing.credit.face_swap_desc") },
+    { action: t("pricing.credit.talking_avatar"), credits: 20, description: t("pricing.credit.talking_avatar_desc") },
+    { action: t("pricing.credit.video_translate"), credits: 30, description: t("pricing.credit.video_translate_desc") },
   ];
 
   const handleSubscribe = async (planSlug: string) => {
@@ -633,7 +633,7 @@ export default function Pricing() {
         </div>
         <div className="text-center mt-6">
           <a href="/payment-troubleshooting" className="text-sm text-purple-400 hover:text-purple-300 underline underline-offset-4">
-            {t("pp.faq.troubleshoot")} {/* 문제 해결 가이드 */}
+            {t("pp.faq.troubleshoot")}
           </a>
         </div>
       </div>

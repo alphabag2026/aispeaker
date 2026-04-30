@@ -37,17 +37,17 @@ export default function ScormExport() {
       packagesQuery.refetch();
     },
     onError: (err) => {
-      toast.error(`생성 실패: ${err.message}`);
+      toast.error(`Generation failed: ${err.message}`);
     },
   });
   const downloadMutation = trpc.scorm.download.useMutation({
     onSuccess: (data) => {
       window.open(data.url, "_blank");
-      toast.success("다운로드 시작");
+      toast.success(t("scormExport.downloadStart"));
       packagesQuery.refetch();
     },
     onError: (err) => {
-      toast.error(`다운로드 실패: ${err.message}`);
+      toast.error(`Download failed: ${err.message}`);
     },
   });
 
@@ -222,10 +222,10 @@ export default function ScormExport() {
               <div>
                 <h3 className="font-semibold text-lg mb-1">{t("scormExport.infoBannerTitle")}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
-                  SCORM(Sharable Content Object Reference Model)은 e-러닝 콘텐츠의 국제 표준입니다. 
-                  생성된 패키지를 Moodle, Canvas, Blackboard 등 LMS에 업로드하면 학습 진행률, 완료 여부, 
-                  소요 시간 등을 자동으로 추적할 수 있습니다. xAPI(Experience API) 문장도 함께 포함되어 
-                  더 세밀한 학습 분석이 가능합니다.
+                  {t("scormExport.hardcoded1")} 
+                  {t("scormExport.hardcoded2")} 
+                  {t("scormExport.hardcoded3")} 
+                  {t("scormExport.hardcoded4")}
                 </p>
               </div>
             </div>
@@ -241,8 +241,8 @@ export default function ScormExport() {
           <Card className="bg-[#1a1a2e] border-gray-800">
             <CardContent className="flex flex-col items-center justify-center py-20">
               <Package className="w-16 h-16 text-gray-600 mb-4" />
-              <h3 className="text-lg font-medium text-gray-400 mb-2">아직 생성된 패키지가 없습니다</h3>
-              <p className="text-gray-500 text-sm mb-4">완료된 파이프라인에서 SCORM 패키지를 {t("scormExport.buttonGenerate")}해보세요.</p>
+              <h3 className="text-lg font-medium text-gray-400 mb-2">{t("scormExport.hardcoded1")}</h3>
+              <p className="text-gray-500 text-sm mb-4">{t("scormExport.hardcoded5")}</p>
               <Button onClick={() => setIsDialogOpen(true)} className="bg-purple-600 hover:bg-purple-700">
                 <Package className="w-4 h-4 mr-2" />{t("scormExport.buttonFirstPackage")}
               </Button>
@@ -273,7 +273,7 @@ export default function ScormExport() {
                           {pkg.downloadCount > 0 && (
                             <>
                               <span>·</span>
-                              <span>{t("scormExport.buttonDownload")} {pkg.downloadCount}회</span>
+                              <span>{t("scormExport.buttonDownload")} {pkg.downloadCount}</span>
                             </>
                           )}
                           <span>·</span>
@@ -302,9 +302,9 @@ export default function ScormExport() {
                   <div className="mt-3 flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {t("scormExport.completionCriteriaLabel")}: {pkg.completionCriteria === "slide_view" ? t("scormExport.optionSlideView") : pkg.completionCriteria === "quiz_pass" ? t("scormExport.optionQuizPass") : `최소 ${pkg.minTimeSec}초`}
+                      {t("scormExport.completionCriteriaLabel")}: {pkg.completionCriteria === "slide_view" ? t("scormExport.optionSlideView") : pkg.completionCriteria === "quiz_pass" ? t("scormExport.optionQuizPass") : `${pkg.minTimeSec}s min`}
                     </span>
-                    {pkg.includeSubtitles && <span>자막 포함</span>}
+                    {pkg.includeSubtitles && <span>{t("{i18n_key}")}</span>}
                     {pkg.includeThumbnail && <span>{t("scormExport.labelIncludeThumbnail")}</span>}
                   </div>
                 </CardContent>

@@ -281,7 +281,7 @@ export default function VideoEffectsStudio() {
 
                 {/* URL input fallback */}
                 <div>
-                  <Label className="text-xs text-muted-foreground">또는 이미지 URL 입력</Label>
+                  <Label className="text-xs text-muted-foreground">{t("videoEffectsStudio.hardcoded1")}</Label>
                   <Input
                     placeholder="https://example.com/image.jpg"
                     value={imageUrl}
@@ -301,7 +301,7 @@ export default function VideoEffectsStudio() {
                   ) : (
                     <Sparkles className="h-4 w-4" />
                   )}
-                  {taskId && !resultUrl ? "처리 중..." : "효과 적용"}
+                  {taskId && !resultUrl ? t("videoEffectsStudio.hardcoded2") : t("videoEffectsStudio.hardcoded3")}
                 </Button>
               </CardContent>
             </Card>
@@ -311,7 +311,7 @@ export default function VideoEffectsStudio() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Film className="h-4 w-4 text-pink-400" />
-                  결과
+                  {t("videoEffectsStudio.hardcoded1")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -337,7 +337,7 @@ export default function VideoEffectsStudio() {
                         onClick={handleReset}
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
-                        새로 만들기
+                        {t("videoEffectsStudio.hardcoded2")}
                       </Button>
                     </div>
                     <ShareToGalleryButton mediaUrl={resultUrl} mediaType="video" toolUsed="video-effects" />
@@ -345,13 +345,13 @@ export default function VideoEffectsStudio() {
                 ) : taskId ? (
                   <div className="flex flex-col items-center justify-center py-8">
                     <Loader2 className="h-10 w-10 animate-spin text-violet-400/50 mb-3" />
-                    <p className="text-sm text-muted-foreground">AI가 비디오를 생성하고 있습니다...</p>
-                    <p className="text-xs text-muted-foreground mt-1">보통 30초~2분 소요됩니다</p>
+                    <p className="text-sm text-muted-foreground">{t("videoEffectsStudio.hardcoded4")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("videoEffectsStudio.hardcoded5")}</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                     <Film className="h-12 w-12 mb-3 opacity-20" />
-                    <p className="text-sm">효과를 선택하고 이미지를 업로드하세요</p>
+                    <p className="text-sm">{t("videoEffectsStudio.hardcoded6")}</p>
                   </div>
                 )}
               </CardContent>

@@ -303,14 +303,14 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
       const result = await createSessionMut.mutateAsync({
         projectId,
         insertContentId: insertContentId,
-        title: `화이트보드 협업`,
+        title: t("whiteboardEditor.hardcoded1"),
       });
       setSessionCode(result.sessionCode);
       setCollabMode(true);
       collab.connect(result.sessionCode, user.id, user.name || `User ${user.id}`);
-      toast.success("협업 세션이 생성되었습니다");
+      toast.success(t("whiteboardEditor.hardcoded2"));
     } catch (err: any) {
-      toast.error(err.message || "세션 생성 실패");
+      toast.error(err.message || t("whiteboardEditor.hardcoded3"));
     }
   };
 
@@ -319,14 +319,14 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
     setSessionCode(joinCode.trim());
     setCollabMode(true);
     collab.connect(joinCode.trim(), user.id, user.name || `User ${user.id}`);
-    toast.success("세션에 참여합니다...");
+    toast.success(t("whiteboardEditor.hardcoded4"));
   };
 
   const handleLeaveSession = () => {
     collab.disconnect();
     setCollabMode(false);
     setSessionCode("");
-    toast.info("협업 세션에서 나갔습니다");
+    toast.info(t("whiteboardEditor.hardcoded5"));
   };
 
   // AI Image generation
@@ -352,7 +352,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
           naturalWidth: img.width,
           naturalHeight: img.height,
         }]);
-        toast.success("AI 이미지가 화이트보드에 추가되었습니다");
+        toast.success(t("whiteboardEditor.hardcoded6"));
       };
       img.onerror = () => {
         // Even if image fails to load in browser, still add it
@@ -363,32 +363,32 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
           src: data.imageUrl || "",
           naturalWidth: 512, naturalHeight: 512,
         }]);
-        toast.success("AI 이미지가 추가되었습니다 (프리뷰 로딩 실패)");
+        toast.success(t("whiteboardEditor.hardcoded7"));
       };
       img.src = data.imageUrl || "";
     },
-    onError: (e) => toast.error(`이미지 생성 실패: ${e.message}`),
+    onError: (e) => toast.error(`Image generation failed: ${e.message}`),
   });
 
   const renderWhiteboardMp4 = trpc.lectureBuilder.renderWhiteboardMp4.useMutation({
     onSuccess: (data) => {
       setIsExportingMp4(false);
-      toast.success(`화이트보드 MP4 생성 완료! (${data.duration.toFixed(1)}초, ${data.frames}프레임)`);
+      toast.success(`MP4 created! (${data.duration.toFixed(1)}s, ${data.frames} frames)`);
       onExportMp4?.(data.videoUrl);
     },
     onError: (e) => {
       setIsExportingMp4(false);
-      toast.error(`MP4 생성 실패: ${e.message}`);
+      toast.error(`MP4 failed: ${e.message}`);
     },
   });
 
   const handleExportMp4 = () => {
     if (!projectId || !insertContentId) {
-      toast.error("프로젝트 정보가 필요합니다");
+      toast.error(t("whiteboardEditor.hardcoded8"));
       return;
     }
     if (recordedStrokes.current.length === 0) {
-      toast.error("녹화된 애니메이션이 없습니다. 먼저 펜 애니메이션을 녹화하세요.");
+      toast.error(t("whiteboardEditor.hardcoded9"));
       return;
     }
     setIsExportingMp4(true);
@@ -418,7 +418,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
         fontFamily: "sans-serif",
       };
       setTexts(prev => [...prev, newText]);
-      toast.success("AI 콘텐츠가 화이트보드에 추가되었습니다");
+      toast.success(t("whiteboardEditor.hardcoded10"));
     },
     onError: (e) => toast.error(e.message),
   });
@@ -688,7 +688,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
   const stopRecording = () => {
     setIsRecording(false);
     const duration = Date.now() - recordStartTime.current;
-    toast.success(`녹화 완료! ${(duration / 1000).toFixed(1)}초, ${recordedStrokes.current.length}개 스트로크`);
+    toast.success(`Recording done! ${(duration / 1000).toFixed(1)}s, ${recordedStrokes.current.length} strokes`);
   };
 
   // --- Playback ---
@@ -764,7 +764,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
     setBgColor(tmpl.bgColor);
     setSelectedElement(null);
     setShowTemplates(false);
-    toast.success(`"${tmpl.name}" 템플릿이 적용되었습니다`);
+    toast.success(`"${tmpl.name}" applied`);
   };
 
   // --- Save ---
@@ -806,7 +806,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
 
   const toolButtons: { id: Tool; icon: any; label: string }[] = [
     { id: "select", icon: MousePointer, label: t("whiteboardEditor.toolSelect") },
-    { id: "pen", icon: Pen, label: "펜" },
+    { id: "pen", icon: Pen, label: "Pen" },
     { id: "eraser", icon: Eraser, label: t("whiteboardEditor.toolEraser") },
     { id: "text", icon: Type, label: t("whiteboardEditor.toolText") },
     { id: "image", icon: ImageIcon, label: t("whiteboardEditor.toolImage") },
@@ -933,7 +933,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
                 <Badge variant="destructive" className="text-xs gap-1"><WifiOff className="w-3 h-3" /> {t("whiteboardEditor.connecting")}</Badge>
               )}
               <Badge variant="outline" className="text-xs">
-                {collab.participants.length}명 참여 중
+                {collab.participants.length} online
               </Badge>
               {/* Participant avatars */}
               <div className="flex -space-x-1">
@@ -987,7 +987,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
           {t("whiteboardEditor.play")}
         </Button>
         {recordedStrokes.current.length > 0 && (
-          <Badge variant="outline" className="text-xs">{recordedStrokes.current.length}개 스트로크</Badge>
+          <Badge variant="outline" className="text-xs">{recordedStrokes.current.length} strokes</Badge>
         )}
         {recordedStrokes.current.length > 0 && projectId && insertContentId && (
           <div className="ml-auto">
@@ -1033,15 +1033,15 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
           <SelectContent>
             <SelectItem value="text">{t("whiteboardEditor.toolText")}</SelectItem>
             <SelectItem value="bullet_points">{t("whiteboardEditor.bulletPoints")}</SelectItem>
-            <SelectItem value="diagram">다이어그램</SelectItem>
-            <SelectItem value="equation">수식</SelectItem>
+            <SelectItem value="diagram">{t("whiteboardEditor.hardcoded11")}</SelectItem>
+            <SelectItem value="equation">{t("whiteboardEditor.hardcoded12")}</SelectItem>
             <SelectItem value="timeline">{t("whiteboardEditor.timeline")}</SelectItem>
           </SelectContent>
         </Select>
         <Input
           value={aiPrompt}
           onChange={e => setAiPrompt(e.target.value)}
-          placeholder="AI에게 화이트보드 내용을 요청하세요..."
+          placeholder={t("whiteboardEditor.hardcoded13")}
           className="h-7 text-xs flex-1"
           onKeyDown={e => {
             if (e.key === "Enter" && aiPrompt.trim()) {
@@ -1063,19 +1063,19 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
         <Select value={aiImageStyle} onValueChange={v => setAiImageStyle(v as any)}>
           <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="illustration">일러스트</SelectItem>
-            <SelectItem value="diagram">다이어그램</SelectItem>
-            <SelectItem value="infographic">인포그래픽</SelectItem>
-            <SelectItem value="sketch">스케치</SelectItem>
-            <SelectItem value="realistic">사실적</SelectItem>
-            <SelectItem value="cartoon">카툰</SelectItem>
-            <SelectItem value="minimalist">미니말</SelectItem>
+            <SelectItem value="illustration">{t("whiteboardEditor.hardcoded14")}</SelectItem>
+            <SelectItem value="diagram">{t("whiteboardEditor.hardcoded11")}</SelectItem>
+            <SelectItem value="infographic">{t("whiteboardEditor.hardcoded15")}</SelectItem>
+            <SelectItem value="sketch">{t("whiteboardEditor.hardcoded16")}</SelectItem>
+            <SelectItem value="realistic">{t("whiteboardEditor.hardcoded17")}</SelectItem>
+            <SelectItem value="cartoon">{t("whiteboardEditor.hardcoded18")}</SelectItem>
+            <SelectItem value="minimalist">{t("whiteboardEditor.hardcoded19")}</SelectItem>
           </SelectContent>
         </Select>
         <Input
           value={aiImagePrompt}
           onChange={e => setAiImagePrompt(e.target.value)}
-          placeholder="AI로 배경/일러스트 생성..."
+          placeholder={t("whiteboardEditor.hardcoded20")}
           className="h-7 text-xs flex-1"
           onKeyDown={e => {
             if (e.key === "Enter" && aiImagePrompt.trim()) {
@@ -1087,7 +1087,7 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
           disabled={!aiImagePrompt.trim() || generateAiImage.isPending}
           onClick={() => generateAiImage.mutate({ prompt: aiImagePrompt.trim(), style: aiImageStyle, language })}>
           {generateAiImage.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <ImageIcon className="w-3 h-3" />}
-          {t("whiteboardEditor.toolImage")} 생성
+          {t("whiteboardEditor.toolImage")}
         </Button>
       </div>
 
@@ -1121,13 +1121,13 @@ export default function WhiteboardEditor({ initialData, onSave, onExportMp4, wid
               <Textarea
                 value={textInput}
                 onChange={e => setTextInput(e.target.value)}
-                placeholder="텍스트를 입력하세요..."
+                placeholder={t("whiteboardEditor.hardcoded21")}
                 className="text-sm min-h-[60px]"
                 autoFocus
               />
               <div className="flex gap-1">
                 <Button size="sm" className="h-7 text-xs" onClick={confirmText}>{t("whiteboardEditor.confirmText")}</Button>
-                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingText(null)}>취소</Button>
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingText(null)}>{t("whiteboardEditor.hardcoded2")}</Button>
               </div>
             </div>
           </div>

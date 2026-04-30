@@ -15,10 +15,10 @@ import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "대기 중", color: "bg-yellow-500/20 text-yellow-400", icon: Clock },
-  generating: { label: "생성 중", color: "bg-blue-500/20 text-blue-400", icon: Loader2 },
-  completed: { label: "완료", color: "bg-green-500/20 text-green-400", icon: CheckCircle2 },
-  failed: { label: "실패", color: "bg-red-500/20 text-red-400", icon: AlertCircle },
+  pending: { label: t(t("videoHistory.hardcoded1")), color: "bg-yellow-500/20 text-yellow-400", icon: Clock },
+  generating: { label: t(t("videoHistory.hardcoded2")), color: "bg-blue-500/20 text-blue-400", icon: Loader2 },
+  completed: { label: t(t("videoHistory.hardcoded3")), color: "bg-green-500/20 text-green-400", icon: CheckCircle2 },
+  failed: { label: t(t("videoHistory.hardcoded4")), color: "bg-red-500/20 text-red-400", icon: AlertCircle },
 };
 
 export default function VideoHistory() {

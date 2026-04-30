@@ -475,6 +475,6 @@ otherLanguages.forEach(lang => {
     "home.cta.desc": "Choose your face and voice, and start lecturing on Zoom right away. Try it free with our free plan.",
     "home.cta.free": "Start for Free",
     "home.cta.compare": "Compare Plans",
-    "home.footer": "AI Speaker v3.0 — AI-Powered Virtual Lecture Automation Platform"
+    "home.footer": "AI Speaker v3.0 — AI-Powered Virtual Lecture Automation Platform",
   });
 });

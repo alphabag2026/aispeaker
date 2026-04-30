@@ -15,6 +15,19 @@ registerTranslations("ko", {
   "adminAnalytics.toolRankingTitle": "인기 도구 순위",
   "adminAnalytics.noToolData": "사용 데이터 없음",
   "adminAnalytics.useUnit": "회",
+  "adminAnalytics.hardcoded1": "음성 복제",
+  "adminAnalytics.hardcoded2": "음성 변환",
+  "adminAnalytics.hardcoded3": "이미지 생성",
+  "adminAnalytics.hardcoded4": "배경 제거",
+  "adminAnalytics.hardcoded5": "비디오 효과",
+  "adminAnalytics.hardcoded6": "이미지→비디오",
+  "adminAnalytics.hardcoded7": "페이스 스왑",
+  "adminAnalytics.hardcoded8": "토킹 아바타",
+  "adminAnalytics.hardcoded9": "비디오 번역",
+  "adminAnalytics.hardcoded10": "관리자 권한이 필요합니다",
+  "adminAnalytics.hardcoded11": "홈으로",
+  "adminAnalytics.hardcoded12": "관리자 분석 대시보드",
+  "adminAnalytics.hardcoded13": "전체 사용자",
 });
 
 registerTranslations("en", {

@@ -555,7 +555,7 @@ registerTranslations("ko", {
   "lectureBuilder.hardcoded.layoutsRecommended": "{count}개 슬라이드에 대한 레이아웃이 추천되었습니다",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4 내보내기 완료! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "슬라이드 {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "버전 {version}으로 복원하시겠습니까? 현재 스크립트가 대체됩니다."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "버전 {version}으로 복원하시겠습니까? 현재 스크립트가 대체됩니다.",
 });
 registerTranslations("en", {
   "lectureBuilder.stringLiteral0": "Select Avatar",
@@ -1113,7 +1113,7 @@ registerTranslations("en", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Layouts recommended for {count} slides",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4 export complete! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Slide {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Restore to version {version}? Current scripts will be replaced."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Restore to version {version}? Current scripts will be replaced.",
 });
 registerTranslations("zh", {
   "lectureBuilder.stringLiteral0": "选择头像",
@@ -1671,7 +1671,7 @@ registerTranslations("zh", {
   "lectureBuilder.hardcoded.layoutsRecommended": "已为{count}张幻灯片推荐布局",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4导出完成！({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "幻灯片 {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "恢复到版本{version}？当前脚本将被替换。"
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "恢复到版本{version}？当前脚本将被替换。",
 });
 registerTranslations("ja", {
   "lectureBuilder.stringLiteral0": "アバター選択",
@@ -2229,7 +2229,7 @@ registerTranslations("ja", {
   "lectureBuilder.hardcoded.layoutsRecommended": "{count}スライドのレイアウトが推薦されました",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4エクスポート完了！({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "スライド {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "バージョン{version}に復元しますか？現在のスクリプトが置き換えられます。"
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "バージョン{version}に復元しますか？現在のスクリプトが置き換えられます。",
 });
 registerTranslations("vi", {
   "lectureBuilder.stringLiteral0": "Chọn avatar",
@@ -2787,7 +2787,7 @@ registerTranslations("vi", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Đã đề xuất bố cục cho {count} slide",
   "lectureBuilder.hardcoded.mp4ExportComplete": "Xuất MP4 hoàn tất! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Slide {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Khôi phục về phiên bản {version}? Kịch bản hiện tại sẽ bị thay thế."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Khôi phục về phiên bản {version}? Kịch bản hiện tại sẽ bị thay thế.",
 });
 registerTranslations("th", {
   "lectureBuilder.stringLiteral0": "เลือกอวาตาร์",
@@ -3345,7 +3345,7 @@ registerTranslations("th", {
   "lectureBuilder.hardcoded.layoutsRecommended": "แนะนำเลย์เอาต์สำหรับ {count} สไลด์",
   "lectureBuilder.hardcoded.mp4ExportComplete": "ส่งออก MP4 เสร็จสิ้น! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "สไลด์ {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "กู้คืนเป็นเวอร์ชัน {version}? สคริปต์ปัจจุบันจะถูกแทนที่"
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "กู้คืนเป็นเวอร์ชัน {version}? สคริปต์ปัจจุบันจะถูกแทนที่",
 });
 registerTranslations("id", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -3903,7 +3903,7 @@ registerTranslations("id", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Tata letak direkomendasikan untuk {count} slide",
   "lectureBuilder.hardcoded.mp4ExportComplete": "Ekspor MP4 selesai! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Slide {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Pulihkan ke versi {version}? Skrip saat ini akan diganti."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Pulihkan ke versi {version}? Skrip saat ini akan diganti.",
 });
 registerTranslations("ms", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4461,7 +4461,7 @@ registerTranslations("ms", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Susun atur disyorkan untuk {count} slaid",
   "lectureBuilder.hardcoded.mp4ExportComplete": "Eksport MP4 selesai! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Slaid {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Pulihkan ke versi {version}? Skrip semasa akan diganti."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Pulihkan ke versi {version}? Skrip semasa akan diganti.",
 });
 registerTranslations("es", {
   "lectureBuilder.stringLiteral0": "Seleccionar avatar",
@@ -5019,7 +5019,7 @@ registerTranslations("es", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Diseños recomendados para {count} diapositivas",
   "lectureBuilder.hardcoded.mp4ExportComplete": "¡Exportación MP4 completada! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Diapositiva {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "¿Restaurar a la versión {version}? Los guiones actuales serán reemplazados."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "¿Restaurar a la versión {version}? Los guiones actuales serán reemplazados.",
 });
 registerTranslations("fr", {
   "lectureBuilder.stringLiteral0": "Sélection de l'avatar",
@@ -5577,7 +5577,7 @@ registerTranslations("fr", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Mises en page recommandées pour {count} diapositives",
   "lectureBuilder.hardcoded.mp4ExportComplete": "Export MP4 terminé ! ({size}Mo)",
   "lectureBuilder.hardcoded.slideAlt": "Diapositive {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Restaurer la version {version} ? Les scripts actuels seront remplacés."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Restaurer la version {version} ? Les scripts actuels seront remplacés.",
 });
 registerTranslations("de", {
   "lectureBuilder.stringLiteral0": "Avatar auswählen",
@@ -6135,7 +6135,7 @@ registerTranslations("de", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Layouts für {count} Folien empfohlen",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4-Export abgeschlossen! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Folie {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Auf Version {version} zurücksetzen? Aktuelle Skripte werden ersetzt."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Auf Version {version} zurücksetzen? Aktuelle Skripte werden ersetzt.",
 });
 registerTranslations("pt", {
   "lectureBuilder.stringLiteral0": "Selecionar avatar",
@@ -6693,7 +6693,7 @@ registerTranslations("pt", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Layouts recomendados para {count} slides",
   "lectureBuilder.hardcoded.mp4ExportComplete": "Exportação MP4 concluída! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Slide {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Restaurar para a versão {version}? Os roteiros atuais serão substituídos."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Restaurar para a versão {version}? Os roteiros atuais serão substituídos.",
 });
 registerTranslations("ru", {
   "lectureBuilder.stringLiteral0": "Выбор аватара",
@@ -7251,7 +7251,7 @@ registerTranslations("ru", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Макеты рекомендованы для {count} слайдов",
   "lectureBuilder.hardcoded.mp4ExportComplete": "Экспорт MP4 завершён! ({size}МБ)",
   "lectureBuilder.hardcoded.slideAlt": "Слайд {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Восстановить версию {version}? Текущие скрипты будут заменены."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Восстановить версию {version}? Текущие скрипты будут заменены.",
 });
 registerTranslations("ar", {
   "lectureBuilder.stringLiteral0": "اختيار الصورة الرمزية",
@@ -7809,7 +7809,7 @@ registerTranslations("ar", {
   "lectureBuilder.hardcoded.layoutsRecommended": "تم التوصية بتخطيطات لـ {count} شريحة",
   "lectureBuilder.hardcoded.mp4ExportComplete": "اكتمل تصدير MP4! ({size} ميجابايت)",
   "lectureBuilder.hardcoded.slideAlt": "شريحة {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "استعادة الإصدار {version}؟ سيتم استبدال النصوص الحالية."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "استعادة الإصدار {version}؟ سيتم استبدال النصوص الحالية.",
 });
 registerTranslations("hi", {
   "lectureBuilder.stringLiteral0": "अवतार चुनें",
@@ -8367,7 +8367,7 @@ registerTranslations("hi", {
   "lectureBuilder.hardcoded.layoutsRecommended": "{count} स्लाइड के लिए लेआउट अनुशंसित",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4 निर्यात पूर्ण! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "स्लाइड {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "संस्करण {version} पर पुनर्स्थापित करें? वर्तमान स्क्रिप्ट बदल दी जाएंगी।"
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "संस्करण {version} पर पुनर्स्थापित करें? वर्तमान स्क्रिप्ट बदल दी जाएंगी।",
 });
 registerTranslations("it", {
   "lectureBuilder.stringLiteral0": "Seleziona avatar",
@@ -8925,7 +8925,7 @@ registerTranslations("it", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Layout consigliati per {count} diapositive",
   "lectureBuilder.hardcoded.mp4ExportComplete": "Esportazione MP4 completata! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Diapositiva {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Ripristinare alla versione {version}? Gli script attuali verranno sostituiti."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Ripristinare alla versione {version}? Gli script attuali verranno sostituiti.",
 });
 registerTranslations("nl", {
   "lectureBuilder.stringLiteral0": "Avatar selecteren",
@@ -9483,7 +9483,7 @@ registerTranslations("nl", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Lay-outs aanbevolen voor {count} dia's",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4-export voltooid! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Dia {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Herstellen naar versie {version}? Huidige scripts worden vervangen."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Herstellen naar versie {version}? Huidige scripts worden vervangen.",
 });
 registerTranslations("pl", {
   "lectureBuilder.stringLiteral0": "Wybierz awatara",
@@ -10041,7 +10041,7 @@ registerTranslations("pl", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Układy zalecane dla {count} slajdów",
   "lectureBuilder.hardcoded.mp4ExportComplete": "Eksport MP4 zakończony! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Slajd {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Przywrócić do wersji {version}? Bieżące skrypty zostaną zastąpione."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Przywrócić do wersji {version}? Bieżące skrypty zostaną zastąpione.",
 });
 registerTranslations("sv", {
   "lectureBuilder.stringLiteral0": "Välj avatar",
@@ -10599,7 +10599,7 @@ registerTranslations("sv", {
   "lectureBuilder.hardcoded.layoutsRecommended": "Layouter rekommenderade för {count} bilder",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4-export klar! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Bild {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Återställ till version {version}? Nuvarande skript ersätts."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Återställ till version {version}? Nuvarande skript ersätts.",
 });
 registerTranslations("tr", {
   "lectureBuilder.stringLiteral0": "Avatar Seçimi",
@@ -11157,5 +11157,5 @@ registerTranslations("tr", {
   "lectureBuilder.hardcoded.layoutsRecommended": "{count} slayt için düzenler önerildi",
   "lectureBuilder.hardcoded.mp4ExportComplete": "MP4 dışa aktarma tamamlandı! ({size}MB)",
   "lectureBuilder.hardcoded.slideAlt": "Slayt {idx}",
-  "lectureBuilder.hardcoded.restoreVersionConfirm": "Sürüm {version}'e geri yüklensin mi? Mevcut komut dosyaları değiştirilecek."
+  "lectureBuilder.hardcoded.restoreVersionConfirm": "Sürüm {version}'e geri yüklensin mi? Mevcut komut dosyaları değiştirilecek.",
 });

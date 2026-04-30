@@ -94,6 +94,10 @@ registerTranslations("ko", {
   "onboardingTutorial.readyToUse": "이제 AI Speaker의 모든 기능을 활용할 준비가 되었습니다. 첫 번째 AI 강의 영상을 제작해보세요!",
   "onboardingTutorial.goToStudio": "제작 스튜디오로 이동",
   "onboardingTutorial.keepExploring": "계속 둘러보기",
+  "onboardingTutorial.hardcoded1": "AI 강의 플랫폼의 핵심 기능을 단계별로 안내합니다.",
+  "onboardingTutorial.hardcoded2": "아래 6단계를 따라하면 첫 AI 강의 영상을 제작하고 라이브 방송까지 진행할 수 있습니다.",
+  "onboardingTutorial.hardcoded3": "이제 AI Speaker의 모든 기능을 활용할 준비가 되었습니다.",
+  "onboardingTutorial.hardcoded4": "첫 번째 AI 강의 영상을 제작해보세요!",
 });
 
 registerTranslations("en", {

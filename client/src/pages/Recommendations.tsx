@@ -225,7 +225,7 @@ export default function Recommendations() {
                 <div key={item.id} className="flex items-center justify-between p-3 bg-[#1a1a2e] border border-gray-800 rounded-lg">
                   <div>
                     <p className="font-medium">{t("recommendations.history.courseLabel")}{item.listingId}</p>
-                    <p className="text-xs text-gray-400">{t("recommendations.history.progressLabel")}: {item.progressPercent}% | {t("recommendations.history.learningTimeLabel")}: {Math.round((item.watchTimeSec || 0) / 60)}분</p>
+                    <p className="text-xs text-gray-400">{t("recommendations.history.progressLabel")}: {item.progressPercent}% | {t("recommendations.history.learningTimeLabel")}: {Math.round((item.watchTimeSec || 0) / 60)}min</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {item.isCompleted ? (

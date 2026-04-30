@@ -40,7 +40,7 @@ registerTranslations("ko", {
   "ivp.no_voice_profiles": "음성 프로필이 없습니다",
   "ivp.create_first_profile_desc": "AI 강사가 사용할 음성 프로필을 만들어보세요.",
   "ivp.create_first_profile_button": "첫 프로필 만들기",
-  "ivp.preview_text": "안녕하세요, 저는 AI 강사입니다. 오늘 Web3에 대해 알아보겠습니다."
+  "ivp.preview_text": "안녕하세요, 저는 AI 강사입니다. 오늘 Web3에 대해 알아보겠습니다.",
 });
 
 registerTranslations("en", {
@@ -83,7 +83,7 @@ registerTranslations("en", {
   "ivp.no_voice_profiles": "No Voice Profiles",
   "ivp.create_first_profile_desc": "Create a voice profile for the AI instructor to use.",
   "ivp.create_first_profile_button": "Create First Profile",
-  "ivp.preview_text": "Hello, I am an AI instructor. Today we will learn about Web3."
+  "ivp.preview_text": "Hello, I am an AI instructor. Today we will learn about Web3.",
 });
 
 registerTranslations("zh", {
@@ -126,7 +126,7 @@ registerTranslations("zh", {
   "ivp.no_voice_profiles": "没有语音配置文件",
   "ivp.create_first_profile_desc": "为AI讲师创建一个语音配置文件。",
   "ivp.create_first_profile_button": "创建第一个配置文件",
-  "ivp.preview_text": "你好，我是AI讲师。今天我们将学习关于Web3的知识。"
+  "ivp.preview_text": "你好，我是AI讲师。今天我们将学习关于Web3的知识。",
 });
 
 registerTranslations("ja", {
@@ -169,7 +169,7 @@ registerTranslations("ja", {
   "ivp.no_voice_profiles": "音声プロファイルがありません",
   "ivp.create_first_profile_desc": "AI講師が使用する音声プロファイルを作成してください。",
   "ivp.create_first_profile_button": "最初のプロファイルを作成",
-  "ivp.preview_text": "こんにちは、私はAI講師です。今日はWeb3について学びましょう。"
+  "ivp.preview_text": "こんにちは、私はAI講師です。今日はWeb3について学びましょう。",
 });
 
 registerTranslations("vi", {
@@ -212,7 +212,7 @@ registerTranslations("vi", {
   "ivp.no_voice_profiles": "Không có hồ sơ giọng nói",
   "ivp.create_first_profile_desc": "Tạo hồ sơ giọng nói để giảng viên AI sử dụng.",
   "ivp.create_first_profile_button": "Tạo hồ sơ đầu tiên",
-  "ivp.preview_text": "Xin chào, tôi là giảng viên AI. Hôm nay chúng ta sẽ tìm hiểu về Web3."
+  "ivp.preview_text": "Xin chào, tôi là giảng viên AI. Hôm nay chúng ta sẽ tìm hiểu về Web3.",
 });
 
 registerTranslations("th", {
@@ -255,7 +255,7 @@ registerTranslations("th", {
   "ivp.no_voice_profiles": "ไม่มีโปรไฟล์เสียง",
   "ivp.create_first_profile_desc": "สร้างโปรไฟล์เสียงเพื่อให้ผู้สอน AI ใช้",
   "ivp.create_first_profile_button": "สร้างโปรไฟล์แรก",
-  "ivp.preview_text": "สวัสดี ฉันคือผู้สอน AI วันนี้เราจะมาเรียนรู้เกี่ยวกับ Web3"
+  "ivp.preview_text": "สวัสดี ฉันคือผู้สอน AI วันนี้เราจะมาเรียนรู้เกี่ยวกับ Web3",
 });
 
 registerTranslations("es", {
@@ -298,7 +298,7 @@ registerTranslations("es", {
   "ivp.no_voice_profiles": "No hay perfiles de voz",
   "ivp.create_first_profile_desc": "Crea un perfil de voz para que lo use el instructor de IA.",
   "ivp.create_first_profile_button": "Crear primer perfil",
-  "ivp.preview_text": "Hola, soy un instructor de IA. Hoy aprenderemos sobre Web3."
+  "ivp.preview_text": "Hola, soy un instructor de IA. Hoy aprenderemos sobre Web3.",
 });
 
 registerTranslations("fr", {
@@ -341,7 +341,7 @@ registerTranslations("fr", {
   "ivp.no_voice_profiles": "Aucun profil vocal",
   "ivp.create_first_profile_desc": "Créez un profil vocal à utiliser par l'instructeur IA.",
   "ivp.create_first_profile_button": "Créer le premier profil",
-  "ivp.preview_text": "Bonjour, je suis un instructeur IA. Aujourd'hui, nous allons en apprendre davantage sur le Web3."
+  "ivp.preview_text": "Bonjour, je suis un instructeur IA. Aujourd'hui, nous allons en apprendre davantage sur le Web3.",
 });
 
 registerTranslations("de", {
@@ -384,7 +384,7 @@ registerTranslations("de", {
   "ivp.no_voice_profiles": "Keine Sprachprofile",
   "ivp.create_first_profile_desc": "Erstellen Sie ein Sprachprofil, das der KI-Lehrer verwenden soll.",
   "ivp.create_first_profile_button": "Erstes Profil erstellen",
-  "ivp.preview_text": "Hallo, ich bin ein KI-Lehrer. Heute werden wir etwas über Web3 lernen."
+  "ivp.preview_text": "Hallo, ich bin ein KI-Lehrer. Heute werden wir etwas über Web3 lernen.",
 });
 
 registerTranslations("pt", {
@@ -427,7 +427,7 @@ registerTranslations("pt", {
   "ivp.no_voice_profiles": "Nenhum perfil de voz",
   "ivp.create_first_profile_desc": "Crie um perfil de voz para o instrutor de IA usar.",
   "ivp.create_first_profile_button": "Criar primeiro perfil",
-  "ivp.preview_text": "Olá, sou um instrutor de IA. Hoje vamos aprender sobre a Web3."
+  "ivp.preview_text": "Olá, sou um instrutor de IA. Hoje vamos aprender sobre a Web3.",
 });
 
 registerTranslations("ru", {
@@ -470,7 +470,7 @@ registerTranslations("ru", {
   "ivp.no_voice_profiles": "Нет голосовых профилей",
   "ivp.create_first_profile_desc": "Создайте голосовой профиль для использования ИИ-инструктором.",
   "ivp.create_first_profile_button": "Создать первый профиль",
-  "ivp.preview_text": "Здравствуйте, я ИИ-инструктор. Сегодня мы узнаем о Web3."
+  "ivp.preview_text": "Здравствуйте, я ИИ-инструктор. Сегодня мы узнаем о Web3.",
 });
 
 registerTranslations("ar", {
@@ -513,7 +513,7 @@ registerTranslations("ar", {
   "ivp.no_voice_profiles": "لا توجد ملفات تعريف صوتية",
   "ivp.create_first_profile_desc": "قم بإنشاء ملف تعريف صوتي ليستخدمه مدرب الذكاء الاصطناعي.",
   "ivp.create_first_profile_button": "إنشاء الملف الشخصي الأول",
-  "ivp.preview_text": "مرحبًا، أنا مدرب ذكاء اصطناعي. اليوم سنتعلم عن Web3."
+  "ivp.preview_text": "مرحبًا، أنا مدرب ذكاء اصطناعي. اليوم سنتعلم عن Web3.",
 });
 
 registerTranslations("hi", {
@@ -556,7 +556,7 @@ registerTranslations("hi", {
   "ivp.no_voice_profiles": "कोई आवाज़ प्रोफ़ाइल नहीं",
   "ivp.create_first_profile_desc": "AI प्रशिक्षक के उपयोग के लिए एक आवाज़ प्रोफ़ाइल बनाएं।",
   "ivp.create_first_profile_button": "पहली प्रोफ़ाइल बनाएं",
-  "ivp.preview_text": "नमस्ते, मैं एक AI प्रशिक्षक हूँ। आज हम Web3 के बारे में जानेंगे।"
+  "ivp.preview_text": "नमस्ते, मैं एक AI प्रशिक्षक हूँ। आज हम Web3 के बारे में जानेंगे।",
 });
 
 registerTranslations("id", {
@@ -599,7 +599,7 @@ registerTranslations("id", {
   "ivp.no_voice_profiles": "Tidak Ada Profil Suara",
   "ivp.create_first_profile_desc": "Buat profil suara untuk digunakan oleh instruktur AI.",
   "ivp.create_first_profile_button": "Buat Profil Pertama",
-  "ivp.preview_text": "Halo, saya instruktur AI. Hari ini kita akan belajar tentang Web3."
+  "ivp.preview_text": "Halo, saya instruktur AI. Hari ini kita akan belajar tentang Web3.",
 });
 
 registerTranslations("ms", {
@@ -642,7 +642,7 @@ registerTranslations("ms", {
   "ivp.no_voice_profiles": "Tiada Profil Suara",
   "ivp.create_first_profile_desc": "Cipta profil suara untuk digunakan oleh pengajar AI.",
   "ivp.create_first_profile_button": "Cipta Profil Pertama",
-  "ivp.preview_text": "Hello, saya pengajar AI. Hari ini kita akan belajar tentang Web3."
+  "ivp.preview_text": "Hello, saya pengajar AI. Hari ini kita akan belajar tentang Web3.",
 });
 
 registerTranslations("tr", {
@@ -685,7 +685,7 @@ registerTranslations("tr", {
   "ivp.no_voice_profiles": "Ses Profili Yok",
   "ivp.create_first_profile_desc": "Yapay zeka eğitmeninin kullanması için bir ses profili oluşturun.",
   "ivp.create_first_profile_button": "İlk Profili Oluştur",
-  "ivp.preview_text": "Merhaba, ben bir yapay zeka eğitmeniyim. Bugün Web3 hakkında bilgi edineceğiz."
+  "ivp.preview_text": "Merhaba, ben bir yapay zeka eğitmeniyim. Bugün Web3 hakkında bilgi edineceğiz.",
 });
 
 registerTranslations("it", {
@@ -728,7 +728,7 @@ registerTranslations("it", {
   "ivp.no_voice_profiles": "Nessun profilo vocale",
   "ivp.create_first_profile_desc": "Crea un profilo vocale da far utilizzare all'istruttore IA.",
   "ivp.create_first_profile_button": "Crea il primo profilo",
-  "ivp.preview_text": "Ciao, sono un istruttore IA. Oggi impareremo a conoscere il Web3."
+  "ivp.preview_text": "Ciao, sono un istruttore IA. Oggi impareremo a conoscere il Web3.",
 });
 
 registerTranslations("nl", {
@@ -771,7 +771,7 @@ registerTranslations("nl", {
   "ivp.no_voice_profiles": "Geen spraakprofielen",
   "ivp.create_first_profile_desc": "Maak een spraakprofiel aan voor de AI-instructeur om te gebruiken.",
   "ivp.create_first_profile_button": "Eerste profiel maken",
-  "ivp.preview_text": "Hallo, ik ben een AI-instructeur. Vandaag gaan we leren over Web3."
+  "ivp.preview_text": "Hallo, ik ben een AI-instructeur. Vandaag gaan we leren over Web3.",
 });
 
 registerTranslations("pl", {
@@ -814,7 +814,7 @@ registerTranslations("pl", {
   "ivp.no_voice_profiles": "Brak profili głosowych",
   "ivp.create_first_profile_desc": "Utwórz profil głosowy, z którego będzie korzystał instruktor AI.",
   "ivp.create_first_profile_button": "Utwórz pierwszy profil",
-  "ivp.preview_text": "Witaj, jestem instruktorem AI. Dzisiaj dowiemy się o Web3."
+  "ivp.preview_text": "Witaj, jestem instruktorem AI. Dzisiaj dowiemy się o Web3.",
 });
 
 registerTranslations("sv", {
@@ -857,5 +857,5 @@ registerTranslations("sv", {
   "ivp.no_voice_profiles": "Inga röstprofiler",
   "ivp.create_first_profile_desc": "Skapa en röstprofil som AI-instruktören kan använda.",
   "ivp.create_first_profile_button": "Skapa första profilen",
-  "ivp.preview_text": "Hej, jag är en AI-instruktör. Idag ska vi lära oss om Web3."
+  "ivp.preview_text": "Hej, jag är en AI-instruktör. Idag ska vi lära oss om Web3.",
 });

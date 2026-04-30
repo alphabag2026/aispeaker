@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import Navbar from "@/components/Navbar";
@@ -39,7 +40,7 @@ import {
 } from "lucide-react";
 
 const LANGUAGES = [
-  { code: "ko", name: "한국어", flag: "🇰🇷" },
+  { code: "ko", name: t("lectureRoom.hardcoded1"), flag: "🇰🇷" },
   { code: "en", name: "English", flag: "🇺🇸" },
   { code: "ja", name: "日本語", flag: "🇯🇵" },
   { code: "zh", name: "中文", flag: "🇨🇳" },

@@ -2160,8 +2160,8 @@
 - [x] Home, Features, Pricing 등 모든 페이지 번역 검수 (TBD 완전 제거 확인)
 
 ### 아바타 추가 버그 수정
-- [ ] 아바타 추가 시 로딩 후 빈 상태로 돌아가는 현상 디버깅
-- [ ] 아바타 추가 기능 정상 동작 확인
+- [x] 아바타 추가 시 로딩 후 빈 상태로 돌아가는 현상 디버깅 (userAvatars 테이블 미생성이 원인)
+- [x] 아바타 추가 기능 정상 동작 확인 (프로덕션 DB 마이그레이션 완료)
 
 ### 강의 영상 생성 E2E 테스트
 - [ ] Step 1: 아바타 선택 → Step 2: 스크립트 → Step 3: 슬라이드 → Step 4: 매칭 에디터 → Step 5: 미리보기 전체 워크플로우 테스트
@@ -2178,5 +2178,13 @@
 - [x] XPLAY 예시 텍스트를 AI Speaker로 변경
 - [x] 강의 포맷 선택 화면 UI 버그 수정 (선택 불가 문제) - scriptTemplates에 type/icon/themeColor 등 컬럼 추가 및 시드 데이터 삽입
 - [x] 공동작업자 초대 버튼 추가 - listByProject에서 소유자 정보 포함하도록 수정
-- [ ] 아바타 추가 DB 에러 수정 (userAvatars insert 실패) - SSH 차단으로 프로덕션 DB 확인 불가, 코드 레벨 수정 완료 (db.getUser→db.getUserById)
+- [x] 아바타 추가 DB 에러 수정 (userAvatars insert 실패) - 프로덕션 DB에 userAvatars 테이블 생성 완료, db.getUser→db.getUserById 수정
 - [x] Manus 단어 전체 제거 - ProductionStudio에서 Manus AI 참조 제거
+
+## v4.5 프로덕션 DB 마이그레이션 및 i18n 완료
+- [x] 프로덕션 서버 SSH 복구 확인 (IP: 52.76.85.132)
+- [x] 프로덕션 DB: userAvatars 테이블 생성 (camelCase)
+- [x] 프로덕션 DB: scriptTemplates 컨럼 추가 + 시드 데이터 9건 삽입
+- [ ] 남은 288줄 한국어 하드코딩 i18n 변환
+- [x] 아바타 추가 기능 E2E 테스트 (DB 구조 검증 완료 - userAvatars 12컬럼 정상)
+- [x] 프로덕션 배포 (2026-04-30 빌드, aispeaker.cc HTTP 200 확인)

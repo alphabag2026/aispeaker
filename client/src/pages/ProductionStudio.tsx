@@ -34,7 +34,7 @@ const getCATEGORIES = (t: (k: string) => string) => [
   { value: "blockchain", label: t("ps.catBlockchain") },
   { value: "defi", label: "DeFi" },
   { value: "nft", label: "NFT" },
-  { value: "metaverse", label: "메타버스" },
+  { value: "metaverse", label: t("productionStudio.hardcoded1") },
   { value: "general", label: t("ps.catGeneral") },
 ];
 
@@ -1701,7 +1701,7 @@ export default function ProductionStudio() {
 
                           return (
                             <div>
-                              {/* 슬라이드 미리보기 - grid grid-cols-3 thumbnail layout */}
+                              {/* Slide preview - grid grid-cols-3 thumbnail layout */}
                               <p className="text-sm text-muted-foreground mb-2">{t("ps.slidePreviewCount", { count: slides.length })}</p>
                               {(() => {
                                 if (previewSlideIdx === null) {
@@ -2375,7 +2375,7 @@ export default function ProductionStudio() {
                   </div>
                   <Separator />
                   <div>
-                    {/* 공통 PIP 모드 - PIP 모드 활성화 */}
+                    {/* Common PIP mode - PIP mode activation */}
                     <div className="flex items-center justify-between mb-2">
                       <Label className="text-sm">{t("ps.pipModeTitle")}</Label>
                       <Switch checked={batchPipEnabled} onCheckedChange={setBatchPipEnabled} />
@@ -2949,14 +2949,14 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
       setNewComment("");
       setRating(0);
       setReplyTo(null);
-      toast.success("댓글이 등록되었습니다.");
+      toast.success(t("productionStudio.hardcoded2"));
     },
-    onError: () => toast.error("댓글 등록에 실패했습니다."),
+    onError: () => toast.error(t("productionStudio.hardcoded3")),
   });
   const deleteComment = trpc.presetComment.delete.useMutation({
     onSuccess: () => {
       utils.presetComment.list.invalidate();
-      toast.success("댓글이 삭제되었습니다.");
+      toast.success(t("productionStudio.hardcoded4"));
     },
   });
 
@@ -2975,7 +2975,7 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
     <div className="border-t border-border/50 pt-4 mt-4">
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold flex items-center gap-1.5">
-          <MessageSquare className="w-4 h-4" /> 댓글 & 리뷰
+          <MessageSquare className="w-4 h-4" /> {t("productionStudio.hardcoded1")}
           {data?.total ? <span className="text-xs text-muted-foreground">({data.total})</span> : null}
         </h4>
         {data?.rating && (typeof data.rating === 'object' ? data.rating.average : data.rating) > 0 && (
@@ -2991,13 +2991,13 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
         <div className="mb-3 space-y-2">
           {replyTo && (
             <div className="text-xs text-muted-foreground flex items-center gap-1">
-              답글 작성 중...
+              {t("productionStudio.hardcoded2")}
               <button className="text-primary hover:underline" onClick={() => setReplyTo(null)}>{t("ps.cancelAction")}</button>
             </div>
           )}
           {!replyTo && (
             <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">평점:</span>
+              <span className="text-xs text-muted-foreground">{t("productionStudio.hardcoded5")}</span>
               {[1, 2, 3, 4, 5].map(s => (
                 <button key={s} onClick={() => setRating(rating === s ? 0 : s)}>
                   <Star className={`w-4 h-4 ${s <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40"}`} />
@@ -3007,7 +3007,7 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
           )}
           <div className="flex gap-2">
             <Input
-              placeholder={replyTo ? "답글을 입력하세요..." : "댓글을 입력하세요..."}
+              placeholder={replyTo ? t("productionStudio.hardcoded6") : t("productionStudio.hardcoded7")}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmit()}
@@ -3019,7 +3019,7 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
           </div>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground mb-3">로그인 후 댓글을 작성할 수 있습니다.</p>
+        <p className="text-xs text-muted-foreground mb-3">{t("productionStudio.hardcoded8")}</p>
       )}
 
       {/* Comment List */}
@@ -3028,14 +3028,14 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
           <Loader2 className="w-4 h-4 animate-spin mx-auto text-muted-foreground" />
         </div>
       ) : (data?.comments || []).length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-4">아직 댓글이 없습니다. 첫 번째 리뷰를 남겨보세요!</p>
+        <p className="text-xs text-muted-foreground text-center py-4">{t("productionStudio.hardcoded9")}</p>
       ) : (
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {(data?.comments || []).map((item: any) => (
             <div key={item.comment.id} className={`p-2.5 rounded-lg bg-background/50 border border-border/30 ${item.comment.parentId ? "ml-6" : ""}`}>
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium">{item.userName || "사용자"}</span>
+                  <span className="text-xs font-medium">{item.userName || t("productionStudio.hardcoded10")}</span>
                   {item.comment.rating && (
                     <div className="flex items-center">
                       {[1, 2, 3, 4, 5].map(s => (
@@ -3049,7 +3049,7 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
                     {new Date(item.comment.createdAt).toLocaleDateString("ko-KR")}
                   </span>
                   {user && !item.comment.parentId && (
-                    <button className="text-[10px] text-primary hover:underline" onClick={() => setReplyTo(item.comment.id)}>답글</button>
+                    <button className="text-[10px] text-primary hover:underline" onClick={() => setReplyTo(item.comment.id)}>{t("productionStudio.hardcoded3")}</button>
                   )}
                   {user && item.comment.userId === user.id && (
                     <button className="text-[10px] text-destructive hover:underline" onClick={() => deleteComment.mutate({ id: item.comment.id })}>
@@ -3067,7 +3067,7 @@ function PresetCommentSection({ presetType, presetId }: { presetType: "avatar" |
       {/* Show more */}
       {data && data.total > 5 && !showAll && (
         <button className="text-xs text-primary hover:underline mt-2 w-full text-center" onClick={() => setShowAll(true)}>
-          댓글 더보기 ({data.total - 5}개 더)
+          {t("productionStudio.hardcoded4")} ({data.total - 5})
         </button>
       )}
     </div>

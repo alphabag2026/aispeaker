@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -15,21 +16,22 @@ import {
 } from "lucide-react";
 
 const FEATURE_INFO: Record<string, { label: string; icon: typeof Zap; color: string }> = {
-  tts_conversion: { label: "TTS 음성 생성", icon: Mic, color: "text-blue-400" },
-  image_generation: { label: "이미지 생성", icon: ImageIcon, color: "text-purple-400" },
-  bg_remove: { label: "배경 제거/교체", icon: Palette, color: "text-pink-400" },
-  voice_clone: { label: "음성 복제", icon: Mic, color: "text-cyan-400" },
-  voice_change: { label: "음성 변환", icon: Headphones, color: "text-green-400" },
-  video_effects: { label: "비디오 이펙트", icon: Film, color: "text-orange-400" },
-  image_to_video: { label: "이미지→비디오", icon: Video, color: "text-red-400" },
-  face_swap: { label: "페이스 스왑", icon: Wand2, color: "text-amber-400" },
-  talking_avatar: { label: "토킹 아바타", icon: Camera, color: "text-indigo-400" },
-  video_translate: { label: "비디오 번역", icon: Globe, color: "text-teal-400" },
-  lecture_generation: { label: "강의 생성", icon: Sparkles, color: "text-violet-400" },
-  avatar_generation: { label: "아바타 생성", icon: Camera, color: "text-rose-400" },
+  tts_conversion: { label: t("creditDashboard.ttsConversion"), icon: Mic, color: "text-blue-400" },
+  image_generation: { label: t("creditDashboard.imageGeneration"), icon: ImageIcon, color: "text-purple-400" },
+  bg_remove: { label: t("creditDashboard.bgRemove"), icon: Palette, color: "text-pink-400" },
+  voice_clone: { label: t("creditDashboard.voiceClone"), icon: Mic, color: "text-cyan-400" },
+  voice_change: { label: t("creditDashboard.voiceChange"), icon: Headphones, color: "text-green-400" },
+  video_effects: { label: t("creditDashboard.videoEffects"), icon: Film, color: "text-orange-400" },
+  image_to_video: { label: t("creditDashboard.imageToVideo"), icon: Video, color: "text-red-400" },
+  face_swap: { label: t("creditDashboard.faceSwap"), icon: Wand2, color: "text-amber-400" },
+  talking_avatar: { label: t("creditDashboard.talkingAvatar"), icon: Camera, color: "text-indigo-400" },
+  video_translate: { label: t("creditDashboard.videoTranslate"), icon: Globe, color: "text-teal-400" },
+  lecture_generation: { label: t("creditDashboard.lectureGeneration"), icon: Sparkles, color: "text-violet-400" },
+  avatar_generation: { label: t("creditDashboard.avatarGeneration"), icon: Camera, color: "text-rose-400" },
 };
 
 export default function CreditDashboard() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const [period, setPeriod] = useState<"7d" | "30d" | "all">("30d");
 
@@ -82,9 +84,9 @@ export default function CreditDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="glass-card p-8 text-center">
-          <p className="text-muted-foreground mb-4">로그인이 필요합니다</p>
+          <p className="text-muted-foreground mb-4">{t("{i18n_key}")}</p>
           <Link href="/">
-            <Button>홈으로</Button>
+            <Button>{t("{i18n_key}")}</Button>
           </Link>
         </Card>
       </div>
@@ -106,14 +108,12 @@ export default function CreditDashboard() {
               <h1 className="text-xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                 Credit Dashboard
               </h1>
-              <p className="text-xs text-muted-foreground">크레딧 잔액 및 사용 현황</p>
+              <p className="text-xs text-muted-foreground">{t("{i18n_key}")}</p>
             </div>
           </div>
           <Link href="/pricing">
             <Button className="glow-button gap-2">
-              <ShoppingCart className="h-4 w-4" />
-              크레딧 충전
-            </Button>
+              <ShoppingCart className="h-4 w-4" />{t("{i18n_key}")}</Button>
           </Link>
         </div>
       </header>
@@ -129,7 +129,7 @@ export default function CreditDashboard() {
                     <Zap className="h-6 w-6 text-yellow-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">현재 크레딧 잔액</p>
+                    <p className="text-sm text-muted-foreground">{t("{i18n_key}")}</p>
                     <p className="text-3xl font-bold text-foreground">
                       {balanceQuery.isLoading ? (
                         <Loader2 className="h-6 w-6 animate-spin" />
@@ -140,12 +140,12 @@ export default function CreditDashboard() {
                   </div>
                 </div>
                 <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">
-                  {credits > 500 ? "충분" : credits > 100 ? "보통" : "부족"}
+                  {credits > 500 ? t("creditDashboard.statusSufficient") : credits > 100 ? t("creditDashboard.statusNormal") : t("creditDashboard.statusInsufficient")}
                 </Badge>
               </div>
               <Progress value={progressPercent} className="h-2 mb-2" />
               <p className="text-xs text-muted-foreground">
-                {credits > 0 ? `약 ${Math.floor(credits / 5)}회 이미지 생성 가능` : "크레딧을 충전해주세요"}
+                {credits > 0 ? `~${Math.floor(credits / 5)} images` : t("creditDashboard.pleaseCharge")}
               </p>
             </CardContent>
           </Card>
@@ -153,7 +153,7 @@ export default function CreditDashboard() {
           <Card className="glass-card">
             <CardContent className="p-6 flex flex-col justify-between h-full">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">기간별 사용량</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("{i18n_key}")}</p>
                 <div className="flex gap-1 mb-4">
                   {(["7d", "30d", "all"] as const).map((p) => (
                     <Button
@@ -163,7 +163,7 @@ export default function CreditDashboard() {
                       className="text-xs h-7 px-2"
                       onClick={() => setPeriod(p)}
                     >
-                      {p === "7d" ? "7일" : p === "30d" ? "30일" : "전체"}
+                      {p === "7d" ? t("creditDashboard.period7d") : p === "30d" ? t("creditDashboard.period30d") : t("creditDashboard.periodAll")}
                     </Button>
                   ))}
                 </div>
@@ -172,14 +172,14 @@ export default function CreditDashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <TrendingDown className="h-4 w-4 text-red-400" />
-                    <span className="text-sm text-muted-foreground">사용</span>
+                    <span className="text-sm text-muted-foreground">{t("{i18n_key}")}</span>
                   </div>
                   <span className="font-semibold text-red-400">-{stats.totalUsed.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-green-400" />
-                    <span className="text-sm text-muted-foreground">충전</span>
+                    <span className="text-sm text-muted-foreground">{t("{i18n_key}")}</span>
                   </div>
                   <span className="font-semibold text-green-400">+{stats.totalAdded.toLocaleString()}</span>
                 </div>
@@ -192,19 +192,15 @@ export default function CreditDashboard() {
         <Card className="glass-card">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              기능별 사용량
-            </CardTitle>
+              <BarChart3 className="h-5 w-5 text-primary" />{t("{i18n_key}")}</CardTitle>
           </CardHeader>
           <CardContent>
             {sortedFeatures.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Sparkles className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">아직 사용 내역이 없습니다</p>
+                <p className="text-sm">{t("{i18n_key}")}</p>
                 <Link href="/ai-studio">
-                  <Button variant="outline" size="sm" className="mt-3">
-                    AI Studio 시작하기
-                  </Button>
+                  <Button variant="outline" size="sm" className="mt-3">{t("{i18n_key}")}</Button>
                 </Link>
               </div>
             ) : (
@@ -221,7 +217,7 @@ export default function CreditDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-medium truncate">{info?.label || feature}</span>
-                          <span className="text-xs text-muted-foreground">{amount} 크레딧</span>
+                          <span className="text-xs text-muted-foreground">{amount} credits</span>
                         </div>
                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
@@ -242,9 +238,7 @@ export default function CreditDashboard() {
         <Card className="glass-card">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              최근 사용 내역
-            </CardTitle>
+              <Clock className="h-5 w-5 text-primary" />{t("{i18n_key}")}</CardTitle>
           </CardHeader>
           <CardContent>
             {historyQuery.isLoading ? (
@@ -254,7 +248,7 @@ export default function CreditDashboard() {
             ) : !historyQuery.data || historyQuery.data.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Clock className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">사용 내역이 없습니다</p>
+                <p className="text-sm">{t("{i18n_key}")}</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
@@ -269,7 +263,7 @@ export default function CreditDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {info?.label || item.feature || (isDeduction ? "크레딧 사용" : "크레딧 충전")}
+                          {info?.label || item.feature || (isDeduction ? t("creditDashboard.creditUsed") : t("creditDashboard.creditCharged"))}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(item.createdAt).toLocaleString("ko-KR", {
@@ -298,8 +292,8 @@ export default function CreditDashboard() {
               <CardContent className="p-4 flex items-center gap-3">
                 <CreditCard className="h-8 w-8 text-primary" />
                 <div>
-                  <p className="font-medium text-sm">크레딧 충전</p>
-                  <p className="text-xs text-muted-foreground">패키지 구매</p>
+                  <p className="font-medium text-sm">{t("creditDashboard.hardcoded1")}</p>
+                  <p className="text-xs text-muted-foreground">{t("{i18n_key}")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -310,7 +304,7 @@ export default function CreditDashboard() {
                 <Sparkles className="h-8 w-8 text-violet-400" />
                 <div>
                   <p className="font-medium text-sm">AI Studio</p>
-                  <p className="text-xs text-muted-foreground">도구 사용하기</p>
+                  <p className="text-xs text-muted-foreground">{t("{i18n_key}")}</p>
                 </div>
               </CardContent>
             </Card>
@@ -320,8 +314,8 @@ export default function CreditDashboard() {
               <CardContent className="p-4 flex items-center gap-3">
                 <ImageIcon className="h-8 w-8 text-fuchsia-400" />
                 <div>
-                  <p className="font-medium text-sm">커뮤니티 갤러리</p>
-                  <p className="text-xs text-muted-foreground">작품 공유하기</p>
+                  <p className="font-medium text-sm">{t("{i18n_key}")}</p>
+                  <p className="text-xs text-muted-foreground">{t("{i18n_key}")}</p>
                 </div>
               </CardContent>
             </Card>

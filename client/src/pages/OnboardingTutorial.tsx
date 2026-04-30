@@ -223,8 +223,8 @@ export default function OnboardingTutorial() {
             {t("onboardingTutorial.gettingStarted")}
           </h1>
           <p className="text-muted-foreground max-w-2xl">
-            AI 강의 플랫폼의 핵심 기능을 단계별로 안내합니다.
-            아래 6단계를 따라하면 첫 AI 강의 영상을 제작하고 라이브 방송까지 진행할 수 있습니다.
+            {t("onboardingTutorial.hardcoded1")}
+            {t("onboardingTutorial.hardcoded2")}
           </p>
 
           {/* Total Estimated Time */}
@@ -254,7 +254,7 @@ export default function OnboardingTutorial() {
               />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {completedSteps.size}/{tutorialSteps.length} 단계 완료
+              {completedSteps.size}/{tutorialSteps.length} completed
               {allCompleted && (
                 <span className="ml-2 text-green-400 font-semibold">{t("onboardingTutorial.allStepsCompleted")}</span>
               )}
@@ -512,8 +512,8 @@ export default function OnboardingTutorial() {
               {t("onboardingTutorial.allOnboardingCompleted")}
             </p>
             <p className="text-sm text-muted-foreground mb-6">
-              이제 AI Speaker의 모든 기능을 활용할 준비가 되었습니다.
-              첫 번째 AI 강의 영상을 제작해보세요!
+              {t("onboardingTutorial.hardcoded3")}
+              {t("onboardingTutorial.hardcoded4")}
             </p>
 
             <div className="flex flex-col gap-2">
