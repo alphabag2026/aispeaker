@@ -1,6 +1,6 @@
 /**
- * Video Exporter - 강의 영상 MP4 내보내기 모듈
- * ffmpeg를 사용하여 슬라이드 이미지 + 아바타 영상 + BGM을 합성하여 최종 MP4 생성
+ * Video Exporter - Lecture video MP4 export module
+ * Composes slide images + avatar videos + BGM into final MP4 using ffmpeg
  */
 import ffmpeg from "fluent-ffmpeg";
 import { storagePut } from "./storage";
@@ -229,7 +229,7 @@ export async function exportLectureVideo(
 
   try {
     // Phase 1: Download assets
-    onProgress?.({ phase: "download", progress: 0, message: "에셋 다운로드 중..." });
+    onProgress?.({ phase: "download", progress: 0, message: "Downloading assets..." });
     
     for (let i = 0; i < config.segments.length; i++) {
       const seg = config.segments[i];
@@ -242,11 +242,11 @@ export async function exportLectureVideo(
       }
       
       const dlProgress = Math.round(((i + 1) / config.segments.length) * 20);
-      onProgress?.({ phase: "download", progress: dlProgress, message: `에셋 다운로드 중 (${i + 1}/${config.segments.length})...` });
+      onProgress?.({ phase: "download", progress: dlProgress, message: `Downloading assets (${i + 1}/${config.segments.length})...` });
     }
 
     // Phase 2: Compose individual segments
-    onProgress?.({ phase: "compose", progress: 20, message: "세그먼트 합성 중..." });
+    onProgress?.({ phase: "compose", progress: 20, message: "Composing segments..." });
     
     for (let i = 0; i < config.segments.length; i++) {
       const seg = config.segments[i];
@@ -280,11 +280,11 @@ export async function exportLectureVideo(
       segmentPaths.push(finalSegmentPath);
       
       const composeProgress = 20 + Math.round(((i + 1) / config.segments.length) * 40);
-      onProgress?.({ phase: "compose", progress: composeProgress, message: `세그먼트 합성 중 (${i + 1}/${config.segments.length})...` });
+      onProgress?.({ phase: "compose", progress: composeProgress, message: `Composing segments (${i + 1}/${config.segments.length})...` });
     }
 
     // Phase 3: Merge all segments
-    onProgress?.({ phase: "merge", progress: 60, message: "세그먼트 병합 중..." });
+    onProgress?.({ phase: "merge", progress: 60, message: "Merging segments..." });
     
     const concatListPath = path.join(tmpDir, "concat-list.txt");
     let mergedPath: string;
@@ -299,7 +299,7 @@ export async function exportLectureVideo(
     // Add BGM if provided
     let finalPath = mergedPath;
     if (config.bgmUrl) {
-      onProgress?.({ phase: "merge", progress: 75, message: "배경음악 합성 중..." });
+      onProgress?.({ phase: "merge", progress: 75, message: "Mixing background music..." });
       const bgmPath = path.join(tmpDir, "bgm.mp3");
       await downloadFile(config.bgmUrl, bgmPath);
       
@@ -313,7 +313,7 @@ export async function exportLectureVideo(
     }
 
     // Phase 4: Upload to S3
-    onProgress?.({ phase: "upload", progress: 85, message: "영상 업로드 중..." });
+    onProgress?.({ phase: "upload", progress: 85, message: "Uploading video..." });
     
     const finalBuffer = fs.readFileSync(finalPath);
     const fileSize = finalBuffer.length;
@@ -323,7 +323,7 @@ export async function exportLectureVideo(
     // Calculate total duration
     const totalDuration = config.segments.reduce((acc, s) => acc + s.duration, 0);
 
-    onProgress?.({ phase: "complete", progress: 100, message: "내보내기 완료!" });
+    onProgress?.({ phase: "complete", progress: 100, message: "Export complete!" });
 
     return { videoUrl: url, fileSize, duration: totalDuration };
   } finally {

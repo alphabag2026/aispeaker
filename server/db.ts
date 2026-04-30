@@ -579,15 +579,15 @@ export async function seedBuiltInTemplates() {
   const existing = await db.select().from(aiContextTemplates).where(eq(aiContextTemplates.isBuiltIn, true)).limit(1);
   if (existing.length > 0) return;
   const templates: InsertAiContextTemplate[] = [
-    { category: "web3", name: "Web3 기초 입문", description: "Web3의 기본 개념, 탈중앙화, 블록체인 기초를 다루는 입문 강의", systemPrompt: "당신은 Web3 전문 강사입니다. 블록체인, 탈중앙화, 스마트 컨트랙트, 지갑 사용법 등 Web3의 기초 개념을 쉽고 친절하게 설명합니다.", topics: "블록체인 기초, 탈중앙화, 스마트 컨트랙트, 지갑, dApp", difficulty: "beginner", isBuiltIn: true },
-    { category: "web3", name: "Web3 개발자 과정", description: "Solidity, Hardhat, Ethers.js를 활용한 Web3 개발 실전", systemPrompt: "당신은 Web3 개발 전문 강사입니다. Solidity 스마트 컨트랙트 개발, Hardhat 프레임워크, Ethers.js 사용법을 가르칩니다.", topics: "Solidity, Hardhat, Ethers.js, 스마트 컨트랙트 보안", difficulty: "intermediate", isBuiltIn: true },
-    { category: "defi", name: "DeFi 프로토콜 이해", description: "탈중앙화 금융의 핵심 프로토콜과 메커니즘 분석", systemPrompt: "당신은 DeFi 전문 분석가이자 강사입니다. AMM, 유동성 풀, 이자 농사, 플래시론 등 DeFi 핵심 메커니즘을 설명합니다.", topics: "AMM, 유동성 풀, 이자 농사, 플래시론, 오라클", difficulty: "intermediate", isBuiltIn: true },
-    { category: "nft", name: "NFT 크리에이터 가이드", description: "NFT 제작, 민팅, 마켓플레이스 활용 가이드", systemPrompt: "당신은 NFT 전문 강사입니다. NFT의 기술적 원리, 디지털 아트 제작, 민팅, 마켓플레이스 활용법을 가르칩니다.", topics: "ERC-721, ERC-1155, IPFS, 민팅, 마켓플레이스", difficulty: "beginner", isBuiltIn: true },
-    { category: "blockchain", name: "블록체인 아키텍처 심화", description: "합의 알고리즘, 레이어2, 크로스체인 기술 심화", systemPrompt: "당신은 블록체인 아키텍처 전문가입니다. 합의 알고리즘, 레이어2, 크로스체인 브릿지 등을 다룹니다.", topics: "합의 알고리즘, 레이어2, 크로스체인, 샤딩", difficulty: "advanced", isBuiltIn: true },
-    { category: "ai", name: "AI 기초와 ChatGPT 활용", description: "AI/ML 기초 개념과 ChatGPT, 프롬프트 엔지니어링", systemPrompt: "당신은 AI 교육 전문 강사입니다. AI/ML 기초, LLM, 프롬프트 엔지니어링을 가르칩니다.", topics: "AI/ML 기초, LLM, 프롬프트 엔지니어링, ChatGPT", difficulty: "beginner", isBuiltIn: true },
-    { category: "ai", name: "AI 개발 실전", description: "Python, TensorFlow, LangChain을 활용한 AI 개발", systemPrompt: "당신은 AI 개발 전문 강사입니다. Python 기반 AI 개발, LangChain, RAG 시스템 구축을 가르칩니다.", topics: "Python, TensorFlow, LangChain, RAG, 파인튜닝", difficulty: "advanced", isBuiltIn: true },
-    { category: "metaverse", name: "메타버스 생태계 이해", description: "메타버스 플랫폼, 가상 경제, 디지털 트윈", systemPrompt: "당신은 메타버스 전문 강사입니다. 메타버스 플랫폼, 가상 경제, XR 기술을 다룹니다.", topics: "메타버스 플랫폼, 가상 경제, 디지털 트윈, XR", difficulty: "beginner", isBuiltIn: true },
-    { category: "general", name: "범용 기술 강의", description: "다양한 기술 주제를 다루는 범용 템플릿", systemPrompt: "당신은 전문적인 기술 강사입니다. 학생들의 질문에 정확하고 이해하기 쉽게 답변합니다.", topics: "프로그래밍, 웹 개발, 데이터베이스, 클라우드", difficulty: "beginner", isBuiltIn: true },
+    { category: "web3", name: "Web3 Fundamentals", description: "Introduction to Web3 basics: decentralization, blockchain fundamentals", systemPrompt: "You are a Web3 expert instructor. Explain blockchain, decentralization, smart contracts, wallet usage and other Web3 basics clearly and kindly.", topics: "Blockchain basics, Decentralization, Smart contracts, Wallets, dApp", difficulty: "beginner", isBuiltIn: true },
+    { category: "web3", name: "Web3 Developer Course", description: "Hands-on Web3 development with Solidity, Hardhat, Ethers.js", systemPrompt: "You are a Web3 development instructor. Teach Solidity smart contract development, Hardhat framework, and Ethers.js usage.", topics: "Solidity, Hardhat, Ethers.js, Smart contract security", difficulty: "intermediate", isBuiltIn: true },
+    { category: "defi", name: "Understanding DeFi Protocols", description: "Analysis of core DeFi protocols and mechanisms", systemPrompt: "You are a DeFi analyst and instructor. Explain AMM, liquidity pools, yield farming, flash loans and other core DeFi mechanisms.", topics: "AMM, Liquidity pools, Yield farming, Flash loans, Oracles", difficulty: "intermediate", isBuiltIn: true },
+    { category: "nft", name: "NFT Creator Guide", description: "Guide to NFT creation, minting, and marketplace usage", systemPrompt: "You are an NFT expert instructor. Teach the technical principles of NFTs, digital art creation, minting, and marketplace usage.", topics: "ERC-721, ERC-1155, IPFS, Minting, Marketplaces", difficulty: "beginner", isBuiltIn: true },
+    { category: "blockchain", name: "Advanced Blockchain Architecture", description: "Deep dive into consensus algorithms, Layer 2, cross-chain technology", systemPrompt: "You are a blockchain architecture expert. Cover consensus algorithms, Layer 2 solutions, cross-chain bridges and more.", topics: "Consensus algorithms, Layer 2, Cross-chain, Sharding", difficulty: "advanced", isBuiltIn: true },
+    { category: "ai", name: "AI Basics & ChatGPT", description: "AI/ML fundamentals, ChatGPT, and prompt engineering", systemPrompt: "You are an AI education instructor. Teach AI/ML basics, LLMs, and prompt engineering.", topics: "AI/ML basics, LLM, Prompt engineering, ChatGPT", difficulty: "beginner", isBuiltIn: true },
+    { category: "ai", name: "AI Development in Practice", description: "AI development with Python, TensorFlow, LangChain", systemPrompt: "You are an AI development instructor. Teach Python-based AI development, LangChain, and RAG system building.", topics: "Python, TensorFlow, LangChain, RAG, Fine-tuning", difficulty: "advanced", isBuiltIn: true },
+    { category: "metaverse", name: "Metaverse Ecosystem", description: "Metaverse platforms, virtual economy, digital twins", systemPrompt: "You are a metaverse expert instructor. Cover metaverse platforms, virtual economies, and XR technology.", topics: "Metaverse platforms, Virtual economy, Digital twins, XR", difficulty: "beginner", isBuiltIn: true },
+    { category: "general", name: "General Technology Lecture", description: "General-purpose template covering various tech topics", systemPrompt: "You are a professional technology instructor. Answer students' questions accurately and in an easy-to-understand manner.", topics: "Programming, Web development, Databases, Cloud", difficulty: "beginner", isBuiltIn: true },
   ];
   for (const template of templates) await db.insert(aiContextTemplates).values(template);
 }
@@ -879,7 +879,7 @@ export async function saveScriptAsTemplate(scriptId: number, userId: number, nam
   const templateId = await createScriptTemplate({
     userId,
     name,
-    description: description || `"${s.title}" 스크립트에서 생성된 템플릿`,
+    description: description || `Template generated from "${s.title}" script`,
     category: s.category || "general",
     difficulty: s.difficulty || "beginner",
     structure: JSON.stringify(structure),
@@ -962,7 +962,7 @@ export async function autoSaveScriptVersion(scriptId: number, userId: number, ch
     sections: script.sections,
     sectionCount: script.sectionCount || 0,
     estimatedDurationSec: script.estimatedDurationSec || 0,
-    changeDescription: changeDescription || `버전 ${newVer} 자동 저장`,
+    changeDescription: changeDescription || `Auto-saved version ${newVer}`,
     changeType: "auto",
   });
 }
@@ -992,7 +992,7 @@ export async function rollbackScriptToVersion(scriptId: number, versionId: numbe
     sections: version.sections,
     sectionCount: version.sectionCount || 0,
     estimatedDurationSec: version.estimatedDurationSec || 0,
-    changeDescription: `버전 ${version.versionNumber}으로 롤백`,
+    changeDescription: `Rolled back to version ${version.versionNumber}`,
     changeType: "rollback",
   });
 
@@ -2261,7 +2261,7 @@ export async function cloneLectureProject(sourceProjectId: number, userId: numbe
   const newProjectId = await createLectureProject({
     userId,
     title: newTitle,
-    description: source.description ? `[복제] ${source.description}` : "[복제됨]",
+    description: source.description ? `[Clone] ${source.description}` : "[Cloned]",
     currentStep: source.currentStep,
     status: "draft",
     avatarPosition: source.avatarPosition,

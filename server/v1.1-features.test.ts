@@ -123,7 +123,7 @@ describe("VOD System", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.vod.delete({ id: 1 })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("vod.createFromLecture requires instructor role", async () => {
@@ -131,7 +131,7 @@ describe("VOD System", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.vod.createFromLecture({ lectureId: 1 })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("vod.createFromLecture allows instructors", async () => {
@@ -141,7 +141,7 @@ describe("VOD System", () => {
       await caller.vod.createFromLecture({ lectureId: 1 });
     } catch (e: any) {
       // DB/lecture not found is expected, but not FORBIDDEN
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
   });
 });
@@ -255,7 +255,7 @@ describe("Avatar Mode in Lectures", () => {
     } catch (e: any) {
       // DB not available, but input validation should pass
       expect(e.code).not.toBe("BAD_REQUEST");
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
   });
 
@@ -331,14 +331,14 @@ describe("Cross-feature Integration", () => {
     try {
       await caller.vod.delete({ id: 1 });
     } catch (e: any) {
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
 
     // Lecture create should not throw FORBIDDEN
     try {
       await caller.lecture.create({ title: "Integration Test" });
     } catch (e: any) {
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
   });
 
@@ -346,9 +346,9 @@ describe("Cross-feature Integration", () => {
     const { ctx } = createUserContext({ platformRole: "student" });
     const caller = appRouter.createCaller(ctx);
 
-    await expect(caller.vod.delete({ id: 1 })).rejects.toThrow("강사 권한이 필요합니다.");
-    await expect(caller.vod.createFromLecture({ lectureId: 1 })).rejects.toThrow("강사 권한이 필요합니다.");
-    await expect(caller.lecture.create({ title: "Test" })).rejects.toThrow("강사 권한이 필요합니다.");
+    await expect(caller.vod.delete({ id: 1 })).rejects.toThrow("Instructor permission required.");
+    await expect(caller.vod.createFromLecture({ lectureId: 1 })).rejects.toThrow("Instructor permission required.");
+    await expect(caller.lecture.create({ title: "Test" })).rejects.toThrow("Instructor permission required.");
   });
 
   it("unauthenticated users can access public endpoints", async () => {

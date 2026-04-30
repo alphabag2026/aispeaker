@@ -138,7 +138,7 @@ describe("Instructor Access Control", () => {
   it("voiceProfile.list rejects students", async () => {
     const { ctx } = createUserContext({ platformRole: "student" });
     const caller = appRouter.createCaller(ctx);
-    await expect(caller.voiceProfile.list()).rejects.toThrow("강사 권한이 필요합니다.");
+    await expect(caller.voiceProfile.list()).rejects.toThrow("Instructor permission required.");
   });
 
   it("voiceProfile.list allows instructors", async () => {
@@ -148,7 +148,7 @@ describe("Instructor Access Control", () => {
       await caller.voiceProfile.list();
     } catch (e: any) {
       // DB not available, but should not be FORBIDDEN
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
   });
 
@@ -158,7 +158,7 @@ describe("Instructor Access Control", () => {
     try {
       await caller.voiceProfile.list();
     } catch (e: any) {
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
   });
 
@@ -167,7 +167,7 @@ describe("Instructor Access Control", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.lecture.create({ title: "Test Lecture" })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("lecture.create allows instructors", async () => {
@@ -176,7 +176,7 @@ describe("Instructor Access Control", () => {
     try {
       await caller.lecture.create({ title: "Test Lecture" });
     } catch (e: any) {
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
   });
 });
@@ -277,7 +277,7 @@ describe("Whiteboard", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.whiteboard.save({ lectureId: 1, snapshotData: "{}" })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("whiteboard.load requires authentication", async () => {
@@ -303,7 +303,7 @@ describe("Voice Profile CRUD", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.voiceProfile.delete({ id: 1 })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 });
 
@@ -319,7 +319,7 @@ describe("Material Management", () => {
         filename: "test.pdf",
         fileType: "pdf",
       })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("material.delete requires instructor", async () => {
@@ -327,6 +327,6 @@ describe("Material Management", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.material.delete({ id: 1 })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 });

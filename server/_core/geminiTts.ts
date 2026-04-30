@@ -34,36 +34,36 @@ const OPENAI_TO_GEMINI_VOICE: Record<string, string> = {
 
 // All available Gemini voices
 export const GEMINI_VOICES = [
-  { id: "Zephyr", name: "Zephyr", desc: "밝고 활기찬 톤", style: "Bright" },
-  { id: "Puck", name: "Puck", desc: "경쾌하고 활발한 톤", style: "Upbeat" },
-  { id: "Charon", name: "Charon", desc: "정보 전달에 적합한 톤", style: "Informative" },
-  { id: "Kore", name: "Kore", desc: "단단하고 확신 있는 톤", style: "Firm" },
-  { id: "Fenrir", name: "Fenrir", desc: "흥분되고 열정적인 톤", style: "Excitable" },
-  { id: "Leda", name: "Leda", desc: "젊고 생동감 있는 톤", style: "Youthful" },
-  { id: "Orus", name: "Orus", desc: "단단하고 안정적인 톤", style: "Firm" },
-  { id: "Aoede", name: "Aoede", desc: "산뜻하고 가벼운 톤", style: "Breezy" },
-  { id: "Callirrhoe", name: "Callirrhoe", desc: "편안하고 자연스러운 톤", style: "Easy-going" },
-  { id: "Autonoe", name: "Autonoe", desc: "밝고 명랑한 톤", style: "Bright" },
-  { id: "Enceladus", name: "Enceladus", desc: "숨결이 느껴지는 톤", style: "Breathy" },
-  { id: "Iapetus", name: "Iapetus", desc: "맑고 깨끗한 톤", style: "Clear" },
-  { id: "Umbriel", name: "Umbriel", desc: "편안하고 여유로운 톤", style: "Easy-going" },
-  { id: "Algieba", name: "Algieba", desc: "부드럽고 매끄러운 톤", style: "Smooth" },
-  { id: "Despina", name: "Despina", desc: "부드럽고 매끄러운 톤", style: "Smooth" },
-  { id: "Erinome", name: "Erinome", desc: "맑고 선명한 톤", style: "Clear" },
-  { id: "Algenib", name: "Algenib", desc: "거친 느낌의 톤", style: "Gravelly" },
-  { id: "Rasalgethi", name: "Rasalgethi", desc: "정보 전달에 적합한 톤", style: "Informative" },
-  { id: "Laomedeia", name: "Laomedeia", desc: "경쾌하고 활발한 톤", style: "Upbeat" },
-  { id: "Achernar", name: "Achernar", desc: "부드럽고 차분한 톤", style: "Soft" },
-  { id: "Alnilam", name: "Alnilam", desc: "단단하고 권위 있는 톤", style: "Firm" },
-  { id: "Schedar", name: "Schedar", desc: "균일하고 안정적인 톤", style: "Even" },
-  { id: "Gacrux", name: "Gacrux", desc: "성숙하고 깊은 톤", style: "Mature" },
-  { id: "Pulcherrima", name: "Pulcherrima", desc: "적극적이고 앞선 톤", style: "Forward" },
-  { id: "Achird", name: "Achird", desc: "친근하고 다정한 톤", style: "Friendly" },
-  { id: "Zubenelgenubi", name: "Zubenelgenubi", desc: "캐주얼하고 편한 톤", style: "Casual" },
-  { id: "Vindemiatrix", name: "Vindemiatrix", desc: "부드럽고 온화한 톤", style: "Gentle" },
-  { id: "Sadachbia", name: "Sadachbia", desc: "활기차고 생동감 있는 톤", style: "Lively" },
-  { id: "Sadaltager", name: "Sadaltager", desc: "지식이 풍부한 톤", style: "Knowledgeable" },
-  { id: "Sulafat", name: "Sulafat", desc: "따뜻하고 포근한 톤", style: "Warm" },
+  { id: "Zephyr", name: "Zephyr", desc: "Bright and energetic tone", style: "Bright" },
+  { id: "Puck", name: "Puck", desc: "Cheerful and lively tone", style: "Upbeat" },
+  { id: "Charon", name: "Charon", desc: "Suitable for informational delivery", style: "Informative" },
+  { id: "Kore", name: "Kore", desc: "Firm and confident tone", style: "Firm" },
+  { id: "Fenrir", name: "Fenrir", desc: "Excited and passionate tone", style: "Excitable" },
+  { id: "Leda", name: "Leda", desc: "Youthful and vibrant tone", style: "Youthful" },
+  { id: "Orus", name: "Orus", desc: "Firm and stable tone", style: "Firm" },
+  { id: "Aoede", name: "Aoede", desc: "Fresh and light tone", style: "Breezy" },
+  { id: "Callirrhoe", name: "Callirrhoe", desc: "Relaxed and natural tone", style: "Easy-going" },
+  { id: "Autonoe", name: "Autonoe", desc: "Bright and cheerful tone", style: "Bright" },
+  { id: "Enceladus", name: "Enceladus", desc: "Breathy and airy tone", style: "Breathy" },
+  { id: "Iapetus", name: "Iapetus", desc: "Clear and crisp tone", style: "Clear" },
+  { id: "Umbriel", name: "Umbriel", desc: "Comfortable and relaxed tone", style: "Easy-going" },
+  { id: "Algieba", name: "Algieba", desc: "Soft and smooth tone", style: "Smooth" },
+  { id: "Despina", name: "Despina", desc: "Soft and smooth tone", style: "Smooth" },
+  { id: "Erinome", name: "Erinome", desc: "Clear and vivid tone", style: "Clear" },
+  { id: "Algenib", name: "Algenib", desc: "Rough and gravelly tone", style: "Gravelly" },
+  { id: "Rasalgethi", name: "Rasalgethi", desc: "Suitable for informational delivery", style: "Informative" },
+  { id: "Laomedeia", name: "Laomedeia", desc: "Cheerful and lively tone", style: "Upbeat" },
+  { id: "Achernar", name: "Achernar", desc: "Soft and calm tone", style: "Soft" },
+  { id: "Alnilam", name: "Alnilam", desc: "Firm and authoritative tone", style: "Firm" },
+  { id: "Schedar", name: "Schedar", desc: "Even and stable tone", style: "Even" },
+  { id: "Gacrux", name: "Gacrux", desc: "Mature and deep tone", style: "Mature" },
+  { id: "Pulcherrima", name: "Pulcherrima", desc: "Proactive and forward tone", style: "Forward" },
+  { id: "Achird", name: "Achird", desc: "Friendly and warm tone", style: "Friendly" },
+  { id: "Zubenelgenubi", name: "Zubenelgenubi", desc: "Casual and relaxed tone", style: "Casual" },
+  { id: "Vindemiatrix", name: "Vindemiatrix", desc: "Soft and gentle tone", style: "Gentle" },
+  { id: "Sadachbia", name: "Sadachbia", desc: "Energetic and vibrant tone", style: "Lively" },
+  { id: "Sadaltager", name: "Sadaltager", desc: "Knowledgeable and informed tone", style: "Knowledgeable" },
+  { id: "Sulafat", name: "Sulafat", desc: "Warm and cozy tone", style: "Warm" },
 ];
 
 export type GeminiTtsOptions = {
@@ -165,7 +165,7 @@ export async function generateGeminiTts(
     const apiKey = ENV.geminiApiKey || ENV.forgeApiKey;
     if (!apiKey) {
       return {
-        error: "TTS 서비스 인증 키가 설정되지 않았습니다",
+        error: "TTS service authentication key is not configured",
         code: "SERVICE_ERROR",
         details: "GEMINI_API_KEY or BUILT_IN_FORGE_API_KEY is not set",
       };
@@ -226,20 +226,20 @@ export async function generateGeminiTts(
       // Classify error
       if (status === 401 || status === 403) {
         return {
-          error: "API 키가 유효하지 않거나 만료되었습니다. 관리자에게 문의하세요.",
+          error: "API key is invalid or expired. Please contact administrator.",
           code: "API_KEY_INVALID",
           details: `HTTP ${status}: ${errorMessage}`,
         };
       }
       if (status === 429) {
         return {
-          error: "API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요.",
+          error: "API usage limit exceeded. Please try again later.",
           code: "QUOTA_EXCEEDED",
           details: `HTTP ${status}: ${errorMessage}`,
         };
       }
       return {
-        error: `TTS 생성에 실패했습니다 (HTTP ${status})`,
+        error: `TTS generation failed (HTTP ${status})`,
         code: "MODEL_ERROR",
         details: errorMessage,
       };
@@ -251,7 +251,7 @@ export async function generateGeminiTts(
     const parts = data?.candidates?.[0]?.content?.parts;
     if (!parts || parts.length === 0) {
       return {
-        error: "TTS 응답에 오디오 데이터가 없습니다",
+        error: "No audio data in TTS response",
         code: "MODEL_ERROR",
         details: JSON.stringify(data).slice(0, 500),
       };
@@ -260,7 +260,7 @@ export async function generateGeminiTts(
     const audioPart = parts.find((p: any) => p.inlineData);
     if (!audioPart?.inlineData?.data) {
       return {
-        error: "TTS 응답에서 오디오를 추출할 수 없습니다",
+        error: "Cannot extract audio from TTS response",
         code: "MODEL_ERROR",
         details: "No inlineData found in response parts",
       };
@@ -313,7 +313,7 @@ export async function generateGeminiTts(
       errorMessage: error instanceof Error ? error.message?.slice(0, 500) : "Unknown error",
     });
     return {
-      error: "TTS 생성 중 예기치 않은 오류가 발생했습니다",
+      error: "Unexpected error during TTS generation",
       code: "SERVICE_ERROR",
       details: error instanceof Error ? error.message : "Unknown error",
     };

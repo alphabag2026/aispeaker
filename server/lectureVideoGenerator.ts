@@ -1,5 +1,5 @@
 /**
- * Lecture Video Generator - LectureBuilder 전용 영상 생성 파이프라인
+ * Lecture Video Generator - Video generation pipeline for LectureBuilder
  */
 import { storagePut } from "./storage";
 
@@ -82,7 +82,7 @@ export async function generateLectureVideo(
   for (let i = 0; i < totalSegments; i++) {
     const segment = config.segments[i];
     onProgress?.({ phase: "avatar", current: i + 1, total: totalSegments,
-      message: `아바타 영상 생성 중 (${i + 1}/${totalSegments}): ${segment.avatarName}` });
+      message: `Generating avatar video (${i + 1}/${totalSegments}): ${segment.avatarName}` });
     try {
       const url = await generateAvatarVideo(segment.avatarFaceUrl, segment.script, segment.avatarVoiceId, didApiKey);
       segmentVideoUrls.push(url);
@@ -92,10 +92,10 @@ export async function generateLectureVideo(
     }
   }
 
-  onProgress?.({ phase: "compose", current: 0, total: totalSegments, message: "슬라이드와 아바타 영상 합성 중..." });
+  onProgress?.({ phase: "compose", current: 0, total: totalSegments, message: "Composing slides and avatar videos..." });
   const composedSegments = segmentVideoUrls.filter(u => u);
 
-  onProgress?.({ phase: "finalize", current: 0, total: 1, message: "최종 영상 생성 중..." });
+  onProgress?.({ phase: "finalize", current: 0, total: 1, message: "Generating final video..." });
   const finalVideoUrl = composedSegments[0] || "";
   const resultKey = `lecture-builder/${config.projectId}/output/final-${Date.now()}.json`;
   await storagePut(resultKey, Buffer.from(JSON.stringify({
@@ -103,7 +103,7 @@ export async function generateLectureVideo(
       bgmUrl: config.bgmUrl, bgmVolume: config.bgmVolume }, createdAt: new Date().toISOString(),
   })), "application/json");
 
-  onProgress?.({ phase: "complete", current: 1, total: 1, message: "영상 생성 완료!" });
+  onProgress?.({ phase: "complete", current: 1, total: 1, message: "Video generation complete!" });
   return { videoUrl: finalVideoUrl, totalDuration: totalSegments * 30 };
 }
 

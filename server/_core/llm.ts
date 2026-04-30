@@ -391,21 +391,21 @@ export async function invokeLLM(params: InvokeParams & { _userId?: number }): Pr
         // Classify errors with user-friendly messages
         if (status === 401 || status === 403) {
           throw new Error(
-            `AI 서비스 인증 오류: API 키가 유효하지 않거나 만료되었습니다. 관리자에게 문의하세요. (HTTP ${status})`
+            `AI service authentication error: API key is invalid or expired. Please contact the administrator. (HTTP ${status})`
           );
         }
         if (status === 429) {
           throw new Error(
-            `AI 서비스 사용량 한도 초과: 일일 API 쿼터를 초과했습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`
+            `AI service rate limit exceeded: Daily API quota has been exceeded. Please try again later. (HTTP ${status})`
           );
         }
         if (status === 500 || status === 502 || status === 503) {
           throw new Error(
-            `AI 서비스 일시적 오류: 서버가 응답하지 않습니다. ${MAX_RETRIES}회 재시도 후에도 실패했습니다. 잠시 후 다시 시도해주세요. (HTTP ${status})`
+            `AI service temporary error: Server is not responding. Failed after ${MAX_RETRIES} retries. Please try again later. (HTTP ${status})`
           );
         }
         throw new Error(
-          `AI 서비스 오류: ${response.statusText} (HTTP ${status}) – ${errorText.slice(0, 200)}`
+          `AI service error: ${response.statusText} (HTTP ${status}) – ${errorText.slice(0, 200)}`
         );
       }
 
