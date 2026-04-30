@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Share2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ShareToGalleryButtonProps {
   mediaUrl: string;
@@ -19,14 +20,15 @@ export default function ShareToGalleryButton({
   size = "default",
   className = "flex-1 gap-2",
 }: ShareToGalleryButtonProps) {
+  const { t } = useLanguage();
   const [shared, setShared] = useState(false);
 
   const shareMut = trpc.community.create.useMutation({
     onSuccess: () => {
-      toast.success("커뮤니티 갤러리에 공유되었습니다! 🎉");
+      toast.success(t("shareToGalleryButton.hardcoded1"));
       setShared(true);
     },
-    onError: (err: any) => toast.error(err.message || "공유 실패"),
+    onError: (err: any) => toast.error(err.message || t("shareToGalleryButton.hardcoded2")),
   });
 
   return (
@@ -38,7 +40,7 @@ export default function ShareToGalleryButton({
       onClick={() => {
         shareMut.mutate({
           title: `AI Studio - ${toolUsed}`,
-          description: `AI Studio ${toolUsed} 도구로 생성한 작품입니다.`,
+          description: `AI Studio ${toolUsed}`,
           mediaUrl,
           mediaType,
           toolUsed,
@@ -46,7 +48,7 @@ export default function ShareToGalleryButton({
       }}
     >
       <Share2 className="h-4 w-4" />
-      {shared ? "공유 완료" : "갤러리 공유"}
+      {shared ? t("shareToGalleryButton.hardcoded3") : t("shareToGalleryButton.hardcoded4")}
     </Button>
   );
 }

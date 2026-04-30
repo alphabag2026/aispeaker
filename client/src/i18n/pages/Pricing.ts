@@ -111,7 +111,7 @@ registerTranslations("en", {
   "pricing.cta.title": "Get Started Now",
   "pricing.cta.desc": "Unlock new possibilities in content creation with the powerful features of AI Speaker. Get started now and experience the difference.",
   "pricing.cta.starter": "Start Starter Plan",
-  "pricing.cta.enterprise": "Contact Enterprise"
+  "pricing.cta.enterprise": "Contact Enterprise",
 });
 
 registerTranslations("zh", {
@@ -167,7 +167,7 @@ registerTranslations("zh", {
   "pricing.cta.title": "立即开始",
   "pricing.cta.desc": "利用AI Speaker的强大功能，开启内容创作的新可能性。立即开始，体验不同。",
   "pricing.cta.starter": "开始入门计划",
-  "pricing.cta.enterprise": "联系企业"
+  "pricing.cta.enterprise": "联系企业",
 });
 
 registerTranslations("ja", {
@@ -223,7 +223,7 @@ registerTranslations("ja", {
   "pricing.cta.title": "今すぐ始める",
   "pricing.cta.desc": "AIスピーカーの強力な機能でコンテンツ制作の新たな可能性を切り開きます。今すぐ始めて違いを体験してください。",
   "pricing.cta.starter": "スタータープランを開始",
-  "pricing.cta.enterprise": "エンタープライズへのお問い合わせ"
+  "pricing.cta.enterprise": "エンタープライズへのお問い合わせ",
 });
 
 registerTranslations("vi", {
@@ -279,7 +279,7 @@ registerTranslations("vi", {
   "pricing.cta.title": "Bắt đầu ngay",
   "pricing.cta.desc": "Mở khóa những khả năng mới trong việc tạo nội dung với các tính năng mạnh mẽ của AI Speaker. Bắt đầu ngay và trải nghiệm sự khác biệt.",
   "pricing.cta.starter": "Bắt đầu gói Starter",
-  "pricing.cta.enterprise": "Liên hệ doanh nghiệp"
+  "pricing.cta.enterprise": "Liên hệ doanh nghiệp",
 });
 
 registerTranslations("th", {
@@ -335,7 +335,7 @@ registerTranslations("th", {
   "pricing.cta.title": "เริ่มเลย",
   "pricing.cta.desc": "ปลดล็อกความเป็นไปได้ใหม่ๆ ในการสร้างเนื้อหาด้วยคุณสมบัติอันทรงพลังของ AI Speaker เริ่มเลยและสัมผัสกับความแตกต่าง",
   "pricing.cta.starter": "เริ่มแผน Starter",
-  "pricing.cta.enterprise": "ติดต่อองค์กร"
+  "pricing.cta.enterprise": "ติดต่อองค์กร",
 });
 
 registerTranslations("id", {
@@ -391,7 +391,7 @@ registerTranslations("id", {
   "pricing.cta.title": "Mulai Sekarang",
   "pricing.cta.desc": "Buka kemungkinan baru dalam pembuatan konten dengan fitur canggih AI Speaker. Mulai sekarang dan rasakan perbedaannya.",
   "pricing.cta.starter": "Mulai Paket Starter",
-  "pricing.cta.enterprise": "Hubungi Perusahaan"
+  "pricing.cta.enterprise": "Hubungi Perusahaan",
 });
 
 registerTranslations("ms", {
@@ -447,7 +447,7 @@ registerTranslations("ms", {
   "pricing.cta.title": "Mulakan Sekarang",
   "pricing.cta.desc": "Buka kemungkinan baharu dalam penciptaan kandungan dengan ciri-ciri hebat AI Speaker. Mulakan sekarang dan rasai perbezaannya.",
   "pricing.cta.starter": "Mulakan Pelan Permulaan",
-  "pricing.cta.enterprise": "Hubungi Enterprise"
+  "pricing.cta.enterprise": "Hubungi Enterprise",
 });
 
 registerTranslations("es", {
@@ -503,7 +503,7 @@ registerTranslations("es", {
   "pricing.cta.title": "Empiece ahora",
   "pricing.cta.desc": "Desbloquee nuevas posibilidades en la creación de contenido con las potentes funciones de AI Speaker. Empiece ahora y experimente la diferencia.",
   "pricing.cta.starter": "Iniciar plan Starter",
-  "pricing.cta.enterprise": "Contactar con Enterprise"
+  "pricing.cta.enterprise": "Contactar con Enterprise",
 });
 
 registerTranslations("fr", {
@@ -559,7 +559,7 @@ registerTranslations("fr", {
   "pricing.cta.title": "Commencez maintenant",
   "pricing.cta.desc": "Débloquez de nouvelles possibilités dans la création de contenu avec les puissantes fonctionnalités d'AI Speaker. Commencez maintenant et découvrez la différence.",
   "pricing.cta.starter": "Démarrer le forfait Starter",
-  "pricing.cta.enterprise": "Contacter l'entreprise"
+  "pricing.cta.enterprise": "Contacter l'entreprise",
 });
 
 registerTranslations("de", {
@@ -615,7 +615,7 @@ registerTranslations("de", {
   "pricing.cta.title": "Jetzt loslegen",
   "pricing.cta.desc": "Erschließen Sie neue Möglichkeiten bei der Erstellung von Inhalten mit den leistungsstarken Funktionen von AI Speaker. Legen Sie jetzt los und erleben Sie den Unterschied.",
   "pricing.cta.starter": "Starter-Plan starten",
-  "pricing.cta.enterprise": "Enterprise kontaktieren"
+  "pricing.cta.enterprise": "Enterprise kontaktieren",
 });
 
 registerTranslations("pt", {
@@ -671,7 +671,7 @@ registerTranslations("pt", {
   "pricing.cta.title": "Comece agora",
   "pricing.cta.desc": "Desbloqueie novas possibilidades na criação de conteúdo com os recursos poderosos do AI Speaker. Comece agora e sinta a diferença.",
   "pricing.cta.starter": "Iniciar plano Starter",
-  "pricing.cta.enterprise": "Contatar a Enterprise"
+  "pricing.cta.enterprise": "Contatar a Enterprise",
 });
 
 registerTranslations("ru", {
@@ -727,7 +727,7 @@ registerTranslations("ru", {
   "pricing.cta.title": "Начать сейчас",
   "pricing.cta.desc": "Откройте новые возможности в создании контента с помощью мощных функций AI Speaker. Начните сейчас и почувствуйте разницу.",
   "pricing.cta.starter": "Начать план Starter",
-  "pricing.cta.enterprise": "Связаться с Enterprise"
+  "pricing.cta.enterprise": "Связаться с Enterprise",
 });
 
 registerTranslations("ar", {
@@ -783,7 +783,7 @@ registerTranslations("ar", {
   "pricing.cta.title": "ابدأ الآن",
   "pricing.cta.desc": "أطلق العنان لإمكانيات جديدة في إنشاء المحتوى باستخدام الميزات القوية لـ AI Speaker. ابدأ الآن واختبر الفرق.",
   "pricing.cta.starter": "ابدأ خطة المبتدئين",
-  "pricing.cta.enterprise": "اتصل بالمؤسسة"
+  "pricing.cta.enterprise": "اتصل بالمؤسسة",
 });
 
 registerTranslations("hi", {
@@ -839,7 +839,7 @@ registerTranslations("hi", {
   "pricing.cta.title": "अभी शुरू करें",
   "pricing.cta.desc": "एआई स्पीकर की शक्तिशाली विशेषताओं के साथ सामग्री निर्माण में नई संभावनाएं अनलॉक करें। अभी शुरू करें और अंतर का अनुभव करें।",
   "pricing.cta.starter": "स्टार्टर प्लान शुरू करें",
-  "pricing.cta.enterprise": "एंटरप्राइज से संपर्क करें"
+  "pricing.cta.enterprise": "एंटरप्राइज से संपर्क करें",
 });
 
 registerTranslations("it", {
@@ -895,7 +895,7 @@ registerTranslations("it", {
   "pricing.cta.title": "Inizia ora",
   "pricing.cta.desc": "Sblocca nuove possibilità nella creazione di contenuti con le potenti funzionalità di AI Speaker. Inizia ora e sperimenta la differenza.",
   "pricing.cta.starter": "Inizia il piano Starter",
-  "pricing.cta.enterprise": "Contatta Enterprise"
+  "pricing.cta.enterprise": "Contatta Enterprise",
 });
 
 registerTranslations("nl", {
@@ -951,7 +951,7 @@ registerTranslations("nl", {
   "pricing.cta.title": "Begin nu",
   "pricing.cta.desc": "Ontgrendel nieuwe mogelijkheden voor het maken van content met de krachtige functies van AI Speaker. Begin nu en ervaar het verschil.",
   "pricing.cta.starter": "Starter-plan starten",
-  "pricing.cta.enterprise": "Contact opnemen met Enterprise"
+  "pricing.cta.enterprise": "Contact opnemen met Enterprise",
 });
 
 registerTranslations("pl", {
@@ -1007,7 +1007,7 @@ registerTranslations("pl", {
   "pricing.cta.title": "Zacznij teraz",
   "pricing.cta.desc": "Odkryj nowe możliwości tworzenia treści dzięki potężnym funkcjom AI Speaker. Zacznij teraz i poczuj różnicę.",
   "pricing.cta.starter": "Rozpocznij plan Starter",
-  "pricing.cta.enterprise": "Skontaktuj się z Enterprise"
+  "pricing.cta.enterprise": "Skontaktuj się z Enterprise",
 });
 
 registerTranslations("sv", {
@@ -1063,7 +1063,7 @@ registerTranslations("sv", {
   "pricing.cta.title": "Kom igång nu",
   "pricing.cta.desc": "Lås upp nya möjligheter för innehållsskapande med de kraftfulla funktionerna i AI Speaker. Kom igång nu och upplev skillnaden.",
   "pricing.cta.starter": "Starta startplan",
-  "pricing.cta.enterprise": "Kontakta Enterprise"
+  "pricing.cta.enterprise": "Kontakta Enterprise",
 });
 
 registerTranslations("tr", {
@@ -1119,5 +1119,5 @@ registerTranslations("tr", {
   "pricing.cta.title": "Şimdi Başlayın",
   "pricing.cta.desc": "AI Speaker'ın güçlü özellikleriyle içerik oluşturmada yeni olanakların kilidini açın. Şimdi başlayın ve farkı yaşayın.",
   "pricing.cta.starter": "Başlangıç Planını Başlat",
-  "pricing.cta.enterprise": "Kurumsal İletişime Geçin"
+  "pricing.cta.enterprise": "Kurumsal İletişime Geçin",
 });

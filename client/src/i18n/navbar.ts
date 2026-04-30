@@ -129,6 +129,6 @@ otherLanguages.forEach(lang => {
     "nav.my_lectures": "My Lectures",
     "nav.create": "Create Lecture",
     "nav.my_subscription": "Subscription",
-    "nav.certificates": "Certificates"
+    "nav.certificates": "Certificates",
   });
 });

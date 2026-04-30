@@ -622,81 +622,81 @@ registerTranslations("tr", {
 
 
 registerTranslations("ko", {
-  "lectureFormatSelector.personnelAndStyleRequired": "인원 구성과 강의 스타일을 모두 선택해야 합니다."
+  "lectureFormatSelector.personnelAndStyleRequired": "인원 구성과 강의 스타일을 모두 선택해야 합니다.",
 });
 
 registerTranslations("en", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Personnel composition and lecture style must both be selected."
+  "lectureFormatSelector.personnelAndStyleRequired": "Personnel composition and lecture style must both be selected.",
 });
 
 registerTranslations("zh", {
-  "lectureFormatSelector.personnelAndStyleRequired": "必须同时选择人员组成和讲座风格。"
+  "lectureFormatSelector.personnelAndStyleRequired": "必须同时选择人员组成和讲座风格。",
 });
 
 registerTranslations("ja", {
-  "lectureFormatSelector.personnelAndStyleRequired": "人員構成と講義スタイルの両方を選択する必要があります。"
+  "lectureFormatSelector.personnelAndStyleRequired": "人員構成と講義スタイルの両方を選択する必要があります。",
 });
 
 registerTranslations("vi", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Phải chọn cả thành phần nhân sự và kiểu bài giảng."
+  "lectureFormatSelector.personnelAndStyleRequired": "Phải chọn cả thành phần nhân sự và kiểu bài giảng.",
 });
 
 registerTranslations("th", {
-  "lectureFormatSelector.personnelAndStyleRequired": "ต้องเลือกทั้งองค์ประกอบบุคลากรและรูปแบบการบรรยาย"
+  "lectureFormatSelector.personnelAndStyleRequired": "ต้องเลือกทั้งองค์ประกอบบุคลากรและรูปแบบการบรรยาย",
 });
 
 registerTranslations("id", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Komposisi personel dan gaya kuliah harus dipilih keduanya."
+  "lectureFormatSelector.personnelAndStyleRequired": "Komposisi personel dan gaya kuliah harus dipilih keduanya.",
 });
 
 registerTranslations("ms", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Komposisi kakitangan dan gaya kuliah mesti dipilih kedua-duanya."
+  "lectureFormatSelector.personnelAndStyleRequired": "Komposisi kakitangan dan gaya kuliah mesti dipilih kedua-duanya.",
 });
 
 registerTranslations("es", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Se deben seleccionar tanto la composición del personal como el estilo de la conferencia."
+  "lectureFormatSelector.personnelAndStyleRequired": "Se deben seleccionar tanto la composición del personal como el estilo de la conferencia.",
 });
 
 registerTranslations("fr", {
-  "lectureFormatSelector.personnelAndStyleRequired": "La composition du personnel et le style de la conférence doivent être tous deux sélectionnés."
+  "lectureFormatSelector.personnelAndStyleRequired": "La composition du personnel et le style de la conférence doivent être tous deux sélectionnés.",
 });
 
 registerTranslations("de", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Personalzusammensetzung und Vorlesungsstil müssen beide ausgewählt werden."
+  "lectureFormatSelector.personnelAndStyleRequired": "Personalzusammensetzung und Vorlesungsstil müssen beide ausgewählt werden.",
 });
 
 registerTranslations("pt", {
-  "lectureFormatSelector.personnelAndStyleRequired": "A composição do pessoal e o estilo da palestra devem ser selecionados."
+  "lectureFormatSelector.personnelAndStyleRequired": "A composição do pessoal e o estilo da palestra devem ser selecionados.",
 });
 
 registerTranslations("ru", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Необходимо выбрать и состав персонала, и стиль лекции."
+  "lectureFormatSelector.personnelAndStyleRequired": "Необходимо выбрать и состав персонала, и стиль лекции.",
 });
 
 registerTranslations("ar", {
-  "lectureFormatSelector.personnelAndStyleRequired": "يجب تحديد كل من تكوين الموظفين وأسلوب المحاضرة."
+  "lectureFormatSelector.personnelAndStyleRequired": "يجب تحديد كل من تكوين الموظفين وأسلوب المحاضرة.",
 });
 
 registerTranslations("hi", {
-  "lectureFormatSelector.personnelAndStyleRequired": "कार्मिक संरचना और व्याख्यान शैली दोनों का चयन किया जाना चाहिए।"
+  "lectureFormatSelector.personnelAndStyleRequired": "कार्मिक संरचना और व्याख्यान शैली दोनों का चयन किया जाना चाहिए।",
 });
 
 registerTranslations("it", {
-  "lectureFormatSelector.personnelAndStyleRequired": "È necessario selezionare sia la composizione del personale che lo stile della lezione."
+  "lectureFormatSelector.personnelAndStyleRequired": "È necessario selezionare sia la composizione del personale che lo stile della lezione.",
 });
 
 registerTranslations("nl", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Zowel de personeelssamenstelling als de lesstijl moeten worden geselecteerd."
+  "lectureFormatSelector.personnelAndStyleRequired": "Zowel de personeelssamenstelling als de lesstijl moeten worden geselecteerd.",
 });
 
 registerTranslations("pl", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Należy wybrać zarówno skład personelu, jak i styl wykładu."
+  "lectureFormatSelector.personnelAndStyleRequired": "Należy wybrać zarówno skład personelu, jak i styl wykładu.",
 });
 
 registerTranslations("sv", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Både personalsammansättning och föreläsningsstil måste väljas."
+  "lectureFormatSelector.personnelAndStyleRequired": "Både personalsammansättning och föreläsningsstil måste väljas.",
 });
 
 registerTranslations("tr", {
-  "lectureFormatSelector.personnelAndStyleRequired": "Personel kompozisyonu ve ders stili her ikisi de seçilmelidir."
+  "lectureFormatSelector.personnelAndStyleRequired": "Personel kompozisyonu ve ders stili her ikisi de seçilmelidir.",
 });

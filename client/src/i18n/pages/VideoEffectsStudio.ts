@@ -30,6 +30,14 @@ registerTranslations("ko", {
   "videoEffectsStudio.insufficientCredits": "크레딧 부족",
   "videoEffectsStudio.insufficientCreditsMessage": "이 작업을 수행하기에 크레딧이 부족합니다.",
   "videoEffectsStudio.rechargeCredits": "크레딧 충전",
+  "videoEffectsStudio.hardcoded1": "또는 이미지 URL 입력",
+  "videoEffectsStudio.hardcoded2": "처리 중...",
+  "videoEffectsStudio.hardcoded3": "효과 적용",
+  "videoEffectsStudio.hardcoded4": "AI가 비디오를 생성하고 있습니다...",
+  "videoEffectsStudio.hardcoded5": "보통 30초~2분 소요됩니다",
+  "videoEffectsStudio.hardcoded6": "효과를 선택하고 이미지를 업로드하세요",
+  "videoEffectsStudio.hardcoded1": "결과",
+  "videoEffectsStudio.hardcoded2": "새로 만들기",
 });
 
 registerTranslations("en", {

@@ -6,6 +6,7 @@ import { Volume2, Loader2, Square } from "lucide-react";
 import { toast } from "sonner";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 interface VoicePreviewButtonProps {
   voiceId: string;
   size?: "sm" | "default" | "icon";
@@ -64,7 +65,7 @@ export default function VoicePreviewButton({
       }
     } catch (err: any) {
       setIsPlaying(false);
-      if (err?.message?.includes("한도")) {
+      if (err?.message?.includes(t("voicePreviewButton.hardcoded1"))) {
         toast.error(t("vpb.apiLimitExceeded"));
       } else {
         toast.error(t("vpb.previewFailed"));

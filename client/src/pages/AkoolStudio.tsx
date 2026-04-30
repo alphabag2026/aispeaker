@@ -77,7 +77,7 @@ function ShareToGalleryButton({ mediaUrl, mediaType, toolUsed }: { mediaUrl: str
       onClick={() => {
         shareMut.mutate({
           title: `AI Studio - ${toolUsed}`,
-          description: `AI Studio ${toolUsed} 도구로 생성한 작품입니다.`,
+          description: `AI Studio - ${toolUsed}`,
           mediaUrl,
           mediaType,
           toolUsed,
@@ -254,9 +254,7 @@ function ImageToVideoTab() {
               <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
               <p className="text-sm text-muted-foreground">{"akoolStudio.imageToVideo.creating"}</p>
               <Button variant="outline" size="sm" className="gap-2" onClick={() => setPollId(resultId)} disabled={pollQuery.isFetching}>
-                <RefreshCw className={`h-3.5 w-3.5 ${pollQuery.isFetching ? 'animate-spin' : ''}`} />
-                상태 확인
-              </Button>
+                <RefreshCw className={`h-3.5 w-3.5 ${pollQuery.isFetching ? 'animate-spin' : ''}`} />{t("{i18n_key}")}</Button>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -287,7 +285,7 @@ function FaceSwapTab() {
   const faceSwapMut = trpc.akool.faceSwapPro.useMutation({
     onSuccess: (data: any) => {
       setResultId(data._id || data.id);
-      toast.success("얼굴 교환 요청 완료!");
+      toast.success(t("akoolStudio.hardcoded1"));
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -309,10 +307,10 @@ function FaceSwapTab() {
     if (!d) return;
     if (d.status === 3 && (d.resultUrl)) {
       setResultUrl(d.resultUrl);
-      toast.success("얼굴 교환 완료!");
+      toast.success(t("akoolStudio.hardcoded2"));
       setFsPollId(null);
     } else if (d.status === 4) {
-      toast.error("얼굴 교환 실패");
+      toast.error(t("akoolStudio.hardcoded3"));
       setFsPollId(null);
     }
   }, [fsPollQuery.data]);
@@ -323,29 +321,29 @@ function FaceSwapTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <User2 className="h-5 w-5 text-pink-400" />
-            얼굴 교환
+            {t("akoolStudio.hardcoded1")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-2">
-            <Button variant={mode === "pro" ? "default" : "outline"} size="sm" onClick={() => setMode("pro")} className={mode === "pro" ? "bg-gradient-to-r from-pink-600 to-rose-600 border-0" : ""}>Pro 모드</Button>
-            <Button variant={mode === "plus" ? "default" : "outline"} size="sm" onClick={() => setMode("plus")} className={mode === "plus" ? "bg-gradient-to-r from-violet-600 to-blue-600 border-0" : ""}>Plus 모드</Button>
+            <Button variant={mode === "pro" ? "default" : "outline"} size="sm" onClick={() => setMode("pro")} className={mode === "pro" ? "bg-gradient-to-r from-pink-600 to-rose-600 border-0" : ""}>{t("akoolStudio.hardcoded4")}</Button>
+            <Button variant={mode === "plus" ? "default" : "outline"} size="sm" onClick={() => setMode("plus")} className={mode === "plus" ? "bg-gradient-to-r from-violet-600 to-blue-600 border-0" : ""}>{t("akoolStudio.hardcoded5")}</Button>
           </div>
           <div>
-            <Label className="text-sm font-medium">소스 이미지 (교체할 얼굴)</Label>
+            <Label className="text-sm font-medium">{t("akoolStudio.hardcoded6")}</Label>
             <Input placeholder="https://example.com/source-face.jpg" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} className="mt-1.5 bg-background/50" />
           </div>
           <div>
-            <Label className="text-sm font-medium">타겟 이미지/비디오</Label>
+            <Label className="text-sm font-medium">{t("akoolStudio.hardcoded7")}</Label>
             <Input placeholder="https://example.com/target.jpg" value={targetUrl} onChange={(e) => setTargetUrl(e.target.value)} className="mt-1.5 bg-background/50" />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">얼굴 향상</Label>
+            <Label className="text-sm font-medium">{t("akoolStudio.hardcoded8")}</Label>
             <Switch checked={faceEnhance} onCheckedChange={setFaceEnhance} />
           </div>
           <Button className="w-full glow-button" disabled={!sourceUrl || !targetUrl || faceSwapMut.isPending || isDeducting} onClick={() => deductAndRun("face_swap", () => faceSwapMut.mutate({ sourceUrl, targetUrl, faceEnhance } as any))}>
             {faceSwapMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wand2 className="h-4 w-4 mr-2" />}
-            얼굴 교환 시작
+            {t("akoolStudio.hardcoded2")}
           </Button>
         </CardContent>
       </Card>
@@ -374,16 +372,16 @@ function FaceSwapTab() {
           ) : resultId ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary/50" />
-              <p className="text-sm text-muted-foreground">처리 중...</p>
+              <p className="text-sm text-muted-foreground">{t("akoolStudio.hardcoded9")}</p>
               <Button variant="outline" size="sm" className="gap-2" onClick={() => setFsPollId(resultId)} disabled={fsPollQuery.isFetching}>
                 <RefreshCw className={`h-3.5 w-3.5 ${fsPollQuery.isFetching ? 'animate-spin' : ''}`} />
-                상태 확인
+                {t("akoolStudio.hardcoded3")}
               </Button>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <User2 className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">소스와 타겟 이미지를 입력하세요</p>
+              <p className="text-sm">{t("akoolStudio.hardcoded10")}</p>
             </div>
           )}
         </CardContent>
@@ -433,7 +431,7 @@ function TalkingAvatarTab() {
       toast.success("akoolStudio.talkingAvatar.createSuccess");
       setAvatarPollId(null);
     } else if (d.status === 4) {
-      toast.error("생성 실패");
+      toast.error(t("akoolStudio.hardcoded11"));
       setAvatarPollId(null);
     }
   }, [avatarPollQuery.data]);
@@ -442,8 +440,8 @@ function TalkingAvatarTab() {
   const voices = [
     { id: "en-US-1", label: "English (US) - Male" },
     { id: "en-US-2", label: "English (US) - Female" },
-    { id: "ko-KR-1", label: "한국어 - 남성" },
-    { id: "ko-KR-2", label: "한국어 - 여성" },
+    { id: "ko-KR-1", label: t("akoolStudio.hardcoded12") },
+    { id: "ko-KR-2", label: t("akoolStudio.hardcoded13") },
     { id: "ja-JP-1", label: "日本語 - 男性" },
     { id: "zh-CN-1", label: "中文 - 男声" },
   ];
@@ -464,7 +462,7 @@ function TalkingAvatarTab() {
           </div>
           <div>
             <Label className="text-sm font-medium">{"akoolStudio.talkingAvatar.scriptLabel"}</Label>
-            <Textarea placeholder="아바타가 말할 내용을 입력하세요..." value={script} onChange={(e) => setScript(e.target.value)} rows={4} className="mt-1.5 bg-background/50" />
+            <Textarea placeholder={t("akoolStudio.hardcoded14")} value={script} onChange={(e) => setScript(e.target.value)} rows={4} className="mt-1.5 bg-background/50" />
           </div>
           <div>
             <Label className="text-sm font-medium">{"akoolStudio.tts.voiceLabel"}</Label>
@@ -511,7 +509,7 @@ function TalkingAvatarTab() {
               <p className="text-sm text-muted-foreground">{"akoolStudio.talkingAvatar.creating"}</p>
               <Button variant="outline" size="sm" className="gap-2" onClick={() => setAvatarPollId(resultId)} disabled={avatarPollQuery.isFetching}>
                 <RefreshCw className={`h-3.5 w-3.5 ${avatarPollQuery.isFetching ? 'animate-spin' : ''}`} />
-                상태 확인
+                {t("akoolStudio.hardcoded3")}
               </Button>
             </div>
           ) : (
@@ -633,7 +631,7 @@ function VideoTranslationTab() {
               <p className="text-sm text-muted-foreground">{"akoolStudio.videoTranslation.translating"}</p>
                <Button variant="outline" size="sm" className="gap-2" onClick={() => setTransPollId(resultId)} disabled={transPollQuery.isFetching}>
                 <RefreshCw className={`h-3.5 w-3.5 ${transPollQuery.isFetching ? 'animate-spin' : ''}`} />
-                상태 확인
+                {t("akoolStudio.hardcoded3")}
               </Button>
             </div>
           ) : (
@@ -665,7 +663,7 @@ function TTSTab() {
   const ttsMut = trpc.akool.ttsGenerate.useMutation({
     onSuccess: (data) => {
       setAudioUrl(data.audioUrl);
-      toast.success(`음성 생성 완료! (${data.voiceName})`);
+      toast.success(`Voice generated! (${data.voiceName})`);
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -776,7 +774,7 @@ function TTSTab() {
                   </button>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {isPlaying ? "재생 중..." : "클릭하여 재생"}
+                  {isPlaying ? t("akoolStudio.hardcoded15") : t("akoolStudio.hardcoded16")}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -789,8 +787,8 @@ function TTSTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Volume2 className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">텍스트를 입력하고 음성을 생성하세요</p>
-              <p className="text-xs mt-2 opacity-60">30종 AI 음성 지원</p>
+              <p className="text-sm">{t("akoolStudio.hardcoded17")}</p>
+              <p className="text-xs mt-2 opacity-60">{t("akoolStudio.hardcoded18")}</p>
             </div>
           )}
         </CardContent>
@@ -816,7 +814,7 @@ function VoiceCloneTab() {
     onSuccess: (data) => {
       setAudioUrl(data.audioUrl);
       setMatchedVoice(data.voiceName);
-      toast.success(`음성 복제 완료! (매칭: ${data.voiceName})`);
+      toast.success(`Voice cloned! (match: ${data.voiceName})`);
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -827,23 +825,23 @@ function VoiceCloneTab() {
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Mic className="h-5 w-5 text-indigo-400" />
-            음성 복제
+            {t("akoolStudio.hardcoded4")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
             <p className="text-xs text-indigo-300">
-              음성 샘플을 분석하여 가장 유사한 AI 음성을 자동 매칭합니다.
-              짧은 음성 샘플(5초 이상)로도 높은 정확도의 매칭이 가능합니다.
+              {t("akoolStudio.hardcoded5")}
+              {t("akoolStudio.hardcoded6")}
             </p>
           </div>
           <div>
-            <Label className="text-sm font-medium">음성 샘플 URL</Label>
+            <Label className="text-sm font-medium">{t("akoolStudio.hardcoded19")}</Label>
             <Input placeholder="https://example.com/voice-sample.mp3" value={sampleUrl} onChange={(e) => setSampleUrl(e.target.value)} className="mt-1.5 bg-background/50" />
           </div>
           <div>
-            <Label className="text-sm font-medium">생성할 텍스트</Label>
-            <Textarea placeholder="복제된 음성으로 말할 내용을 입력하세요..." value={text} onChange={(e) => setText(e.target.value)} rows={4} className="mt-1.5 bg-background/50" />
+            <Label className="text-sm font-medium">{t("akoolStudio.hardcoded20")}</Label>
+            <Textarea placeholder={t("akoolStudio.hardcoded21")} value={text} onChange={(e) => setText(e.target.value)} rows={4} className="mt-1.5 bg-background/50" />
           </div>
           <Button
             className="w-full glow-button"
@@ -856,7 +854,7 @@ function VoiceCloneTab() {
             }}
           >
             {cloneMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mic className="h-4 w-4 mr-2" />}
-            음성 복제 시작
+            {t("akoolStudio.hardcoded7")}
           </Button>
         </CardContent>
       </Card>
@@ -873,7 +871,7 @@ function VoiceCloneTab() {
             <div className="space-y-6">
               {matchedVoice && (
                 <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <p className="text-sm text-green-300">매칭된 음성: <strong>{matchedVoice}</strong></p>
+                  <p className="text-sm text-green-300">Matched voice: <strong>{matchedVoice}</strong></p>
                 </div>
               )}
               <div className="flex flex-col items-center py-6">
@@ -901,7 +899,7 @@ function VoiceCloneTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Mic className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">음성 샘플과 텍스트를 입력하세요</p>
+              <p className="text-sm">{t("akoolStudio.hardcoded23")}</p>
             </div>
           )}
         </CardContent>
@@ -930,7 +928,7 @@ function VoiceChangeTab() {
     onSuccess: (data) => {
       setAudioUrl(data.audioUrl);
       setOriginalText(data.originalText || null);
-      toast.success(`음성 변환 완료! (${data.voiceName})`);
+      toast.success(`Voice converted! (${data.voiceName})`);
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -963,13 +961,13 @@ function VoiceChangeTab() {
             </Select>
           </div>
           <div className="flex items-center justify-between">
-            <Label className="text-sm font-medium">자동 음성 인식 사용</Label>
+            <Label className="text-sm font-medium">{t("akoolStudio.hardcoded24")}</Label>
             <Switch checked={useTranscription} onCheckedChange={setUseTranscription} />
           </div>
           {!useTranscription && (
             <div>
-              <Label className="text-sm font-medium">텍스트 직접 입력</Label>
-              <Textarea placeholder="변환할 텍스트를 입력하세요..." value={text} onChange={(e) => setText(e.target.value)} rows={3} className="mt-1.5 bg-background/50" />
+              <Label className="text-sm font-medium">{t("akoolStudio.hardcoded25")}</Label>
+              <Textarea placeholder={t("akoolStudio.hardcoded26")} value={text} onChange={(e) => setText(e.target.value)} rows={3} className="mt-1.5 bg-background/50" />
             </div>
           )}
           <Button
@@ -1004,7 +1002,7 @@ function VoiceChangeTab() {
             <div className="space-y-6">
               {originalText && (
                 <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                  <p className="text-xs text-muted-foreground mb-1">인식된 텍스트:</p>
+                  <p className="text-xs text-muted-foreground mb-1">{t("akoolStudio.hardcoded27")}</p>
                   <p className="text-sm">{originalText}</p>
                 </div>
               )}
@@ -1255,7 +1253,7 @@ function BgRemoveTab() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Palette className="h-16 w-16 mb-4 opacity-20" />
-              <p className="text-sm">이미지 URL을 입력하세요</p>
+              <p className="text-sm">{t("akoolStudio.hardcoded28")}</p>
             </div>
           )}
         </CardContent>
@@ -1278,16 +1276,16 @@ function LiveCameraTab() {
               <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 to-blue-600/20 blur-2xl rounded-full" />
               <Camera className="h-16 w-16 text-cyan-400 relative" />
             </div>
-            <h2 className="text-2xl font-bold mb-3">라이브 카메라 AI</h2>
+            <h2 className="text-2xl font-bold mb-3">{t("akoolStudio.hardcoded29")}</h2>
             <p className="text-muted-foreground max-w-md mb-6">
-              웹캠에 실시간 AI 효과를 적용합니다. 얼굴 교환, 배경 변경, 뷰티 필터 등을
-              실시간으로 적용하여 화상회의나 라이브 스트리밍에 활용할 수 있습니다.
+              Apply real-time AI effects to webcam. Face swap, background change, beauty filters
+              can be applied in real-time for video conferences or live streaming.
             </p>
             <div className="grid sm:grid-cols-3 gap-4 w-full mb-8">
               {[
-                { icon: User2, label: "실시간 얼굴 교환", desc: "WebRTC 기반 실시간 처리" },
-                { icon: Palette, label: "배경 실시간 변경", desc: "AI 세그멘테이션 기반" },
-                { icon: Sparkles, label: "뷰티 필터", desc: "피부 보정, 메이크업 효과" },
+                { icon: User2, label: t("akoolStudio.hardcoded30"), desc: t("akoolStudio.hardcoded31") },
+                { icon: Palette, label: t("akoolStudio.hardcoded32"), desc: t("akoolStudio.hardcoded33") },
+                { icon: Sparkles, label: t("akoolStudio.hardcoded34"), desc: t("akoolStudio.hardcoded35") },
               ].map((f, i) => (
                 <div key={i} className="p-4 rounded-lg bg-background/30 border border-border/30">
                   <f.icon className="h-6 w-6 text-cyan-400 mb-2 mx-auto" />
@@ -1298,7 +1296,7 @@ function LiveCameraTab() {
             </div>
             <Badge variant="outline" className="gap-2 text-sm px-4 py-2">
               <Clock className="h-4 w-4" />
-              Coming Soon - WebRTC 통합 준비 중
+              Coming Soon - WebRTC Integration
             </Badge>
           </div>
         </CardContent>
@@ -1321,16 +1319,16 @@ function StreamingAvatarTab() {
               <div className="absolute inset-0 bg-gradient-to-r from-violet-600/20 to-pink-600/20 blur-2xl rounded-full" />
               <Radio className="h-16 w-16 text-violet-400 relative" />
             </div>
-            <h2 className="text-2xl font-bold mb-3">스트리밍 아바타</h2>
+            <h2 className="text-2xl font-bold mb-3">{t("akoolStudio.hardcoded36")}</h2>
             <p className="text-muted-foreground max-w-md mb-6">
-              실시간으로 대화하는 AI 아바타를 생성합니다. 음성 인식과 자연어 처리를 결합하여
-              실시간 대화가 가능한 인터랙티브 아바타를 제공합니다.
+              Create AI avatars that converse in real-time. Combining speech recognition and NLP
+              to provide interactive avatars capable of real-time conversation.
             </p>
             <div className="grid sm:grid-cols-3 gap-4 w-full mb-8">
               {[
-                { icon: Brain, label: "실시간 대화", desc: "LLM 기반 자연어 응답" },
-                { icon: Mic, label: "음성 인식", desc: "STT + 실시간 처리" },
-                { icon: Video, label: "아바타 렌더링", desc: "실시간 립싱크 + 표정" },
+                { icon: Brain, label: t("akoolStudio.hardcoded37"), desc: t("akoolStudio.hardcoded38") },
+                { icon: Mic, label: t("akoolStudio.hardcoded39"), desc: t("akoolStudio.hardcoded40") },
+                { icon: Video, label: t("akoolStudio.hardcoded41"), desc: t("akoolStudio.hardcoded42") },
               ].map((f, i) => (
                 <div key={i} className="p-4 rounded-lg bg-background/30 border border-border/30">
                   <f.icon className="h-6 w-6 text-violet-400 mb-2 mx-auto" />
@@ -1341,7 +1339,7 @@ function StreamingAvatarTab() {
             </div>
             <Badge variant="outline" className="gap-2 text-sm px-4 py-2">
               <Clock className="h-4 w-4" />
-              Coming Soon - 실시간 아바타 엔진 개발 중
+              Coming Soon - Real-time Avatar Engine
             </Badge>
           </div>
         </CardContent>
@@ -1356,19 +1354,19 @@ function StreamingAvatarTab() {
 function StudioOverview() {
   const { t } = useLanguage();
   const tools = [
-    { label: "akoolStudio.main.tabs.imageToVideo", href: "/ai-studio/image-to-video", icon: Clapperboard, color: "from-violet-600 to-blue-600", desc: "정적 이미지를 생동감 있는 비디오로 변환", badge: "hot" },
-    { label: "얼굴 교환", href: "/ai-studio/face-swap", icon: User2, color: "from-pink-600 to-rose-600", desc: "AI 기반 정밀 얼굴 교환", badge: "hot" },
-    { label: "아바타 비디오", href: "/ai-studio/talking-avatar", icon: Brain, color: "from-cyan-600 to-teal-600", desc: "텍스트로 말하는 아바타 생성", badge: "" },
-    { label: "akoolStudio.main.tabs.videoTranslation", href: "/ai-studio/video-translate", icon: Languages, color: "from-amber-600 to-orange-600", desc: "15+ 언어로 비디오 자동 번역", badge: "" },
-    { label: "akoolStudio.tts.title", href: "/ai-studio/tts", icon: Volume2, color: "from-green-600 to-emerald-600", desc: "30종 AI 음성 합성", badge: "new" },
-    { label: "음성 복제", href: "/ai-studio/voice-clone", icon: Mic, color: "from-indigo-600 to-violet-600", desc: "목소리를 복제하여 콘텐츠 제작", badge: "new" },
-    { label: "akoolStudio.main.tabs.voiceChange", href: "/ai-studio/voice-change", icon: Headphones, color: "from-purple-600 to-pink-600", desc: "음성을 다른 목소리로 변환", badge: "new" },
-    { label: "akoolStudio.main.tabs.imageGen", href: "/ai-studio/image-gen", icon: ImageIcon, color: "from-rose-600 to-orange-600", desc: "텍스트로 고품질 이미지 생성", badge: "new" },
-    { label: "akoolStudio.bgRemove.title", href: "/ai-studio/bg-remove", icon: Eraser, color: "from-teal-600 to-cyan-600", desc: "AI 배경 제거 및 교체", badge: "new" },
-    { label: "라이브 카메라", href: "/ai-studio/live-camera", icon: Camera, color: "from-sky-600 to-blue-600", desc: "실시간 AI 카메라 효과", badge: "" },
-    { label: "스트리밍 아바타", href: "/ai-studio/streaming-avatar", icon: Radio, color: "from-fuchsia-600 to-violet-600", desc: "실시간 대화형 AI 아바타", badge: "" },
-    { label: "AI 모델 비교", href: "/ai-studio/models", icon: Sparkles, color: "from-fuchsia-600 to-pink-600", desc: "10+ AI 모델 성능 비교", badge: "" },
-    { label: "akoolStudio.imageToVideo.effectPresetLabel", href: "/ai-studio/effects", icon: Zap, color: "from-yellow-600 to-amber-600", desc: "12종 비디오 효과 프리셋", badge: "" },
+    { label: "akoolStudio.main.tabs.imageToVideo", href: "/ai-studio/image-to-video", icon: Clapperboard, color: "from-violet-600 to-blue-600", desc: t("akoolStudio.hardcoded43"), badge: "hot" },
+    { label: t("akoolStudio.hardcoded44"), href: "/ai-studio/face-swap", icon: User2, color: "from-pink-600 to-rose-600", desc: t("akoolStudio.hardcoded45"), badge: "hot" },
+    { label: t("akoolStudio.hardcoded46"), href: "/ai-studio/talking-avatar", icon: Brain, color: "from-cyan-600 to-teal-600", desc: t("akoolStudio.hardcoded47"), badge: "" },
+    { label: "akoolStudio.main.tabs.videoTranslation", href: "/ai-studio/video-translate", icon: Languages, color: "from-amber-600 to-orange-600", desc: t("akoolStudio.hardcoded48"), badge: "" },
+    { label: "akoolStudio.tts.title", href: "/ai-studio/tts", icon: Volume2, color: "from-green-600 to-emerald-600", desc: t("akoolStudio.hardcoded49"), badge: "new" },
+    { label: t("akoolStudio.hardcoded50"), href: "/ai-studio/voice-clone", icon: Mic, color: "from-indigo-600 to-violet-600", desc: t("akoolStudio.hardcoded51"), badge: "new" },
+    { label: "akoolStudio.main.tabs.voiceChange", href: "/ai-studio/voice-change", icon: Headphones, color: "from-purple-600 to-pink-600", desc: t("akoolStudio.hardcoded52"), badge: "new" },
+    { label: "akoolStudio.main.tabs.imageGen", href: "/ai-studio/image-gen", icon: ImageIcon, color: "from-rose-600 to-orange-600", desc: t("akoolStudio.hardcoded53"), badge: "new" },
+    { label: "akoolStudio.bgRemove.title", href: "/ai-studio/bg-remove", icon: Eraser, color: "from-teal-600 to-cyan-600", desc: t("akoolStudio.hardcoded54"), badge: "new" },
+    { label: t("akoolStudio.hardcoded55"), href: "/ai-studio/live-camera", icon: Camera, color: "from-sky-600 to-blue-600", desc: t("akoolStudio.hardcoded56"), badge: "" },
+    { label: t("akoolStudio.hardcoded36"), href: "/ai-studio/streaming-avatar", icon: Radio, color: "from-fuchsia-600 to-violet-600", desc: t("akoolStudio.hardcoded57"), badge: "" },
+    { label: t("akoolStudio.hardcoded58"), href: "/ai-studio/models", icon: Sparkles, color: "from-fuchsia-600 to-pink-600", desc: t("akoolStudio.hardcoded59"), badge: "" },
+    { label: "akoolStudio.imageToVideo.effectPresetLabel", href: "/ai-studio/effects", icon: Zap, color: "from-yellow-600 to-amber-600", desc: t("akoolStudio.hardcoded60"), badge: "" },
   ];
 
   const badgeColors: Record<string, string> = {
@@ -1380,9 +1378,9 @@ function StudioOverview() {
     <div>
       <div className="mb-8">
         <h2 className="text-2xl font-bold mb-2">
-          <span className="gradient-text">AI 도구 모음</span>
+          <span className="gradient-text">{t("akoolStudio.hardcoded61")}</span>
         </h2>
-        <p className="text-muted-foreground">원하는 도구를 선택하여 시작하세요</p>
+        <p className="text-muted-foreground">{t("akoolStudio.hardcoded62")}</p>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {tools.map((tool) => (
@@ -1414,7 +1412,7 @@ function StudioOverview() {
 export function AkoolImageToVideo() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title={t("akoolStudio.main.tabs.imageToVideo")} subtitle="정적 이미지를 생동감 있는 비디오로 변환합니다">
+    <StudioLayout title={t("akoolStudio.main.tabs.imageToVideo")} subtitle={t("akoolStudio.hardcoded63")}>
       <ImageToVideoTab />
     </StudioLayout>
   );
@@ -1423,7 +1421,7 @@ export function AkoolImageToVideo() {
 export function AkoolFaceSwap() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="얼굴 교환" subtitle="AI 기반 정밀 얼굴 교환 (Pro / Plus 모드)">
+    <StudioLayout title={t("akoolStudio.hardcoded44")} subtitle={t("akoolStudio.hardcoded64")}>
       <FaceSwapTab />
     </StudioLayout>
   );
@@ -1432,7 +1430,7 @@ export function AkoolFaceSwap() {
 export function AkoolTalkingAvatar() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="Talking Avatar" subtitle="텍스트 스크립트로 말하는 아바타 비디오를 생성합니다">
+    <StudioLayout title="Talking Avatar" subtitle={t("akoolStudio.hardcoded65")}>
       <TalkingAvatarTab />
     </StudioLayout>
   );
@@ -1441,7 +1439,7 @@ export function AkoolTalkingAvatar() {
 export function AkoolVideoTranslate() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title={t("akoolStudio.main.tabs.videoTranslation")} subtitle="15+ 언어로 비디오를 자동 번역합니다">
+    <StudioLayout title={t("akoolStudio.main.tabs.videoTranslation")} subtitle={t("akoolStudio.hardcoded66")}>
       <VideoTranslationTab />
     </StudioLayout>
   );
@@ -1450,7 +1448,7 @@ export function AkoolVideoTranslate() {
 export function AkoolTTS() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title={t("akoolStudio.tts.title")} subtitle="30종 AI 음성으로 자연스러운 음성 합성">
+    <StudioLayout title={t("akoolStudio.tts.title")} subtitle={t("akoolStudio.hardcoded67")}>
       <TTSTab />
     </StudioLayout>
   );
@@ -1459,7 +1457,7 @@ export function AkoolTTS() {
 export function AkoolVoiceClone() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="음성 복제" subtitle="음성 샘플을 분석하여 유사한 AI 음성으로 복제">
+    <StudioLayout title={t("akoolStudio.hardcoded50")} subtitle={t("akoolStudio.hardcoded68")}>
       <VoiceCloneTab />
     </StudioLayout>
   );
@@ -1468,7 +1466,7 @@ export function AkoolVoiceClone() {
 export function AkoolVoiceChange() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title={t("akoolStudio.main.tabs.voiceChange")} subtitle="음성을 다른 목소리로 변환합니다">
+    <StudioLayout title={t("akoolStudio.main.tabs.voiceChange")} subtitle={t("akoolStudio.hardcoded69")}>
       <VoiceChangeTab />
     </StudioLayout>
   );
@@ -1477,7 +1475,7 @@ export function AkoolVoiceChange() {
 export function AkoolImageGen() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title={t("akoolStudio.main.tabs.imageGen")} subtitle="텍스트 프롬프트로 7종 스타일 이미지 생성">
+    <StudioLayout title={t("akoolStudio.main.tabs.imageGen")} subtitle={t("akoolStudio.hardcoded70")}>
       <ImageGenTab />
     </StudioLayout>
   );
@@ -1486,7 +1484,7 @@ export function AkoolImageGen() {
 export function AkoolBgRemove() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title={t("akoolStudio.bgRemove.title")} subtitle="AI 기반 배경 제거 및 교체">
+    <StudioLayout title={t("akoolStudio.bgRemove.title")} subtitle={t("akoolStudio.hardcoded71")}>
       <BgRemoveTab />
     </StudioLayout>
   );
@@ -1495,7 +1493,7 @@ export function AkoolBgRemove() {
 export function AkoolLiveCamera() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="라이브 카메라" subtitle="실시간 AI 카메라 효과">
+    <StudioLayout title={t("akoolStudio.hardcoded55")} subtitle={t("akoolStudio.hardcoded56")}>
       <LiveCameraTab />
     </StudioLayout>
   );
@@ -1504,7 +1502,7 @@ export function AkoolLiveCamera() {
 export function AkoolStreamingAvatar() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="스트리밍 아바타" subtitle="실시간 대화형 AI 아바타">
+    <StudioLayout title={t("akoolStudio.hardcoded36")} subtitle={t("akoolStudio.hardcoded57")}>
       <StreamingAvatarTab />
     </StudioLayout>
   );
@@ -1513,7 +1511,7 @@ export function AkoolStreamingAvatar() {
 export function AkoolModels() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="AI 모델 비교" subtitle="10+ AI 모델의 성능과 특징을 비교합니다">
+    <StudioLayout title={t("akoolStudio.hardcoded58")} subtitle={t("akoolStudio.hardcoded72")}>
       <ModelCarousel showComparison={true} />
     </StudioLayout>
   );
@@ -1522,7 +1520,7 @@ export function AkoolModels() {
 export function AkoolEffects() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="효과 프리셋 갤러리" subtitle="12종 비디오 효과 프리셋을 미리보기합니다">
+    <StudioLayout title={t("akoolStudio.hardcoded73")} subtitle={t("akoolStudio.hardcoded74")}>
       <EffectsGallery />
     </StudioLayout>
   );
@@ -1534,7 +1532,7 @@ export function AkoolEffects() {
 export default function AkoolStudio() {
   const { t } = useLanguage();
   return (
-    <StudioLayout title="AI Studio" subtitle="25+ AI 도구를 하나의 플랫폼에서">
+    <StudioLayout title="AI Studio" subtitle={t("akoolStudio.hardcoded75")}>
       <StudioOverview />
     </StudioLayout>
   );

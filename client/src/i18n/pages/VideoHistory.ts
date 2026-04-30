@@ -20,6 +20,10 @@ registerTranslations("ko", {
   "생성 중": "생성 중",
   "완료": "완료",
   "실패": "실패",
+  "videoHistory.hardcoded1": "대기 중",
+  "videoHistory.hardcoded2": "생성 중",
+  "videoHistory.hardcoded3": "완료",
+  "videoHistory.hardcoded4": "실패",
 });
 
 registerTranslations("en", {

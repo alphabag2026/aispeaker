@@ -13,6 +13,7 @@ registerTranslations("ko", {
   "lectureRoom.aiAvatarMode": "AI 아바타 모드",
   "lectureRoom.previous": "이전",
   "lectureRoom.next": "다음",
+  "lectureRoom.hardcoded1": "한국어",
 });
 
 registerTranslations("en", {

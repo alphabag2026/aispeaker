@@ -114,6 +114,6 @@ otherLanguages.forEach(lang => {
     "trouble.cause": "Cause",
     "trouble.back_to_pricing": "Back to Pricing",
     "trouble.need_help": "Need more help?",
-    "trouble.contact_support": "Contact customer support"
+    "trouble.contact_support": "Contact customer support",
   });
 });

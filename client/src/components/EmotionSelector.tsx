@@ -11,13 +11,13 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import "@/i18n/components/EmotionSelector";
 
 const EMOTIONS = [
-  { value: "neutral", label: "중립", emoji: "😐", color: "bg-gray-100 text-gray-700" },
-  { value: "happy", label: "기쁨", emoji: "😊", color: "bg-yellow-100 text-yellow-700" },
-  { value: "serious", label: "진지", emoji: "🧐", color: "bg-blue-100 text-blue-700" },
-  { value: "excited", label: "열정", emoji: "🔥", color: "bg-red-100 text-red-700" },
-  { value: "empathetic", label: "공감", emoji: "💜", color: "bg-purple-100 text-purple-700" },
-  { value: "confident", label: "자신감", emoji: "💪", color: "bg-green-100 text-green-700" },
-  { value: "questioning", label: "질문", emoji: "🤔", color: "bg-orange-100 text-orange-700" },
+  { value: "neutral", label: t("emotionSelector.hardcoded1"), emoji: "😐", color: "bg-gray-100 text-gray-700" },
+  { value: "happy", label: t("emotionSelector.hardcoded2"), emoji: "😊", color: "bg-yellow-100 text-yellow-700" },
+  { value: "serious", label: t("emotionSelector.hardcoded3"), emoji: "🧐", color: "bg-blue-100 text-blue-700" },
+  { value: "excited", label: t("emotionSelector.hardcoded4"), emoji: "🔥", color: "bg-red-100 text-red-700" },
+  { value: "empathetic", label: t("emotionSelector.hardcoded5"), emoji: "💜", color: "bg-purple-100 text-purple-700" },
+  { value: "confident", label: t("emotionSelector.hardcoded6"), emoji: "💪", color: "bg-green-100 text-green-700" },
+  { value: "questioning", label: t("emotionSelector.hardcoded7"), emoji: "🤔", color: "bg-orange-100 text-orange-700" },
 ] as const;
 
 interface EmotionSelectorProps {

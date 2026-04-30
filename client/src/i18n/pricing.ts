@@ -234,6 +234,6 @@ otherLanguages.forEach(lang => {
     "pricing.starter_plan": "Starter",
     "pricing.pro_plan": "Professional",
     "pricing.business_plan": "Business",
-    "pricing.enterprise_plan": "Enterprise"
+    "pricing.enterprise_plan": "Enterprise",
   });
 });

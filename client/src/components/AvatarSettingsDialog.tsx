@@ -294,7 +294,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings2Icon className="w-5 h-5 text-primary" />
-            아바타 설정 - {avatar.name}
+            {t("avatarSettingsDialog.hardcoded1")} - {avatar.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -316,7 +316,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                 {AVATAR_ROLES.find((r) => r.value === role)?.label || role}
               </Badge>
               <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                <Volume2 className="w-3 h-3" /> {selectedCloneId ? `클론: ${voiceClones.data?.find(c => c.id === selectedCloneId)?.name || ""}` : ttsVoiceId}
+                <Volume2 className="w-3 h-3" /> {selectedCloneId ? `${t("avatarSettingsDialog.hardcoded7")}: ${voiceClones.data?.find(c => c.id === selectedCloneId)?.name || ""}` : ttsVoiceId}
               </p>
             </div>
           </div>
@@ -324,15 +324,15 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
           {/* Face Selection - 3 Tabs */}
           <div>
             <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
-              <Camera className="w-4 h-4" /> 얼굴 설정
+              <Camera className="w-4 h-4" /> {t("avatarSettingsDialog.hardcoded2")}
             </Label>
             <Tabs value={faceTab} onValueChange={setFaceTab}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="gallery" className="gap-1 text-xs">
-                  <Sparkles className="w-3.5 h-3.5" /> 샘플 {t("avatarSettingsDialog.gallery")}
+                  <Sparkles className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.hardcoded3")}
                 </TabsTrigger>
                 <TabsTrigger value="custom" className="gap-1 text-xs">
-                  <Upload className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.myFace")} 업로드
+                  <Upload className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.hardcoded4")}
                 </TabsTrigger>
                 <TabsTrigger value="ai" className="gap-1 text-xs">
                   <Wand2 className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.aiGenerated")}
@@ -378,7 +378,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                     ) : (
                       <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
                         <User className="w-10 h-10 text-muted-foreground/50" />
-                        <span className="text-[10px] text-muted-foreground mt-1">사진 없음</span>
+                        <span className="text-[10px] text-muted-foreground mt-1">{t("avatarSettingsDialog.hardcoded3")}</span>
                       </div>
                     )}
                   </div>
@@ -404,7 +404,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                           <span className="text-[10px] text-muted-foreground mt-2">{t("avatarSettingsDialog.generating")}</span>
                         </div>
                       ) : aiGeneratedUrl ? (
-                        <img src={aiGeneratedUrl} alt="AI 생성 얼굴" className="w-full h-full object-cover" />
+                        <img src={aiGeneratedUrl} alt={t("avatarSettingsDialog.hardcoded4")} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
                           <Wand2 className="w-8 h-8 text-muted-foreground/50" />
@@ -451,7 +451,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   </div>
 
                   <div>
-                    <Label className="text-xs mb-1 block">얼굴 특징 설명</Label>
+                    <Label className="text-xs mb-1 block">{t("avatarSettingsDialog.hardcoded5")}</Label>
                     <Textarea
                       placeholder={t("avatarSettingsDialog.facePromptPlaceholder")}
                       value={aiPrompt}
@@ -467,12 +467,12 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                     </Button>
                     {aiGeneratedUrl && (
                       <Button variant="outline" onClick={handleGenerateAiFace} disabled={generateFace.isPending} className="gap-1">
-                        <RefreshCw className="w-4 h-4" /> 다시 생성
+                        <RefreshCw className="w-4 h-4" /> {t("avatarSettingsDialog.hardcoded5")}
                       </Button>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
-                    AI가 설명에 맞는 가상 얼굴을 생성합니다. 마음에 들면 저장 버튼을 눌러주세요.
+                    {t("avatarSettingsDialog.hardcoded6")}
                   </p>
                 </div>
               </TabsContent>
@@ -485,7 +485,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-1.5 block">{t("avatarSettingsDialog.name")}</Label>
-              <Input placeholder="아바타 이름" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input placeholder={t("avatarSettingsDialog.hardcoded6")} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
               <Label className="mb-1.5 block">{t("avatarSettingsDialog.role")}</Label>
@@ -640,7 +640,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                         <div className="flex items-center gap-3 flex-1">
                           <div className="flex items-center gap-2 flex-1">
                             <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
-                            <span className="text-sm font-mono">{recordDuration}초 / 30초</span>
+                            <span className="text-sm font-mono">{recordDuration}s / 30s</span>
                             <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-red-500 transition-all duration-1000"
@@ -655,7 +655,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                       )}
                       {recordedBlob && !isRecording && (
                         <div className="flex items-center gap-2 flex-1">
-                          <Badge variant="secondary" className="text-xs">{recordDuration}초 녹음됨</Badge>
+                          <Badge variant="secondary" className="text-xs">{recordDuration}s recorded</Badge>
                           <Button onClick={playRecordedAudio} variant="ghost" size="sm" className="gap-1">
                             <Play className="w-3 h-3" /> {t("avatarSettingsDialog.play")}
                           </Button>

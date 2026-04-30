@@ -42,7 +42,8 @@ registerTranslations('ko', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "도구 사용하기",
   "creditDashboard.communityGallery": "커뮤니티 갤러리",
-  "creditDashboard.shareWorks": "작품 공유하기"
+  "creditDashboard.shareWorks": "작품 공유하기",
+  "creditDashboard.hardcoded1": "크레딧 충전",
 });
 
 registerTranslations('en', {
@@ -87,7 +88,7 @@ registerTranslations('en', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Use Tools",
   "creditDashboard.communityGallery": "Community Gallery",
-  "creditDashboard.shareWorks": "Share Works"
+  "creditDashboard.shareWorks": "Share Works",
 });
 
 registerTranslations('zh', {
@@ -132,7 +133,7 @@ registerTranslations('zh', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "使用工具",
   "creditDashboard.communityGallery": "社区画廊",
-  "creditDashboard.shareWorks": "作品分享"
+  "creditDashboard.shareWorks": "作品分享",
 });
 
 registerTranslations('ja', {
@@ -177,7 +178,7 @@ registerTranslations('ja', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "ツールを使う",
   "creditDashboard.communityGallery": "コミュニティギャラリー",
-  "creditDashboard.shareWorks": "作品を共有"
+  "creditDashboard.shareWorks": "作品を共有",
 });
 
 registerTranslations('vi', {
@@ -222,7 +223,7 @@ registerTranslations('vi', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Sử dụng công cụ",
   "creditDashboard.communityGallery": "Thư viện cộng đồng",
-  "creditDashboard.shareWorks": "Chia sẻ tác phẩm"
+  "creditDashboard.shareWorks": "Chia sẻ tác phẩm",
 });
 
 registerTranslations('th', {
@@ -267,7 +268,7 @@ registerTranslations('th', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "ใช้เครื่องมือ",
   "creditDashboard.communityGallery": "ชุมชนแกลเลอรี",
-  "creditDashboard.shareWorks": "แชร์ผลงาน"
+  "creditDashboard.shareWorks": "แชร์ผลงาน",
 });
 
 registerTranslations('id', {
@@ -312,7 +313,7 @@ registerTranslations('id', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Gunakan Alat",
   "creditDashboard.communityGallery": "Galeri Komunitas",
-  "creditDashboard.shareWorks": "Bagikan Karya"
+  "creditDashboard.shareWorks": "Bagikan Karya",
 });
 
 registerTranslations('ms', {
@@ -357,7 +358,7 @@ registerTranslations('ms', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Gunakan Alat",
   "creditDashboard.communityGallery": "Galeri Komuniti",
-  "creditDashboard.shareWorks": "Kongsi Karya"
+  "creditDashboard.shareWorks": "Kongsi Karya",
 });
 
 registerTranslations('es', {
@@ -402,7 +403,7 @@ registerTranslations('es', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Usar herramientas",
   "creditDashboard.communityGallery": "Galería comunitaria",
-  "creditDashboard.shareWorks": "Compartir obras"
+  "creditDashboard.shareWorks": "Compartir obras",
 });
 
 registerTranslations('fr', {
@@ -447,7 +448,7 @@ registerTranslations('fr', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Utiliser les outils",
   "creditDashboard.communityGallery": "Galerie communautaire",
-  "creditDashboard.shareWorks": "Partager les œuvres"
+  "creditDashboard.shareWorks": "Partager les œuvres",
 });
 
 registerTranslations('de', {
@@ -492,7 +493,7 @@ registerTranslations('de', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Werkzeuge verwenden",
   "creditDashboard.communityGallery": "Community Galerie",
-  "creditDashboard.shareWorks": "Werke teilen"
+  "creditDashboard.shareWorks": "Werke teilen",
 });
 
 registerTranslations('pt', {
@@ -537,7 +538,7 @@ registerTranslations('pt', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Usar ferramentas",
   "creditDashboard.communityGallery": "Galeria comunitária",
-  "creditDashboard.shareWorks": "Compartilhar obras"
+  "creditDashboard.shareWorks": "Compartilhar obras",
 });
 
 registerTranslations('ru', {
@@ -582,7 +583,7 @@ registerTranslations('ru', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Использовать инструменты",
   "creditDashboard.communityGallery": "Сообщество галереи",
-  "creditDashboard.shareWorks": "Поделиться работами"
+  "creditDashboard.shareWorks": "Поделиться работами",
 });
 
 registerTranslations('ar', {
@@ -627,7 +628,7 @@ registerTranslations('ar', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "استخدام الأدوات",
   "creditDashboard.communityGallery": "معرض المجتمع",
-  "creditDashboard.shareWorks": "مشاركة الأعمال"
+  "creditDashboard.shareWorks": "مشاركة الأعمال",
 });
 
 registerTranslations('hi', {
@@ -672,7 +673,7 @@ registerTranslations('hi', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "उपकरण का उपयोग करें",
   "creditDashboard.communityGallery": "सामुदायिक गैलरी",
-  "creditDashboard.shareWorks": "काम साझा करें"
+  "creditDashboard.shareWorks": "काम साझा करें",
 });
 
 registerTranslations('it', {
@@ -717,7 +718,7 @@ registerTranslations('it', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Usa strumenti",
   "creditDashboard.communityGallery": "Galleria comunitaria",
-  "creditDashboard.shareWorks": "Condividi opere"
+  "creditDashboard.shareWorks": "Condividi opere",
 });
 
 registerTranslations('nl', {
@@ -762,7 +763,7 @@ registerTranslations('nl', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Gebruik tools",
   "creditDashboard.communityGallery": "Communitygalerij",
-  "creditDashboard.shareWorks": "Deel werken"
+  "creditDashboard.shareWorks": "Deel werken",
 });
 
 registerTranslations('pl', {
@@ -807,7 +808,7 @@ registerTranslations('pl', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Użyj narzędzi",
   "creditDashboard.communityGallery": "Galeria społeczności",
-  "creditDashboard.shareWorks": "Udostępnij prace"
+  "creditDashboard.shareWorks": "Udostępnij prace",
 });
 
 registerTranslations('sv', {
@@ -852,7 +853,7 @@ registerTranslations('sv', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Använd verktyg",
   "creditDashboard.communityGallery": "Community-galleri",
-  "creditDashboard.shareWorks": "Dela verk"
+  "creditDashboard.shareWorks": "Dela verk",
 });
 
 registerTranslations('tr', {
@@ -897,6 +898,6 @@ registerTranslations('tr', {
   "creditDashboard.aiStudio": "AI Studio",
   "creditDashboard.useTools": "Araçları Kullan",
   "creditDashboard.communityGallery": "Topluluk Galerisi",
-  "creditDashboard.shareWorks": "Çalışmaları Paylaş"
+  "creditDashboard.shareWorks": "Çalışmaları Paylaş",
 });
 

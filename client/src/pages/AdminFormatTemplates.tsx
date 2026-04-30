@@ -23,20 +23,20 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
 
 const CATEGORY_MAP = {
-  personnel: { label: "인원 구성", icon: Users, color: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
-  style: { label: "강의 스타일", icon: Presentation, color: "bg-purple-500/10 text-purple-400 border-purple-500/30" },
-  insert: { label: "삽입 요소", icon: Puzzle, color: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+  personnel: { label: t("adminFormatTemplates.hardcoded1"), icon: Users, color: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+  style: { label: t("adminFormatTemplates.hardcoded2"), icon: Presentation, color: "bg-purple-500/10 text-purple-400 border-purple-500/30" },
+  insert: { label: t("adminFormatTemplates.hardcoded3"), icon: Puzzle, color: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
 };
 
 const COLOR_OPTIONS = [
-  { value: "blue", label: "블루" },
-  { value: "purple", label: "퍼플" },
-  { value: "green", label: "그린" },
-  { value: "amber", label: "앰버" },
-  { value: "rose", label: "로즈" },
-  { value: "cyan", label: "시안" },
-  { value: "orange", label: "오렌지" },
-  { value: "teal", label: "틸" },
+  { value: "blue", label: t("adminFormatTemplates.hardcoded4") },
+  { value: "purple", label: t("adminFormatTemplates.hardcoded5") },
+  { value: "green", label: t("adminFormatTemplates.hardcoded6") },
+  { value: "amber", label: t("adminFormatTemplates.hardcoded7") },
+  { value: "rose", label: t("adminFormatTemplates.hardcoded8") },
+  { value: "cyan", label: t("adminFormatTemplates.hardcoded9") },
+  { value: "orange", label: t("adminFormatTemplates.hardcoded10") },
+  { value: "teal", label: "Teal" },
 ];
 
 interface TemplateForm {
@@ -307,7 +307,7 @@ export default function AdminFormatTemplates() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         {template.isSystem && <Badge variant="secondary" className="text-xs font-mono">{t("adminFormatTemplates.systemTemplateLabel")}</Badge>}
-                        {template.isActive ? <Badge variant="outline" className="text-green-500 border-green-500/50">활성</Badge> : <Badge variant="outline">비활성</Badge>}
+                        {template.isActive ? <Badge variant="outline" className="text-green-500 border-green-500/50">{t("adminFormatTemplates.hardcoded12")}</Badge> : <Badge variant="outline">{t("adminFormatTemplates.hardcoded13")}</Badge>}
                       </div>
                       <div className="text-muted-foreground">ID: {template.id}</div>
                     </div>

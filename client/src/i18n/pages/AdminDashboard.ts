@@ -70,6 +70,7 @@ registerTranslations("ko", {
   "ad.preset.table.downloads": "다운로드",
   "ad.preset.table.createdAt": "생성일",
   "ad.preset.noPresets": "프리셋 데이터가 없습니다.",
+  "adminDashboard.hardcoded1": "통계",
 });
 
 registerTranslations("en", {

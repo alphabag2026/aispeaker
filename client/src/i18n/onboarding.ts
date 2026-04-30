@@ -174,6 +174,6 @@ otherLanguages.forEach(lang => {
     "onboard.step5_title": "Start Live Broadcasting",
     "onboard.step5_subtitle": "Teach live on Zoom, Google Meet as an AI instructor",
     "onboard.step6_title": "Credit Management & Optimization",
-    "onboard.step6_subtitle": "Save costs with efficient credit usage"
+    "onboard.step6_subtitle": "Save costs with efficient credit usage",
   });
 });

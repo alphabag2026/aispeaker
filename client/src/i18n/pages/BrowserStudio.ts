@@ -53,7 +53,7 @@ registerTranslations("ko", {
   "bs.guide2": "PPT를 선택하거나 화면을 공유합니다",
   "bs.guide3": "레이아웃과 PIP 설정을 조정합니다",
   "bs.guide4": "방송 시작 후 Zoom/Meet에서 이 브라우저 탭을 화면 공유하세요",
-  "bs.studioDescription": "이 스튜디오는 OBS 없이 브라우저에서 직접 PPT + 카메라를 합성합니다. Zoom이나 Google Meet에서 \"브라우저 탭 공유\"를 선택하면 합성된 화면이 전달됩니다."
+  "bs.studioDescription": "이 스튜디오는 OBS 없이 브라우저에서 직접 PPT + 카메라를 합성합니다. Zoom이나 Google Meet에서 \"브라우저 탭 공유\"를 선택하면 합성된 화면이 전달됩니다.",
 });
 
 registerTranslations("en", {
@@ -109,7 +109,7 @@ registerTranslations("en", {
   "bs.guide2": "Select a PPT or share your screen",
   "bs.guide3": "Adjust layout and PIP settings",
   "bs.guide4": "After starting the broadcast, share this browser tab in Zoom/Meet",
-  "bs.studioDescription": "This studio composites PPT + camera directly in the browser without OBS. Select \"Share browser tab\" in Zoom or Google Meet to transmit the composited screen."
+  "bs.studioDescription": "This studio composites PPT + camera directly in the browser without OBS. Select \"Share browser tab\" in Zoom or Google Meet to transmit the composited screen.",
 });
 
 registerTranslations("zh", {
@@ -165,7 +165,7 @@ registerTranslations("zh", {
   "bs.guide2": "选择一个PPT或分享你的屏幕",
   "bs.guide3": "调整布局和画中画设置",
   "bs.guide4": "开始直播后，在Zoom/Meet中分享此浏览器标签页",
-  "bs.studioDescription": "该工作室无需OBS即可在浏览器中直接合成PPT+摄像头。在Zoom或Google Meet中选择“共享浏览器标签页”即可传输合成后的画面。"
+  "bs.studioDescription": "该工作室无需OBS即可在浏览器中直接合成PPT+摄像头。在Zoom或Google Meet中选择“共享浏览器标签页”即可传输合成后的画面。",
 });
 
 registerTranslations("ja", {
@@ -221,7 +221,7 @@ registerTranslations("ja", {
   "bs.guide2": "PPTを選択するか、画面を共有します",
   "bs.guide3": "レイアウトとPIP設定を調整します",
   "bs.guide4": "配信開始後、Zoom/Meetでこのブラウザタブを画面共有してください",
-  "bs.studioDescription": "このスタジオはOBSなしでブラウザで直接PPTとカメラを合成します。ZoomまたはGoogle Meetで「ブラウザタブを共有」を選択すると、合成された画面が送信されます。"
+  "bs.studioDescription": "このスタジオはOBSなしでブラウザで直接PPTとカメラを合成します。ZoomまたはGoogle Meetで「ブラウザタブを共有」を選択すると、合成された画面が送信されます。",
 });
 
 registerTranslations("vi", {
@@ -277,7 +277,7 @@ registerTranslations("vi", {
   "bs.guide2": "Chọn một PPT hoặc chia sẻ màn hình của bạn",
   "bs.guide3": "Điều chỉnh bố cục và cài đặt PIP",
   "bs.guide4": "Sau khi bắt đầu phát sóng, hãy chia sẻ tab trình duyệt này trong Zoom/Meet",
-  "bs.studioDescription": "Studio này tổng hợp PPT + máy ảnh trực tiếp trong trình duyệt mà không cần OBS. Chọn \"Chia sẻ tab trình duyệt\" trong Zoom hoặc Google Meet để truyền màn hình đã tổng hợp."
+  "bs.studioDescription": "Studio này tổng hợp PPT + máy ảnh trực tiếp trong trình duyệt mà không cần OBS. Chọn \"Chia sẻ tab trình duyệt\" trong Zoom hoặc Google Meet để truyền màn hình đã tổng hợp.",
 });
 
 registerTranslations("th", {
@@ -333,7 +333,7 @@ registerTranslations("th", {
   "bs.guide2": "เลือก PPT หรือแชร์หน้าจอของคุณ",
   "bs.guide3": "ปรับเค้าโครงและการตั้งค่า PIP",
   "bs.guide4": "หลังจากเริ่มการถ่ายทอดสดแล้ว ให้แชร์แท็บเบราว์เซอร์นี้ใน Zoom/Meet",
-  "bs.studioDescription": "สตูดิโอนี้ประกอบ PPT + กล้องโดยตรงในเบราว์เซอร์โดยไม่ต้องใช้ OBS เลือก \"แชร์แท็บเบราว์เซอร์\" ใน Zoom หรือ Google Meet เพื่อส่งหน้าจอที่ประกอบขึ้น"
+  "bs.studioDescription": "สตูดิโอนี้ประกอบ PPT + กล้องโดยตรงในเบราว์เซอร์โดยไม่ต้องใช้ OBS เลือก \"แชร์แท็บเบราว์เซอร์\" ใน Zoom หรือ Google Meet เพื่อส่งหน้าจอที่ประกอบขึ้น",
 });
 
 registerTranslations("es", {
@@ -389,7 +389,7 @@ registerTranslations("es", {
   "bs.guide2": "Seleccione una presentación de diapositivas o comparta su pantalla",
   "bs.guide3": "Ajuste el diseño y la configuración de PIP",
   "bs.guide4": "Después de iniciar la transmisión, comparta esta pestaña del navegador en Zoom/Meet",
-  "bs.studioDescription": "Este estudio compone PPT + cámara directamente en el navegador sin OBS. Seleccione \"Compartir pestaña del navegador\" en Zoom o Google Meet para transmitir la pantalla compuesta."
+  "bs.studioDescription": "Este estudio compone PPT + cámara directamente en el navegador sin OBS. Seleccione \"Compartir pestaña del navegador\" en Zoom o Google Meet para transmitir la pantalla compuesta.",
 });
 
 registerTranslations("fr", {
@@ -445,7 +445,7 @@ registerTranslations("fr", {
   "bs.guide2": "Sélectionnez un PPT ou partagez votre écran",
   "bs.guide3": "Ajustez la mise en page et les paramètres PIP",
   "bs.guide4": "Après avoir démarré la diffusion, partagez cet onglet de navigateur dans Zoom/Meet",
-  "bs.studioDescription": "Ce studio compose PPT + caméra directement dans le navigateur sans OBS. Sélectionnez \"Partager l'onglet du navigateur\" dans Zoom ou Google Meet pour transmettre l'écran composé."
+  "bs.studioDescription": "Ce studio compose PPT + caméra directement dans le navigateur sans OBS. Sélectionnez \"Partager l'onglet du navigateur\" dans Zoom ou Google Meet pour transmettre l'écran composé.",
 });
 
 registerTranslations("de", {
@@ -501,7 +501,7 @@ registerTranslations("de", {
   "bs.guide2": "Wählen Sie eine PPT aus oder teilen Sie Ihren Bildschirm",
   "bs.guide3": "Passen Sie das Layout und die PIP-Einstellungen an",
   "bs.guide4": "Nach dem Start der Übertragung teilen Sie diesen Browser-Tab in Zoom/Meet",
-  "bs.studioDescription": "Dieses Studio komponiert PPT + Kamera direkt im Browser ohne OBS. Wählen Sie \"Browser-Tab teilen\" in Zoom oder Google Meet, um den komponierten Bildschirm zu übertragen."
+  "bs.studioDescription": "Dieses Studio komponiert PPT + Kamera direkt im Browser ohne OBS. Wählen Sie \"Browser-Tab teilen\" in Zoom oder Google Meet, um den komponierten Bildschirm zu übertragen.",
 });
 
 registerTranslations("pt", {
@@ -557,7 +557,7 @@ registerTranslations("pt", {
   "bs.guide2": "Selecione um PPT ou compartilhe sua tela",
   "bs.guide3": "Ajuste o layout e as configurações de PIP",
   "bs.guide4": "Após iniciar a transmissão, compartilhe esta guia do navegador no Zoom/Meet",
-  "bs.studioDescription": "Este estúdio compõe PPT + câmera diretamente no navegador sem OBS. Selecione \"Compartilhar guia do navegador\" no Zoom ou Google Meet para transmitir a tela composta."
+  "bs.studioDescription": "Este estúdio compõe PPT + câmera diretamente no navegador sem OBS. Selecione \"Compartilhar guia do navegador\" no Zoom ou Google Meet para transmitir a tela composta.",
 });
 
 registerTranslations("ru", {
@@ -613,7 +613,7 @@ registerTranslations("ru", {
   "bs.guide2": "Выберите PPT или поделитесь своим экраном",
   "bs.guide3": "Настройте макет и параметры PIP",
   "bs.guide4": "После начала трансляции поделитесь этой вкладкой браузера в Zoom/Meet",
-  "bs.studioDescription": "Эта студия компонует PPT + камеру прямо в браузере без OBS. Выберите \"Поделиться вкладкой браузера\" в Zoom или Google Meet, чтобы передать скомпонованный экран."
+  "bs.studioDescription": "Эта студия компонует PPT + камеру прямо в браузере без OBS. Выберите \"Поделиться вкладкой браузера\" в Zoom или Google Meet, чтобы передать скомпонованный экран.",
 });
 
 registerTranslations("ar", {
@@ -669,7 +669,7 @@ registerTranslations("ar", {
   "bs.guide2": "حدد عرضًا تقديميًا أو شارك شاشتك",
   "bs.guide3": "اضبط التخطيط وإعدادات PIP",
   "bs.guide4": "بعد بدء البث ، شارك علامة تبويب المتصفح هذه في Zoom/Meet",
-  "bs.studioDescription": "يقوم هذا الاستوديو بتركيب PPT + الكاميرا مباشرة في المتصفح بدون OBS. حدد \"مشاركة علامة تبويب المتصفح\" في Zoom أو Google Meet لنقل الشاشة المركبة."
+  "bs.studioDescription": "يقوم هذا الاستوديو بتركيب PPT + الكاميرا مباشرة في المتصفح بدون OBS. حدد \"مشاركة علامة تبويب المتصفح\" في Zoom أو Google Meet لنقل الشاشة المركبة.",
 });
 
 registerTranslations("hi", {
@@ -725,7 +725,7 @@ registerTranslations("hi", {
   "bs.guide2": "एक PPT चुनें या अपनी स्क्रीन साझा करें",
   "bs.guide3": "लेआउट और PIP सेटिंग्स समायोजित करें",
   "bs.guide4": "प्रसारण शुरू करने के बाद, इस ब्राउज़र टैब को ज़ूम/मीट में साझा करें",
-  "bs.studioDescription": "यह स्टूडियो OBS के बिना सीधे ब्राउज़र में PPT + कैमरा कंपोज़िट करता है। कंपोज़िट स्क्रीन को प्रसारित करने के लिए ज़ूम या गूगल मीट में \"ब्राउज़र टैब साझा करें\" चुनें।"
+  "bs.studioDescription": "यह स्टूडियो OBS के बिना सीधे ब्राउज़र में PPT + कैमरा कंपोज़िट करता है। कंपोज़िट स्क्रीन को प्रसारित करने के लिए ज़ूम या गूगल मीट में \"ब्राउज़र टैब साझा करें\" चुनें।",
 });
 
 registerTranslations("id", {
@@ -781,7 +781,7 @@ registerTranslations("id", {
   "bs.guide2": "Pilih PPT atau bagikan layar Anda",
   "bs.guide3": "Sesuaikan tata letak dan pengaturan PIP",
   "bs.guide4": "Setelah memulai siaran, bagikan tab browser ini di Zoom/Meet",
-  "bs.studioDescription": "Studio ini menyusun PPT + kamera langsung di browser tanpa OBS. Pilih \"Bagikan tab browser\" di Zoom atau Google Meet untuk mengirimkan layar yang disusun."
+  "bs.studioDescription": "Studio ini menyusun PPT + kamera langsung di browser tanpa OBS. Pilih \"Bagikan tab browser\" di Zoom atau Google Meet untuk mengirimkan layar yang disusun.",
 });
 
 registerTranslations("ms", {
@@ -837,7 +837,7 @@ registerTranslations("ms", {
   "bs.guide2": "Pilih PPT atau kongsi skrin anda",
   "bs.guide3": "Laraskan susun atur dan tetapan PIP",
   "bs.guide4": "Selepas memulakan siaran, kongsi tab pelayar ini dalam Zoom/Meet",
-  "bs.studioDescription": "Studio ini menggubah PPT + kamera terus dalam pelayar tanpa OBS. Pilih \"Kongsi tab pelayar\" dalam Zoom atau Google Meet untuk menghantar skrin yang digubah."
+  "bs.studioDescription": "Studio ini menggubah PPT + kamera terus dalam pelayar tanpa OBS. Pilih \"Kongsi tab pelayar\" dalam Zoom atau Google Meet untuk menghantar skrin yang digubah.",
 });
 
 registerTranslations("tr", {
@@ -893,7 +893,7 @@ registerTranslations("tr", {
   "bs.guide2": "Bir PPT seçin veya ekranınızı paylaşın",
   "bs.guide3": "Düzeni ve PIP ayarlarını yapın",
   "bs.guide4": "Yayını başlattıktan sonra, bu tarayıcı sekmesini Zoom/Meet'te paylaşın",
-  "bs.studioDescription": "Bu stüdyo, OBS olmadan doğrudan tarayıcıda PPT + kamerayı birleştirir. Birleştirilmiş ekranı iletmek için Zoom veya Google Meet'te \"Tarayıcı sekmesini paylaş\" seçeneğini seçin."
+  "bs.studioDescription": "Bu stüdyo, OBS olmadan doğrudan tarayıcıda PPT + kamerayı birleştirir. Birleştirilmiş ekranı iletmek için Zoom veya Google Meet'te \"Tarayıcı sekmesini paylaş\" seçeneğini seçin.",
 });
 
 registerTranslations("it", {
@@ -949,7 +949,7 @@ registerTranslations("it", {
   "bs.guide2": "Seleziona una presentazione o condividi il tuo schermo",
   "bs.guide3": "Regola il layout e le impostazioni PIP",
   "bs.guide4": "Dopo aver avviato la trasmissione, condividi questa scheda del browser in Zoom/Meet",
-  "bs.studioDescription": "Questo studio compone PPT + fotocamera direttamente nel browser senza OBS. Seleziona \"Condividi scheda del browser\" in Zoom o Google Meet per trasmettere la schermata composta."
+  "bs.studioDescription": "Questo studio compone PPT + fotocamera direttamente nel browser senza OBS. Seleziona \"Condividi scheda del browser\" in Zoom o Google Meet per trasmettere la schermata composta.",
 });
 
 registerTranslations("nl", {
@@ -1005,7 +1005,7 @@ registerTranslations("nl", {
   "bs.guide2": "Selecteer een PPT of deel uw scherm",
   "bs.guide3": "Pas de indeling en PIP-instellingen aan",
   "bs.guide4": "Nadat u de uitzending hebt gestart, deelt u dit browsertabblad in Zoom/Meet",
-  "bs.studioDescription": "Deze studio stelt PPT + camera rechtstreeks in de browser samen zonder OBS. Selecteer \"Browsertabblad delen\" in Zoom of Google Meet om het samengestelde scherm te verzenden."
+  "bs.studioDescription": "Deze studio stelt PPT + camera rechtstreeks in de browser samen zonder OBS. Selecteer \"Browsertabblad delen\" in Zoom of Google Meet om het samengestelde scherm te verzenden.",
 });
 
 registerTranslations("pl", {
@@ -1061,7 +1061,7 @@ registerTranslations("pl", {
   "bs.guide2": "Wybierz prezentację lub udostępnij ekran",
   "bs.guide3": "Dostosuj układ i ustawienia PIP",
   "bs.guide4": "Po rozpoczęciu transmisji udostępnij tę kartę przeglądarki w Zoom/Meet",
-  "bs.studioDescription": "To studio komponuje PPT + kamerę bezpośrednio w przeglądarce bez OBS. Wybierz \"Udostępnij kartę przeglądarki\" w Zoom lub Google Meet, aby przesłać skomponowany ekran."
+  "bs.studioDescription": "To studio komponuje PPT + kamerę bezpośrednio w przeglądarce bez OBS. Wybierz \"Udostępnij kartę przeglądarki\" w Zoom lub Google Meet, aby przesłać skomponowany ekran.",
 });
 
 registerTranslations("sv", {
@@ -1117,5 +1117,5 @@ registerTranslations("sv", {
   "bs.guide2": "Välj en PPT eller dela din skärm",
   "bs.guide3": "Justera layout och PIP-inställningar",
   "bs.guide4": "När du har startat sändningen, dela den här webbläsarfliken i Zoom/Meet",
-  "bs.studioDescription": "Denna studio komponerar PPT + kamera direkt i webbläsaren utan OBS. Välj \"Dela webbläsarflik\" i Zoom eller Google Meet för att överföra den komponerade skärmen."
+  "bs.studioDescription": "Denna studio komponerar PPT + kamera direkt i webbläsaren utan OBS. Välj \"Dela webbläsarflik\" i Zoom eller Google Meet för att överföra den komponerade skärmen.",
 });

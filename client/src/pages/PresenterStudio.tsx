@@ -244,7 +244,7 @@ export default function PresenterStudio() {
           <h2 className="text-xl font-bold text-white mb-2">{t("presenterStudio.permission.title")}</h2>
           <p className="text-gray-400 mb-6">
             {t("presenterStudio.permission.description")}
-            프로젝트 소유자에게 발표자 역할로 초대를 요청하세요.
+            {t("presenterStudio.hardcoded1")}
           </p>
           <Button variant="outline" onClick={() => navigate("/")}>{t("presenterStudio.button.goHome")}</Button>
         </div>
@@ -277,7 +277,7 @@ export default function PresenterStudio() {
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400 flex items-center gap-1">
             <Users className="w-4 h-4" />
-            {t("presenterStudio.viewers.viewer")} {viewers.data?.length || 0}명
+            {t("presenterStudio.viewers.viewer")} {viewers.data?.length || 0}
           </span>
           <Button variant="ghost" size="sm" className="text-gray-400 gap-1" onClick={() => {
             navigator.clipboard.writeText(roomCode);
@@ -299,10 +299,10 @@ export default function PresenterStudio() {
                 <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-12 shadow-2xl border border-gray-700 min-h-[200px] sm:min-h-[400px] flex flex-col">
                   <div className="flex items-center justify-between mb-6">
                     <Badge variant="outline" className="text-violet-400 border-violet-400">
-                      섹션 {currentSlide + 1} / {sections.length}
+                      Section {currentSlide + 1} / {sections.length}
                     </Badge>
                     <span className="text-xs text-gray-500">
-                      {currentSection.durationSec ? `${Math.round(currentSection.durationSec / 60)}분` : ""}
+                      {currentSection.durationSec ? `${Math.round(currentSection.durationSec / 60)}min` : ""}
                     </span>
                   </div>
                   <h2 className="text-xl sm:text-3xl font-bold mb-3 sm:mb-6 text-white">{currentSection.title}</h2>
@@ -450,7 +450,7 @@ export default function PresenterStudio() {
 
           <div className="border-t border-gray-800 p-3">
             <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
-              <Users className="w-3 h-3" /> {t("presenterStudio.viewers.viewer")} {viewers.data?.length || 0}명
+              <Users className="w-3 h-3" /> {t("presenterStudio.viewers.viewer")} {viewers.data?.length || 0}
             </p>
             <div className="flex flex-wrap gap-1">
               {viewers.data?.slice(0, 20).map((v: any) => (
@@ -478,7 +478,7 @@ export default function PresenterStudio() {
                 : "border-gray-700 bg-gray-800 hover:border-gray-600"
             }`}
           >
-            <p className="text-[10px] text-gray-500">섹션 {idx + 1}</p>
+            <p className="text-[10px] text-gray-500">Section {idx + 1}</p>
             <p className="text-xs truncate text-gray-300">{sec.title}</p>
           </button>
         ))}

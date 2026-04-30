@@ -28,7 +28,7 @@ registerTranslations("ko", {
   "ip.active": "활성",
   "ip.inactive": "비활성",
   "ip.no_platforms": "아직 연동된 플랫폼이 없습니다.",
-  "ip.click_add_platform": "플랫폼 추가 버튼을 클릭하여 시작하세요."
+  "ip.click_add_platform": "플랫폼 추가 버튼을 클릭하여 시작하세요.",
 });
 
 registerTranslations("en", {
@@ -59,7 +59,7 @@ registerTranslations("en", {
   "ip.active": "Active",
   "ip.inactive": "Inactive",
   "ip.no_platforms": "No integrated platforms yet.",
-  "ip.click_add_platform": "Click the Add Platform button to get started."
+  "ip.click_add_platform": "Click the Add Platform button to get started.",
 });
 
 registerTranslations("zh", {
@@ -90,7 +90,7 @@ registerTranslations("zh", {
   "ip.active": "活跃",
   "ip.inactive": "不活跃",
   "ip.no_platforms": "尚无集成平台。",
-  "ip.click_add_platform": "点击“添加平台”按钮开始。"
+  "ip.click_add_platform": "点击“添加平台”按钮开始。",
 });
 
 registerTranslations("ja", {
@@ -121,7 +121,7 @@ registerTranslations("ja", {
   "ip.active": "アクティブ",
   "ip.inactive": "非アクティブ",
   "ip.no_platforms": "まだ連携されたプラットフォームはありません。",
-  "ip.click_add_platform": "「プラットフォームを追加」ボタンをクリックして開始してください。"
+  "ip.click_add_platform": "「プラットフォームを追加」ボタンをクリックして開始してください。",
 });
 
 registerTranslations("vi", {
@@ -152,7 +152,7 @@ registerTranslations("vi", {
   "ip.active": "Hoạt động",
   "ip.inactive": "Không hoạt động",
   "ip.no_platforms": "Chưa có nền tảng nào được tích hợp.",
-  "ip.click_add_platform": "Nhấp vào nút Thêm nền tảng để bắt đầu."
+  "ip.click_add_platform": "Nhấp vào nút Thêm nền tảng để bắt đầu.",
 });
 
 registerTranslations("th", {
@@ -183,7 +183,7 @@ registerTranslations("th", {
   "ip.active": "ใช้งานอยู่",
   "ip.inactive": "ไม่ใช้งาน",
   "ip.no_platforms": "ยังไม่มีแพลตฟอร์มที่รวมไว้",
-  "ip.click_add_platform": "คลิกปุ่ม เพิ่มแพลตฟอร์ม เพื่อเริ่มต้น"
+  "ip.click_add_platform": "คลิกปุ่ม เพิ่มแพลตฟอร์ม เพื่อเริ่มต้น",
 });
 
 registerTranslations("es", {
@@ -214,7 +214,7 @@ registerTranslations("es", {
   "ip.active": "Activo",
   "ip.inactive": "Inactivo",
   "ip.no_platforms": "Aún no hay plataformas integradas.",
-  "ip.click_add_platform": "Haga clic en el botón Agregar plataforma para comenzar."
+  "ip.click_add_platform": "Haga clic en el botón Agregar plataforma para comenzar.",
 });
 
 registerTranslations("fr", {
@@ -245,7 +245,7 @@ registerTranslations("fr", {
   "ip.active": "Actif",
   "ip.inactive": "Inactif",
   "ip.no_platforms": "Aucune plateforme intégrée pour le moment.",
-  "ip.click_add_platform": "Cliquez sur le bouton Ajouter une plateforme pour commencer."
+  "ip.click_add_platform": "Cliquez sur le bouton Ajouter une plateforme pour commencer.",
 });
 
 registerTranslations("de", {
@@ -276,7 +276,7 @@ registerTranslations("de", {
   "ip.active": "Aktiv",
   "ip.inactive": "Inaktiv",
   "ip.no_platforms": "Noch keine Plattformen integriert.",
-  "ip.click_add_platform": "Klicken Sie auf die Schaltfläche „Plattform hinzufügen“, um zu beginnen."
+  "ip.click_add_platform": "Klicken Sie auf die Schaltfläche „Plattform hinzufügen“, um zu beginnen.",
 });
 
 registerTranslations("pt", {
@@ -307,7 +307,7 @@ registerTranslations("pt", {
   "ip.active": "Ativo",
   "ip.inactive": "Inativo",
   "ip.no_platforms": "Nenhuma plataforma integrada ainda.",
-  "ip.click_add_platform": "Clique no botão Adicionar Plataforma para começar."
+  "ip.click_add_platform": "Clique no botão Adicionar Plataforma para começar.",
 });
 
 registerTranslations("ru", {
@@ -338,7 +338,7 @@ registerTranslations("ru", {
   "ip.active": "Активный",
   "ip.inactive": "Неактивный",
   "ip.no_platforms": "Интегрированных платформ пока нет.",
-  "ip.click_add_platform": "Нажмите кнопку «Добавить платформу», чтобы начать."
+  "ip.click_add_platform": "Нажмите кнопку «Добавить платформу», чтобы начать.",
 });
 
 registerTranslations("ar", {
@@ -369,7 +369,7 @@ registerTranslations("ar", {
   "ip.active": "نشيط",
   "ip.inactive": "غير نشط",
   "ip.no_platforms": "لا توجد منصات متكاملة حتى الآن.",
-  "ip.click_add_platform": "انقر فوق الزر إضافة منصة للبدء."
+  "ip.click_add_platform": "انقر فوق الزر إضافة منصة للبدء.",
 });
 
 registerTranslations("hi", {
@@ -400,7 +400,7 @@ registerTranslations("hi", {
   "ip.active": "सक्रिय",
   "ip.inactive": "निष्क्रिय",
   "ip.no_platforms": "अभी तक कोई एकीकृत प्लेटफ़ॉर्म नहीं है।",
-  "ip.click_add_platform": "आरंभ करने के लिए प्लेटफ़ॉर्म जोड़ें बटन पर क्लिक करें।"
+  "ip.click_add_platform": "आरंभ करने के लिए प्लेटफ़ॉर्म जोड़ें बटन पर क्लिक करें।",
 });
 
 registerTranslations("id", {
@@ -431,7 +431,7 @@ registerTranslations("id", {
   "ip.active": "Aktif",
   "ip.inactive": "Tidak Aktif",
   "ip.no_platforms": "Belum ada platform terintegrasi.",
-  "ip.click_add_platform": "Klik tombol Tambah Platform untuk memulai."
+  "ip.click_add_platform": "Klik tombol Tambah Platform untuk memulai.",
 });
 
 registerTranslations("ms", {
@@ -462,7 +462,7 @@ registerTranslations("ms", {
   "ip.active": "Aktif",
   "ip.inactive": "Tidak aktif",
   "ip.no_platforms": "Belum ada platform yang disepadukan.",
-  "ip.click_add_platform": "Klik butang Tambah Platform untuk bermula."
+  "ip.click_add_platform": "Klik butang Tambah Platform untuk bermula.",
 });
 
 registerTranslations("tr", {
@@ -493,7 +493,7 @@ registerTranslations("tr", {
   "ip.active": "Aktif",
   "ip.inactive": "Pasif",
   "ip.no_platforms": "Henüz entegre edilmiş platform yok.",
-  "ip.click_add_platform": "Başlamak için Platform Ekle düğmesine tıklayın."
+  "ip.click_add_platform": "Başlamak için Platform Ekle düğmesine tıklayın.",
 });
 
 registerTranslations("it", {
@@ -524,7 +524,7 @@ registerTranslations("it", {
   "ip.active": "Attivo",
   "ip.inactive": "Inattivo",
   "ip.no_platforms": "Nessuna piattaforma integrata ancora.",
-  "ip.click_add_platform": "Fai clic sul pulsante Aggiungi piattaforma per iniziare."
+  "ip.click_add_platform": "Fai clic sul pulsante Aggiungi piattaforma per iniziare.",
 });
 
 registerTranslations("nl", {
@@ -555,7 +555,7 @@ registerTranslations("nl", {
   "ip.active": "Actief",
   "ip.inactive": "Inactief",
   "ip.no_platforms": "Nog geen geïntegreerde platforms.",
-  "ip.click_add_platform": "Klik op de knop Platform toevoegen om te beginnen."
+  "ip.click_add_platform": "Klik op de knop Platform toevoegen om te beginnen.",
 });
 
 registerTranslations("pl", {
@@ -586,7 +586,7 @@ registerTranslations("pl", {
   "ip.active": "Aktywny",
   "ip.inactive": "Nieaktywny",
   "ip.no_platforms": "Brak jeszcze zintegrowanych platform.",
-  "ip.click_add_platform": "Kliknij przycisk Dodaj platformę, aby rozpocząć."
+  "ip.click_add_platform": "Kliknij przycisk Dodaj platformę, aby rozpocząć.",
 });
 
 registerTranslations("sv", {
@@ -617,5 +617,5 @@ registerTranslations("sv", {
   "ip.active": "Aktiv",
   "ip.inactive": "Inaktiv",
   "ip.no_platforms": "Inga integrerade plattformar ännu.",
-  "ip.click_add_platform": "Klicka på knappen Lägg till plattform för att komma igång."
+  "ip.click_add_platform": "Klicka på knappen Lägg till plattform för att komma igång.",
 });

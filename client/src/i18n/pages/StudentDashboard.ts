@@ -35,7 +35,7 @@ registerTranslations('ko', {
   "studentDashboard.bookmarks.question": "질문",
   "studentDashboard.bookmarks.answer": "답변",
   "studentDashboard.bookmarks.noBookmarksTitle": "북마크가 없습니다",
-  "studentDashboard.bookmarks.noBookmarksDescription": "강의 중 유용한 Q&A를 북마크해보세요."
+  "studentDashboard.bookmarks.noBookmarksDescription": "강의 중 유용한 Q&A를 북마크해보세요.",
 });
 
 registerTranslations('en', {
@@ -73,7 +73,7 @@ registerTranslations('en', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('zh', {
@@ -111,7 +111,7 @@ registerTranslations('zh', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('ja', {
@@ -149,7 +149,7 @@ registerTranslations('ja', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('vi', {
@@ -187,7 +187,7 @@ registerTranslations('vi', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('th', {
@@ -225,7 +225,7 @@ registerTranslations('th', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('id', {
@@ -263,7 +263,7 @@ registerTranslations('id', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('ms', {
@@ -301,7 +301,7 @@ registerTranslations('ms', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('es', {
@@ -339,7 +339,7 @@ registerTranslations('es', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('fr', {
@@ -377,7 +377,7 @@ registerTranslations('fr', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('de', {
@@ -415,7 +415,7 @@ registerTranslations('de', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('pt', {
@@ -453,7 +453,7 @@ registerTranslations('pt', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('ru', {
@@ -491,7 +491,7 @@ registerTranslations('ru', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('ar', {
@@ -529,7 +529,7 @@ registerTranslations('ar', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('hi', {
@@ -567,7 +567,7 @@ registerTranslations('hi', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('it', {
@@ -605,7 +605,7 @@ registerTranslations('it', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('nl', {
@@ -643,7 +643,7 @@ registerTranslations('nl', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('pl', {
@@ -681,7 +681,7 @@ registerTranslations('pl', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('sv', {
@@ -719,7 +719,7 @@ registerTranslations('sv', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 
 registerTranslations('tr', {
@@ -757,6 +757,6 @@ registerTranslations('tr', {
   "studentDashboard.bookmarks.question": "Question",
   "studentDashboard.bookmarks.answer": "Answer",
   "studentDashboard.bookmarks.noBookmarksTitle": "No Bookmarks",
-  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures."
+  "studentDashboard.bookmarks.noBookmarksDescription": "Bookmark useful Q&A during your lectures.",
 });
 

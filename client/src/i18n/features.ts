@@ -1709,6 +1709,6 @@ otherLanguages.forEach(lang => {
     "features.cta.start_free": "Start for Free",
     "features.cta.compare": "Compare Plans",
     "features.cta.detail": "View Details",
-    "features.footer": "AI Speaker v3.0 — AI-Powered Virtual Lecture Automation Platform"
+    "features.footer": "AI Speaker v3.0 — AI-Powered Virtual Lecture Automation Platform",
   });
 });

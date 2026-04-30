@@ -570,6 +570,6 @@ otherLanguages.forEach(lang => {
     "pp.toast.free_activated": "Free plan activated!",
     "pp.toast.enterprise_contact": "For Enterprise plans, please contact sales.\ncontact@virtualspeaker.ai",
     "pp.toast.stripe_redirect": "Redirecting to Stripe checkout...",
-    "pp.toast.payment_error": "An error occurred during payment processing."
+    "pp.toast.payment_error": "An error occurred during payment processing.",
   });
 });

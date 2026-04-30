@@ -20,10 +20,10 @@ const TOOL_ICONS: Record<string, any> = {
 };
 
 const TOOL_NAMES: Record<string, string> = {
-  tts: "TTS", voice_clone: "음성 복제", voice_change: "음성 변환",
-  image_gen: "이미지 생성", bg_remove: "배경 제거",
-  video_effects: "비디오 효과", image_to_video: "이미지→비디오",
-  face_swap: "페이스 스왑", talking_avatar: "토킹 아바타", video_translate: "비디오 번역",
+  tts: "TTS", voice_clone: t("adminAnalytics.hardcoded1"), voice_change: t("adminAnalytics.hardcoded2"),
+  image_gen: t("adminAnalytics.hardcoded3"), bg_remove: t("adminAnalytics.hardcoded4"),
+  video_effects: t("adminAnalytics.hardcoded5"), image_to_video: t("adminAnalytics.hardcoded6"),
+  face_swap: t("adminAnalytics.hardcoded7"), talking_avatar: t("adminAnalytics.hardcoded8"), video_translate: t("adminAnalytics.hardcoded9"),
 };
 
 export default function AdminAnalytics() {
@@ -40,8 +40,8 @@ export default function AdminAnalytics() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="p-8 text-center">
           <Shield className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <p className="text-muted-foreground mb-4">관리자 권한이 필요합니다</p>
-          <Link href="/"><Button>홈으로</Button></Link>
+          <p className="text-muted-foreground mb-4">{t("adminAnalytics.hardcoded10")}</p>
+          <Link href="/"><Button>{t("adminAnalytics.hardcoded11")}</Button></Link>
         </Card>
       </div>
     );
@@ -61,7 +61,7 @@ export default function AdminAnalytics() {
             <Link href="/">
               <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
             </Link>
-            <h1 className="text-3xl font-bold">관리자 분석 대시보드</h1>
+            <h1 className="text-3xl font-bold">{t("adminAnalytics.hardcoded12")}</h1>
             <Badge variant="destructive">Admin Only</Badge>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function AdminAnalytics() {
             <CardContent className="pt-5 pb-4 text-center">
               <Users className="h-6 w-6 mx-auto text-blue-500 mb-2" />
               <p className="text-2xl font-bold">{userStats.totalUsers}</p>
-              <p className="text-xs text-muted-foreground">전체 사용자</p>
+              <p className="text-xs text-muted-foreground">{t("adminAnalytics.hardcoded13")}</p>
             </CardContent>
           </Card>
           <Card>
@@ -135,7 +135,7 @@ export default function AdminAnalytics() {
                     <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
                       <span className="text-sm font-mono">{row.period}</span>
                       <div className="flex items-center gap-4">
-                        <span className="text-sm text-muted-foreground">{row.txCount}건</span>
+                        <span className="text-sm text-muted-foreground">{row.txCount}</span>
                         <Badge variant="secondary">
                           <Zap className="h-3 w-3 mr-0.5" />
                           {Number(row.totalAmount).toLocaleString()}
@@ -172,7 +172,7 @@ export default function AdminAnalytics() {
                             <span className="text-sm font-medium">{TOOL_NAMES[tool.tool] || tool.tool}</span>
                           </div>
                           <div className="flex items-center gap-3 text-sm">
-                            <span>{Number(tool.useCount).toLocaleString()}회</span>
+                            <span>{Number(tool.useCount).toLocaleString()}</span>
                             <Badge variant="outline" className="text-xs">
                               <Zap className="h-2.5 w-2.5 mr-0.5" />
                               {Number(tool.totalCredits || 0).toLocaleString()}
