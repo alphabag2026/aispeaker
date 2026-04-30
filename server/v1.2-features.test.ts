@@ -264,7 +264,7 @@ describe("AI Context Template System", () => {
         category: "web3",
         systemPrompt: "You are a Web3 expert.",
       })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("template.create allows instructors", async () => {
@@ -281,7 +281,7 @@ describe("AI Context Template System", () => {
       });
     } catch (e: any) {
       // DB error expected, but not auth error
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
   });
 
@@ -305,7 +305,7 @@ describe("AI Context Template System", () => {
         id: 1,
         name: "Updated",
       })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("template.delete requires instructor role", async () => {
@@ -313,7 +313,7 @@ describe("AI Context Template System", () => {
     const caller = appRouter.createCaller(ctx);
     await expect(
       caller.template.delete({ id: 1 })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("template.seed creates built-in templates", async () => {
@@ -420,7 +420,7 @@ describe("v1.2 Cross-feature Integration", () => {
         category: "web3",
         systemPrompt: "test",
       })
-    ).rejects.toThrow("강사 권한이 필요합니다.");
+    ).rejects.toThrow("Instructor permission required.");
   });
 
   it("instructor can manage templates", async () => {
@@ -434,7 +434,7 @@ describe("v1.2 Cross-feature Integration", () => {
         systemPrompt: "Expert in Web3",
       });
     } catch (e: any) {
-      expect(e.message).not.toBe("강사 권한이 필요합니다.");
+      expect(e.message).not.toBe("Instructor permission required.");
     }
   });
 

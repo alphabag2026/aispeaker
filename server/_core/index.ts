@@ -87,8 +87,8 @@ async function startServer() {
               try {
                 const { notifyOwner } = await import("./notification");
                 await notifyOwner({
-                  title: `💳 새 구독 결제 완료`,
-                  content: `사용자 ID: ${userId}\n플랜: ${plan.name} (${metadata.billing_cycle === "yearly" ? "연간" : "월간"})\n금액: $${(payment.amountCents / 100).toFixed(2)}\n크레딧: ${plan.monthlyCredits}개 지급\n시간: ${new Date().toISOString()}`,
+                  title: `New subscription payment completed`,
+                  content: `User ID: ${userId}\nPlan: ${plan.name} (${metadata.billing_cycle === "yearly" ? "yearly" : "monthly"})\nAmount: $${(payment.amountCents / 100).toFixed(2)}\nCredits: ${plan.monthlyCredits} granted\nTime: ${new Date().toISOString()}`,
                 });
               } catch (e) { console.warn("[Webhook] Notification failed:", e); }
               }
@@ -105,15 +105,15 @@ async function startServer() {
                 type: "purchase",
                 amount: credits,
                 balanceAfter: (sub?.creditsRemaining || 0) + credits,
-                description: `크레딧 ${credits}개 구매 (Stripe)`,
+                description: `Purchased ${credits} credits (Stripe)`,
               });
               console.log(`[Webhook] Credits added for user ${userId}: ${credits}`);
               // Send notification to owner
               try {
                 const { notifyOwner } = await import("./notification");
                 await notifyOwner({
-                  title: `🪙 크레딧 패키지 구매`,
-                  content: `사용자 ID: ${userId}\n크레딧: ${credits}개 충전\n금액: $${(payment.amountCents / 100).toFixed(2)}\n시간: ${new Date().toISOString()}`,
+                  title: `Credit package purchased`,
+                  content: `User ID: ${userId}\nCredits: ${credits} added\nAmount: $${(payment.amountCents / 100).toFixed(2)}\nTime: ${new Date().toISOString()}`,
                 });
               } catch (e) { console.warn("[Webhook] Notification failed:", e); }
             }

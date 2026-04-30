@@ -20,7 +20,7 @@ export const SUBSCRIPTION_PRODUCTS = {
     priceMonthly: 2900, // $29.00 in cents
     priceYearly: 27800, // $278.00 in cents (20% off)
     credits: 100,
-    description: "개인 강사를 위한 기본 플랜",
+    description: "Basic plan for individual instructors",
   },
   professional: {
     name: "Professional",
@@ -28,7 +28,7 @@ export const SUBSCRIPTION_PRODUCTS = {
     priceMonthly: 9900, // $99.00
     priceYearly: 95000, // $950.00 (20% off)
     credits: 500,
-    description: "전문 강사를 위한 완전한 도구",
+    description: "Complete tools for professional instructors",
   },
   business: {
     name: "Business",
@@ -36,7 +36,7 @@ export const SUBSCRIPTION_PRODUCTS = {
     priceMonthly: 29900, // $299.00
     priceYearly: 287000, // $2,870.00 (20% off)
     credits: 2000,
-    description: "교육 기관을 위한 팀 플랜",
+    description: "Team plan for educational institutions",
   },
   enterprise: {
     name: "Enterprise",
@@ -44,38 +44,38 @@ export const SUBSCRIPTION_PRODUCTS = {
     priceMonthly: 79900, // $799.00
     priceYearly: 767000, // $7,670.00 (20% off)
     credits: 10000,
-    description: "대규모 기업 교육 솔루션",
+    description: "Enterprise-scale education solution",
   },
 } as const;
 
 export const CREDIT_PACKAGES = [
-  { id: "credits_50", name: "50 크레딧", credits: 50, priceCents: 1500, perCredit: "$0.30" },
-  { id: "credits_200", name: "200 크레딧", credits: 200, priceCents: 5000, perCredit: "$0.25" },
-  { id: "credits_500", name: "500 크레딧", credits: 500, priceCents: 10000, perCredit: "$0.20" },
-  { id: "credits_2000", name: "2,000 크레딧", credits: 2000, priceCents: 30000, perCredit: "$0.15" },
+  { id: "credits_50", name: "50 Credits", credits: 50, priceCents: 1500, perCredit: "$0.30" },
+  { id: "credits_200", name: "200 Credits", credits: 200, priceCents: 5000, perCredit: "$0.25" },
+  { id: "credits_500", name: "500 Credits", credits: 500, priceCents: 10000, perCredit: "$0.20" },
+  { id: "credits_2000", name: "2,000 Credits", credits: 2000, priceCents: 30000, perCredit: "$0.15" },
 ] as const;
 
 // ========== Credit Costs per Feature ==========
 
 export const CREDIT_COSTS = {
-  script_generation: 5,    // AI 스크립트 생성 1건
-  tts_conversion: 3,       // TTS 변환 1건 (1000자 기준)
-  avatar_video: 20,        // 아바타 영상 1분
-  deepfake_transform: 30,  // 딥페이크 얼굴 변환 1분
-  thumbnail_generation: 2, // 썸네일 생성 1건
-  subtitle_generation: 3,  // 자막 생성 1건
-  voice_modulation: 5,     // 음성 변조 1건
-  live_broadcast: 10,      // 라이브 방송 10분당
+  script_generation: 5,    // AI script generation per item
+  tts_conversion: 3,       // TTS conversion per item (1000 chars)
+  avatar_video: 20,        // Avatar video per minute
+  deepfake_transform: 30,  // Deepfake face transform per minute
+  thumbnail_generation: 2, // Thumbnail generation per item
+  subtitle_generation: 3,  // Subtitle generation per item
+  voice_modulation: 5,     // Voice modulation per item
+  live_broadcast: 10,      // Live broadcast per 10 minutes
   // v8.1 AI Studio features
-  image_generation: 5,     // AI 이미지 생성 1건
-  bg_remove: 3,            // 배경 제거/교체 1건
-  voice_clone: 5,          // 음성 복제 1건
-  voice_change: 3,         // 음성 변환 1건
-  video_effects: 15,       // 비디오 이펙트 1건
-  image_to_video: 20,      // 이미지→비디오 1건
-  face_swap: 25,           // 페이스 스왑 1건
-  talking_avatar: 20,      // 토킹 아바타 1건
-  video_translate: 30,     // 비디오 번역 1건
+  image_generation: 5,     // AI image generation per item
+  bg_remove: 3,            // Background remove/replace per item
+  voice_clone: 5,          // Voice clone per item
+  voice_change: 3,         // Voice change per item
+  video_effects: 15,       // Video effects per item
+  image_to_video: 20,      // Image to video per item
+  face_swap: 25,           // Face swap per item
+  talking_avatar: 20,      // Talking avatar per item
+  video_translate: 30,     // Video translate per item
 } as const;
 
 export type CreditFeature = keyof typeof CREDIT_COSTS;

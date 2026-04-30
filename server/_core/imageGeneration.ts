@@ -126,7 +126,7 @@ export async function generateImage(
     buffer = await generateWithGemini(options.prompt);
   } else {
     throw new Error(
-      "이미지 생성 서비스를 사용할 수 없습니다. BUILT_IN_FORGE_API_URL 또는 GEMINI_API_KEY를 설정해주세요."
+      "Image generation service is unavailable. Please configure BUILT_IN_FORGE_API_URL or GEMINI_API_KEY."
     );
   }
 

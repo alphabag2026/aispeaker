@@ -36,8 +36,8 @@ registerTranslations("ko", {
   "videoEffectsStudio.hardcoded4": "AI가 비디오를 생성하고 있습니다...",
   "videoEffectsStudio.hardcoded5": "보통 30초~2분 소요됩니다",
   "videoEffectsStudio.hardcoded6": "효과를 선택하고 이미지를 업로드하세요",
-  "videoEffectsStudio.hardcoded1": "결과",
-  "videoEffectsStudio.hardcoded2": "새로 만들기",
+  "videoEffectsStudio.hardcoded7": "결과",
+  "videoEffectsStudio.hardcoded8": "새로 만들기",
 });
 
 registerTranslations("en", {

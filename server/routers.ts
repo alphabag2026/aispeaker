@@ -30,7 +30,7 @@ const safeOptionalNumber = z.union([z.number(), z.null(), z.undefined()]).option
 // Instructor-only procedure
 const instructorProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.platformRole !== "instructor" && ctx.user.role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "강사 권한이 필요합니다." });
+    throw new TRPCError({ code: "FORBIDDEN", message: "Instructor permission required." });
   }
   return next({ ctx });
 });
@@ -88,7 +88,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const existing = await db.getUserByEmail(input.email);
         if (existing) {
-          throw new TRPCError({ code: "CONFLICT", message: "이미 등록된 이메일입니다." });
+          throw new TRPCError({ code: "CONFLICT", message: "Email already registered." });
         }
         const passwordHash = await bcrypt.hash(input.password, 12);
         const userId = await db.createUserWithEmail({
@@ -97,7 +97,7 @@ export const appRouter = router({
           name: input.name,
         });
         const user = await db.getUserById(userId);
-        if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "회원가입 실패" });
+        if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Registration failed" });
         const token = await sdk.createSessionToken(user.id, { email: user.email || "", name: user.name || "" });
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 365 * 24 * 60 * 60 * 1000 });
@@ -113,11 +113,11 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const user = await db.getUserByEmail(input.email);
         if (!user || !user.passwordHash) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "이메일 또는 비밀번호가 올바르지 않습니다." });
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
         }
         const valid = await bcrypt.compare(input.password, user.passwordHash);
         if (!valid) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "이메일 또는 비밀번호가 올바르지 않습니다." });
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
         }
         const token = await sdk.createSessionToken(user.id, { email: user.email || "", name: user.name || "" });
         const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -144,7 +144,7 @@ export const appRouter = router({
             picture: response.data.picture,
           };
         } catch (err) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "Google 인증에 실패했습니다." });
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Google authentication failed." });
         }
 
         // Check if user exists by Google ID
@@ -166,7 +166,7 @@ export const appRouter = router({
             user = await db.getUserById(userId);
           }
         }
-        if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "로그인 실패" });
+        if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Login failed" });
 
         const token = await sdk.createSessionToken(user.id, { email: user.email || "", name: user.name || "" });
         const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -181,7 +181,7 @@ export const appRouter = router({
         const user = await db.getUserByEmail(input.email);
         if (!user) {
           // Don't reveal whether email exists
-          return { success: true, message: "등록된 이메일이라면 비밀번호 재설정 링크가 발송됩니다." };
+          return { success: true, message: "If the email is registered, a password reset link will be sent." };
         }
         // Generate a secure random token
         const token = crypto.randomBytes(32).toString("hex");
@@ -190,7 +190,7 @@ export const appRouter = router({
         // In production, send email with reset link
         // For now, return token (development mode)
         console.log(`[Password Reset] Token for ${input.email}: ${token}`);
-        return { success: true, message: "등록된 이메일이라면 비밀번호 재설정 링크가 발송됩니다.", resetToken: token };
+        return { success: true, message: "If the email is registered, a password reset link will be sent.", resetToken: token };
       }),
 
     // Reset Password with token
@@ -202,16 +202,16 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const resetRecord = await db.getPasswordResetToken(input.token);
         if (!resetRecord) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 재설정 토큰입니다." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid reset token." });
         }
         if (new Date() > resetRecord.expiresAt) {
           await db.deletePasswordResetToken(input.token);
-          throw new TRPCError({ code: "BAD_REQUEST", message: "만료된 재설정 토큰입니다. 다시 요청해주세요." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Expired reset token. Please request again." });
         }
         const passwordHash = await bcrypt.hash(input.newPassword, 12);
         await db.updateUserPassword(resetRecord.userId, passwordHash);
         await db.deletePasswordResetToken(input.token);
-        return { success: true, message: "비밀번호가 성공적으로 변경되었습니다." };
+        return { success: true, message: "Password changed successfully." };
       }),
 
     // Change Password (for logged-in users)
@@ -223,15 +223,15 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const user = await db.getUserById(ctx.user.id);
         if (!user || !user.passwordHash) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "비밀번호 변경이 불가능한 계정입니다." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This account does not support password changes." });
         }
         const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
         if (!valid) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "현재 비밀번호가 올바르지 않습니다." });
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect." });
         }
         const passwordHash = await bcrypt.hash(input.newPassword, 12);
         await db.updateUserPassword(user.id, passwordHash);
-        return { success: true, message: "비밀번호가 성공적으로 변경되었습니다." };
+        return { success: true, message: "Password changed successfully." };
       }),
   }),
 
@@ -260,7 +260,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const lecture = await db.getLectureById(input.id);
-        if (!lecture) throw new TRPCError({ code: "NOT_FOUND", message: "강의를 찾을 수 없습니다." });
+        if (!lecture) throw new TRPCError({ code: "NOT_FOUND", message: "Lecture not found." });
         return lecture;
       }),
     create: instructorProcedure
@@ -349,21 +349,21 @@ export const appRouter = router({
         const questionId = await db.createQaMessage({ lectureId: input.lectureId, userId: ctx.user.id, messageType: "question", inputMethod: input.inputMethod || "text", content: input.content });
         await db.incrementQuestionCount(ctx.user.id, input.lectureId);
         const lecture = await db.getLectureById(input.lectureId);
-        const systemPrompt = lecture?.aiContext || "당신은 Web3와 AI 전문 강사입니다. 학생의 질문에 정확하고 이해하기 쉽게 답변합니다.";
+        const systemPrompt = lecture?.aiContext || "You are a Web3 and AI expert instructor. Answer student questions accurately and in an easy-to-understand manner.";
 
         // Apply voice modulation style if configured
         let styleInstruction = "";
         if (lecture?.voiceModProfileId) {
           const voiceMod = await db.getVoiceModProfileById(lecture.voiceModProfileId);
           if (voiceMod?.stylePrompt) {
-            styleInstruction = `\n\n말투 지시: ${voiceMod.stylePrompt}`;
+            styleInstruction = `\n\nSpeaking style instruction: ${voiceMod.stylePrompt}`;
           }
           if (voiceMod?.speakingStyle) {
             const styleMap: Record<string, string> = {
-              formal: "격식체로 정중하게", casual: "친근하고 편안하게", academic: "학술적이고 전문적으로",
-              friendly: "따뜻하고 친절하게", authoritative: "권위있고 확신에 찬 어조로"
+              formal: "Speak formally and politely", casual: "Speak casually and comfortably", academic: "Speak academically and professionally",
+              friendly: "Speak warmly and kindly", authoritative: "Speak with authority and confidence"
             };
-            styleInstruction += `\n답변 스타일: ${styleMap[voiceMod.speakingStyle] || "자연스럽게"} 답변하세요.`;
+            styleInstruction += `\nResponse style: ${styleMap[voiceMod.speakingStyle] || "Speak naturally"} respond accordingly.`;
           }
         }
 
@@ -374,7 +374,7 @@ export const appRouter = router({
           ],
         });
         const rawAnswer = response.choices?.[0]?.message?.content;
-        const answerContent = typeof rawAnswer === "string" ? rawAnswer : "죄송합니다, 답변을 생성하지 못했습니다.";
+        const answerContent = typeof rawAnswer === "string" ? rawAnswer : "Sorry, could not generate a response.";
         const answerId = await db.createQaMessage({ lectureId: input.lectureId, messageType: "answer", inputMethod: "text", content: answerContent });
         await db.incrementAnswerCount(ctx.user.id, input.lectureId);
         return { questionId, answerId, answer: answerContent };
@@ -421,7 +421,7 @@ export const appRouter = router({
         const voice = TTS_VOICES.find(v => v.id.toLowerCase() === input.voiceId.toLowerCase());
         const voiceName = voice?.name || input.voiceId;
         const voiceDesc = voice?.desc || '';
-        const sampleText = `안녕하세요, 저는 ${voiceName}입니다. ${voiceDesc} 스타일로 AI 강의를 진행해 드리겠습니다.`;
+        const sampleText = `Hello, I am ${voiceName}. I will deliver AI lectures in a ${voiceDesc} style.`;
         const ttsResult = await generateGeminiTts({ text: sampleText, voiceId: input.voiceId });
         if ('error' in ttsResult) throw new TRPCError({ code: ttsResult.code === 'QUOTA_EXCEEDED' ? 'TOO_MANY_REQUESTS' : 'INTERNAL_SERVER_ERROR', message: ttsResult.error });
         const fileKey = `tts-preview/${input.voiceId.toLowerCase()}-${Date.now()}.mp3`;
@@ -449,7 +449,7 @@ export const appRouter = router({
             if (voiceMod.stylePrompt) {
               const styleResponse = await invokeLLM({
                 messages: [
-                  { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 내용은 유지하되 말투만 변경합니다. 변환 지시: ${voiceMod.stylePrompt}\n스타일: ${voiceMod.speakingStyle}` },
+                  { role: "system", content: `Convert the following text to the specified speaking style. Keep the content but change only the tone. Instruction: ${voiceMod.stylePrompt}\nStyle: ${voiceMod.speakingStyle}` },
                   { role: "user", content: input.text },
                 ],
               });
@@ -605,7 +605,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const vod = await db.getVodById(input.id);
-        if (!vod) throw new TRPCError({ code: "NOT_FOUND", message: "VOD를 찾을 수 없습니다." });
+        if (!vod) throw new TRPCError({ code: "NOT_FOUND", message: "VOD not found." });
         await db.incrementVodViewCount(input.id);
         return vod;
       }),
@@ -622,7 +622,7 @@ export const appRouter = router({
         if (!lecture) throw new TRPCError({ code: "NOT_FOUND" });
         const messages = await db.getQaMessages(input.lectureId);
         const snapshots = await db.getWhiteboardSnapshots(input.lectureId);
-        const vodId = await db.createVodRecording({ lectureId: input.lectureId, title: `${lecture.title} - 녹화본`, description: lecture.description, messageCount: messages.length, snapshotCount: snapshots.length, status: "processing", startedAt: lecture.createdAt, endedAt: new Date() });
+        const vodId = await db.createVodRecording({ lectureId: input.lectureId, title: `${lecture.title} - Recording`, description: lecture.description, messageCount: messages.length, snapshotCount: snapshots.length, status: "processing", startedAt: lecture.createdAt, endedAt: new Date() });
         if (vodId) {
           let offsetSec = 0;
           for (const msg of messages) {
@@ -833,13 +833,13 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const profile = await db.getVoiceModProfileById(input.profileId);
         if (!profile) throw new TRPCError({ code: "NOT_FOUND" });
-        const sampleText = input.sampleText || "안녕하세요, 저는 AI 강사입니다. 오늘 Web3에 대해 알아보겠습니다.";
+        const sampleText = input.sampleText || "Hello, I am an AI instructor. Today we will learn about Web3.";
         let textToSpeak = sampleText;
         // Apply style transformation
         if (profile.stylePrompt) {
           const styleResponse = await invokeLLM({
             messages: [
-              { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${profile.stylePrompt}\n스타일: ${profile.speakingStyle}` },
+              { role: "system", content: `Convert the following text to the specified speaking style. Instruction: ${profile.stylePrompt}\nStyle: ${profile.speakingStyle}` },
               { role: "user", content: sampleText },
             ],
           });
@@ -910,12 +910,12 @@ export const appRouter = router({
         // Check completion
         const progress = await db.getLearningProgressForLecture(ctx.user.id, input.lectureId);
         if (!progress || (progress.completionPercent || 0) < 70) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "강의 진도 70% 이상 달성해야 수료증을 발급받을 수 있습니다." });
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "You must complete at least 70% of the lecture to receive a certificate." });
         }
         const lecture = await db.getLectureById(input.lectureId);
         if (!lecture) throw new TRPCError({ code: "NOT_FOUND" });
         const certificateCode = `CERT-${nanoid(12).toUpperCase()}`;
-        const studentName = ctx.user.name || "수강생";
+        const studentName = ctx.user.name || "Student";
         // Generate certificate HTML and store as PDF placeholder
         const certHtml = generateCertificateHtml(studentName, lecture.title, certificateCode, progress.completionPercent || 100);
         const certBuffer = Buffer.from(certHtml, "utf-8");
@@ -1058,7 +1058,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const templateId = await db.saveScriptAsTemplate(input.scriptId, ctx.user.id, input.name, input.description, input.tags);
-        if (!templateId) throw new TRPCError({ code: "NOT_FOUND", message: "스크립트를 찾을 수 없습니다." });
+        if (!templateId) throw new TRPCError({ code: "NOT_FOUND", message: "Script not found." });
         return { id: templateId, success: true };
       }),
 
@@ -1073,15 +1073,15 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const template = await db.getScriptTemplateById(input.templateId);
-        if (!template) throw new TRPCError({ code: "NOT_FOUND", message: "템플릿을 찾을 수 없습니다." });
+        if (!template) throw new TRPCError({ code: "NOT_FOUND", message: "Template not found." });
 
         // Increment usage
         await db.incrementScriptTemplateUsage(input.templateId);
 
         const structure = JSON.parse(template.structure);
         const durationMin = input.targetDurationMin || template.targetDurationMin || 10;
-        const langMap: Record<string, string> = { ko: "한국어", en: "English", ja: "日本語", zh: "中文" };
-        const lang = langMap[input.language || "ko"] || "한국어";
+        const langMap: Record<string, string> = { ko: "Korean", en: "English", ja: "Japanese", zh: "Chinese" };
+        const lang = langMap[input.language || "ko"] || "Korean";
 
         // Create script record first
         const scriptId = await db.createLectureScript({
@@ -1100,31 +1100,31 @@ export const appRouter = router({
           // Build section prompts from template structure
           const sectionPrompts = structure.map((s: any, i: number) => {
             const secDuration = Math.round(durationMin * 60 * (s.durationPercent || (100 / structure.length)) / 100);
-            return `섹션 ${i + 1}: "${s.title}" - ${s.description || ""} (약 ${secDuration}초)`;
+            return `Section ${i + 1}: "${s.title}" - ${s.description || ""} (approx ${secDuration}sec)`;
           }).join("\n");
 
           const response = await invokeLLM({
             messages: [
               {
                 role: "system",
-                content: `당신은 전문 강의 스크립트 작성가입니다. ${lang}로 작성하세요.
-주어진 템플릿 구조에 맞춰 ${durationMin}분 분량의 강의 스크립트를 작성합니다.
+                content: `You are a professional lecture script writer. Write in ${lang}.
+Create a ${durationMin}-minute lecture script following the given template structure.
 
-템플릿 구조:\n${sectionPrompts}
+Template structure:\n${sectionPrompts}
 
-반드시 아래 JSON 형식으로만 응답하세요:
+Respond ONLY in the following JSON format:
 {
   "sections": [
     {
-      "title": "섹션 제목",
-      "content": "강사가 말할 전체 스크립트 텍스트 (자연스러운 구어체로)",
-      "durationSec": 예상_초,
-      "slideNotes": "이 섹션의 슬라이드에 표시할 핵심 키워드/요약"
+      "title": "section title",
+      "content": "full script text the instructor will speak (natural conversational tone)",
+      "durationSec": estimated_seconds,
+      "slideNotes": "key keywords/summary to display on slides for this section"
     }
   ]
 }`
               },
-              { role: "user", content: `주제: ${input.title}\n상세 요청: ${input.prompt}\n카테고리: ${template.category}\n난이도: ${template.difficulty}\n목표 시간: ${durationMin}분` },
+              { role: "user", content: `Topic: ${input.title}\nDetailed request: ${input.prompt}\nCategory: ${template.category}\nDifficulty: ${template.difficulty}\nTarget duration: ${durationMin} min` },
             ],
             response_format: {
               type: "json_schema",
@@ -1175,7 +1175,7 @@ export const appRouter = router({
           return { id: scriptId, status: "ready", sectionCount: sections.length, estimatedDurationSec: totalDuration };
         } catch (error) {
           await db.updateLectureScript(scriptId, { status: "error" });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "템플릿 기반 스크립트 생성에 실패했습니다." });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate template-based script." });
         }
       }),
 
@@ -1183,98 +1183,98 @@ export const appRouter = router({
     seedBuiltIn: instructorProcedure.mutation(async () => {
       const builtInTemplates = [
         {
-          name: "기본 강의 (도입-본론-결론)",
-          description: "가장 기본적인 3단계 강의 구조. 도입부에서 주제를 소개하고, 본론에서 핵심 내용을 전달하며, 결론에서 요약합니다.",
+          name: "Basic Lecture (Intro-Body-Conclusion)",
+          description: "The most basic 3-step lecture structure. Introduce the topic, deliver core content, and summarize.",
           category: "general" as const,
           difficulty: "beginner" as const,
           structure: JSON.stringify([
-            { title: "도입 - 주제 소개", description: "강의 주제와 학습 목표를 소개합니다.", durationPercent: 15, slideNotes: "주제 소개, 학습 목표" },
-            { title: "본론 - 핵심 내용", description: "주요 개념과 이론을 상세히 설명합니다.", durationPercent: 60, slideNotes: "핵심 개념, 이론 설명" },
-            { title: "결론 - 요약 및 정리", description: "핵심 내용을 요약하고 다음 학습 방향을 안내합니다.", durationPercent: 25, slideNotes: "요약, 핵심 포인트" },
+            { title: "Introduction - Topic Overview", description: "Introduce the lecture topic and learning objectives.", durationPercent: 15, slideNotes: "Topic intro, Learning goals" },
+            { title: "Body - Core Content", description: "Explain key concepts and theories in detail.", durationPercent: 60, slideNotes: "Key concepts, Theory" },
+            { title: "Conclusion - Summary", description: "Summarize key content and guide next learning steps.", durationPercent: 25, slideNotes: "Summary, Key points" },
           ]),
           sectionCount: 3,
           targetDurationMin: 10,
-          tags: "기본,입문,3단계",
+          tags: "basic,intro,3-step",
         },
         {
-          name: "Q&A 포함 강의",
-          description: "도입, 본론, 중간 Q&A, 심화 내용, 최종 Q&A 및 정리를 포함한 인터랙티브 강의 구조.",
+          name: "Interactive Q&A Lecture",
+          description: "Interactive lecture structure with intro, body, mid Q&A, advanced content, and final Q&A.",
           category: "general" as const,
           difficulty: "intermediate" as const,
           structure: JSON.stringify([
-            { title: "도입 - 배경 설명", description: "주제의 배경과 중요성을 설명합니다.", durationPercent: 10, slideNotes: "배경, 중요성" },
-            { title: "핵심 개념 설명", description: "기본 개념과 원리를 설명합니다.", durationPercent: 25, slideNotes: "기본 개념" },
-            { title: "중간 Q&A - 개념 확인", description: "학습자의 이해도를 확인하는 질문과 답변 시간.", durationPercent: 10, slideNotes: "Q&A, 이해도 확인" },
-            { title: "심화 내용", description: "고급 개념과 실제 적용 사례를 다룹니다.", durationPercent: 30, slideNotes: "심화, 사례" },
-            { title: "최종 Q&A 및 정리", description: "전체 내용 요약과 최종 질의응답.", durationPercent: 25, slideNotes: "요약, 최종 Q&A" },
+            { title: "Introduction - Background", description: "Explain the background and importance of the topic.", durationPercent: 10, slideNotes: "Background, Importance" },
+            { title: "Core Concepts", description: "Explain fundamental concepts and principles.", durationPercent: 25, slideNotes: "Fundamentals" },
+            { title: "Mid Q&A - Concept Check", description: "Q&A time to verify learner understanding.", durationPercent: 10, slideNotes: "Q&A, Understanding check" },
+            { title: "Advanced Content", description: "Cover advanced concepts and real-world applications.", durationPercent: 30, slideNotes: "Advanced, Cases" },
+            { title: "Final Q&A & Summary", description: "Overall summary and final Q&A session.", durationPercent: 25, slideNotes: "Summary, Final Q&A" },
           ]),
           sectionCount: 5,
           targetDurationMin: 20,
-          tags: "Q&A,인터랙티브,5단계",
+          tags: "Q&A,interactive,5-step",
         },
         {
-          name: "실습형 워크숍",
-          description: "이론 설명 후 단계별 실습을 진행하는 핸즈온 워크숍 구조.",
+          name: "Practical Workshop",
+          description: "Hands-on workshop structure with theory followed by step-by-step practice.",
           category: "ai" as const,
           difficulty: "intermediate" as const,
           structure: JSON.stringify([
-            { title: "개요 및 환경 설정", description: "실습 목표와 필요한 도구/환경을 안내합니다.", durationPercent: 10, slideNotes: "환경 설정, 도구 안내" },
-            { title: "이론 배경", description: "실습에 필요한 핵심 이론을 간략히 설명합니다.", durationPercent: 15, slideNotes: "핵심 이론" },
-            { title: "실습 Step 1", description: "첫 번째 실습 단계를 진행합니다.", durationPercent: 20, slideNotes: "실습 1단계" },
-            { title: "실습 Step 2", description: "두 번째 실습 단계를 진행합니다.", durationPercent: 20, slideNotes: "실습 2단계" },
-            { title: "실습 Step 3", description: "세 번째 실습 단계를 진행합니다.", durationPercent: 20, slideNotes: "실습 3단계" },
-            { title: "결과 확인 및 마무리", description: "실습 결과를 확인하고 추가 학습 자료를 안내합니다.", durationPercent: 15, slideNotes: "결과 확인, 추가 자료" },
+            { title: "Overview & Setup", description: "Guide practice goals and required tools/environment.", durationPercent: 10, slideNotes: "Setup, Tools" },
+            { title: "Theory Background", description: "Briefly explain core theory needed for practice.", durationPercent: 15, slideNotes: "Core theory" },
+            { title: "Practice Step 1", description: "Proceed with the first practice step.", durationPercent: 20, slideNotes: "Step 1" },
+            { title: "Practice Step 2", description: "Proceed with the second practice step.", durationPercent: 20, slideNotes: "Step 2" },
+            { title: "Practice Step 3", description: "Proceed with the third practice step.", durationPercent: 20, slideNotes: "Step 3" },
+            { title: "Results & Wrap-up", description: "Review practice results and guide additional resources.", durationPercent: 15, slideNotes: "Results, Resources" },
           ]),
           sectionCount: 6,
           targetDurationMin: 30,
-          tags: "실습,워크숍,핸즈온,6단계",
+          tags: "practice,workshop,hands-on,6-step",
         },
         {
-          name: "Web3 프로젝트 분석",
-          description: "Web3 프로젝트를 체계적으로 분석하는 구조. 프로젝트 개요, 기술 스택, 토크노믹스, 로드맵, 투자 관점 분석.",
+          name: "Web3 Project Analysis",
+          description: "Systematic Web3 project analysis structure: overview, tech stack, tokenomics, roadmap, investment analysis.",
           category: "web3" as const,
           difficulty: "advanced" as const,
           structure: JSON.stringify([
-            { title: "프로젝트 개요", description: "프로젝트의 비전, 미션, 팀 소개.", durationPercent: 15, slideNotes: "비전, 미션, 팀" },
-            { title: "기술 스택 분석", description: "사용된 블록체인, 합의 메커니즘, 스마트 컨트랙트 구조.", durationPercent: 20, slideNotes: "기술, 블록체인, 컨트랙트" },
-            { title: "토크노믹스", description: "토큰 분배, 유틸리티, 인플레이션/디플레이션 메커니즘.", durationPercent: 20, slideNotes: "토큰, 분배, 유틸리티" },
-            { title: "로드맵 및 파트너십", description: "개발 로드맵, 주요 파트너십, 생태계 확장 계획.", durationPercent: 20, slideNotes: "로드맵, 파트너" },
-            { title: "투자 관점 분석", description: "SWOT 분석, 리스크 요인, 경쟁사 비교.", durationPercent: 25, slideNotes: "SWOT, 리스크, 경쟁" },
+            { title: "Project Overview", description: "Project vision, mission, and team introduction.", durationPercent: 15, slideNotes: "Vision, Mission, Team" },
+            { title: "Tech Stack Analysis", description: "Blockchain used, consensus mechanism, smart contract architecture.", durationPercent: 20, slideNotes: "Tech, Blockchain, Contracts" },
+            { title: "Tokenomics", description: "Token distribution, utility, inflation/deflation mechanisms.", durationPercent: 20, slideNotes: "Token, Distribution, Utility" },
+            { title: "Roadmap & Partnerships", description: "Development roadmap, key partnerships, ecosystem expansion.", durationPercent: 20, slideNotes: "Roadmap, Partners" },
+            { title: "Investment Analysis", description: "SWOT analysis, risk factors, competitor comparison.", durationPercent: 25, slideNotes: "SWOT, Risk, Competition" },
           ]),
           sectionCount: 5,
           targetDurationMin: 15,
-          tags: "Web3,프로젝트분석,토크노믹스,5단계",
+          tags: "Web3,project-analysis,tokenomics,5-step",
         },
         {
-          name: "DeFi 프로토콜 튜토리얼",
-          description: "DeFi 프로토콜 사용법을 단계별로 안내하는 튜토리얼 구조.",
+          name: "DeFi Protocol Tutorial",
+          description: "Step-by-step tutorial structure for using DeFi protocols.",
           category: "defi" as const,
           difficulty: "beginner" as const,
           structure: JSON.stringify([
-            { title: "DeFi 기초 개념", description: "DeFi의 기본 개념과 전통 금융과의 차이점.", durationPercent: 15, slideNotes: "DeFi 기초, 차이점" },
-            { title: "지갑 연결 및 준비", description: "메타마스크 설정, 네트워크 추가, 토큰 준비.", durationPercent: 15, slideNotes: "지갑, 메타마스크" },
-            { title: "프로토콜 사용법", description: "스왑, 유동성 공급, 스테이킹 등 핵심 기능 사용법.", durationPercent: 30, slideNotes: "스왑, 유동성, 스테이킹" },
-            { title: "수익률 계산 및 리스크", description: "APY/APR 이해, 임시 손실, 스마트 컨트랙트 리스크.", durationPercent: 25, slideNotes: "수익률, 리스크" },
-            { title: "보안 팁 및 마무리", description: "피싱 방지, 승인 관리, 안전한 DeFi 사용법.", durationPercent: 15, slideNotes: "보안, 피싱 방지" },
+            { title: "DeFi Basics", description: "Basic DeFi concepts and differences from traditional finance.", durationPercent: 15, slideNotes: "DeFi basics, Differences" },
+            { title: "Wallet Setup", description: "MetaMask setup, network addition, token preparation.", durationPercent: 15, slideNotes: "Wallet, MetaMask" },
+            { title: "Protocol Usage", description: "How to use core features: swap, liquidity provision, staking.", durationPercent: 30, slideNotes: "Swap, Liquidity, Staking" },
+            { title: "Yield & Risk", description: "Understanding APY/APR, impermanent loss, smart contract risk.", durationPercent: 25, slideNotes: "Yield, Risk" },
+            { title: "Security Tips & Wrap-up", description: "Anti-phishing, approval management, safe DeFi usage.", durationPercent: 15, slideNotes: "Security, Anti-phishing" },
           ]),
           sectionCount: 5,
           targetDurationMin: 15,
-          tags: "DeFi,튜토리얼,프로토콜,5단계",
+          tags: "DeFi,tutorial,protocol,5-step",
         },
         {
-          name: "뉴스 브리핑 형식",
-          description: "최신 뉴스를 빠르게 전달하는 브리핑 형식. 헤드라인, 상세 분석, 시장 영향, 전망.",
+          name: "News Briefing Format",
+          description: "Quick news delivery format: headlines, detailed analysis, market impact, outlook.",
           category: "blockchain" as const,
           difficulty: "beginner" as const,
           structure: JSON.stringify([
-            { title: "오늘의 헤드라인", description: "주요 뉴스 3-5개를 간략히 소개합니다.", durationPercent: 20, slideNotes: "헤드라인, 주요 뉴스" },
-            { title: "심층 분석", description: "가장 중요한 뉴스를 상세히 분석합니다.", durationPercent: 35, slideNotes: "심층 분석" },
-            { title: "시장 영향", description: "뉴스가 시장에 미치는 영향을 분석합니다.", durationPercent: 25, slideNotes: "시장 영향, 가격" },
-            { title: "전망 및 정리", description: "향후 전망과 투자자 시사점을 정리합니다.", durationPercent: 20, slideNotes: "전망, 시사점" },
+            { title: "Today's Headlines", description: "Brief introduction of 3-5 major news items.", durationPercent: 20, slideNotes: "Headlines, Major news" },
+            { title: "Deep Analysis", description: "Detailed analysis of the most important news.", durationPercent: 35, slideNotes: "Deep analysis" },
+            { title: "Market Impact", description: "Analyze the impact of news on the market.", durationPercent: 25, slideNotes: "Market impact, Price" },
+            { title: "Outlook & Summary", description: "Summarize future outlook and investor implications.", durationPercent: 20, slideNotes: "Outlook, Implications" },
           ]),
           sectionCount: 4,
           targetDurationMin: 10,
-          tags: "뉴스,브리핑,시장분석,4단계",
+          tags: "news,briefing,market-analysis,4-step",
         },
       ];
 
@@ -1319,31 +1319,31 @@ export const appRouter = router({
         // Generate script using LLM
         const durationMin = input.targetDurationMin || 10;
         const sectionCount = Math.max(3, Math.ceil(durationMin / 3));
-        const langMap: Record<string, string> = { ko: "한국어", en: "English", ja: "日本語", zh: "中文" };
-        const lang = langMap[input.language || "ko"] || "한국어";
+        const langMap: Record<string, string> = { ko: "Korean", en: "English", ja: "Japanese", zh: "Chinese" };
+        const lang = langMap[input.language || "ko"] || "Korean";
 
         try {
           const response = await invokeLLM({
             messages: [
               {
                 role: "system",
-                content: `당신은 전문 강의 스크립트 작성가입니다. ${lang}로 작성하세요.
-주어진 주제에 대해 ${durationMin}분 분량의 강의 스크립트를 작성합니다.
-${sectionCount}개의 섹션으로 나누어 작성하세요.
+                content: `You are a professional lecture script writer. Write in ${lang}.
+Create a ${durationMin}-minute lecture script on the given topic.
+Divide into ${sectionCount} sections.
 
-반드시 아래 JSON 형식으로만 응답하세요:
+Respond ONLY in the following JSON format:
 {
   "sections": [
     {
-      "title": "섹션 제목",
-      "content": "강사가 말할 전체 스크립트 텍스트 (자연스러운 구어체로)",
-      "durationSec": 예상_초,
-      "slideNotes": "이 섹션의 슬라이드에 표시할 핵심 키워드/요약"
+      "title": "section title",
+      "content": "full script text the instructor will speak (natural conversational tone)",
+      "durationSec": estimated_seconds,
+      "slideNotes": "key keywords/summary to display on slides for this section"
     }
   ]
 }`
               },
-              { role: "user", content: `주제: ${input.title}\n상세 요청: ${input.prompt}\n카테고리: ${input.category || "web3"}\n난이도: ${input.difficulty || "beginner"}\n목표 시간: ${durationMin}분` },
+              { role: "user", content: `Topic: ${input.title}\nDetailed request: ${input.prompt}\nCategory: ${input.category || "web3"}\nDifficulty: ${input.difficulty || "beginner"}\nTarget duration: ${durationMin} min` },
             ],
             response_format: {
               type: "json_schema",
@@ -1395,7 +1395,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         } catch (error: any) {
           console.error('[Script Generate] Error:', error?.message || error, error?.stack);
           await db.updateLectureScript(scriptId, { status: "error" });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `스크립트 생성에 실패했습니다: ${error?.message || 'Unknown error'}` });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Script generation failed: ${error?.message || 'Unknown error'}` });
         }
       }),
 
@@ -1444,7 +1444,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           // Extract title from first line or numbered prefix
           const firstLine = text.split('\n')[0].trim();
           const titleMatch = firstLine.match(/^\d+[.、)\s]\s*(.+)/) || firstLine.match(/^第[一二三四五六七八九十]+[.、\s]\s*(.+)/);
-          const title = titleMatch ? titleMatch[1].substring(0, 100) : `섹션 ${idx + 1}`;
+          const title = titleMatch ? titleMatch[1].substring(0, 100) : `Section ${idx + 1}`;
           const content = text.trim();
           const charRatio = content.length / totalChars;
           const durationSec = Math.round(durationMin * 60 * charRatio);
@@ -1463,7 +1463,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const scriptId = await db.createLectureScript({
           userId: ctx.user.id,
           title: input.title,
-          prompt: `[직접 작성] ${input.title}`,
+          prompt: `[Manual] ${input.title}`,
           category: input.category || "web3",
           difficulty: input.difficulty || "beginner",
           language: input.language || "ko",
@@ -1512,16 +1512,16 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const script = await db.getLectureScriptById(input.scriptId);
         if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
         const sections = script.sections ? JSON.parse(script.sections) : [];
-        if (input.sectionIndex >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "잘못된 섹션 인덱스" });
+        if (input.sectionIndex >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid section index" });
 
         const section = sections[input.sectionIndex];
-        const langMap: Record<string, string> = { ko: "한국어", en: "English", ja: "日本語", zh: "中文" };
-        const lang = langMap[script.language || "ko"] || "한국어";
+        const langMap: Record<string, string> = { ko: "Korean", en: "English", ja: "Japanese", zh: "Chinese" };
+        const lang = langMap[script.language || "ko"] || "Korean";
 
         const response = await invokeLLM({
           messages: [
-            { role: "system", content: `당신은 전문 강의 스크립트 작성가입니다. ${lang}로 작성하세요.\n기존 섹션을 개선하여 다시 작성합니다.\n반드시 아래 JSON 형식으로만 응답하세요:\n{"title":"섹션 제목","content":"강사가 말할 스크립트","durationSec":예상초,"slideNotes":"핵심 키워드"}` },
-            { role: "user", content: `기존 섹션 제목: ${section.title}\n기존 내용: ${section.content}\n${input.customPrompt ? `수정 요청: ${input.customPrompt}` : "더 자연스럽고 전문적으로 개선해주세요."}` },
+            { role: "system", content: `You are a professional lecture script writer. Write in ${lang}.\nImprove and rewrite the existing section.\nRespond ONLY in the following JSON format:\n{"title":"section title","content":"instructor script","durationSec":estimated_seconds,"slideNotes":"key keywords"}` },
+            { role: "user", content: `Current section title: ${section.title}\nCurrent content: ${section.content}\n${input.customPrompt ? `Edit request: ${input.customPrompt}` : "Please improve to be more natural and professional."}` },
           ],
           response_format: {
             type: "json_schema",
@@ -1544,7 +1544,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         });
 
         const rawContent = response.choices?.[0]?.message?.content;
-        if (typeof rawContent !== "string") throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "LLM 응답 오류" });
+        if (typeof rawContent !== "string") throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "LLM response error" });
         const newSection = JSON.parse(rawContent);
         sections[input.sectionIndex] = newSection;
 
@@ -1570,10 +1570,10 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const script = await db.getLectureScriptById(input.scriptId);
         if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
         const sections = script.sections ? JSON.parse(script.sections) : [];
-        if (input.newOrder.length !== sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "섹션 수가 일치하지 않습니다." });
+        if (input.newOrder.length !== sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Section count mismatch." });
 
         const reordered = input.newOrder.map(idx => {
-          if (idx < 0 || idx >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "잘못된 인덱스" });
+          if (idx < 0 || idx >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid index" });
           return sections[idx];
         });
 
@@ -1631,7 +1631,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
         const sections = script.sections ? JSON.parse(script.sections) : [];
         const newSection = {
-          title: input.title || `섹션 ${sections.length + 1}`,
+          title: input.title || `Section ${sections.length + 1}`,
           content: input.content || "",
           durationSec: input.durationSec || 60,
           slideNotes: "",
@@ -1659,8 +1659,8 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const script = await db.getLectureScriptById(input.scriptId);
         if (!script || script.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
         const sections = script.sections ? JSON.parse(script.sections) : [];
-        if (input.sectionIndex >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "잘못된 섹션 인덱스" });
-        if (sections.length <= 1) throw new TRPCError({ code: "BAD_REQUEST", message: "최소 1개 섹션이 필요합니다." });
+        if (input.sectionIndex >= sections.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid section index" });
+        if (sections.length <= 1) throw new TRPCError({ code: "BAD_REQUEST", message: "At least 1 section is required." });
         sections.splice(input.sectionIndex, 1);
         const fullScript = sections.map((s: any) => `## ${s.title}\n\n${s.content}`).join("\n\n");
         const totalDuration = sections.reduce((sum: number, s: any) => sum + (s.durationSec || 0), 0);
@@ -1692,7 +1692,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .input(z.object({ scriptId: z.number(), changeDescription: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
         const versionId = await db.autoSaveScriptVersion(input.scriptId, ctx.user.id, input.changeDescription);
-        if (!versionId) throw new TRPCError({ code: "NOT_FOUND", message: "스크립트를 찾을 수 없습니다." });
+        if (!versionId) throw new TRPCError({ code: "NOT_FOUND", message: "Script not found." });
         return { versionId };
       }),
 
@@ -1701,7 +1701,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .input(z.object({ scriptId: z.number(), versionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const result = await db.rollbackScriptToVersion(input.scriptId, input.versionId, ctx.user.id);
-        if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "버전을 찾을 수 없습니다." });
+        if (!result) throw new TRPCError({ code: "NOT_FOUND", message: "Version not found." });
         return { success: true };
       }),
 
@@ -1724,7 +1724,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const scripts = await db.getLectureScripts(ctx.user.id);
         const script = scripts.find((s: any) => s.id === input.scriptId);
         if (!script) throw new TRPCError({ code: "NOT_FOUND" });
-        if (!script.scriptContent) throw new TRPCError({ code: "BAD_REQUEST", message: "스크립트 내용이 없습니다." });
+        if (!script.scriptContent) throw new TRPCError({ code: "BAD_REQUEST", message: "No script content." });
 
         // Create analysis record
         const analysisId = await db.createContentAnalysis({
@@ -1739,9 +1739,9 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             messages: [
               {
                 role: "system",
-                content: `당신은 교육 콘텐츠 품질 분석 전문가입니다. 강의 스크립트를 분석하여 다음 항목을 0-100점으로 평가하고 개선 제안을 제공하세요.
+                content: `You are an educational content quality analysis expert. Analyze the lecture script, rate the following items 0-100, and provide improvement suggestions.
 
-반드시 아래 JSON 형식으로만 응답하세요:
+Respond ONLY in the following JSON format:
 {
   "scores": {
     "readability": 0-100,
@@ -1751,11 +1751,11 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
     "engagement": 0-100
   },
   "analysis": {
-    "readability": { "avgSentenceLength": number, "complexWords": number, "summary": "설명" },
-    "difficulty": { "level": "beginner|intermediate|advanced", "appropriateness": "설명" },
-    "keywords": { "topKeywords": ["키워드1", "키워드2", ...], "density": number, "summary": "설명" },
-    "structure": { "sectionBalance": "설명", "hasIntro": boolean, "hasConclusion": boolean },
-    "engagement": { "questionCount": number, "exampleCount": number, "summary": "설명" }
+    "readability": { "avgSentenceLength": number, "complexWords": number, "summary": "description" },
+    "difficulty": { "level": "beginner|intermediate|advanced", "appropriateness": "description" },
+    "keywords": { "topKeywords": ["keyword1", "keyword2", ...], "density": number, "summary": "description" },
+    "structure": { "sectionBalance": "description", "hasIntro": boolean, "hasConclusion": boolean },
+    "engagement": { "questionCount": number, "exampleCount": number, "summary": "description" }
   },
   "metrics": {
     "totalWords": number,
@@ -1765,13 +1765,13 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
     "estimatedReadingTime": number
   },
   "suggestions": [
-    { "category": "readability|difficulty|keyword|structure|engagement", "suggestion": "구체적 개선 제안", "priority": "high|medium|low" }
+    { "category": "readability|difficulty|keyword|structure|engagement", "suggestion": "specific improvement suggestion", "priority": "high|medium|low" }
   ]
 }`
               },
               {
                 role: "user",
-                content: `제목: ${script.title}\n카테고리: ${script.category}\n난이도: ${script.difficulty}\n섹션 수: ${sections.length}\n\n스크립트 내용:\n${script.scriptContent}`
+                content: `Title: ${script.title}\nCategory: ${script.category}\nDifficulty: ${script.difficulty}\nSections: ${sections.length}\n\nScript content:\n${script.scriptContent}`
               },
             ],
             response_format: {
@@ -1885,7 +1885,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           return { analysisId, overall, scores: result.scores, suggestions: result.suggestions, metrics: result.metrics, analysis: result.analysis };
         } catch (error) {
           await db.updateContentAnalysis(analysisId, { status: "failed" });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "분석 중 오류가 발생했습니다." });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "An error occurred during analysis." });
         }
       }),
 
@@ -2011,7 +2011,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         // Fallback: return empty segments with instruction
         return {
           segments: [
-            { start: 0, end: 5, text: "(자막을 직접 입력해주세요)" },
+            { start: 0, end: 5, text: "(Please enter subtitles)" },
           ],
         };
       }),
@@ -2053,7 +2053,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         input.sampleFaceId = safeNum(input.sampleFaceId);
 
         const script = await db.getLectureScriptById(input.scriptId);
-        if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "스크립트가 준비되지 않았습니다." });
+        if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Script is not ready." });
 
         // Build config with PIP settings
         const configObj = input.config ? JSON.parse(input.config) : {};
@@ -2074,7 +2074,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           title: input.title,
           status: "tts_gen",
           progressPercent: 10,
-          currentStep: "TTS 음성 생성 중...",
+          currentStep: "Generating TTS audio...",
           voiceProfileId: input.voiceProfileId,
           voiceModProfileId: input.voiceModProfileId,
           faceSwapProfileId: input.faceSwapProfileId,
@@ -2120,7 +2120,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             if (voiceModData?.stylePrompt) {
               const styleResponse = await invokeLLM({
                 messages: [
-                  { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${voiceModData.stylePrompt}\n스타일: ${voiceModData.speakingStyle}` },
+                  { role: "system", content: `Convert the following text to the specified speaking style. Instruction: ${voiceModData.stylePrompt}\nStyle: ${voiceModData.speakingStyle}` },
                   { role: "user", content: textToSpeak },
                 ],
               });
@@ -2132,7 +2132,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
 
           await db.updateProductionPipeline(pipelineId, {
             progressPercent: 30,
-            currentStep: `TTS 병렬 생성 중... (${sections.length}개 섹션)`,
+            currentStep: `Generating TTS in parallel... (${sections.length} sections)`,
           });
 
           // Generate TTS for all sections in parallel (max 4 concurrent)
@@ -2162,7 +2162,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             const progress = Math.round(30 + (60 * Math.min(batch + CONCURRENCY, sections.length) / sections.length));
             await db.updateProductionPipeline(pipelineId, {
               progressPercent: progress,
-              currentStep: `TTS 생성 중... (${Math.min(batch + CONCURRENCY, sections.length)}/${sections.length})`,
+              currentStep: `Generating TTS... (${Math.min(batch + CONCURRENCY, sections.length)}/${sections.length})`,
             });
           }
 
@@ -2211,7 +2211,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               await db.updateProductionPipeline(pipelineId, {
                 status: "avatar_gen",
                 progressPercent: 70,
-                currentStep: `${engineLabel} 아바타 영상 생성 중... (0/${audioUrls.length})`,
+                currentStep: `${engineLabel} avatar video generation... (0/${audioUrls.length})`,
               });
 
               for (let i = 0; i < audioUrls.length; i++) {
@@ -2345,7 +2345,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
                   const avatarProgress = Math.round(70 + (25 * (i + 1)) / audioUrls.length);
                   await db.updateProductionPipeline(pipelineId, {
                     progressPercent: avatarProgress,
-                    currentStep: `${engineLabel} 아바타 영상 생성 중... (${i + 1}/${audioUrls.length})`,
+                    currentStep: `${engineLabel} avatar video generation... (${i + 1}/${audioUrls.length})`,
                   });
                 } catch (error) {
                   console.error(`[${engineLabel}] Error generating avatar for section ${i}:`, error);
@@ -2365,7 +2365,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               try {
                 console.log(`[Seedance] Generating ${label}: ${prompt}`);
                 await db.updateProductionPipeline(pipelineId, {
-                  currentStep: `Seedance 2.0 ${label} 영상 생성 중...`,
+                  currentStep: `Seedance 2.0 ${label} video generation...`,
                 });
 
                 // Submit to fal.ai queue
@@ -2455,7 +2455,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           await db.updateProductionPipeline(pipelineId, {
             status: "completed",
             progressPercent: 100,
-            currentStep: "완료",
+            currentStep: "Complete",
             avatarVideoUrls: avatarVideoUrls.length > 0 ? JSON.stringify(avatarVideoUrls) : null,
             introVideoUrl: introVideoUrl || null,
             outroVideoUrl: outroVideoUrl || null,
@@ -2474,11 +2474,11 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         } catch (error) {
           await db.updateProductionPipeline(pipelineId, {
             status: "failed",
-            currentStep: "오류 발생",
+            currentStep: "Error occurred",
             errorMessage: error instanceof Error ? error.message : "Unknown error",
           });
           const errMsg = error instanceof Error ? error.message : "Unknown error";
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: errMsg.includes("한도") ? "API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요." : `파이프라인 실행에 실패했습니다: ${errMsg}` });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: errMsg.includes("limit") ? "API usage limit exceeded. Please try again later." : `Pipeline execution failed: ${errMsg}` });
         }
       }),
 
@@ -2499,22 +2499,22 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const pipeline = await db.getProductionPipelineById(input.id);
-        if (!pipeline) throw new TRPCError({ code: "NOT_FOUND", message: "파이프라인을 찾을 수 없습니다." });
+        if (!pipeline) throw new TRPCError({ code: "NOT_FOUND", message: "Pipeline not found." });
         if (pipeline.pipeline.userId !== ctx.user.id && ctx.user.role !== "admin") {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const activeStatuses = ["queued", "script_gen", "tts_gen", "avatar_gen", "compositing"];
         if (!activeStatuses.includes(pipeline.pipeline.status)) {
-          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "이미 완료되었거나 취소된 파이프라인입니다." });
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Pipeline is already completed or cancelled." });
         }
         // Mark as cancelled in DB - running async operations will check this flag
         await db.updateProductionPipeline(input.id, {
           status: "cancelled",
-          currentStep: "사용자에 의해 취소됨",
-          errorMessage: "사용자가 제작을 취소했습니다.",
+          currentStep: "Cancelled by user",
+          errorMessage: "Production cancelled by user.",
           completedAt: new Date(),
         });
-        return { success: true, message: "파이프라인이 취소되었습니다." };
+        return { success: true, message: "Pipeline has been cancelled." };
       }),
 
     /** Delete a pipeline */
@@ -2555,7 +2555,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           try {
             const script = await db.getLectureScriptById(item.scriptId);
             if (!script || script.status !== "ready") {
-              results.push({ scriptId: item.scriptId, pipelineId: null, status: "skipped", error: "스크립트가 준비되지 않았습니다." });
+              results.push({ scriptId: item.scriptId, pipelineId: null, status: "skipped", error: "Script is not ready." });
               continue;
             }
 
@@ -2565,7 +2565,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               title: item.title,
               status: "tts_gen",
               progressPercent: 10,
-              currentStep: "TTS 음성 생성 중...",
+              currentStep: "Generating TTS audio...",
               voiceModProfileId: item.voiceModProfileId,
               faceSwapProfileId: item.faceSwapProfileId,
               sampleFaceId: item.sampleFaceId,
@@ -2581,7 +2581,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               } : {}),
             });
             if (!pipelineId) {
-              results.push({ scriptId: item.scriptId, pipelineId: null, status: "failed", error: "파이프라인 생성 실패" });
+              results.push({ scriptId: item.scriptId, pipelineId: null, status: "failed", error: "Pipeline creation failed" });
               continue;
             }
 
@@ -2614,7 +2614,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               if (voiceModData?.stylePrompt) {
                 const styleResponse = await invokeLLM({
                   messages: [
-                    { role: "system", content: `다음 텍스트를 지정된 말투로 변환하세요. 변환 지시: ${voiceModData.stylePrompt}\n스타일: ${voiceModData.speakingStyle}` },
+                    { role: "system", content: `Convert the following text to the specified speaking style. Instruction: ${voiceModData.stylePrompt}\nStyle: ${voiceModData.speakingStyle}` },
                     { role: "user", content: textToSpeak },
                   ],
                 });
@@ -2646,7 +2646,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
               const progress = Math.round(10 + (70 * Math.min(batch + BATCH_CONCURRENCY, sections.length) / sections.length));
               await db.updateProductionPipeline(pipelineId, {
                 progressPercent: progress,
-                currentStep: `TTS 생성 중... (${Math.min(batch + BATCH_CONCURRENCY, sections.length)}/${sections.length})`,
+                currentStep: `Generating TTS... (${Math.min(batch + BATCH_CONCURRENCY, sections.length)}/${sections.length})`,
               });
             }
 
@@ -2659,7 +2659,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             await db.updateProductionPipeline(pipelineId, {
               status: "completed",
               progressPercent: 100,
-              currentStep: "완료",
+              currentStep: "Complete",
               audioUrls: JSON.stringify(audioUrls),
               totalDurationSec: totalDuration,
               completedAt: new Date(),
@@ -2717,7 +2717,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         } catch (error) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: `썸네일 생성에 실패했습니다: ${error instanceof Error ? error.message : "Unknown error"}`,
+            message: `Thumbnail generation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
           });
         }
       }),
@@ -2736,10 +2736,10 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const pipelineData = await db.getProductionPipelineById(input.pipelineId);
         if (!pipelineData) throw new TRPCError({ code: "NOT_FOUND" });
         if (pipelineData.pipeline.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
-        if (pipelineData.pipeline.status !== "completed") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "파이프라인이 완료되지 않았습니다." });
+        if (pipelineData.pipeline.status !== "completed") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Pipeline is not completed." });
 
         const audioUrls = pipelineData.pipeline.audioUrls ? JSON.parse(pipelineData.pipeline.audioUrls) : [];
-        if (audioUrls.length === 0) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "오디오 파일이 없습니다." });
+        if (audioUrls.length === 0) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "No audio files found." });
 
         let srtContent = "";
         let subtitleIndex = 1;
@@ -2753,7 +2753,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             const result = await transcribeAudio({
               audioUrl: audioUrls[i],
               language: input.language || pipelineData.script.language || "ko",
-              prompt: sections[i]?.title || "강의 내용",
+              prompt: sections[i]?.title || "lecture content",
             });
 
             if ("error" in result) {
@@ -2875,7 +2875,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       }))
       .mutation(async ({ ctx, input }) => {
         const script = await db.getLectureScriptById(input.scriptId);
-        if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "스크립트가 준비되지 않았습니다." });
+        if (!script || script.status !== "ready") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Script is not ready." });
         const roomCode = nanoid(8).toUpperCase();
         const id = await db.createBroadcast({
           instructorId: ctx.user.id,
@@ -2902,7 +2902,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const broadcast = await db.getBroadcastById(input.id);
-        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "방송을 찾을 수 없습니다." });
+        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "Broadcast not found." });
         const script = await db.getLectureScriptById(broadcast.scriptId);
         return { ...broadcast, script };
       }),
@@ -2912,7 +2912,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .input(z.object({ roomCode: z.string() }))
       .query(async ({ input }) => {
         const broadcast = await db.getBroadcastByRoomCode(input.roomCode);
-        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "방송방을 찾을 수 없습니다." });
+        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "Broadcast room not found." });
         const script = await db.getLectureScriptById(broadcast.scriptId);
         return { ...broadcast, script };
       }),
@@ -2930,7 +2930,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         if (!broadcast) throw new TRPCError({ code: "NOT_FOUND" });
         const isOwner = broadcast.instructorId === ctx.user.id;
         const collabRole = broadcast.projectId ? await db.getCollaboratorRole(broadcast.projectId, ctx.user.id) : null;
-        if (!isOwner && collabRole !== "presenter") throw new TRPCError({ code: "FORBIDDEN", message: "방송 시작은 소유자 또는 발표자만 가능합니다" });
+        if (!isOwner && collabRole !== "presenter") throw new TRPCError({ code: "FORBIDDEN", message: "Only the owner or presenter can start a broadcast" });
         await db.updateBroadcast(input.broadcastId, {
           status: "live",
           startedAt: new Date(),
@@ -3047,7 +3047,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .mutation(async ({ ctx, input }) => {
         const broadcast = await db.getBroadcastById(input.broadcastId);
         if (!broadcast) throw new TRPCError({ code: "NOT_FOUND" });
-        const displayName = ctx.user.name || "시청자";
+        const displayName = ctx.user.name || "Viewer";
         await db.joinBroadcast(input.broadcastId, ctx.user.id, displayName);
         return { success: true };
       }),
@@ -3083,7 +3083,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         messageType: z.enum(["chat", "question"]).default("chat"),
       }))
       .mutation(async ({ ctx, input }) => {
-        const displayName = ctx.user.name || "시청자";
+        const displayName = ctx.user.name || "Viewer";
         const id = await db.createBroadcastChat({
           broadcastId: input.broadcastId,
           userId: ctx.user.id,
@@ -3123,14 +3123,14 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       }))
       .mutation(async ({ input }) => {
         const broadcast = await db.getBroadcastById(input.broadcastId);
-        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "방송을 찾을 수 없습니다." });
+        if (!broadcast) throw new TRPCError({ code: "NOT_FOUND", message: "Broadcast not found." });
         const script = await db.getLectureScriptById(broadcast.scriptId);
-        if (!script) throw new TRPCError({ code: "NOT_FOUND", message: "스크립트를 찾을 수 없습니다." });
+        if (!script) throw new TRPCError({ code: "NOT_FOUND", message: "Script not found." });
 
         let sections: any[] = [];
         try { sections = JSON.parse(script.sections as string); } catch {}
         const section = sections[input.slideIndex];
-        if (!section) throw new TRPCError({ code: "BAD_REQUEST", message: "해당 슬라이드를 찾을 수 없습니다." });
+        if (!section) throw new TRPCError({ code: "BAD_REQUEST", message: "Slide not found." });
 
         const langNames: Record<string, string> = {
           ko: "Korean", zh: "Chinese", en: "English", ja: "Japanese",
@@ -3336,14 +3336,14 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const voice = await db.getSampleVoice(input.id);
-        if (!voice) throw new TRPCError({ code: "NOT_FOUND", message: "음성을 찾을 수 없습니다." });
+        if (!voice) throw new TRPCError({ code: "NOT_FOUND", message: "Voice not found." });
         // If already has a sample audio URL, return it
         if (voice.sampleAudioUrl) {
           return { audioUrl: voice.sampleAudioUrl };
         }
         // Generate a short demo TTS using Gemini
         const demoTexts: Record<string, string> = {
-          ko: "안녕하세요, 저는 AI 강의 음성입니다. 이 목소리로 여러분의 강의를 더욱 생동감 있게 만들어 드리겠습니다.",
+          ko: "Hello, I am an AI lecture voice. I will make your lectures more vivid with this voice.",
           en: "Hello, I am an AI lecture voice. I will make your lectures more engaging and dynamic with this voice.",
           ja: "こんにちは、私はAI講義の音声です。この声であなたの講義をより生き生きとしたものにします。",
           zh: "你好，我是AI讲座语音。我会用这个声音让你的讲座更加生动有趣。",
@@ -3365,7 +3365,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             voiceId: voice.ttsVoiceId,
           });
           if ('error' in result) {
-            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error || "TTS 생성 실패" });
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error || "TTS generation failed" });
           }
           // Upload to S3
           const fileKey = `voice-demos/${voice.ttsVoiceId}-${nanoid(6)}.mp3`;
@@ -3376,7 +3376,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         } catch (err: any) {
           if (err instanceof TRPCError) throw err;
           console.error("[Voice Preview] TTS generation failed:", err.message);
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "음성 미리듣기 생성에 실패했습니다." });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate voice preview." });
         }
       }),
   }),
@@ -3447,7 +3447,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       }))
       .mutation(async ({ ctx, input }) => {
         const plan = await db.getSubscriptionPlanBySlug(input.planSlug);
-        if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "플랜을 찾을 수 없습니다." });
+        if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "Plan not found." });
         const periodEnd = new Date();
         if (input.billingCycle === "yearly") {
           periodEnd.setFullYear(periodEnd.getFullYear() + 1);
@@ -3506,7 +3506,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         if (currentCredits < cost) {
           throw new TRPCError({
             code: "PRECONDITION_FAILED",
-            message: `크레딧이 부족합니다. 필요: ${cost}, 보유: ${currentCredits}`,
+            message: `Insufficient credits. Required: ${cost}, Available: ${currentCredits}`,
           });
         }
         // Deduct credits from subscription
@@ -3533,7 +3533,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           type: "usage",
           amount: -cost,
           balanceAfter,
-          description: `${input.feature} 사용`,
+          description: `Used ${input.feature}`,
           resourceType: input.feature,
           resourceId: input.resourceId,
         });
@@ -3553,9 +3553,9 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .mutation(async ({ ctx, input }) => {
         const { getStripe, SUBSCRIPTION_PRODUCTS } = await import("./stripe");
         const stripe = getStripe();
-        if (!stripe) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "결제 시스템이 설정되지 않았습니다." });
+        if (!stripe) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Payment system is not configured." });
         const product = SUBSCRIPTION_PRODUCTS[input.planSlug as keyof typeof SUBSCRIPTION_PRODUCTS];
-        if (!product) throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 플랜입니다." });
+        if (!product) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid plan." });
         const priceCents = input.billingCycle === "yearly" ? product.priceYearly : product.priceMonthly;
         // Create payment record
         const paymentRecord = await db.createPayment({
@@ -3565,7 +3565,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           amountCents: priceCents,
           currency: "usd",
           status: "pending",
-          description: `${product.name} 구독 (${input.billingCycle})`,
+          description: `${product.name} subscription (${input.billingCycle})`,
           metadata: { planSlug: input.planSlug, billingCycle: input.billingCycle },
         });
         const session = await stripe.checkout.sessions.create({
@@ -3574,7 +3574,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           line_items: [{
             price_data: {
               currency: "usd",
-              product_data: { name: `AI Speaker ${product.name} (${input.billingCycle === "yearly" ? "연간" : "월간"})` },
+              product_data: { name: `AI Speaker ${product.name} (${input.billingCycle === "yearly" ? "yearly" : "monthly"})` },
               unit_amount: priceCents,
             },
             quantity: 1,
@@ -3605,9 +3605,9 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
       .mutation(async ({ ctx, input }) => {
         const { getStripe, CREDIT_PACKAGES } = await import("./stripe");
         const stripe = getStripe();
-        if (!stripe) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "결제 시스템이 설정되지 않았습니다." });
+        if (!stripe) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Payment system is not configured." });
         const pkg = CREDIT_PACKAGES.find(p => p.id === input.packageId);
-        if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 패키지입니다." });
+        if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid package." });
         const paymentRecord = await db.createPayment({
           userId: ctx.user.id,
           paymentType: "credit_package",
@@ -3616,7 +3616,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           currency: "usd",
           creditAmount: pkg.credits,
           status: "pending",
-          description: `${pkg.name} 크레딧 패키지`,
+          description: `${pkg.name} credit package`,
           metadata: { packageId: input.packageId, credits: pkg.credits },
         });
         const session = await stripe.checkout.sessions.create({
@@ -3690,15 +3690,15 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         let description = "";
         if (input.type === "subscription" && input.planSlug) {
           const product = SUBSCRIPTION_PRODUCTS[input.planSlug as keyof typeof SUBSCRIPTION_PRODUCTS];
-          if (!product) throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 플랜" });
+          if (!product) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid plan" });
           amountCents = input.billingCycle === "yearly" ? product.priceYearly : product.priceMonthly;
-          description = `${product.name} 구독 (${input.billingCycle || "monthly"}) - 암호화폐`;
+          description = `${product.name} subscription (${input.billingCycle || "monthly"}) - cryptocurrency`;
         } else if (input.type === "credit_package" && input.packageId) {
           const pkg = CREDIT_PACKAGES.find(p => p.id === input.packageId);
-          if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "유효하지 않은 패키지" });
+          if (!pkg) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid package" });
           amountCents = pkg.priceCents;
           creditAmount = pkg.credits;
-          description = `${pkg.name} 크레딧 패키지 - 암호화폐`;
+          description = `${pkg.name} credit package - cryptocurrency`;
         } else {
           throw new TRPCError({ code: "BAD_REQUEST" });
         }
@@ -3815,7 +3815,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
             type: "purchase",
             amount: payment.creditAmount,
             balanceAfter: (sub?.creditsRemaining || 0) + payment.creditAmount,
-            description: `크레딧 ${payment.creditAmount}개 구매 (암호화폐)`,
+            description: `Purchased ${payment.creditAmount} credits (cryptocurrency)`,
           });
         }
         return { success: true };
@@ -4234,7 +4234,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
                   ? JSON.parse(insertTpl.insertElements)
                   : insertTpl.insertElements;
                 if (elems.type === 'intro_outro' || elems.position === 'start_end') {
-                  scriptSections.push({ text: `[${insertTpl.name} - 오프닝] 여기에 인트로 내용을 작성하세요`, sortOrder: order++ });
+                  scriptSections.push({ text: `[${insertTpl.name} - Opening] Write your intro content here`, sortOrder: order++ });
                 }
               } catch (e) {}
             }
@@ -4243,18 +4243,18 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
           // Main content sections based on style
           if (styleId) {
             const styleTpl = await db.getLectureFormatTemplate(styleId);
-            const styleName = styleTpl?.name || '강의';
+            const styleName = styleTpl?.name || 'Lecture';
             scriptSections.push(
-              { text: `[도입] ${styleName} - 강의 주제 소개 및 목표 설명`, sortOrder: order++ },
-              { text: `[본문 1] ${styleName} - 콘텐츠 첫 번째 섹션`, sortOrder: order++ },
-              { text: `[본문 2] ${styleName} - 콘텐츠 두 번째 섹션`, sortOrder: order++ },
-              { text: `[본문 3] ${styleName} - 콘텐츠 세 번째 섹션`, sortOrder: order++ },
+              { text: `[Intro] ${styleName} - Topic introduction and goals`, sortOrder: order++ },
+              { text: `[Body 1] ${styleName} - Content section 1`, sortOrder: order++ },
+              { text: `[Body 2] ${styleName} - Content section 2`, sortOrder: order++ },
+              { text: `[Body 3] ${styleName} - Content section 3`, sortOrder: order++ },
             );
           } else {
             scriptSections.push(
-              { text: '[도입] 강의 주제 소개', sortOrder: order++ },
-              { text: '[본문 1] 첫 번째 섹션', sortOrder: order++ },
-              { text: '[본문 2] 두 번째 섹션', sortOrder: order++ },
+              { text: '[Intro] Topic introduction', sortOrder: order++ },
+              { text: '[Body 1] First section', sortOrder: order++ },
+              { text: '[Body 2] Second section', sortOrder: order++ },
             );
           }
 
@@ -4267,14 +4267,14 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
                   ? JSON.parse(insertTpl.insertElements)
                   : insertTpl.insertElements;
                 if (elems.type !== 'intro_outro' && elems.position !== 'start_end') {
-                  scriptSections.push({ text: `[${insertTpl.name}] 여기에 ${insertTpl.name} 내용을 작성하세요`, sortOrder: order++ });
+                  scriptSections.push({ text: `[${insertTpl.name}] Write your ${insertTpl.name} content here`, sortOrder: order++ });
                 }
               } catch (e) {}
             }
           }
 
           // Closing section
-          scriptSections.push({ text: '[마무리] 강의 요약 및 마무리 인사', sortOrder: order++ });
+          scriptSections.push({ text: '[Closing] Lecture summary and closing remarks', sortOrder: order++ });
 
           // Check for outro insert
           for (const insertId of insertIds) {
@@ -4285,7 +4285,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
                   ? JSON.parse(insertTpl.insertElements)
                   : insertTpl.insertElements;
                 if (elems.type === 'intro_outro' || elems.position === 'start_end') {
-                  scriptSections.push({ text: `[${insertTpl.name} - 클로징] 여기에 아웃트로 내용을 작성하세요`, sortOrder: order++ });
+                  scriptSections.push({ text: `[${insertTpl.name} - Closing] Write your outro content here`, sortOrder: order++ });
                 }
               } catch (e) {}
             }
@@ -4407,7 +4407,7 @@ ${sectionCount}개의 섹션으로 나누어 작성하세요.
         const ageHint = input.ageRange ? ({ young: "in their 20s", middle: "in their 30s-40s", senior: "in their 50s-60s" }[input.ageRange]) : "";
         const fullPrompt = `Portrait of a ${genderHint} ${ageHint}, ${input.prompt}. ${styleMap[input.style]}. Face centered, looking at camera, shoulders visible.`;
         const { url } = await generateImage({ prompt: fullPrompt });
-        if (!url) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI 얼굴 생성에 실패했습니다" });
+        if (!url) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI face generation failed" });
         return { imageUrl: url };
       }),
 
@@ -5034,7 +5034,7 @@ Return a JSON object with a "sections" array. Each section has:
         await db.updateLectureProject(input.projectId, {
           status: "generating" as any,
           generationProgress: 0,
-          generationStep: "영상 생성 준비 중...",
+          generationStep: "Preparing video generation...",
         });
         try {
           const totalSegments = segments.length;
@@ -5069,7 +5069,7 @@ Return a JSON object with a "sections" array. Each section has:
             status: "completed" as any,
             finalVideoUrl: result.videoUrl,
             generationProgress: 100,
-            generationStep: "완료",
+            generationStep: "Complete",
           });
           // Update generation history
           await db.updateVideoGeneration(genId, {
@@ -5212,7 +5212,7 @@ Return a JSON object with a "sections" array. Each section has:
           db.listProjectSlides(input.projectId),
           db.listSlideScripts(input.projectId),
         ]);
-        if (slides.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "슬라이드가 없습니다" });
+        if (slides.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No slides found" });
         // Build export segments
         const segments = slides.map(slide => {
           const script = scripts.find(s => s.slideId === slide.id);
@@ -5231,7 +5231,7 @@ Return a JSON object with a "sections" array. Each section has:
         await db.updateLectureProject(input.projectId, {
           status: "generating" as any,
           generationProgress: 0,
-          generationStep: "MP4 내보내기 준비 중...",
+          generationStep: "Preparing MP4 export...",
         });
         try {
           const { exportLectureVideo } = await import("./videoExporter");
@@ -5258,7 +5258,7 @@ Return a JSON object with a "sections" array. Each section has:
             status: "completed" as any,
             finalVideoUrl: result.videoUrl,
             generationProgress: 100,
-            generationStep: "MP4 내보내기 완료",
+            generationStep: "MP4 export complete",
           });
           // Create generation history record
           const genId = await db.createVideoGeneration({
@@ -5294,26 +5294,26 @@ Return a JSON object with a "sections" array. Each section has:
       }))
       .mutation(async ({ ctx, input }) => {
         const styleGuides: Record<string, string> = {
-          formal: "격식적이고 전문적인 강의 톤으로 작성하세요. 존댓말을 사용하고 학술적 어휘를 적절히 활용하세요.",
-          casual: "친근하고 편안한 톤으로 작성하세요. 청중과 대화하듯이 자연스럽게 설명하세요.",
-          educational: "교육적이고 이해하기 쉬운 톤으로 작성하세요. 핵심 개념을 명확히 설명하고 예시를 들어주세요.",
-          storytelling: "스토리텔링 형식으로 작성하세요. 청중의 흥미를 끌 수 있는 내러티브 구조를 사용하세요.",
+          formal: "Write in a formal and professional lecture tone. Use polite language and academic vocabulary appropriately.",
+          casual: "Write in a friendly and comfortable tone. Explain naturally as if talking with the audience.",
+          educational: "Write in an educational and easy-to-understand tone. Clearly explain key concepts with examples.",
+          storytelling: "Write in a storytelling format. Use narrative structure that captures the audience's interest.",
         };
-        const systemPrompt = `당신은 AI 강의 스크립트 전문가입니다. 주어진 텍스트를 강의용 스크립트로 개선해주세요.
+        const systemPrompt = `You are an AI lecture script expert. Improve the given text into a lecture script.
 
-스타일: ${styleGuides[input.style] || styleGuides.educational}
+Style: ${styleGuides[input.style] || styleGuides.educational}
 
-규칙:
-1. 원문의 핵심 내용을 유지하면서 강의에 적합한 문체로 변환
-2. 자연스러운 말하기 흐름으로 작성 (TTS로 읽혀질 예정)
-3. 적절한 쉬어가기와 강조 표현 포함
-4. 불필요한 전문 용어는 쉽게 풀어서 설명
-5. 개선된 스크립트만 출력하세요 (설명이나 주석 없이)
-6. 언어: ${input.language === "ko" ? "한국어" : input.language}`;
+Rules:
+1. Keep the core content while converting to lecture-appropriate style
+2. Write in natural speaking flow (will be read by TTS)
+3. Include appropriate pauses and emphasis
+4. Simplify unnecessary jargon
+5. Output only the improved script (no explanations or comments)
+6. Language: ${input.language === "ko" ? "Korean" : input.language}`;
 
-        let userContent = `다음 텍스트를 강의용 스크립트로 개선해주세요:\n\n${input.scriptText}`;
+        let userContent = `Please improve the following text into a lecture script:\n\n${input.scriptText}`;
         if (input.slideContext) {
-          userContent += `\n\n슬라이드 컨텍스트: ${input.slideContext}`;
+          userContent += `\n\nSlide context: ${input.slideContext}`;
         }
 
         const response = await invokeLLM({
@@ -5339,10 +5339,10 @@ Return a JSON object with a "sections" array. Each section has:
       }))
       .mutation(async ({ ctx, input }) => {
         const styleGuides: Record<string, string> = {
-          formal: "격식적이고 전문적인 강의 톤으로 작성하세요. 존댓말을 사용하고 학술적 어휘를 적절히 활용하세요.",
-          casual: "친근하고 편안한 톤으로 작성하세요. 청중과 대화하듯이 자연스럽게 설명하세요.",
-          educational: "교육적이고 이해하기 쉬운 톤으로 작성하세요. 핵심 개념을 명확히 설명하고 예시를 들어주세요.",
-          storytelling: "스토리텔링 형식으로 작성하세요. 청중의 흥미를 끌 수 있는 내러티브 구조를 사용하세요.",
+          formal: "Write in a formal and professional lecture tone. Use polite language and academic vocabulary appropriately.",
+          casual: "Write in a friendly and comfortable tone. Explain naturally as if talking with the audience.",
+          educational: "Write in an educational and easy-to-understand tone. Clearly explain key concepts with examples.",
+          storytelling: "Write in a storytelling format. Use narrative structure that captures the audience's interest.",
         };
         const results: { id: string; original: string; improved: string }[] = [];
         for (const sec of input.sections) {
@@ -5351,11 +5351,11 @@ Return a JSON object with a "sections" array. Each section has:
             continue;
           }
           try {
-            const systemPrompt = `당신은 AI 강의 스크립트 전문가입니다. 주어진 텍스트를 강의용 스크립트로 개선해주세요.\n\n스타일: ${styleGuides[input.style] || styleGuides.educational}\n\n규칙:\n1. 원문의 핵심 내용을 유지하면서 강의에 적합한 문체로 변환\n2. 자연스러운 말하기 흐름으로 작성 (TTS로 읽혀질 예정)\n3. 적절한 쉬어가기와 강조 표현 포함\n4. 불필요한 전문 용어는 쉽게 풀어서 설명\n5. 개선된 스크립트만 출력하세요 (설명이나 주석 없이)\n6. 언어: ${input.language === "ko" ? "한국어" : input.language}`;
+            const systemPrompt = `You are an AI lecture script expert. Improve the given text into a lecture script.\n\nStyle: ${styleGuides[input.style] || styleGuides.educational}\n\nRules:\n1. Keep the core content while converting to lecture-appropriate style\n2. Write in natural speaking flow (will be read by TTS)\n3. Include appropriate pauses and emphasis\n4. Simplify unnecessary jargon\n5. Output only the improved script (no explanations or comments)\n6. Language: ${input.language === "ko" ? "Korean" : input.language}`;
             const response = await invokeLLM({
               messages: [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: `다음 텍스트를 강의용 스크립트로 개선해주세요:\n\n${sec.text}` },
+                { role: "user", content: `Please improve the following text into a lecture script:\n\n${sec.text}` },
               ],
             });
             const improved = (response.choices?.[0]?.message?.content as string) || sec.text;
@@ -5399,12 +5399,12 @@ Return a JSON object with a "sections" array. Each section has:
       .input(z.object({ batchId: z.string() }))
       .mutation(async ({ ctx, input }) => {
         const batch = await db.getScriptImprovementBatch(input.batchId);
-        if (batch.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "이력을 찾을 수 없습니다" });
+        if (batch.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "History not found" });
         if (batch[0].userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
         return { sections: batch.map(b => ({ sectionId: b.sectionId, originalText: b.originalText })) };
       }),
 
-    // --- AI Script Proofread (교정) - soften/polish existing text ---
+    // --- AI Script Proofread - soften/polish existing text ---
     proofreadScript: protectedProcedure
       .input(z.object({
         scriptText: z.string().min(1).max(10000),
@@ -5413,28 +5413,28 @@ Return a JSON object with a "sections" array. Each section has:
       }))
       .mutation(async ({ ctx, input }) => {
         const filterGuides: Record<string, string> = {
-          smooth: "부드럽고 자연스러운 말투로 교정하세요. 딱딱한 표현을 부드럽게 바꾸고, 읽기 편한 흐름으로 만드세요.",
-          news: "뉴스 앵커처럼 명확하고 객관적인 톤으로 교정하세요. 간결하고 정확한 문장을 사용하세요.",
-          presentation: "프레젠테이션 발표자처럼 자신감 있고 설득력 있는 톤으로 교정하세요. 청중을 끌어들이는 표현을 사용하세요.",
-          conversational: "친구와 대화하듯 편안하고 친근한 톤으로 교정하세요. 구어체를 적절히 사용하세요.",
-          dramatic: "드라마틱하고 감정이 실린 톤으로 교정하세요. 강조와 감탄, 긴장감을 적절히 넣으세요.",
-          concise: "핵심만 간결하게 정리하세요. 불필요한 수식어와 반복을 제거하고 짧고 임팩트 있게 만드세요.",
+          smooth: "Proofread into a smooth and natural tone. Soften rigid expressions and create a comfortable reading flow.",
+          news: "Proofread into a clear and objective tone like a news anchor. Use concise and accurate sentences.",
+          presentation: "Proofread into a confident and persuasive tone like a presenter. Use expressions that engage the audience.",
+          conversational: "Proofread into a comfortable and friendly tone as if chatting with a friend. Use colloquial language appropriately.",
+          dramatic: "Proofread into a dramatic and emotional tone. Add appropriate emphasis, exclamation, and tension.",
+          concise: "Keep only the essentials. Remove unnecessary modifiers and repetition, make it short and impactful.",
         };
-        const systemPrompt = `당신은 전문 스크립트 교정 전문가입니다. 주어진 텍스트를 교정해주세요.
+        const systemPrompt = `You are a professional script proofreading expert. Please proofread the given text.
 
-교정 스타일: ${filterGuides[input.filter]}
+Proofreading style: ${filterGuides[input.filter]}
 
-규칙:
-1. 원문의 의미와 핵심 내용을 절대 변경하지 마세요
-2. 문법 오류, 어색한 표현, 오타를 수정하세요
-3. TTS로 자연스럽게 읽힐 수 있도록 작성하세요
-4. 교정된 텍스트만 출력하세요 (설명 없이)
-5. 언어: ${input.language === "ko" ? "한국어" : input.language}`;
+Rules:
+1. Never change the meaning or core content
+2. Fix grammar errors, awkward expressions, and typos
+3. Write so it reads naturally when spoken by TTS
+4. Output only the proofread text (no explanations)
+5. Language: ${input.language === "ko" ? "Korean" : input.language}`;
 
         const response = await invokeLLM({
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `다음 텍스트를 교정해주세요:\n\n${input.scriptText}` },
+            { role: "user", content: `Please proofread the following text:\n\n${input.scriptText}` },
           ],
         });
         const proofread = (response.choices?.[0]?.message?.content as string) || "";
@@ -5450,22 +5450,22 @@ Return a JSON object with a "sections" array. Each section has:
       }))
       .mutation(async ({ ctx, input }) => {
         const typeGuides: Record<string, string> = {
-          text: "화이트보드에 적을 핵심 텍스트를 생성하세요. 큰 글씨로 보기 좋게 줄바꿈하여 작성하세요.",
-          diagram: "간단한 다이어그램을 텍스트 아트로 표현하세요. 화살표(→, ↓, ↑)와 박스를 사용하세요.",
-          bullet_points: "핵심 포인트를 불릿 형태로 정리하세요. 각 항목은 한 줄로 간결하게 작성하세요.",
-          equation: "수식이나 공식을 보기 좋게 작성하세요. 기호와 숫자를 명확하게 표현하세요.",
-          timeline: "타임라인 형태로 정리하세요. 날짜/시점과 이벤트를 순서대로 나열하세요.",
+          text: "Generate key text for the whiteboard. Write with line breaks for readability in large font.",
+          diagram: "Express a simple diagram as text art. Use arrows (→, ↓, ↑) and boxes.",
+          bullet_points: "Organize key points in bullet form. Keep each item concise in one line.",
+          equation: "Write equations or formulas neatly. Express symbols and numbers clearly.",
+          timeline: "Organize in timeline format. List dates/timepoints and events in order.",
         };
-        const systemPrompt = `당신은 화이트보드 콘텐츠 전문가입니다. 강의 화이트보드에 적을 내용을 생성해주세요.
+        const systemPrompt = `You are a whiteboard content expert. Generate content for a lecture whiteboard.
 
-콘텐츠 유형: ${typeGuides[input.contentType]}
+Content type: ${typeGuides[input.contentType]}
 
-규칙:
-1. 화이트보드에 적기 적합한 간결하고 시각적인 형태로 작성
-2. 핵심 키워드와 구조를 강조
-3. 너무 길지 않게 (최대 10줄)
-4. 언어: ${input.language === "ko" ? "한국어" : input.language}
-5. 콘텐츠만 출력하세요 (설명 없이)`;
+Rules:
+1. Write in a concise and visual format suitable for whiteboard
+2. Emphasize key keywords and structure
+3. Keep it short (max 10 lines)
+4. Language: ${input.language === "ko" ? "Korean" : input.language}
+5. Output only the content (no explanations)`;
 
         const response = await invokeLLM({
           messages: [
@@ -5817,7 +5817,7 @@ Return a JSON object with a "sections" array. Each section has:
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
         const scripts = await db.listSlideScripts(input.projectId);
         const scriptsWithText = scripts.filter((s: any) => s.scriptText && s.scriptText.trim());
-        if (scriptsWithText.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "번역할 스크립트가 없습니다" });
+        if (scriptsWithText.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No scripts to translate" });
 
         const langNames: Record<string, string> = {
           ko: "Korean", en: "English", ja: "Japanese", zh: "Chinese",
@@ -5910,7 +5910,7 @@ Return a JSON object with a "sections" array. Each section has:
       .mutation(async ({ ctx, input }) => {
         const scripts = await db.listSlideScripts(input.projectId);
         const script = scripts.find(s => s.id === input.scriptId);
-        if (!script || !script.interpreterText) throw new TRPCError({ code: "BAD_REQUEST", message: "통역 텍스트가 없습니다" });
+        if (!script || !script.interpreterText) throw new TRPCError({ code: "BAD_REQUEST", message: "No interpreter text" });
         const project = await db.getLectureProject(input.projectId);
         const voiceId = input.voiceId || project?.interpreterVoiceId || "Kore";
         const ttsResult = await generateGeminiTts({ text: script.interpreterText, voiceId });
@@ -5931,7 +5931,7 @@ Return a JSON object with a "sections" array. Each section has:
         const project = await db.getLectureProject(input.projectId);
         const voiceId = input.voiceId || project?.interpreterVoiceId || "Kore";
         const interpreterScripts = scripts.filter(s => s.interpreterText && s.interpreterText.trim());
-        if (interpreterScripts.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "통역 텍스트가 없습니다. 먼저 자동 번역을 실행해주세요." });
+        if (interpreterScripts.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No interpreter text. Please run auto-translation first." });
         const results: Array<{ scriptId: number; slideId: number; audioUrl: string }> = [];
         for (const script of interpreterScripts) {
           try {
@@ -6091,7 +6091,7 @@ Return a JSON object with a "sections" array. Each section has:
         sampleFaceId: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (!isKlingConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "KLING API가 설정되지 않았습니다." });
+        if (!isKlingConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "KLING API is not configured." });
         const result = await createImageToVideoApi({ imageUrl: input.imageUrl, prompt: input.prompt, duration: input.duration, mode: input.mode, model: input.model, aspectRatio: input.aspectRatio });
         const taskDbId = await db.createKlingTask({ userId: ctx.user.id, taskType: "image2video", klingTaskId: result.taskId, status: result.taskStatus || "submitted", sourceImageUrl: input.imageUrl, prompt: input.prompt || null, model: input.model, mode: input.mode, durationSetting: input.duration, aspectRatio: input.aspectRatio, purpose: input.purpose, projectAvatarId: input.projectAvatarId || null, sampleFaceId: input.sampleFaceId || null });
         return { id: taskDbId, klingTaskId: result.taskId, status: result.taskStatus };
@@ -6106,7 +6106,7 @@ Return a JSON object with a "sections" array. Each section has:
         purpose: z.string().default("avatar_preview"),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (!isKlingConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "KLING API가 설정되지 않았습니다." });
+        if (!isKlingConfigured()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "KLING API is not configured." });
         const result = await createTextToVideoApi({ prompt: input.prompt, duration: input.duration, mode: input.mode, model: input.model, aspectRatio: input.aspectRatio });
         const taskDbId = await db.createKlingTask({ userId: ctx.user.id, taskType: "text2video", klingTaskId: result.taskId, status: result.taskStatus || "submitted", prompt: input.prompt, model: input.model, mode: input.mode, durationSetting: input.duration, aspectRatio: input.aspectRatio, purpose: input.purpose });
         return { id: taskDbId, klingTaskId: result.taskId, status: result.taskStatus };
@@ -6153,7 +6153,7 @@ Return a JSON object with a "sections" array. Each section has:
       .mutation(async ({ ctx, input }) => {
         const task = await db.getKlingTask(input.klingTaskId);
         if (!task || task.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
-        if (task.status !== "succeed" || !task.videoUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "영상 생성이 완료된 작업만 아바타로 등록할 수 있습니다." });
+        if (task.status !== "succeed" || !task.videoUrl) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Only completed video tasks can be registered as avatars." });
         // Use source image as face image, or video thumbnail
         const imageUrl = task.sourceImageUrl || task.videoUrl;
         const newFace = await db.createSampleFace({
@@ -6164,7 +6164,7 @@ Return a JSON object with a "sections" array. Each section has:
           ageRange: input.ageRange || null,
           imageUrl: imageUrl,
           thumbnailUrl: imageUrl,
-          description: input.description || `KLING AI로 생성된 아바타 (${task.taskType})`,
+          description: input.description || `Avatar generated by KLING AI (${task.taskType})`,
           tags: JSON.stringify(["kling-ai", "generated"]),
           languages: JSON.stringify(["ko", "en"]),
           isPremium: false,
@@ -6194,7 +6194,7 @@ Return a JSON object with a "sections" array. Each section has:
           insertContentId: input.insertContentId || null,
           hostUserId: ctx.user.id,
           sessionCode,
-          title: input.title || `협업 세션 #${Date.now().toString(36)}`,
+          title: input.title || `Collaboration session #${Date.now().toString(36)}`,
           maxParticipants: input.maxParticipants,
         });
         return { sessionId: result.id, sessionCode };
@@ -6204,8 +6204,8 @@ Return a JSON object with a "sections" array. Each section has:
       .input(z.object({ sessionCode: z.string() }))
       .query(async ({ ctx, input }) => {
         const session = await db.getWhiteboardSessionByCode(input.sessionCode);
-        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
-        if (session.status === "ended") throw new TRPCError({ code: "BAD_REQUEST", message: "종료된 세션입니다." });
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found." });
+        if (session.status === "ended") throw new TRPCError({ code: "BAD_REQUEST", message: "Session has ended." });
         const participants = await db.getSessionParticipants(session.id);
         return { session, participants };
       }),
@@ -6241,40 +6241,40 @@ Return a JSON object with a "sections" array. Each section has:
         // Get all slides and scripts for this project
         const slides = await db.listProjectSlides(input.projectId);
         const scripts = await db.listSlideScripts(input.projectId);
-        if (!slides.length) throw new TRPCError({ code: "BAD_REQUEST", message: "슬라이드가 없습니다." });
+        if (!slides.length) throw new TRPCError({ code: "BAD_REQUEST", message: "No slides found." });
 
         // Build prompt for LLM
         const slideInfo = slides.map((s: any, i: number) => {
           const script = scripts.find((sc: any) => sc.slideId === s.id);
-          return `슬라이드 ${i + 1} (ID: ${s.id}): 스크립트="${script?.scriptText || '(없음)'}"`;
+          return `Slide ${i + 1} (ID: ${s.id}): script="${script?.scriptText || '(none)'}"`;
         }).join("\n");
 
         const response = await invokeLLM({
           messages: [
             {
               role: "system",
-              content: `당신은 프레젠테이션 디자인 전문가입니다. 각 슬라이드의 스크립트를 분석하여 최적의 레이아웃을 추천해주세요.
+              content: `You are a presentation design expert. Analyze each slide's script and recommend the optimal layout.
 
-사용 가능한 레이아웃 타입:
-- title_only: 제목만 크게 표시 (오프닝/클로징)
-- title_subtitle: 제목 + 부제목 (섹션 시작)
-- title_body: 제목 + 본문 텍스트 (일반 설명)
-- title_bullets: 제목 + 글머리 기호 목록 (핵심 포인트)
-- comparison: 좌우 비교 (A vs B 비교)
-- image_left: 왼쪽 이미지 + 오른쪽 텍스트
-- image_right: 오른쪽 이미지 + 왼쪽 텍스트
-- image_full: 전체 이미지 배경 + 오버레이 텍스트
-- quote: 인용문 스타일
-- chart: 차트/데이터 시각화
-- diagram: 다이어그램/플로우차트
-- timeline: 타임라인/연대기
-- blank: 빈 슬라이드
+Available layout types:
+- title_only: Large title only (opening/closing)
+- title_subtitle: Title + subtitle (section start)
+- title_body: Title + body text (general explanation)
+- title_bullets: Title + bullet list (key points)
+- comparison: Side-by-side comparison (A vs B)
+- image_left: Left image + right text
+- image_right: Right image + left text
+- image_full: Full image background + overlay text
+- quote: Quote style
+- chart: Chart/data visualization
+- diagram: Diagram/flowchart
+- timeline: Timeline/chronology
+- blank: Empty slide
 
-각 슬라이드에 대해 JSON 배열로 응답해주세요.`
+Respond with a JSON array for each slide.`
             },
             {
               role: "user",
-              content: `다음 슬라이드들의 최적 레이아웃을 추천해주세요:\n\n${slideInfo}`
+              content: `Please recommend optimal layouts for the following slides:\n\n${slideInfo}`
             }
           ],
           response_format: {
@@ -6318,7 +6318,7 @@ Return a JSON object with a "sections" array. Each section has:
         });
 
         const content = response.choices?.[0]?.message?.content as string;
-        if (!content) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "AI 응답 없음" });
+        if (!content) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No AI response" });
 
         const parsed = JSON.parse(content);
         const validTypes = ["title_only", "title_subtitle", "title_body", "title_bullets", "comparison", "image_left", "image_right", "image_full", "quote", "chart", "diagram", "timeline", "blank"];
@@ -6735,7 +6735,7 @@ Return a JSON object with a "sections" array. Each section has:
               throw new Error("Transcription failed");
             }
           } catch {
-            throw new TRPCError({ code: "BAD_REQUEST", message: "음성 인식에 실패했습니다. 텍스트를 직접 입력해주세요." });
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Speech recognition failed. Please enter text manually." });
           }
         }
 
@@ -7612,11 +7612,11 @@ Return a JSON object with a "sections" array. Each section has:
       .mutation(async ({ ctx, input }) => {
         const pipelineResult = await db.getProductionPipelineById(input.pipelineId);
         if (!pipelineResult || pipelineResult.pipeline.userId !== ctx.user.id) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "파이프라인을 찾을 수 없습니다." });
+          throw new TRPCError({ code: "NOT_FOUND", message: "Pipeline not found." });
         }
         const pipelineData = pipelineResult.pipeline;
         if (pipelineData.status !== "completed") {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "완료된 파이프라인만 SCORM으로 내보낼 수 있습니다." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Only completed pipelines can be exported as SCORM." });
         }
         const scriptData = pipelineResult.script;
         const pkg = await db.createScormPackage({
@@ -7668,7 +7668,7 @@ Return a JSON object with a "sections" array. Each section has:
           } catch (err: any) {
             await db.updateScormPackage(pkg.id, {
               status: "failed",
-              errorMessage: err.message || "패키지 생성 실패",
+              errorMessage: err.message || "Package generation failed",
             });
           }
         })();
@@ -7685,7 +7685,7 @@ Return a JSON object with a "sections" array. Each section has:
       .query(async ({ ctx, input }) => {
         const pkg = await db.getScormPackageById(input.id);
         if (!pkg || pkg.userId !== ctx.user.id) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "패키지를 찾을 수 없습니다." });
+          throw new TRPCError({ code: "NOT_FOUND", message: "Package not found." });
         }
         return pkg;
       }),
@@ -7695,10 +7695,10 @@ Return a JSON object with a "sections" array. Each section has:
       .mutation(async ({ ctx, input }) => {
         const pkg = await db.getScormPackageById(input.id);
         if (!pkg || pkg.userId !== ctx.user.id) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "패키지를 찾을 수 없습니다." });
+          throw new TRPCError({ code: "NOT_FOUND", message: "Package not found." });
         }
         if (pkg.status !== "ready" || !pkg.packageUrl) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "패키지가 준비되지 않았습니다." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Package is not ready." });
         }
         await db.incrementScormDownloadCount(input.id);
         return { url: pkg.packageUrl };
@@ -7722,7 +7722,7 @@ Return a JSON object with a "sections" array. Each section has:
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const listing = await db.getMarketplaceListingById(input.id);
-        if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "상품을 찾을 수 없습니다." });
+        if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "Product not found." });
         await db.incrementListingViewCount(input.id);
         return listing;
       }),
@@ -7769,7 +7769,7 @@ Return a JSON object with a "sections" array. Each section has:
       .mutation(async ({ ctx, input }) => {
         const listing = await db.getMarketplaceListingById(input.id);
         if (!listing || listing.sellerId !== ctx.user.id) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "상품을 찾을 수 없습니다." });
+          throw new TRPCError({ code: "NOT_FOUND", message: "Product not found." });
         }
         const { id, ...data } = input;
         await db.updateMarketplaceListing(id, data);
@@ -7787,13 +7787,13 @@ Return a JSON object with a "sections" array. Each section has:
       }))
       .mutation(async ({ ctx, input }) => {
         const listing = await db.getMarketplaceListingById(input.listingId);
-        if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "상품을 찾을 수 없습니다." });
+        if (!listing) throw new TRPCError({ code: "NOT_FOUND", message: "Product not found." });
         if (listing.sellerId === ctx.user.id) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "자신의 상품은 구매할 수 없습니다." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot purchase your own product." });
         }
         const alreadyPurchased = await db.hasPurchased(ctx.user.id, input.listingId);
         if (alreadyPurchased) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "이미 구매한 상품입니다." });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Already purchased." });
         }
         const price = listing.salePriceInCents || listing.priceInCents;
         const platformFee = Math.round(price * 0.15); // 15% platform fee
@@ -7867,7 +7867,7 @@ Return a JSON object with a "sections" array. Each section has:
       .mutation(async ({ ctx, input }) => {
         const purchase = await db.getPurchaseById(input.purchaseId);
         if (!purchase || purchase.buyerId !== ctx.user.id) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "구매 기록을 찾을 수 없습니다." });
+          throw new TRPCError({ code: "NOT_FOUND", message: "Purchase record not found." });
         }
         return db.createMarketplaceReview({
           listingId: input.listingId,
@@ -8078,9 +8078,9 @@ Return a JSON object with a "sections" array. Each section has:
       .mutation(async ({ ctx, input }) => {
         // Verify session exists and belongs to user
         const session = await db.getInterpretationSession(input.sessionId);
-        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found." });
         if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다." });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Permission denied." });
         }
 
         // Language name mapping for better LLM translation
@@ -8106,7 +8106,7 @@ Return a JSON object with a "sections" array. Each section has:
 
         const translatedText = (llmResponse.choices?.[0]?.message?.content as string || "").trim();
         if (!translatedText) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "번역에 실패했습니다." });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Translation failed." });
         }
 
         // Save translation segment
@@ -8140,9 +8140,9 @@ Return a JSON object with a "sections" array. Each section has:
       }))
       .mutation(async ({ ctx, input }) => {
         const session = await db.getInterpretationSession(input.sessionId);
-        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found." });
         if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다." });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Permission denied." });
         }
 
         const langNames: Record<string, string> = {
@@ -8196,9 +8196,9 @@ Return a JSON object with a "sections" array. Each section has:
       .input(z.object({ sessionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const session = await db.getInterpretationSession(input.sessionId);
-        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found." });
         if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다." });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Permission denied." });
         }
         await db.endInterpretationSession(input.sessionId);
         return { success: true };
@@ -8213,9 +8213,9 @@ Return a JSON object with a "sections" array. Each section has:
       }))
       .query(async ({ ctx, input }) => {
         const session = await db.getInterpretationSession(input.sessionId);
-        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "세션을 찾을 수 없습니다." });
+        if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found." });
         if (session.hostUserId !== ctx.user.id && ctx.user.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "권한이 없습니다." });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Permission denied." });
         }
         const segments = await db.getSessionSegments(input.sessionId, input.targetLanguage, input.limit);
         return { session, segments };
@@ -8271,7 +8271,7 @@ Return a JSON object with a "sections" array. Each section has:
         const buffer = Buffer.from(input.audioData, "base64");
         const sizeMB = buffer.length / (1024 * 1024);
         if (sizeMB > 16) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: `파일 크기가 ${sizeMB.toFixed(1)}MB입니다. 최대 16MB까지 허용됩니다.` });
+          throw new TRPCError({ code: "BAD_REQUEST", message: `File size is ${sizeMB.toFixed(1)}MB. Maximum 16MB allowed.` });
         }
 
         // 2. Upload to S3
@@ -8316,7 +8316,7 @@ Return a JSON object with a "sections" array. Each section has:
         const buffer = Buffer.from(input.audioData, "base64");
         const sizeMB = buffer.length / (1024 * 1024);
         if (sizeMB > 16) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: `파일 크기가 ${sizeMB.toFixed(1)}MB입니다. 최대 16MB까지 허용됩니다.` });
+          throw new TRPCError({ code: "BAD_REQUEST", message: `File size is ${sizeMB.toFixed(1)}MB. Maximum 16MB allowed.` });
         }
 
         // 2. Upload to S3
@@ -8332,7 +8332,7 @@ Return a JSON object with a "sections" array. Each section has:
         if ("error" in sttResult) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: `음성 인식 실패: ${sttResult.error}`,
+            message: `Speech recognition failed: ${sttResult.error}`,
             cause: sttResult,
           });
         }
@@ -8389,7 +8389,7 @@ Return a JSON object with a "sections" array. Each section has:
 
               return { language: targetLang, languageName: targetLangName, text: translatedText, success: true };
             } catch (err) {
-              return { language: targetLang, languageName: targetLangName, text: "", success: false, error: err instanceof Error ? err.message : "번역 실패" };
+              return { language: targetLang, languageName: targetLangName, text: "", success: false, error: err instanceof Error ? err.message : "Translation failed" };
             }
           })
         );
@@ -8406,7 +8406,7 @@ Return a JSON object with a "sections" array. Each section has:
 
   // ============ v12.3 - Collaboration ============
   collaboration: router({
-    // 이메일로 사용자 검색
+    // Search user by email
     searchUser: protectedProcedure
       .input(z.object({ email: z.string().email() }))
       .query(async ({ input }) => {
@@ -8414,7 +8414,7 @@ Return a JSON object with a "sections" array. Each section has:
         return user;
       }),
 
-    // 프로젝트에 협업자 초대
+    // Invite collaborator to project
     invite: protectedProcedure
       .input(z.object({
         projectId: z.number(),
@@ -8422,23 +8422,23 @@ Return a JSON object with a "sections" array. Each section has:
      role: z.enum(["presenter", "editor", "viewer"]).default("editor"),
       }))
       .mutation(async ({ ctx, input }) => {
-        // 프로젝트 소유자만 초대 가능
+        // Only project owner can invite
        const project = await db.getLectureProject(input.projectId);
         if (!project || project.userId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "프로젝트 소유자만 초대할 수 있습니다" });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only the project owner can invite" });
         }
-        // 초대할 사용자 찾기
+        // Find user to invite
         const targetUser = await db.findUserByEmail(input.email);
         if (!targetUser) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "해당 이메일로 등록된 사용자를 찾을 수 없습니다" });
+          throw new TRPCError({ code: "NOT_FOUND", message: "No user found with this email" });
         }
         if (targetUser.id === ctx.user.id) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "자기 자신을 초대할 수 없습니다" });
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot invite yourself" });
         }
-        // 이미 초대된 사용자인지 확인
+        // Check if user is already invited
         const existing = await db.getProjectCollaborators(input.projectId);
         if (existing.some(c => c.userId === targetUser.id)) {
-          throw new TRPCError({ code: "CONFLICT", message: "이미 초대된 사용자입니다" });
+          throw new TRPCError({ code: "CONFLICT", message: "User already invited" });
         }
         const id = await db.addCollaborator({
           projectId: input.projectId,
@@ -8448,24 +8448,24 @@ Return a JSON object with a "sections" array. Each section has:
           inviteStatus: "pending",
           inviteEmail: input.email,
         });
-        // 초대 수신자에게 알림 발송
+        // Send notification to invitee
         try {
           await db.createNotification({
             userId: targetUser.id,
             type: "system",
-            title: "협업 초대",
-            message: `${ctx.user.name || '사용자'}님이 프로젝트 "${project.title || '제목 없음'}"(에) ${input.role === 'presenter' ? '발표자' : input.role === 'editor' ? '편집자' : '뷰어'}로 초대했습니다.`,
+            title: "Collaboration Invite",
+            message: `${ctx.user.name || 'User'} invited you as ${input.role === 'presenter' ? 'presenter' : input.role === 'editor' ? 'editor' : 'viewer'} to project "${project.title || 'Untitled'}".`,
             link: "/lecture-builder",
           });
-        } catch (_) { /* 알림 실패는 무시 */ }
+        } catch (_) { /* Ignore notification failure */ }
         return { id, userName: targetUser.name };
       }),
 
-    // 프로젝트 협업자 목록
+    // List project collaborators
     listByProject: protectedProcedure
       .input(z.object({ projectId: z.number() }))
       .query(async ({ ctx, input }) => {
-        // 소유자 또는 협업자만 조회 가능
+        // Only owner or collaborators can view
         const project = await db.getLectureProject(input.projectId);
         if (!project) throw new TRPCError({ code: "NOT_FOUND" });
         const isOwner = project.userId === ctx.user.id;
@@ -8490,26 +8490,26 @@ Return a JSON object with a "sections" array. Each section has:
         return [ownerEntry, ...collaborators.map(c => ({ ...c, isMe: c.userId === ctx.user.id }))];
       }),
 
-    // 내가 참여 중인 협업 프로젝트 목록
+    // List my collaborative projects
     myCollaborations: protectedProcedure
       .query(async ({ ctx }) => {
         return db.getMyCollaborations(ctx.user.id);
       }),
 
-    // 받은 초대 목록
+    // List received invitations
     pendingInvitations: protectedProcedure
       .query(async ({ ctx }) => {
         return db.getPendingInvitations(ctx.user.id);
       }),
 
-    // 초대 수락/거절
+    // Accept/decline invitation
     respondToInvite: protectedProcedure
       .input(z.object({
         inviteId: z.number(),
         accept: z.boolean(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // 초대 정보 조회 (알림 발송용)
+        // Get invitation info (for notification)
         const dbConn = await db.getDb();
         let inviterUserId: number | null = null;
         let projectTitle = "";
@@ -8521,41 +8521,41 @@ Return a JSON object with a "sections" array. Each section has:
           if (rows[0]) {
             inviterUserId = rows[0].invitedBy;
             const project = await db.getLectureProject(rows[0].projectId);
-            projectTitle = project?.title || "제목 없음";
+            projectTitle = project?.title || "Untitled";
           }
         }
 
         await db.updateCollaboratorStatus(input.inviteId, input.accept ? "accepted" : "rejected");
 
-        // 초대자에게 수락/거절 알림 발송
+        // Send accept/decline notification to inviter
         if (inviterUserId) {
           try {
             await db.createNotification({
               userId: inviterUserId,
               type: "system",
-              title: input.accept ? "협업 초대 수락" : "협업 초대 거절",
-              message: `${ctx.user.name || '사용자'}님이 프로젝트 "${projectTitle}" 협업 초대를 ${input.accept ? '수락' : '거절'}했습니다.`,
+              title: input.accept ? "Collaboration invite accepted" : "Collaboration invite declined",
+              message: `${ctx.user.name || 'User'} ${input.accept ? 'accepted' : 'declined'} the collaboration invite for project "${projectTitle}".`,
               link: "/lecture-builder",
             });
-          } catch (_) { /* 알림 실패는 무시 */ }
+          } catch (_) { /* Ignore notification failure */ }
         }
 
         return { success: true };
       }),
 
-    // 협업자 제거 (소유자만)
+    // Remove collaborator (owner only)
     remove: protectedProcedure
       .input(z.object({ collaboratorId: z.number(), projectId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.projectId);
         if (!project || project.userId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "프로젝트 소유자만 제거할 수 있습니다" });
+          throw new TRPCError({ code: "FORBIDDEN", message: "Only the project owner can remove members" });
         }
         await db.removeCollaborator(input.collaboratorId);
         return { success: true };
       }),
 
-    // 협업자 역할 변경 (소유자만)
+    // Change collaborator role (owner only)
     updateRole: protectedProcedure
       .input(z.object({
         collaboratorId: z.number(),
@@ -9135,15 +9135,15 @@ function generateCertificateHtml(studentName: string, lectureTitle: string, code
     .code{font-family:monospace;color:#aaa;font-size:12px;margin-top:20px}
     .badge{display:inline-block;background:#6c63ff;color:white;padding:8px 24px;border-radius:20px;margin-top:20px;font-size:14px}
   </style></head><body><div class="cert">
-    <h1>수료증</h1>
+    <h1>Certificate of Completion</h1>
     <div class="subtitle">CERTIFICATE OF COMPLETION</div>
-    <p>아래의 수강생이 다음 강의를 성공적으로 수료하였음을 증명합니다.</p>
+    <p>This certifies that the following student has successfully completed the lecture.</p>
     <div class="name">${studentName}</div>
     <div class="lecture">「${lectureTitle}」</div>
-    <div class="completion">수료율: ${completion}%</div>
+    <div class="completion">Completion: ${completion}%</div>
     <div class="badge">AI Lecture Platform</div>
     <div class="date">${date}</div>
-    <div class="code">인증코드: ${code}</div>
+    <div class="code">Certificate Code: ${code}</div>
   </div></body></html>`;
 }
 
@@ -9226,7 +9226,7 @@ function generateScoHtml(title: string, pipeline: any, sections: any[], version:
   <div class="container">
     <h1>${title}</h1>
     <div class="video-container">
-      ${pipeline.finalVideoUrl ? `<video controls src="${pipeline.finalVideoUrl}"></video>` : '<p>영상이 준비되지 않았습니다.</p>'}
+      ${pipeline.finalVideoUrl ? `<video controls src="${pipeline.finalVideoUrl}"></video>` : '<p>Video is not ready.</p>'}
     </div>
     <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
     <div class="sections">
