@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio, SlidersHorizontal, RotateCcw, TestTube } from "lucide-react";
+import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio, SlidersHorizontal, RotateCcw, TestTube, Save, BookmarkPlus, Headphones } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -23,6 +23,8 @@ interface AvatarData {
   sampleFaceId: number | null;
   customFaceUrl: string | null;
   voiceCloneId: number | null;
+  voiceSpeed: number | null;
+  voicePitch: number | null;
   sortOrder: number;
 }
 
@@ -92,8 +94,15 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [previewText, setPreviewText] = useState(t("avatarSettingsDialog.welcomeMessage"));
 
   // Speed/Pitch controls
-  const [speed, setSpeed] = useState(1.0);
-  const [pitch, setPitch] = useState(0);
+  const [speed, setSpeed] = useState(avatar.voiceSpeed ?? 1.0);
+  const [pitch, setPitch] = useState(avatar.voicePitch ?? 0);
+
+  // A/B Test state
+  const [abPlaying, setAbPlaying] = useState<"original" | "clone" | null>(null);
+
+  // Custom preset state
+  const [newPresetName, setNewPresetName] = useState("");
+  const [showPresetForm, setShowPresetForm] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -116,8 +125,11 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
     setCloneDesc("");
     setSelectedCloneId(avatar.voiceCloneId || null);
     setVoiceMode(avatar.voiceCloneId ? "clone" : "preset");
-    setSpeed(1.0);
-    setPitch(0);
+    setSpeed(avatar.voiceSpeed ?? 1.0);
+    setPitch(avatar.voicePitch ?? 0);
+    setAbPlaying(null);
+    setNewPresetName("");
+    setShowPresetForm(false);
   }, [avatar]);
 
   // Cleanup audio on unmount
@@ -201,6 +213,25 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
     onError: (e) => toast.error(e.message),
   });
 
+  // Voice effect presets
+  const effectPresets = trpc.voiceEffectPreset.list.useQuery(undefined, { enabled: open });
+  const createEffectPreset = trpc.voiceEffectPreset.create.useMutation({
+    onSuccess: () => {
+      toast.success(t("avatarSettingsDialog.presetSaved"));
+      effectPresets.refetch();
+      setNewPresetName("");
+      setShowPresetForm(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteEffectPreset = trpc.voiceEffectPreset.delete.useMutation({
+    onSuccess: () => {
+      toast.success(t("avatarSettingsDialog.presetDeleted"));
+      effectPresets.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const handleSave = () => {
     const faceUrl = faceTab === "ai" ? aiGeneratedUrl : faceTab === "custom" ? customFaceUrl : null;
     const cloneId = voiceMode === "clone" && selectedCloneId ? selectedCloneId : null;
@@ -216,6 +247,8 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
       sampleFaceId: faceTab === "gallery" ? selectedFaceId : null,
       customFaceUrl: faceUrl,
       voiceCloneId: cloneId,
+      voiceSpeed: speed !== 1.0 ? speed : undefined,
+      voicePitch: pitch !== 0 ? pitch : undefined,
     });
   };
 
@@ -1060,6 +1093,172 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                 </Button>
               </div>
             </div>
+          </div>
+
+          <Separator />
+
+          {/* A/B Comparison Test */}
+          {voiceMode === "clone" && selectedCloneId && (() => {
+            const selectedClone = voiceClones.data?.find(c => c.id === selectedCloneId);
+            if (!selectedClone || !selectedClone.sampleUrl) return null;
+            return (
+              <div>
+                <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
+                  <Headphones className="w-4 h-4" /> {t("avatarSettingsDialog.abTestSection")}
+                </Label>
+                <p className="text-xs text-muted-foreground mb-3">{t("avatarSettingsDialog.abTestDesc")}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Original Sample */}
+                  <div className={`rounded-lg border p-3 text-center transition-all ${
+                    abPlaying === "original" ? "border-orange-500 bg-orange-500/5" : "border-border"
+                  }`}>
+                    <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center mx-auto mb-2">
+                      <FileAudio className="w-5 h-5 text-orange-500" />
+                    </div>
+                    <p className="text-xs font-medium mb-2">{t("avatarSettingsDialog.originalSample")}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 text-xs"
+                      onClick={() => {
+                        if (audioRef.current) { audioRef.current.pause(); }
+                        setAbPlaying("original");
+                        const audio = new Audio(selectedClone.sampleUrl);
+                        audioRef.current = audio;
+                        audio.play();
+                        audio.onended = () => { setAbPlaying(null); audioRef.current = null; };
+                      }}
+                    >
+                      {abPlaying === "original" ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                      {t("avatarSettingsDialog.playOriginal")}
+                    </Button>
+                  </div>
+                  {/* Cloned Voice */}
+                  <div className={`rounded-lg border p-3 text-center transition-all ${
+                    abPlaying === "clone" ? "border-primary bg-primary/5" : "border-border"
+                  }`}>
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                      <MicVocal className="w-5 h-5 text-primary" />
+                    </div>
+                    <p className="text-xs font-medium mb-2">{t("avatarSettingsDialog.clonedVoice")}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5 text-xs"
+                      disabled={previewClone.isPending}
+                      onClick={() => {
+                        if (audioRef.current) { audioRef.current.pause(); }
+                        setAbPlaying("clone");
+                        previewClone.mutate({
+                          id: selectedCloneId,
+                          text: stablePreviewText,
+                          speed: speed !== 1.0 ? speed : undefined,
+                          pitch: pitch !== 0 ? pitch : undefined,
+                        });
+                      }}
+                    >
+                      {previewClone.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : abPlaying === "clone" ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                      {t("avatarSettingsDialog.playClone")}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Saved Voice Effect Presets */}
+          <div>
+            <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
+              <BookmarkPlus className="w-4 h-4" /> {t("avatarSettingsDialog.savedPresets")}
+            </Label>
+
+            {/* Existing presets list */}
+            {effectPresets.data && effectPresets.data.length > 0 ? (
+              <div className="space-y-2 mb-3">
+                {effectPresets.data.map((preset: any) => (
+                  <div key={preset.id} className="flex items-center gap-2 rounded-lg border p-2.5 hover:bg-muted/30 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{preset.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {t("avatarSettingsDialog.speed")}: {(preset.speed || 1.0).toFixed(1)}x · {t("avatarSettingsDialog.pitch")}: {preset.pitch > 0 ? "+" : ""}{preset.pitch || 0}
+                        {preset.voiceId && ` · ${preset.voiceId}`}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 text-xs h-7"
+                      onClick={() => {
+                        setSpeed(preset.speed || 1.0);
+                        setPitch(preset.pitch || 0);
+                        if (preset.voiceId) setTtsVoiceId(preset.voiceId);
+                        toast.success(t("avatarSettingsDialog.presetLoaded"));
+                      }}
+                    >
+                      <Play className="w-3 h-3" /> {t("avatarSettingsDialog.presetLoaded").split(" ")[0]}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={() => {
+                        if (confirm(t("avatarSettingsDialog.confirmDeletePreset"))) {
+                          deleteEffectPreset.mutate({ id: preset.id });
+                        }
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mb-3">{t("avatarSettingsDialog.noSavedPresets")}</p>
+            )}
+
+            {/* Save new preset */}
+            {!showPresetForm ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 w-full"
+                onClick={() => setShowPresetForm(true)}
+              >
+                <Save className="w-3.5 h-3.5" />
+                {t("avatarSettingsDialog.saveAsPreset")}
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder={t("avatarSettingsDialog.enterPresetName")}
+                  value={newPresetName}
+                  onChange={(e) => setNewPresetName(e.target.value)}
+                  className="text-sm flex-1"
+                />
+                <Button
+                  size="sm"
+                  className="gap-1 shrink-0"
+                  disabled={!newPresetName.trim() || createEffectPreset.isPending}
+                  onClick={() => {
+                    const voiceId = voiceMode === "clone" && selectedCloneId
+                      ? voiceClones.data?.find(c => c.id === selectedCloneId)?.matchedVoiceId || ttsVoiceId
+                      : ttsVoiceId;
+                    createEffectPreset.mutate({
+                      name: newPresetName.trim(),
+                      speed,
+                      pitch,
+                      voiceId,
+                    });
+                  }}
+                >
+                  {createEffectPreset.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                  {t("avatarSettingsDialog.savePreset")}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { setShowPresetForm(false); setNewPresetName(""); }}>
+                  {t("avatarSettingsDialog.cancel")}
+                </Button>
+              </div>
+            )}
           </div>
 
           <Separator />

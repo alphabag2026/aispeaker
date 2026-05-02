@@ -2312,3 +2312,15 @@
 - [x] 프론트엔드: 기본 음성 5가지 프리셋 선택 UI (클론 없이도 사용 가능)
 - [x] i18n: 새 기능 관련 번역 키 추가 (20개 언어, 28개 키)
 - [x] 테스트: 새 기능 vitest 테스트 작성 (66개 통과)
+
+## 음성 클로닝 강화 v5.2
+- [x] DB: projectAvatars에 voiceSpeed, voicePitch 컬럼 추가
+- [x] DB: voiceEffectPresets 테이블 생성 (커스텀 프리셋 저장용)
+- [x] 백엔드: updateAvatar에 voiceSpeed/voicePitch 저장 지원
+- [x] 백엔드: voiceEffectPreset CRUD 라우터 (create/list/delete)
+- [x] 프론트엔드: 아바타 설정 저장 시 speed/pitch 값도 DB에 저장
+- [x] 프론트엔드: 아바타 설정 열 때 저장된 speed/pitch 값 불러오기
+- [x] 프론트엔드: A/B 비교 테스트 UI (원본 샘플 vs 클론 음성 나란히 재생)
+- [x] 프론트엔드: 커스텀 프리셋 저장/불러오기/삭제 UI
+- [x] i18n: 새 기능 번역 키 추가 (20개 언어, 17개 키)
+- [x] 테스트: v5.2 기능 vitest 테스트 작성 (54개 통과)

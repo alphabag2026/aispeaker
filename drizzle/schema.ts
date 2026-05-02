@@ -1214,6 +1214,10 @@ export const projectAvatars = mysqlTable("projectAvatars", {
   ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).default("Kore"),
   /** Voice clone ID (references voiceClones table) */
   voiceCloneId: int("voiceCloneId"),
+  /** Voice speed (0.5 ~ 2.0, default 1.0) */
+  voiceSpeed: float("voiceSpeed").default(1.0),
+  /** Voice pitch (-12 ~ +12 semitones, default 0) */
+  voicePitch: float("voicePitch").default(0),
   /** Sort order */
   sortOrder: int("sortOrder").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -2418,3 +2422,20 @@ export const didVideoHistory = mysqlTable("didVideoHistory", {
 });
 export type DidVideoHistory = typeof didVideoHistory.$inferSelect;
 export type InsertDidVideoHistory = typeof didVideoHistory.$inferInsert;
+
+
+/**
+ * Voice Effect Presets - user-saved voice effect configurations
+ */
+export const voiceEffectPresets = mysqlTable("voiceEffectPresets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  voiceId: varchar("voiceId", { length: 128 }).notNull(),
+  speed: float("speed").default(1.0).notNull(),
+  pitch: float("pitch").default(0).notNull(),
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type VoiceEffectPreset = typeof voiceEffectPresets.$inferSelect;
+export type InsertVoiceEffectPreset = typeof voiceEffectPresets.$inferInsert;

@@ -4381,6 +4381,8 @@ Respond ONLY in the following JSON format:
         sampleFaceId: z.number().nullable().optional(),
         customFaceUrl: z.string().nullable().optional(),
         voiceCloneId: z.number().nullable().optional(),
+        voiceSpeed: z.number().min(0.5).max(2.0).optional(),
+        voicePitch: z.number().min(-12).max(12).optional(),
         sortOrder: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -8872,6 +8874,37 @@ Respond in JSON format:
         { id: "Sulafat", name: "Sulafat", style: "Warm", gender: "female" as const, desc: "Warm and empathetic", emoji: "\u2764\uFE0F", color: "rose" },
       ];
     }),
+  }),
+  // ========== Voice Effect Presets ==========
+  voiceEffectPreset: router({
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(100),
+        voiceId: z.string().min(1),
+        speed: z.number().min(0.5).max(2.0),
+        pitch: z.number().min(-12).max(12),
+        description: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.createVoiceEffectPreset({
+          userId: ctx.user.id,
+          name: input.name,
+          voiceId: input.voiceId,
+          speed: input.speed,
+          pitch: input.pitch,
+          description: input.description ?? null,
+        });
+        return { id };
+      }),
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.listVoiceEffectPresets(ctx.user.id);
+    }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteVoiceEffectPreset(input.id, ctx.user.id);
+        return { success: true };
+      }),
   }),
   // ========== User Custom Avatars ==========
   userAvatar: router({

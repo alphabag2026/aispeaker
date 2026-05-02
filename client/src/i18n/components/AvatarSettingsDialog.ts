@@ -125,6 +125,23 @@ registerTranslations("ko", {
   "avatarSettingsDialog.fresh": "상쾌한",
   "avatarSettingsDialog.deep": "깊은",
   "avatarSettingsDialog.warm": "따뜻한",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B 비교 테스트",
+  "avatarSettingsDialog.abTestDesc": "원본 음성 샘플과 클론 음성을 나란히 비교해 보세요",
+  "avatarSettingsDialog.originalSample": "원본 샘플",
+  "avatarSettingsDialog.clonedVoice": "클론 음성",
+  "avatarSettingsDialog.playOriginal": "원본 재생",
+  "avatarSettingsDialog.playClone": "클론 재생",
+  "avatarSettingsDialog.selectCloneForAB": "A/B 테스트를 위해 클론 음성을 선택해주세요",
+  "avatarSettingsDialog.savedPresets": "💾 저장된 프리셋",
+  "avatarSettingsDialog.noSavedPresets": "저장된 프리셋이 없습니다",
+  "avatarSettingsDialog.saveAsPreset": "현재 설정을 프리셋으로 저장",
+  "avatarSettingsDialog.presetName": "프리셋 이름",
+  "avatarSettingsDialog.enterPresetName": "프리셋 이름을 입력하세요",
+  "avatarSettingsDialog.savePreset": "프리셋 저장",
+  "avatarSettingsDialog.presetSaved": "프리셋이 저장되었습니다",
+  "avatarSettingsDialog.presetDeleted": "프리셋이 삭제되었습니다",
+  "avatarSettingsDialog.presetLoaded": "프리셋이 적용되었습니다",
+  "avatarSettingsDialog.confirmDeletePreset": "이 프리셋을 삭제하시겠습니까?"
 });
 
 registerTranslations("en", {
@@ -252,6 +269,23 @@ registerTranslations("en", {
   "avatarSettingsDialog.fresh": "Fresh",
   "avatarSettingsDialog.deep": "Deep",
   "avatarSettingsDialog.warm": "Warm",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("zh", {
@@ -379,6 +413,23 @@ registerTranslations("zh", {
   "avatarSettingsDialog.fresh": "清新",
   "avatarSettingsDialog.deep": "深沉",
   "avatarSettingsDialog.warm": "温暖",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B 对比测试",
+  "avatarSettingsDialog.abTestDesc": "并排比较原始语音样本和克隆语音",
+  "avatarSettingsDialog.originalSample": "原始样本",
+  "avatarSettingsDialog.clonedVoice": "克隆语音",
+  "avatarSettingsDialog.playOriginal": "播放原始",
+  "avatarSettingsDialog.playClone": "播放克隆",
+  "avatarSettingsDialog.selectCloneForAB": "请选择克隆语音进行A/B测试",
+  "avatarSettingsDialog.savedPresets": "💾 已保存预设",
+  "avatarSettingsDialog.noSavedPresets": "没有已保存的预设",
+  "avatarSettingsDialog.saveAsPreset": "将当前设置保存为预设",
+  "avatarSettingsDialog.presetName": "预设名称",
+  "avatarSettingsDialog.enterPresetName": "输入预设名称",
+  "avatarSettingsDialog.savePreset": "保存预设",
+  "avatarSettingsDialog.presetSaved": "预设已保存",
+  "avatarSettingsDialog.presetDeleted": "预设已删除",
+  "avatarSettingsDialog.presetLoaded": "预设已应用",
+  "avatarSettingsDialog.confirmDeletePreset": "删除此预设？"
 });
 
 registerTranslations("ja", {
@@ -506,6 +557,23 @@ registerTranslations("ja", {
   "avatarSettingsDialog.fresh": "爽やかな",
   "avatarSettingsDialog.deep": "深みのある",
   "avatarSettingsDialog.warm": "温かい",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B比較テスト",
+  "avatarSettingsDialog.abTestDesc": "オリジナル音声とクローン音声を並べて比較",
+  "avatarSettingsDialog.originalSample": "オリジナルサンプル",
+  "avatarSettingsDialog.clonedVoice": "クローン音声",
+  "avatarSettingsDialog.playOriginal": "オリジナル再生",
+  "avatarSettingsDialog.playClone": "クローン再生",
+  "avatarSettingsDialog.selectCloneForAB": "A/Bテスト用にクローン音声を選択してください",
+  "avatarSettingsDialog.savedPresets": "💾 保存済みプリセット",
+  "avatarSettingsDialog.noSavedPresets": "保存済みプリセットなし",
+  "avatarSettingsDialog.saveAsPreset": "現在の設定をプリセットとして保存",
+  "avatarSettingsDialog.presetName": "プリセット名",
+  "avatarSettingsDialog.enterPresetName": "プリセット名を入力",
+  "avatarSettingsDialog.savePreset": "プリセット保存",
+  "avatarSettingsDialog.presetSaved": "プリセットが保存されました",
+  "avatarSettingsDialog.presetDeleted": "プリセットが削除されました",
+  "avatarSettingsDialog.presetLoaded": "プリセットが適用されました",
+  "avatarSettingsDialog.confirmDeletePreset": "このプリセットを削除しますか？"
 });
 
 registerTranslations("vi", {
@@ -633,6 +701,23 @@ registerTranslations("vi", {
   "avatarSettingsDialog.fresh": "Tươi mới",
   "avatarSettingsDialog.deep": "Sâu lắng",
   "avatarSettingsDialog.warm": "Ấm áp",
+  "avatarSettingsDialog.abTestSection": "🔊 So sánh A/B",
+  "avatarSettingsDialog.abTestDesc": "So sánh mẫu giọng gốc và giọng nhân bản",
+  "avatarSettingsDialog.originalSample": "Mẫu gốc",
+  "avatarSettingsDialog.clonedVoice": "Giọng nhân bản",
+  "avatarSettingsDialog.playOriginal": "Phát gốc",
+  "avatarSettingsDialog.playClone": "Phát nhân bản",
+  "avatarSettingsDialog.selectCloneForAB": "Chọn giọng nhân bản để thử A/B",
+  "avatarSettingsDialog.savedPresets": "💾 Cài đặt đã lưu",
+  "avatarSettingsDialog.noSavedPresets": "Không có cài đặt đã lưu",
+  "avatarSettingsDialog.saveAsPreset": "Lưu cài đặt hiện tại",
+  "avatarSettingsDialog.presetName": "Tên cài đặt",
+  "avatarSettingsDialog.enterPresetName": "Nhập tên cài đặt",
+  "avatarSettingsDialog.savePreset": "Lưu",
+  "avatarSettingsDialog.presetSaved": "Đã lưu cài đặt",
+  "avatarSettingsDialog.presetDeleted": "Đã xóa cài đặt",
+  "avatarSettingsDialog.presetLoaded": "Đã áp dụng cài đặt",
+  "avatarSettingsDialog.confirmDeletePreset": "Xóa cài đặt này?"
 });
 
 registerTranslations("th", {
@@ -760,6 +845,23 @@ registerTranslations("th", {
   "avatarSettingsDialog.fresh": "สดใส",
   "avatarSettingsDialog.deep": "ลึก",
   "avatarSettingsDialog.warm": "อบอุ่น",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("id", {
@@ -887,6 +989,23 @@ registerTranslations("id", {
   "avatarSettingsDialog.fresh": "Segar",
   "avatarSettingsDialog.deep": "Dalam",
   "avatarSettingsDialog.warm": "Hangat",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("ms", {
@@ -1014,6 +1133,23 @@ registerTranslations("ms", {
   "avatarSettingsDialog.fresh": "Segar",
   "avatarSettingsDialog.deep": "Dalam",
   "avatarSettingsDialog.warm": "Hangat",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("es", {
@@ -1141,6 +1277,23 @@ registerTranslations("es", {
   "avatarSettingsDialog.fresh": "Fresco",
   "avatarSettingsDialog.deep": "Profundo",
   "avatarSettingsDialog.warm": "Cálido",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("fr", {
@@ -1268,6 +1421,23 @@ registerTranslations("fr", {
   "avatarSettingsDialog.fresh": "Frais",
   "avatarSettingsDialog.deep": "Profond",
   "avatarSettingsDialog.warm": "Chaleureux",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("de", {
@@ -1395,6 +1565,23 @@ registerTranslations("de", {
   "avatarSettingsDialog.fresh": "Frisch",
   "avatarSettingsDialog.deep": "Tief",
   "avatarSettingsDialog.warm": "Warm",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("pt", {
@@ -1522,6 +1709,23 @@ registerTranslations("pt", {
   "avatarSettingsDialog.fresh": "Fresco",
   "avatarSettingsDialog.deep": "Profundo",
   "avatarSettingsDialog.warm": "Quente",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("ru", {
@@ -1649,6 +1853,23 @@ registerTranslations("ru", {
   "avatarSettingsDialog.fresh": "Свежий",
   "avatarSettingsDialog.deep": "Глубокий",
   "avatarSettingsDialog.warm": "Тёплый",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("ar", {
@@ -1776,6 +1997,23 @@ registerTranslations("ar", {
   "avatarSettingsDialog.fresh": "منعش",
   "avatarSettingsDialog.deep": "عميق",
   "avatarSettingsDialog.warm": "دافئ",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("hi", {
@@ -1903,6 +2141,23 @@ registerTranslations("hi", {
   "avatarSettingsDialog.fresh": "ताज़ा",
   "avatarSettingsDialog.deep": "गहरा",
   "avatarSettingsDialog.warm": "गर्म",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("it", {
@@ -2030,6 +2285,23 @@ registerTranslations("it", {
   "avatarSettingsDialog.fresh": "Fresco",
   "avatarSettingsDialog.deep": "Profondo",
   "avatarSettingsDialog.warm": "Caldo",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("nl", {
@@ -2157,6 +2429,23 @@ registerTranslations("nl", {
   "avatarSettingsDialog.fresh": "Fris",
   "avatarSettingsDialog.deep": "Diep",
   "avatarSettingsDialog.warm": "Warm",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("pl", {
@@ -2284,6 +2573,23 @@ registerTranslations("pl", {
   "avatarSettingsDialog.fresh": "Świeży",
   "avatarSettingsDialog.deep": "Głęboki",
   "avatarSettingsDialog.warm": "Ciepły",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("sv", {
@@ -2411,6 +2717,23 @@ registerTranslations("sv", {
   "avatarSettingsDialog.fresh": "Fräsch",
   "avatarSettingsDialog.deep": "Djup",
   "avatarSettingsDialog.warm": "Varm",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
 registerTranslations("tr", {
@@ -2538,5 +2861,22 @@ registerTranslations("tr", {
   "avatarSettingsDialog.fresh": "Taze",
   "avatarSettingsDialog.deep": "Derin",
   "avatarSettingsDialog.warm": "Sıcak",
+  "avatarSettingsDialog.abTestSection": "🔊 A/B Comparison Test",
+  "avatarSettingsDialog.abTestDesc": "Compare original voice sample and cloned voice side by side",
+  "avatarSettingsDialog.originalSample": "Original Sample",
+  "avatarSettingsDialog.clonedVoice": "Cloned Voice",
+  "avatarSettingsDialog.playOriginal": "Play Original",
+  "avatarSettingsDialog.playClone": "Play Clone",
+  "avatarSettingsDialog.selectCloneForAB": "Select a clone voice for A/B testing",
+  "avatarSettingsDialog.savedPresets": "💾 Saved Presets",
+  "avatarSettingsDialog.noSavedPresets": "No saved presets",
+  "avatarSettingsDialog.saveAsPreset": "Save current settings as preset",
+  "avatarSettingsDialog.presetName": "Preset Name",
+  "avatarSettingsDialog.enterPresetName": "Enter preset name",
+  "avatarSettingsDialog.savePreset": "Save Preset",
+  "avatarSettingsDialog.presetSaved": "Preset saved",
+  "avatarSettingsDialog.presetDeleted": "Preset deleted",
+  "avatarSettingsDialog.presetLoaded": "Preset loaded",
+  "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?"
 });
 
