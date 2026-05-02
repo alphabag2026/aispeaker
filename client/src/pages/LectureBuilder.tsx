@@ -973,13 +973,27 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
                 <div className="flex items-center gap-2">
                   <Select value={avatarVoice} onValueChange={setAvatarVoice}>
                     <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {voices.map((v) =>
-                        <SelectItem key={v.id} value={v.id}>{v.name} ({v.desc})</SelectItem>)}
+                    <SelectContent className="max-h-[300px]">
+                      {voices.map((v: any) =>
+                        <SelectItem key={v.id} value={v.id}>
+                          <span className="flex items-center gap-1.5">
+                            <span className={`text-[10px] font-medium px-1 py-0.5 rounded ${v.gender === 'female' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}>
+                              {v.gender === 'female' ? '♀' : '♂'}
+                            </span>
+                            <span>{v.name}</span>
+                            <span className="text-muted-foreground text-xs">({v.desc})</span>
+                            <span className="text-[9px] text-muted-foreground ml-auto">🌐 {(v.languages || []).length}+</span>
+                          </span>
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                   <VoicePreviewButton voiceId={avatarVoice} size="default" variant="outline" />
                 </div>
+                {(() => { const sel = voices.find((v: any) => v.id === avatarVoice) as any; return sel ? (
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {sel.gender === 'female' ? '👩 여성' : '👨 남성'} · {sel.style} · 지원: 한/영/일/중/스/프/독/포 외 {(sel.languages || []).length}개 언어
+                  </p>
+                ) : null; })()}
               </div>
               <Button className="w-full" disabled={(!selectedFaceId && !selectedMyAvatarUrl) || !avatarName.trim() || addAvatar.isPending}
                 onClick={() => {
