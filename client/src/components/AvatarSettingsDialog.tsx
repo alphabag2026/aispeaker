@@ -57,6 +57,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [faceTab, setFaceTab] = useState<string>(avatar.customFaceUrl ? "custom" : "gallery");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const voiceFileInputRef = useRef<HTMLInputElement>(null);
 
   // AI Face Generation state
   const [aiPrompt, setAiPrompt] = useState("");
@@ -528,19 +529,28 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   <div className="flex items-center gap-2">
                     <Select value={ttsVoiceId} onValueChange={setTtsVoiceId}>
                       <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[300px]">
                         {voices.map((v: any) => (
                           <SelectItem key={v.id} value={v.id}>
-                            <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-1.5">
+                              <span className={`text-[10px] font-medium px-1 py-0.5 rounded ${v.gender === 'female' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}>
+                                {v.gender === 'female' ? '♀' : '♂'}
+                              </span>
                               <span>{v.name}</span>
-                              <span className="text-xs text-muted-foreground">({v.desc})</span>
-                            </div>
+                              <span className="text-muted-foreground text-xs">({v.desc})</span>
+                              <span className="text-[9px] text-muted-foreground ml-auto">🌐 {(v.languages || []).length}+</span>
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <VoicePreviewButton voiceId={ttsVoiceId} size="default" variant="outline" />
                   </div>
+                  {(() => { const sel = voices.find((v: any) => v.id === ttsVoiceId); return sel ? (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {sel.gender === 'female' ? '👩 여성' : '👨 남성'} · {sel.style} · 지원: 한/영/일/중/스/프/독/포 외 {(sel.languages || []).length}개 언어
+                    </p>
+                  ) : null; })()}
                   <p className="text-xs text-muted-foreground">
                     {t("avatarSettingsDialog.voicePreviewDescription")}
                   </p>
@@ -620,8 +630,52 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                     </div>
                   )}
 
+                  {/* Upload Voice File */}
+                  <div className="border rounded-lg p-3 space-y-2 bg-muted/20">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Upload className="w-4 h-4 text-primary" /> 음성 파일 업로드
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      강사의 실제 음성 파일을 업로드하여 음성 클론을 생성할 수 있습니다. (MP3, WAV, M4A, 5초~30초)
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={() => voiceFileInputRef.current?.click()}
+                      >
+                        <Upload className="w-4 h-4" /> 음성 파일 선택
+                      </Button>
+                      <input
+                        ref={voiceFileInputRef}
+                        type="file"
+                        accept="audio/mp3,audio/mpeg,audio/wav,audio/m4a,audio/webm,audio/ogg,.mp3,.wav,.m4a,.webm,.ogg"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          if (file.size > 10 * 1024 * 1024) {
+                            toast.error("파일 크기는 10MB 이하여야 합니다.");
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const arrayBuffer = reader.result as ArrayBuffer;
+                            const blob = new Blob([arrayBuffer], { type: file.type });
+                            setRecordedBlob(blob);
+                            setRecordedUrl(URL.createObjectURL(blob));
+                            setRecordDuration(0);
+                            toast.success(`"${file.name}" 파일이 로드되었습니다.`);
+                          };
+                          reader.readAsArrayBuffer(file);
+                          e.target.value = "";
+                        }}
+                      />
+                    </div>
+                  </div>
+
                   {/* Record New Clone */}
-                  <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
+                  <div className="border rounded-lg p-3 space-y-2 bg-muted/20">
                     <Label className="text-sm font-medium flex items-center gap-2">
                       <MicVocal className="w-4 h-4 text-primary" /> {t("avatarSettingsDialog.createNewClone")}
                     </Label>

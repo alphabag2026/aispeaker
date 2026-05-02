@@ -382,7 +382,13 @@ export default function AvatarCustomizePanel({ avatar, faces, voices, onUpdated,
                 <SelectContent>
                   {voices.map((v: any) => (
                     <SelectItem key={v.id} value={v.id}>
-                      <span>{v.name} <span className="text-muted-foreground text-xs">({v.desc})</span></span>
+                      <span className="flex items-center gap-1">
+                        <span className={`text-[9px] font-medium px-0.5 rounded ${v.gender === 'female' ? 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}`}>
+                          {v.gender === 'female' ? '♀' : '♂'}
+                        </span>
+                        <span>{v.name}</span>
+                        <span className="text-muted-foreground text-[10px]">({v.desc})</span>
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
