@@ -30,6 +30,8 @@ import KlingAvatarCreator from "@/components/KlingAvatarCreator";
 import { LectureFormatSelector } from "@/components/LectureFormatSelector";
 import { ProjectCollaborationPanel, PendingInvitationsPanel } from "@/components/ProjectCollaborationPanel";
 import AvatarSettingsDialog from "@/components/AvatarSettingsDialog";
+import StepGuideTooltip from "@/components/StepGuideTooltip";
+import AvatarCustomizePanel from "@/components/AvatarCustomizePanel";
 
 // ============ TYPES ============
 interface ScriptSection {
@@ -306,7 +308,10 @@ export default function LectureBuilder() {
               <ChevronLeft className="w-4 h-4" />{t("lectureBuilder.jsxText43")}
             </Button>
             <h2 className="font-semibold text-foreground truncate max-w-md">{project?.title || t("lectureBuilder.stringLiteral44")}</h2>
-            <div className="text-sm text-muted-foreground">Step {currentStep}/5</div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Step {currentStep}/5</span>
+              <StepGuideTooltip currentStep={currentStep} />
+            </div>
           </div>
           <div className="flex items-center gap-1">
             {STEPS.map((step, i) => {
@@ -512,6 +517,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
   const createDidPreview = trpc.userAvatar.createDidPreview.useMutation();
   const [showKlingDialog, setShowKlingDialog] = useState(false);
   const [editingAvatar, setEditingAvatar] = useState<any | null>(null);
+  const [customizingAvatar, setCustomizingAvatar] = useState<any | null>(null);
   const [editingUserAvatar, setEditingUserAvatar] = useState<any | null>(null);
   const [editUserAvatarName, setEditUserAvatarName] = useState("");
   const [editUserAvatarDesc, setEditUserAvatarDesc] = useState("");
@@ -981,9 +987,10 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
           {avatars.map((av, i) => {
           const face = faces.find((f) => f.id === av.sampleFaceId);
           const roleInfo = AVATAR_ROLES.find((r: any) => r.value === av.role);
+          const isCustomizing = customizingAvatar?.id === av.id;
           return (
-            <Card key={av.id} className="relative group cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all"
-            onClick={() => setEditingAvatar(av)}>
+            <Card key={av.id} className={`relative group cursor-pointer transition-all ${isCustomizing ? "ring-2 ring-primary" : "hover:ring-2 hover:ring-primary/30"}`}
+            onClick={() => { setCustomizingAvatar(av); setEditingAvatar(null); }}>
                 <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
               onClick={(e) => {e.stopPropagation();deleteAvatar.mutate({ id: av.id });}}>
                   <X className="w-5 h-5 text-destructive hover:text-destructive/80" />
@@ -1017,6 +1024,17 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
         })}
         </div>
       }
+
+      {/* Inline Customize Panel */}
+      {avatars.length > 0 && (
+        <AvatarCustomizePanel
+          avatar={customizingAvatar}
+          faces={faces}
+          voices={voices}
+          onUpdated={() => { onRefresh(); setCustomizingAvatar(null); }}
+          onClose={() => setCustomizingAvatar(null)}
+        />
+      )}
 
       {/* User Avatar Edit Dialog */}
       <Dialog open={!!editingUserAvatar} onOpenChange={(open) => { if (!open) setEditingUserAvatar(null); }}>
