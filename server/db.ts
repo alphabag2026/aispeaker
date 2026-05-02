@@ -88,6 +88,7 @@ import {
   broadcastAnalytics, InsertBroadcastAnalytic,
   userAvatars, InsertUserAvatar,
   didVideoHistory, InsertDidVideoHistory,
+  voiceEffectPresets, InsertVoiceEffectPreset,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -4067,4 +4068,20 @@ export async function deleteDidVideo(id: number, userId: number) {
 export async function listDidVideosByScript(scriptId: number, userId: number) {
   const db = await getDb(); if (!db) return [];
   return db.select().from(didVideoHistory).where(and(eq(didVideoHistory.scriptId, scriptId), eq(didVideoHistory.userId, userId))).orderBy(asc(didVideoHistory.sectionIndex));
+}
+
+
+// ========== Voice Effect Presets ==========
+export async function listVoiceEffectPresets(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(voiceEffectPresets).where(eq(voiceEffectPresets.userId, userId)).orderBy(desc(voiceEffectPresets.createdAt));
+}
+export async function createVoiceEffectPreset(data: InsertVoiceEffectPreset) {
+  const db = await getDb(); if (!db) return null;
+  const [result] = await db.insert(voiceEffectPresets).values(data).$returningId();
+  return result?.id ?? null;
+}
+export async function deleteVoiceEffectPreset(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(voiceEffectPresets).where(and(eq(voiceEffectPresets.id, id), eq(voiceEffectPresets.userId, userId)));
 }
