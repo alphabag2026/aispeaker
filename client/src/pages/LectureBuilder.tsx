@@ -21,7 +21,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown } from
+  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket } from
 "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -32,6 +32,9 @@ import { ProjectCollaborationPanel, PendingInvitationsPanel } from "@/components
 import AvatarSettingsDialog from "@/components/AvatarSettingsDialog";
 import StepGuideTooltip from "@/components/StepGuideTooltip";
 import AvatarCustomizePanel from "@/components/AvatarCustomizePanel";
+import OnboardingTour from "@/components/OnboardingTour";
+import ScriptAutocomplete from "@/components/ScriptAutocomplete";
+import AvatarPresetPackages from "@/components/AvatarPresetPackages";
 
 // ============ TYPES ============
 interface ScriptSection {
@@ -90,6 +93,8 @@ export default function LectureBuilder() {
 
   // Step state
   const [currentStep, setCurrentStep] = useState(1);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [forceOnboarding, setForceOnboarding] = useState(false);
 
   // Project creation
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -300,6 +305,14 @@ export default function LectureBuilder() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
+      {/* Onboarding Tour for first-time visitors */}
+      {projectId && (
+        <OnboardingTour
+          onComplete={() => { setShowOnboarding(false); setForceOnboarding(false); }}
+          forceShow={forceOnboarding}
+        />
+      )}
+
       {/* Step Progress Bar */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3">
@@ -311,6 +324,9 @@ export default function LectureBuilder() {
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Step {currentStep}/5</span>
               <StepGuideTooltip currentStep={currentStep} />
+              <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-primary" onClick={() => setForceOnboarding(true)} title={t("onboarding.welcome")}>
+                <Rocket className="w-3.5 h-3.5" />
+              </Button>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -579,6 +595,14 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
 
               {/* Tab 1: Preset Faces */}
               <TabsContent value="preset" className="space-y-4 pt-2">
+                {/* Preset Packages */}
+                <AvatarPresetPackages onApply={(preset) => {
+                  setAvatarName(preset.name);
+                  setAvatarRole(preset.role);
+                  setAvatarVoice(preset.voiceId);
+                }} />
+                <Separator className="my-3" />
+                <p className="text-xs text-muted-foreground font-medium">{t("lectureBuilder.avatarTab.preset")}</p>
                 <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
                   {faces.filter((f) => f.isActive).map((face) =>
                     <button key={face.id}
@@ -1571,12 +1595,14 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
                     <Badge variant="outline" className="text-xs">{idx + 1}</Badge>
                   </div>
                   <div className="flex-1 space-y-2">
-                    <Textarea
+                    <ScriptAutocomplete
                   value={sec.text}
-                  onChange={(e) => updateSection(idx, e.target.value)}
+                  onChange={(val) => updateSection(idx, val)}
                   placeholder={t("lectureBuilder.hardcoded.sectionPlaceholder", { idx: String(idx + 1) })}
                   rows={3}
-                  className="resize-none" />
+                  language={language}
+                  lectureTitle={undefined}
+                  sectionContext={`Section ${idx + 1} of ${sections.length}`} />
                 
                     <div className="flex items-center gap-2 flex-wrap">
                       {avatars.length > 0 &&

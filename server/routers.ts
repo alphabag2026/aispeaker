@@ -5441,6 +5441,39 @@ Rules:
         return { original: input.scriptText, proofread: proofread.trim(), filter: input.filter };
       }),
 
+    // --- AI Script Autocomplete ---
+    scriptAutocomplete: protectedProcedure
+      .input(z.object({
+        currentText: z.string().min(1).max(5000),
+        sectionContext: z.string().optional(),
+        lectureTitle: z.string().optional(),
+        language: z.string().default("ko"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const langName = input.language === "ko" ? "Korean" : input.language === "ja" ? "Japanese" : input.language === "zh" ? "Chinese" : "English";
+        const systemPrompt = `You are an AI lecture script assistant. Given the current text being written, suggest the next 1-2 sentences to continue naturally.
+
+Rules:
+1. Continue seamlessly from the last sentence
+2. Match the tone and style of the existing text
+3. Keep suggestions concise (1-2 sentences, max 100 characters)
+4. Write in ${langName}
+5. Output ONLY the suggested continuation text, nothing else
+6. Do not repeat what was already written
+7. Make it suitable for TTS (spoken naturally)`;
+        let userContent = `Continue this lecture script:\n\n${input.currentText}`;
+        if (input.lectureTitle) userContent += `\n\nLecture topic: ${input.lectureTitle}`;
+        if (input.sectionContext) userContent += `\n\nSection context: ${input.sectionContext}`;
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        });
+        const suggestion = (response.choices?.[0]?.message?.content as string) || "";
+        return { suggestion: suggestion.trim() };
+      }),
+
     // --- AI Whiteboard Content Generation ---
     generateWhiteboardContent: protectedProcedure
       .input(z.object({
