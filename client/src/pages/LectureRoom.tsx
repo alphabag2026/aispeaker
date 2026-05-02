@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 
 const LANGUAGES = [
-  { code: "ko", name: t("lectureRoom.hardcoded1"), flag: "🇰🇷" },
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
   { code: "en", name: "English", flag: "🇺🇸" },
   { code: "ja", name: "日本語", flag: "🇯🇵" },
   { code: "zh", name: "中文", flag: "🇨🇳" },

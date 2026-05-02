@@ -16,18 +16,18 @@ import {
 } from "lucide-react";
 
 const FEATURE_INFO: Record<string, { label: string; icon: typeof Zap; color: string }> = {
-  tts_conversion: { label: t("creditDashboard.ttsConversion"), icon: Mic, color: "text-blue-400" },
-  image_generation: { label: t("creditDashboard.imageGeneration"), icon: ImageIcon, color: "text-purple-400" },
-  bg_remove: { label: t("creditDashboard.bgRemove"), icon: Palette, color: "text-pink-400" },
-  voice_clone: { label: t("creditDashboard.voiceClone"), icon: Mic, color: "text-cyan-400" },
-  voice_change: { label: t("creditDashboard.voiceChange"), icon: Headphones, color: "text-green-400" },
-  video_effects: { label: t("creditDashboard.videoEffects"), icon: Film, color: "text-orange-400" },
-  image_to_video: { label: t("creditDashboard.imageToVideo"), icon: Video, color: "text-red-400" },
-  face_swap: { label: t("creditDashboard.faceSwap"), icon: Wand2, color: "text-amber-400" },
-  talking_avatar: { label: t("creditDashboard.talkingAvatar"), icon: Camera, color: "text-indigo-400" },
-  video_translate: { label: t("creditDashboard.videoTranslate"), icon: Globe, color: "text-teal-400" },
-  lecture_generation: { label: t("creditDashboard.lectureGeneration"), icon: Sparkles, color: "text-violet-400" },
-  avatar_generation: { label: t("creditDashboard.avatarGeneration"), icon: Camera, color: "text-rose-400" },
+  tts_conversion: { label: "TTS 음성 생성", icon: Mic, color: "text-blue-400" },
+  image_generation: { label: "이미지 생성", icon: ImageIcon, color: "text-purple-400" },
+  bg_remove: { label: "배경 제거/교체", icon: Palette, color: "text-pink-400" },
+  voice_clone: { label: "음성 복제", icon: Mic, color: "text-cyan-400" },
+  voice_change: { label: "음성 변환", icon: Headphones, color: "text-green-400" },
+  video_effects: { label: "비디오 이펙트", icon: Film, color: "text-orange-400" },
+  image_to_video: { label: "이미지→비디오", icon: Video, color: "text-red-400" },
+  face_swap: { label: "페이스 스왑", icon: Wand2, color: "text-amber-400" },
+  talking_avatar: { label: "토킹 아바타", icon: Camera, color: "text-indigo-400" },
+  video_translate: { label: "비디오 번역", icon: Globe, color: "text-teal-400" },
+  lecture_generation: { label: "강의 생성", icon: Sparkles, color: "text-violet-400" },
+  avatar_generation: { label: "아바타 생성", icon: Camera, color: "text-rose-400" },
 };
 
 export default function CreditDashboard() {

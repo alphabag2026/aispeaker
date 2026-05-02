@@ -21,7 +21,7 @@ import "@/i18n/components/BroadcastInterpretationPanel";
 
 // Supported languages for broadcast interpretation
 const BROADCAST_LANGUAGES = [
-  { code: "ko", name: t("broadcastInterpretationPanel.hardcoded1"), flag: "🇰🇷" },
+  { code: "ko", name: "한국어", flag: "🇰🇷" },
   { code: "en", name: "English", flag: "🇺🇸" },
   { code: "ja", name: "日本語", flag: "🇯🇵" },
   { code: "zh", name: "中文", flag: "🇨🇳" },
