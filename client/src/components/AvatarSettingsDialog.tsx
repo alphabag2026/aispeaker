@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio, SlidersHorizontal, RotateCcw, TestTube, Save, BookmarkPlus, Headphones } from "lucide-react";
+import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio, SlidersHorizontal, RotateCcw, TestTube, Save, BookmarkPlus, Headphones, Plus, Heart, Copy, Globe, Search, Zap, BarChart3, Layers } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -104,6 +104,19 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [newPresetName, setNewPresetName] = useState("");
   const [showPresetForm, setShowPresetForm] = useState(false);
 
+  // Multi-sample state
+  const [showAddSample, setShowAddSample] = useState(false);
+  const multiSampleInputRef = useRef<HTMLInputElement>(null);
+
+  // Community preset state
+  const [showCommunity, setShowCommunity] = useState(false);
+  const [communitySort, setCommunitySort] = useState<"popular" | "newest" | "mostUsed">("popular");
+  const [communitySearch, setCommunitySearch] = useState("");
+
+  // Real-time analysis state
+  const [realtimeAnalysis, setRealtimeAnalysis] = useState<Record<string, any> | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -130,6 +143,11 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
     setAbPlaying(null);
     setNewPresetName("");
     setShowPresetForm(false);
+    setShowAddSample(false);
+    setShowCommunity(false);
+    setRealtimeAnalysis(null);
+    setIsAnalyzing(false);
+    setCommunitySearch("");
   }, [avatar]);
 
   // Cleanup audio on unmount
@@ -227,6 +245,66 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const deleteEffectPreset = trpc.voiceEffectPreset.delete.useMutation({
     onSuccess: () => {
       toast.success(t("avatarSettingsDialog.presetDeleted"));
+      effectPresets.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  // Multi-sample mutations
+  const cloneSamples = trpc.voiceCloneSample.list.useQuery(
+    { voiceCloneId: selectedCloneId! },
+    { enabled: open && !!selectedCloneId }
+  );
+  const addSample = trpc.voiceCloneSample.add.useMutation({
+    onSuccess: () => {
+      toast.success(t("avatarSettingsDialog.sampleAdded"));
+      cloneSamples.refetch();
+      setShowAddSample(false);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteSample = trpc.voiceCloneSample.delete.useMutation({
+    onSuccess: () => {
+      toast.success(t("avatarSettingsDialog.sampleDeleted"));
+      cloneSamples.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const analyzeCombined = trpc.voiceCloneSample.analyzeCombined.useMutation({
+    onSuccess: (data) => {
+      toast.success(t("avatarSettingsDialog.combinedAnalysisComplete"));
+      voiceClones.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const analyzeRealtime = trpc.voiceCloneSample.analyzeRealtime.useMutation({
+    onSuccess: (data) => {
+      setRealtimeAnalysis(data.analysis as any);
+      setIsAnalyzing(false);
+      toast.success(t("avatarSettingsDialog.realtimeAnalysisComplete"));
+    },
+    onError: (e: any) => { setIsAnalyzing(false); toast.error(e.message); },
+  });
+
+  // Community preset queries/mutations
+  const communityPresets = trpc.voiceEffectPreset.community.useQuery(
+    { sortBy: communitySort, search: communitySearch || undefined },
+    { enabled: open && showCommunity }
+  );
+  const publishPreset = trpc.voiceEffectPreset.publish.useMutation({
+    onSuccess: () => {
+      toast.success(t("avatarSettingsDialog.presetPublished"));
+      effectPresets.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const likePreset = trpc.voiceEffectPreset.like.useMutation({
+    onSuccess: () => communityPresets.refetch(),
+    onError: (e: any) => toast.error(e.message),
+  });
+  const copyPreset = trpc.voiceEffectPreset.copy.useMutation({
+    onSuccess: () => {
+      toast.success(t("avatarSettingsDialog.presetCopied"));
       effectPresets.refetch();
     },
     onError: (e: any) => toast.error(e.message),
@@ -357,6 +435,37 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
       });
     };
     reader.readAsDataURL(recordedBlob);
+  };
+
+  // Real-time analysis handler
+  const handleRealtimeAnalysis = () => {
+    if (!recordedBlob) { toast.error(t("avatarSettingsDialog.recordFirst")); return; }
+    setIsAnalyzing(true);
+    setRealtimeAnalysis(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      analyzeRealtime.mutate({
+        audioData: base64,
+        fileName: `realtime-${Date.now()}.webm`,
+      });
+    };
+    reader.readAsDataURL(recordedBlob);
+  };
+
+  // Multi-sample upload handler
+  const handleAddSample = async (file: File) => {
+    if (!selectedCloneId) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      addSample.mutate({
+        voiceCloneId: selectedCloneId,
+        audioData: base64,
+        fileName: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   // Parse voice analysis from clone
@@ -1166,6 +1275,189 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
             );
           })()}
 
+          {/* Multi-Sample Analysis */}
+          {voiceMode === "clone" && selectedCloneId && (
+            <div>
+              <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
+                <Layers className="w-4 h-4" /> {t("avatarSettingsDialog.multiSampleSection")}
+              </Label>
+              <p className="text-xs text-muted-foreground mb-3">{t("avatarSettingsDialog.multiSampleDesc")}</p>
+
+              {/* Existing samples list */}
+              {cloneSamples.data && cloneSamples.data.length > 0 && (
+                <div className="space-y-1.5 mb-3">
+                  {cloneSamples.data.map((sample: any, idx: number) => (
+                    <div key={sample.id} className="flex items-center gap-2 rounded-lg border p-2 text-xs">
+                      <FileAudio className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span className="flex-1 truncate">{t("avatarSettingsDialog.sampleNumber").replace("{n}", String(idx + 1))}</span>
+                      {sample.durationSec && <span className="text-muted-foreground">{sample.durationSec}s</span>}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          const audio = new Audio(sample.sampleUrl);
+                          audio.play();
+                        }}
+                      >
+                        <Play className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive"
+                        onClick={() => deleteSample.mutate({ id: sample.id })}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add sample + Analyze combined */}
+              <div className="flex items-center gap-2">
+                <input
+                  ref={multiSampleInputRef}
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleAddSample(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 flex-1"
+                  disabled={addSample.isPending}
+                  onClick={() => multiSampleInputRef.current?.click()}
+                >
+                  {addSample.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  {t("avatarSettingsDialog.addMoreSamples")}
+                </Button>
+                {cloneSamples.data && cloneSamples.data.length >= 1 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="gap-1.5 flex-1"
+                    disabled={analyzeCombined.isPending}
+                    onClick={() => analyzeCombined.mutate({ voiceCloneId: selectedCloneId })}
+                  >
+                    {analyzeCombined.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Brain className="w-3.5 h-3.5" />}
+                    {t("avatarSettingsDialog.analyzeCombined")} ({(cloneSamples.data?.length || 0) + 1})
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <Separator />
+
+          {/* Real-time Voice Analysis */}
+          <div>
+            <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
+              <Zap className="w-4 h-4" /> {t("avatarSettingsDialog.realtimeAnalysis")}
+            </Label>
+            <p className="text-xs text-muted-foreground mb-3">{t("avatarSettingsDialog.realtimeAnalysisDesc")}</p>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 w-full mb-3"
+              disabled={!recordedBlob || isAnalyzing}
+              onClick={handleRealtimeAnalysis}
+            >
+              {isAnalyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BarChart3 className="w-3.5 h-3.5" />}
+              {isAnalyzing ? t("avatarSettingsDialog.analyzing") : t("avatarSettingsDialog.analyzeRecording")}
+            </Button>
+
+            {!recordedBlob && (
+              <p className="text-xs text-muted-foreground text-center">{t("avatarSettingsDialog.recordFirst")}</p>
+            )}
+
+            {realtimeAnalysis && (
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {realtimeAnalysis.gender && (
+                    <div className="flex items-center gap-1.5">
+                      <User className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">{t("avatarSettingsDialog.gender")}:</span>
+                      <span className="font-medium capitalize">{realtimeAnalysis.gender}</span>
+                    </div>
+                  )}
+                  {realtimeAnalysis.ageRange && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{t("avatarSettingsDialog.ageRange")}:</span>
+                      <span className="font-medium capitalize">{realtimeAnalysis.ageRange}</span>
+                    </div>
+                  )}
+                  {realtimeAnalysis.tone && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{t("avatarSettingsDialog.tone")}:</span>
+                      <span className="font-medium capitalize">{realtimeAnalysis.tone}</span>
+                    </div>
+                  )}
+                  {realtimeAnalysis.pitch && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{t("avatarSettingsDialog.pitchLevel")}:</span>
+                      <span className="font-medium capitalize">{realtimeAnalysis.pitch}</span>
+                    </div>
+                  )}
+                  {realtimeAnalysis.speed && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{t("avatarSettingsDialog.speedLevel")}:</span>
+                      <span className="font-medium capitalize">{realtimeAnalysis.speed}</span>
+                    </div>
+                  )}
+                  {realtimeAnalysis.style && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{t("avatarSettingsDialog.style")}:</span>
+                      <span className="font-medium capitalize">{realtimeAnalysis.style}</span>
+                    </div>
+                  )}
+                  {realtimeAnalysis.clarity && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{t("avatarSettingsDialog.clarity")}:</span>
+                      <span className="font-medium">{realtimeAnalysis.clarity}/10</span>
+                    </div>
+                  )}
+                  {realtimeAnalysis.emotion && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">{t("avatarSettingsDialog.emotion")}:</span>
+                      <span className="font-medium capitalize">{realtimeAnalysis.emotion}</span>
+                    </div>
+                  )}
+                </div>
+                {realtimeAnalysis.bestMatchVoice && (
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span className="text-xs">{t("avatarSettingsDialog.bestMatch")}:</span>
+                    <span className="text-sm font-semibold text-primary">{realtimeAnalysis.bestMatchVoice}</span>
+                    {realtimeAnalysis.matchConfidence && (
+                      <span className="text-xs text-muted-foreground">({realtimeAnalysis.matchConfidence}%)</span>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-auto gap-1 text-xs h-7"
+                      onClick={() => {
+                        setTtsVoiceId(realtimeAnalysis.bestMatchVoice);
+                        toast.success(t("avatarSettingsDialog.voiceApplied"));
+                      }}
+                    >
+                      <Check className="w-3 h-3" /> {t("avatarSettingsDialog.applyVoice")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
           {/* Saved Voice Effect Presets */}
           <div>
             <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
@@ -1196,6 +1488,15 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                       }}
                     >
                       <Play className="w-3 h-3" /> {t("avatarSettingsDialog.presetLoaded").split(" ")[0]}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={`h-7 w-7 ${preset.isPublic ? "text-green-500" : "text-muted-foreground"}`}
+                      title={preset.isPublic ? t("avatarSettingsDialog.unpublishPreset") : t("avatarSettingsDialog.publishPreset")}
+                      onClick={() => publishPreset.mutate({ id: preset.id, isPublic: !preset.isPublic })}
+                    >
+                      <Globe className="w-3 h-3" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -1257,6 +1558,97 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                 <Button variant="ghost" size="sm" onClick={() => { setShowPresetForm(false); setNewPresetName(""); }}>
                   {t("avatarSettingsDialog.cancel")}
                 </Button>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+
+          {/* Community Preset Library */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Globe className="w-4 h-4" /> {t("avatarSettingsDialog.communityLibrary")}
+              </Label>
+              <Button
+                variant={showCommunity ? "default" : "outline"}
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => setShowCommunity(!showCommunity)}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                {showCommunity ? t("avatarSettingsDialog.hideLibrary") : t("avatarSettingsDialog.browseLibrary")}
+              </Button>
+            </div>
+
+            {showCommunity && (
+              <div className="space-y-3">
+                {/* Search & Sort */}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                    <Input
+                      placeholder={t("avatarSettingsDialog.searchPresets")}
+                      value={communitySearch}
+                      onChange={(e) => setCommunitySearch(e.target.value)}
+                      className="pl-8 text-xs h-8"
+                    />
+                  </div>
+                  <Select value={communitySort} onValueChange={(v: any) => setCommunitySort(v)}>
+                    <SelectTrigger className="w-28 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="popular">{t("avatarSettingsDialog.sortPopular")}</SelectItem>
+                      <SelectItem value="newest">{t("avatarSettingsDialog.sortNewest")}</SelectItem>
+                      <SelectItem value="mostUsed">{t("avatarSettingsDialog.sortMostUsed")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Community presets list */}
+                {communityPresets.isLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : communityPresets.data && communityPresets.data.length > 0 ? (
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                    {communityPresets.data.map((preset: any) => (
+                      <div key={preset.id} className="flex items-center gap-2 rounded-lg border p-2.5 hover:bg-muted/30 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-medium truncate">{preset.name}</span>
+                            <span className="text-[10px] text-muted-foreground">by {preset.userName || "Anonymous"}</span>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {t("avatarSettingsDialog.speed")}: {(preset.speed || 1.0).toFixed(1)}x · {t("avatarSettingsDialog.pitch")}: {preset.pitch > 0 ? "+" : ""}{preset.pitch || 0}
+                            {preset.voiceId && ` · ${preset.voiceId}`}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-7 w-7 ${preset.isLiked ? "text-red-500" : "text-muted-foreground"}`}
+                          onClick={() => likePreset.mutate({ presetId: preset.id })}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${preset.isLiked ? "fill-current" : ""}`} />
+                        </Button>
+                        <span className="text-[10px] text-muted-foreground w-6 text-center">{preset.likes || 0}</span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 text-xs h-7"
+                          disabled={copyPreset.isPending}
+                          onClick={() => copyPreset.mutate({ presetId: preset.id })}
+                        >
+                          <Copy className="w-3 h-3" /> {t("avatarSettingsDialog.copyPreset")}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">{t("avatarSettingsDialog.noCommunityPresets")}</p>
+                )}
               </div>
             )}
           </div>

@@ -2430,12 +2430,51 @@ export type InsertDidVideoHistory = typeof didVideoHistory.$inferInsert;
 export const voiceEffectPresets = mysqlTable("voiceEffectPresets", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
+  userName: varchar("userName", { length: 255 }),
   name: varchar("name", { length: 255 }).notNull(),
   voiceId: varchar("voiceId", { length: 128 }).notNull(),
   speed: float("speed").default(1.0).notNull(),
   pitch: float("pitch").default(0).notNull(),
   description: text("description"),
+  /** Whether this preset is shared publicly */
+  isPublic: boolean("isPublic").default(false).notNull(),
+  /** Number of times this preset has been copied */
+  usageCount: int("usageCount").default(0).notNull(),
+  /** Number of likes */
+  likes: int("likes").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type VoiceEffectPreset = typeof voiceEffectPresets.$inferSelect;
 export type InsertVoiceEffectPreset = typeof voiceEffectPresets.$inferInsert;
+
+/**
+ * Voice Clone Samples - multiple audio samples per voice clone for better accuracy
+ */
+export const voiceCloneSamples = mysqlTable("voiceCloneSamples", {
+  id: int("id").autoincrement().primaryKey(),
+  voiceCloneId: int("voiceCloneId").notNull(),
+  userId: int("userId").notNull(),
+  /** S3 URL of the audio sample */
+  sampleUrl: text("sampleUrl").notNull(),
+  /** Duration in seconds */
+  durationSec: int("durationSec"),
+  /** AI analysis result for this sample (JSON) */
+  analysis: text("analysis"),
+  /** Order index for combining */
+  orderIndex: int("orderIndex").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type VoiceCloneSample = typeof voiceCloneSamples.$inferSelect;
+export type InsertVoiceCloneSample = typeof voiceCloneSamples.$inferInsert;
+
+/**
+ * Preset Likes - tracks which users liked which presets (one like per user per preset)
+ */
+export const presetLikes = mysqlTable("presetLikes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  presetId: int("presetId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PresetLike = typeof presetLikes.$inferSelect;
+export type InsertPresetLike = typeof presetLikes.$inferInsert;
