@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio } from "lucide-react";
+import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio, SlidersHorizontal, RotateCcw, TestTube } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -48,6 +49,15 @@ const AI_STYLES = [
   { value: "illustration", label: "avatarSettingsDialog.illustration", desc: "avatarSettingsDialog.digitalIllustration" },
 ];
 
+// Preset voice color mappings
+const PRESET_COLORS: Record<string, string> = {
+  blue: "from-blue-500/20 to-indigo-500/20 border-blue-500/30 hover:border-blue-400/50",
+  slate: "from-slate-500/20 to-gray-500/20 border-slate-500/30 hover:border-slate-400/50",
+  emerald: "from-emerald-500/20 to-teal-500/20 border-emerald-500/30 hover:border-emerald-400/50",
+  violet: "from-violet-500/20 to-purple-500/20 border-violet-500/30 hover:border-violet-400/50",
+  rose: "from-rose-500/20 to-pink-500/20 border-rose-500/30 hover:border-rose-400/50",
+};
+
 export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces, voices, onUpdated }: Props) {
   const { t } = useLanguage();
   const [name, setName] = useState(avatar.name);
@@ -67,7 +77,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [aiAge, setAiAge] = useState<string>("middle");
   const [aiGeneratedUrl, setAiGeneratedUrl] = useState<string | null>(null);
 
-  // Voice mode: "preset" or "clone"
+  // Voice mode: "preset" | "clone" | "presetVoices"
   const [voiceMode, setVoiceMode] = useState<string>(avatar.voiceCloneId ? "clone" : "preset");
 
   // Voice clone recording state
@@ -80,6 +90,10 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [isPlayingClone, setIsPlayingClone] = useState(false);
   const [selectedCloneId, setSelectedCloneId] = useState<number | null>(avatar.voiceCloneId || null);
   const [previewText, setPreviewText] = useState(t("avatarSettingsDialog.welcomeMessage"));
+
+  // Speed/Pitch controls
+  const [speed, setSpeed] = useState(1.0);
+  const [pitch, setPitch] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -102,6 +116,8 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
     setCloneDesc("");
     setSelectedCloneId(avatar.voiceCloneId || null);
     setVoiceMode(avatar.voiceCloneId ? "clone" : "preset");
+    setSpeed(1.0);
+    setPitch(0);
   }, [avatar]);
 
   // Cleanup audio on unmount
@@ -138,6 +154,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
 
   // Voice clone mutations
   const voiceClones = trpc.voiceClone.list.useQuery(undefined, { enabled: open });
+  const voicePresets = trpc.voiceClone.presets.useQuery(undefined, { enabled: open });
   const createClone = trpc.voiceClone.create.useMutation({
     onSuccess: (data) => {
       toast.success(t("avatarSettingsDialog.voiceCloneCreated"));
@@ -164,11 +181,22 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   });
   const previewClone = trpc.voiceClone.preview.useMutation({
     onSuccess: (data) => {
+      if (audioRef.current) audioRef.current.pause();
       const audio = new Audio(data.audioUrl);
       audioRef.current = audio;
       setIsPlayingClone(true);
       audio.play();
       audio.onended = () => setIsPlayingClone(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const testVoice = trpc.voiceClone.testVoice.useMutation({
+    onSuccess: (data) => {
+      if (audioRef.current) audioRef.current.pause();
+      const audio = new Audio(data.audioUrl);
+      audioRef.current = audio;
+      audio.play();
+      audio.onended = () => { audioRef.current = null; };
     },
     onError: (e) => toast.error(e.message),
   });
@@ -305,8 +333,24 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
     } catch { return null; }
   };
 
+  // Format speed label
+  const formatSpeed = (val: number) => {
+    if (val < 0.8) return t("avatarSettingsDialog.speedSlow");
+    if (val > 1.3) return t("avatarSettingsDialog.speedFast");
+    return t("avatarSettingsDialog.speedNormal");
+  };
+
+  // Format pitch label
+  const formatPitch = (val: number) => {
+    if (val === 0) return t("avatarSettingsDialog.pitchNormal");
+    return `${val > 0 ? "+" : ""}${val} ${t("avatarSettingsDialog.semitones")}`;
+  };
+
   const currentFace = faces.find((f) => f.id === selectedFaceId);
   const displayFaceUrl = faceTab === "ai" ? aiGeneratedUrl : faceTab === "custom" ? customFaceUrl : currentFace?.imageUrl;
+
+  // Memoize preset text for stable reference
+  const stablePreviewText = useMemo(() => previewText, [previewText]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -341,6 +385,14 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   ? `🎤 ${t("avatarSettingsDialog.myVoiceClone")}: ${voiceClones.data?.find(c => c.id === selectedCloneId)?.name || ""}`
                   : ttsVoiceId}
               </p>
+              {(speed !== 1.0 || pitch !== 0) && (
+                <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                  <SlidersHorizontal className="w-2.5 h-2.5" />
+                  {speed !== 1.0 && `${t("avatarSettingsDialog.speed")}: ${speed.toFixed(1)}x`}
+                  {speed !== 1.0 && pitch !== 0 && " · "}
+                  {pitch !== 0 && `${t("avatarSettingsDialog.pitch")}: ${pitch > 0 ? "+" : ""}${pitch}`}
+                </p>
+              )}
             </div>
           </div>
 
@@ -363,81 +415,67 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
               </TabsList>
 
               {/* Gallery Tab */}
-              <TabsContent value="gallery" className="mt-3">
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2.5 max-h-[240px] overflow-y-auto p-1">
-                  {faces.filter((f) => f.isActive).map((face) => (
-                    <button
-                      key={face.id}
-                      className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-square ${
-                        selectedFaceId === face.id
-                          ? "border-primary ring-2 ring-primary/30 scale-105"
-                          : "border-transparent hover:border-muted-foreground/30"
-                      }`}
-                      onClick={() => setSelectedFaceId(face.id)}
-                    >
-                      <img src={face.imageUrl} alt={face.name} className="w-full h-full object-cover" />
-                      {selectedFaceId === face.id && (
-                        <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                          <Check className="w-5 h-5 text-primary-foreground bg-primary rounded-full p-0.5" />
-                        </div>
-                      )}
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 px-1 py-0.5">
-                        <span className="text-[9px] text-white truncate block">{face.name}</span>
+              <TabsContent value="gallery">
+                {faces.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">{t("avatarSettingsDialog.noSampleFaces")}</p>
+                ) : (
+                  <div className="grid grid-cols-5 gap-2 max-h-[200px] overflow-y-auto p-1">
+                    {faces.map((face) => (
+                      <div
+                        key={face.id}
+                        className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                          selectedFaceId === face.id ? "border-primary ring-2 ring-primary/30" : "border-transparent hover:border-muted-foreground/30"
+                        }`}
+                        onClick={() => setSelectedFaceId(face.id)}
+                      >
+                        <img src={face.imageUrl} alt={face.name || ""} className="w-full aspect-square object-cover" />
+                        {selectedFaceId === face.id && (
+                          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                            <Check className="w-5 h-5 text-primary" />
+                          </div>
+                        )}
                       </div>
-                    </button>
-                  ))}
-                </div>
-                {faces.filter((f) => f.isActive).length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-8">{t("avatarSettingsDialog.noSampleFaces")}</p>
+                    ))}
+                  </div>
                 )}
               </TabsContent>
 
-              {/* Custom Upload Tab */}
-              <TabsContent value="custom" className="mt-3">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-dashed border-muted-foreground/30 relative">
-                    {customFaceUrl ? (
-                      <img src={customFaceUrl} alt={t("avatarSettingsDialog.myFace")} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
-                        <User className="w-10 h-10 text-muted-foreground/50" />
-                        <span className="text-[10px] text-muted-foreground mt-1">{t("avatarSettingsDialog.gallery")}</span>
+              {/* Custom Face Tab */}
+              <TabsContent value="custom">
+                <div className="space-y-3">
+                  {customFaceUrl ? (
+                    <div className="flex items-center gap-4">
+                      <img src={customFaceUrl} alt="Custom" className="w-20 h-20 rounded-lg object-cover border" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{t("avatarSettingsDialog.myFace")}</p>
+                        <Button variant="outline" size="sm" className="mt-2 gap-1" onClick={() => fileInputRef.current?.click()}>
+                          <RefreshCw className="w-3 h-3" /> {t("avatarSettingsDialog.changePhoto")}
+                        </Button>
                       </div>
-                    )}
-                  </div>
-                  <div className="text-center space-y-2">
-                    <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
-                      {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                      {customFaceUrl ? t("avatarSettingsDialog.changePhoto") : t("avatarSettingsDialog.uploadMyFace")}
-                    </Button>
-                    <p className="text-xs text-muted-foreground">{t("avatarSettingsDialog.jpgPngMax5mb")}</p>
-                  </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm font-medium">{t("avatarSettingsDialog.uploadMyFace")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("avatarSettingsDialog.jpgPngMax5mb")}</p>
+                    </div>
+                  )}
                   <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                 </div>
               </TabsContent>
 
-              {/* AI Generation Tab */}
-              <TabsContent value="ai" className="mt-3">
-                <div className="space-y-4">
-                  <div className="flex justify-center">
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-dashed border-primary/30 relative">
-                      {generateFace.isPending ? (
-                        <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
-                          <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                          <span className="text-[10px] text-muted-foreground mt-2">{t("avatarSettingsDialog.generating")}</span>
-                        </div>
-                      ) : aiGeneratedUrl ? (
-                        <img src={aiGeneratedUrl} alt="AI" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
-                          <Wand2 className="w-8 h-8 text-muted-foreground/50" />
-                          <span className="text-[10px] text-muted-foreground mt-1">{t("avatarSettingsDialog.aiGenerated")}</span>
-                        </div>
-                      )}
+              {/* AI Generated Tab */}
+              <TabsContent value="ai">
+                <div className="space-y-3">
+                  {aiGeneratedUrl && (
+                    <div className="flex justify-center">
+                      <img src={aiGeneratedUrl} alt="AI Generated" className="w-28 h-28 rounded-xl object-cover border-2 border-primary/30" />
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
+                  )}
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
                       <Label className="text-xs mb-1 block">{t("avatarSettingsDialog.style")}</Label>
                       <Select value={aiStyle} onValueChange={setAiStyle}>
@@ -527,22 +565,25 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
 
           <Separator />
 
-          {/* Voice Selection - 2 modes: preset & clone */}
+          {/* Voice Selection - 3 modes: preset, presetVoices, clone */}
           <div>
             <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
               <Mic className="w-4 h-4" /> {t("avatarSettingsDialog.voiceSettings")}
             </Label>
             <Tabs value={voiceMode} onValueChange={setVoiceMode}>
-              <TabsList className="grid w-full grid-cols-2 mb-3">
+              <TabsList className="grid w-full grid-cols-3 mb-3">
                 <TabsTrigger value="preset" className="gap-1 text-xs">
                   <Volume2 className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.defaultVoice")}
+                </TabsTrigger>
+                <TabsTrigger value="presetVoices" className="gap-1 text-xs">
+                  <Sparkles className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.presetVoices")}
                 </TabsTrigger>
                 <TabsTrigger value="clone" className="gap-1 text-xs">
                   <MicVocal className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.myVoiceClone")}
                 </TabsTrigger>
               </TabsList>
 
-              {/* Preset Voice Tab */}
+              {/* Preset Voice Tab (full list) */}
               <TabsContent value="preset">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -572,6 +613,49 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   <p className="text-xs text-muted-foreground">
                     {t("avatarSettingsDialog.voicePreviewDescription")}
                   </p>
+                </div>
+              </TabsContent>
+
+              {/* 5 Preset Voices Tab */}
+              <TabsContent value="presetVoices">
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">{t("avatarSettingsDialog.presetVoicesDesc")}</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {(voicePresets.data || []).map((preset) => {
+                      const isSelected = ttsVoiceId === preset.id && voiceMode === "presetVoices";
+                      const colorClass = PRESET_COLORS[preset.color] || PRESET_COLORS.blue;
+                      return (
+                        <div
+                          key={preset.id}
+                          className={`relative rounded-lg border p-3 cursor-pointer transition-all bg-gradient-to-r ${colorClass} ${
+                            isSelected ? "ring-2 ring-primary/40 border-primary/50" : ""
+                          }`}
+                          onClick={() => {
+                            setTtsVoiceId(preset.id);
+                            setSelectedCloneId(null);
+                            toast.success(t("avatarSettingsDialog.presetSelected"));
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="text-2xl">{preset.emoji}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{preset.name}</span>
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                  {preset.gender === "female" ? "♀" : "♂"} {preset.style}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">{preset.desc}</p>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <VoicePreviewButton voiceId={preset.id} size="sm" variant="ghost" />
+                              {isSelected && <CheckCircle2 className="w-5 h-5 text-primary" />}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </TabsContent>
 
@@ -657,7 +741,12 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                                     disabled={clone.status !== "ready" || previewClone.isPending}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      previewClone.mutate({ id: clone.id, text: previewText });
+                                      previewClone.mutate({
+                                        id: clone.id,
+                                        text: stablePreviewText,
+                                        speed: speed !== 1.0 ? speed : undefined,
+                                        pitch: pitch !== 0 ? pitch : undefined,
+                                      });
                                     }}
                                   >
                                     {previewClone.isPending && previewClone.variables?.id === clone.id ? (
@@ -873,6 +962,104 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                 </div>
               </TabsContent>
             </Tabs>
+          </div>
+
+          <Separator />
+
+          {/* Voice Effects: Speed & Pitch Sliders */}
+          <div>
+            <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4" /> {t("avatarSettingsDialog.voiceEffects")}
+            </Label>
+            <p className="text-xs text-muted-foreground mb-4">{t("avatarSettingsDialog.voiceEffectsDesc")}</p>
+
+            <div className="space-y-5">
+              {/* Speed Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-1.5">
+                    {t("avatarSettingsDialog.speed")}
+                    <span className="text-xs text-muted-foreground">({speed.toFixed(1)}x)</span>
+                  </Label>
+                  <span className="text-xs text-muted-foreground">{formatSpeed(speed)}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted-foreground w-8">0.5x</span>
+                  <Slider
+                    value={[speed]}
+                    onValueChange={([v]) => setSpeed(Math.round(v * 10) / 10)}
+                    min={0.5}
+                    max={2.0}
+                    step={0.1}
+                    className="flex-1"
+                  />
+                  <span className="text-[10px] text-muted-foreground w-8 text-right">2.0x</span>
+                </div>
+              </div>
+
+              {/* Pitch Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm flex items-center gap-1.5">
+                    {t("avatarSettingsDialog.pitch")}
+                    <span className="text-xs text-muted-foreground">({formatPitch(pitch)})</span>
+                  </Label>
+                  <span className="text-xs text-muted-foreground">
+                    {pitch < -4 ? t("avatarSettingsDialog.pitchLow") : pitch > 4 ? t("avatarSettingsDialog.pitchHigh") : t("avatarSettingsDialog.pitchNormal")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] text-muted-foreground w-8">-12</span>
+                  <Slider
+                    value={[pitch]}
+                    onValueChange={([v]) => setPitch(Math.round(v))}
+                    min={-12}
+                    max={12}
+                    step={1}
+                    className="flex-1"
+                  />
+                  <span className="text-[10px] text-muted-foreground w-8 text-right">+12</span>
+                </div>
+              </div>
+
+              {/* Reset & Test Buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => { setSpeed(1.0); setPitch(0); }}
+                  disabled={speed === 1.0 && pitch === 0}
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  {t("avatarSettingsDialog.resetDefaults")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={testVoice.isPending}
+                  onClick={() => {
+                    const voiceId = voiceMode === "clone" && selectedCloneId
+                      ? voiceClones.data?.find(c => c.id === selectedCloneId)?.matchedVoiceId || ttsVoiceId
+                      : ttsVoiceId;
+                    testVoice.mutate({
+                      voiceId,
+                      text: previewText,
+                      speed: speed !== 1.0 ? speed : undefined,
+                      pitch: pitch !== 0 ? pitch : undefined,
+                    });
+                  }}
+                >
+                  {testVoice.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <TestTube className="w-3.5 h-3.5" />
+                  )}
+                  {testVoice.isPending ? t("avatarSettingsDialog.testingVoice") : t("avatarSettingsDialog.previewWithEffects")}
+                </Button>
+              </div>
+            </div>
           </div>
 
           <Separator />

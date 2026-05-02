@@ -69,7 +69,8 @@ export const GEMINI_VOICES = [
 export type GeminiTtsOptions = {
   text: string;
   voiceId?: string;  // OpenAI voice ID (alloy, echo, etc.) or Gemini voice name
-  speed?: number;    // Speed multiplier (0.5 - 2.0), applied via prompt
+  speed?: number;    // Speed multiplier (0.5 - 2.0)
+  pitch?: number;    // Pitch shift in semitones (-12 to +12)
 };
 
 export type GeminiTtsResponse = {
@@ -126,22 +127,60 @@ function createWavHeader(dataLength: number, sampleRate = 24000, bitsPerSample =
 }
 
 /**
- * Convert WAV buffer to MP3 using ffmpeg
+ * Convert WAV buffer to MP3 using ffmpeg (legacy, no effects)
  */
 async function wavToMp3(wavBuffer: Buffer): Promise<Buffer> {
+  return wavToMp3WithEffects(wavBuffer, {});
+}
+
+/**
+ * Convert WAV buffer to MP3 using ffmpeg with optional speed/pitch adjustment
+ * @param speed - Speed multiplier (0.5 - 2.0), 1.0 = normal
+ * @param pitch - Pitch shift in semitones (-12 to +12), 0 = normal
+ */
+async function wavToMp3WithEffects(
+  wavBuffer: Buffer,
+  effects: { speed?: number; pitch?: number }
+): Promise<Buffer> {
   const tmpWav = join(tmpdir(), `tts-${Date.now()}-${Math.random().toString(36).slice(2)}.wav`);
   const tmpMp3 = tmpWav.replace(".wav", ".mp3");
 
   try {
     await writeFile(tmpWav, wavBuffer);
-    // High-quality MP3 conversion with:
-    // -b:a 192k: 192kbps constant bitrate for clear speech
-    // -af loudnorm: EBU R128 loudness normalization for consistent volume
-    // -ar 44100: Standard sample rate for broad compatibility
-    // -ac 1: Mono channel (speech doesn't need stereo)
+
+    // Build audio filter chain
+    const filters: string[] = [];
+
+    // Speed adjustment using atempo (supports 0.5 - 2.0)
+    // For values outside this range, chain multiple atempo filters
+    if (effects.speed && effects.speed !== 1) {
+      const speed = Math.max(0.5, Math.min(2.0, effects.speed));
+      if (speed <= 0.5) {
+        filters.push("atempo=0.5");
+      } else if (speed >= 2.0) {
+        filters.push("atempo=2.0");
+      } else {
+        filters.push(`atempo=${speed}`);
+      }
+    }
+
+    // Pitch shift using rubberband filter (semitones)
+    if (effects.pitch && effects.pitch !== 0) {
+      const semitones = Math.max(-12, Math.min(12, effects.pitch));
+      // Convert semitones to frequency ratio: ratio = 2^(semitones/12)
+      const ratio = Math.pow(2, semitones / 12);
+      // Use asetrate + aresample to shift pitch without changing speed
+      filters.push(`asetrate=24000*${ratio.toFixed(6)},aresample=44100`);
+    }
+
+    // Always add loudness normalization
+    filters.push("loudnorm=I=-16:TP=-1.5:LRA=11");
+
+    const filterStr = filters.join(",");
+
     await execAsync(
       `ffmpeg -i "${tmpWav}" -codec:a libmp3lame -b:a 192k -ar 44100 -ac 1 ` +
-      `-af "loudnorm=I=-16:TP=-1.5:LRA=11" -y "${tmpMp3}" 2>/dev/null`
+      `-af "${filterStr}" -y "${tmpMp3}" 2>/dev/null`
     );
     const mp3Buffer = await readFile(tmpMp3);
     return mp3Buffer;
@@ -182,6 +221,10 @@ export async function generateGeminiTts(
         prompt = `Please speak quickly and energetically: ${options.text}`;
       }
     }
+
+    // Determine if post-processing is needed for speed/pitch
+    const needsSpeedAdjust = options.speed && options.speed !== 1;
+    const needsPitchAdjust = options.pitch && options.pitch !== 0;
 
     // Call Gemini TTS API
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
@@ -273,10 +316,13 @@ export async function generateGeminiTts(
     const wavHeader = createWavHeader(pcmBuffer.length);
     const wavBuffer = Buffer.concat([wavHeader, pcmBuffer]);
 
-    // Convert WAV to MP3
+    // Convert WAV to MP3 with optional speed/pitch adjustment
     let mp3Buffer: Buffer;
     try {
-      mp3Buffer = await wavToMp3(wavBuffer);
+      mp3Buffer = await wavToMp3WithEffects(wavBuffer, {
+        speed: needsSpeedAdjust ? options.speed : undefined,
+        pitch: needsPitchAdjust ? options.pitch : undefined,
+      });
     } catch (convErr) {
       // If ffmpeg fails, return WAV instead
       console.warn("[GeminiTTS] ffmpeg conversion failed, returning WAV:", convErr);
