@@ -20,10 +20,10 @@ const TOOL_ICONS: Record<string, any> = {
 };
 
 const TOOL_NAMES: Record<string, string> = {
-  tts: "TTS", voice_clone: t("adminAnalytics.hardcoded1"), voice_change: t("adminAnalytics.hardcoded2"),
-  image_gen: t("adminAnalytics.hardcoded3"), bg_remove: t("adminAnalytics.hardcoded4"),
-  video_effects: t("adminAnalytics.hardcoded5"), image_to_video: t("adminAnalytics.hardcoded6"),
-  face_swap: t("adminAnalytics.hardcoded7"), talking_avatar: t("adminAnalytics.hardcoded8"), video_translate: t("adminAnalytics.hardcoded9"),
+  tts: "TTS", voice_clone: "음성 복제", voice_change: "음성 변환",
+  image_gen: "이미지 생성", bg_remove: "배경 제거",
+  video_effects: "비디오 효과", image_to_video: "이미지→비디오",
+  face_swap: "페이스 스왑", talking_avatar: "토킹 아바타", video_translate: "비디오 번역",
 };
 
 export default function AdminAnalytics() {

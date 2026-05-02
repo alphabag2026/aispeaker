@@ -13,10 +13,10 @@ import { Badge } from "./ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const ROLE_LABELS: Record<string, { label: string; icon: any; color: string }> = {
-  owner: { label: t("projectCollaborationPanel.hardcoded1"), icon: Crown, color: "text-amber-500" },
-  presenter: { label: "projectCollaborationPanel.rolePresenter", icon: User, color: "text-blue-500" },
-  editor: { label: "projectCollaborationPanel.roleEditor", icon: User, color: "text-green-500" },
-  viewer: { label: "projectCollaborationPanel.roleViewer", icon: User, color: "text-gray-500" },
+  owner: { label: "소유자", icon: Crown, color: "text-amber-500" },
+  presenter: { label: "발표자", icon: User, color: "text-blue-500" },
+  editor: { label: "편집자", icon: User, color: "text-green-500" },
+  viewer: { label: "뷰어", icon: User, color: "text-gray-500" },
 };
 
 export function ProjectCollaborationPanel({ projectId }: { projectId: string }) {
@@ -44,8 +44,10 @@ export function ProjectCollaborationPanel({ projectId }: { projectId: string }) 
   const isOwner = me?.role === "owner";
 
   const getRoleLabel = (role: string) => {
+    if (ROLE_LABELS[role]) return ROLE_LABELS[role].label;
     const roleKey = `projectCollaborationPanel.role${role.charAt(0).toUpperCase() + role.slice(1)}`;
-    return t(roleKey) || ROLE_LABELS[role]?.label || role;
+    const translated = t(roleKey);
+    return (translated && translated !== roleKey) ? translated : role;
   };
 
   const getRoleBadgeVariant = (role: string): "default" | "outline" | "secondary" | "destructive" => {

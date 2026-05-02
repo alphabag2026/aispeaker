@@ -3,32 +3,17 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
+import { createServer as createViteServer } from "vite";
 
 export async function setupVite(app: Express, server: Server) {
-  // Dynamic imports to prevent vite and its plugins from being bundled
-  // These are only needed in development mode
-  const vite = await import("vite");
-  const { default: react } = await import("@vitejs/plugin-react");
-  const { default: tailwindcss } = await import("@tailwindcss/vite");
-
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true as const,
-  };
-
-  const viteServer = await vite.createServer({
-    root: path.resolve(import.meta.dirname, "../..", "client"),
-    plugins: [react(), tailwindcss()],
-    resolve: {
-      alias: {
-        "@": path.resolve(import.meta.dirname, "../..", "client", "src"),
-        "@shared": path.resolve(import.meta.dirname, "../..", "shared"),
-        "@assets": path.resolve(import.meta.dirname, "../..", "attached_assets"),
-      },
+  // Use the project's vite.config.ts for dev server
+  const viteServer = await createViteServer({
+    configFile: path.resolve(import.meta.dirname, "../..", "vite.config.ts"),
+    server: {
+      middlewareMode: true,
+      hmr: { server },
+      allowedHosts: true as const,
     },
-    configFile: false,
-    server: serverOptions,
     appType: "custom",
   });
 

@@ -7,16 +7,16 @@ import { useLanguage } from "@/contexts/LanguageContext";
  * Credit costs per AI Studio feature (must match server CREDIT_COSTS)
  */
 export const AI_FEATURE_COSTS: Record<string, { label: string; cost: number; icon: string }> = {
-  tts_conversion: { label: t("useCreditDeduction.hardcoded1"), cost: 3, icon: "🔊" },
-  image_generation: { label: t("useCreditDeduction.hardcoded2"), cost: 5, icon: "🖼️" },
-  bg_remove: { label: t("useCreditDeduction.hardcoded3"), cost: 3, icon: "🎨" },
-  voice_clone: { label: t("useCreditDeduction.hardcoded4"), cost: 5, icon: "🎤" },
-  voice_change: { label: t("useCreditDeduction.hardcoded5"), cost: 3, icon: "🎧" },
-  video_effects: { label: t("useCreditDeduction.hardcoded6"), cost: 15, icon: "✨" },
-  image_to_video: { label: t("useCreditDeduction.hardcoded7"), cost: 20, icon: "🎬" },
-  face_swap: { label: t("useCreditDeduction.hardcoded8"), cost: 25, icon: "🎭" },
-  talking_avatar: { label: t("useCreditDeduction.hardcoded9"), cost: 20, icon: "🧑‍💻" },
-  video_translate: { label: t("useCreditDeduction.hardcoded10"), cost: 30, icon: "🌐" },
+  tts_conversion: { label: "TTS 음성 생성", cost: 3, icon: "🔊" },
+  image_generation: { label: "이미지 생성", cost: 5, icon: "🖼️" },
+  bg_remove: { label: "배경 제거/교체", cost: 3, icon: "🎨" },
+  voice_clone: { label: "음성 복제", cost: 5, icon: "🎤" },
+  voice_change: { label: "음성 변환", cost: 3, icon: "🎧" },
+  video_effects: { label: "비디오 이펙트", cost: 15, icon: "✨" },
+  image_to_video: { label: "이미지→비디오", cost: 20, icon: "🎬" },
+  face_swap: { label: "페이스 스왑", cost: 25, icon: "🎭" },
+  talking_avatar: { label: "토킹 아바타", cost: 20, icon: "🧑‍💻" },
+  video_translate: { label: "비디오 번역", cost: 30, icon: "🌐" },
 };
 
 export type CreditFeatureKey = keyof typeof AI_FEATURE_COSTS;
