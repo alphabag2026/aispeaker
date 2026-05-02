@@ -2324,3 +2324,30 @@
 - [x] 프론트엔드: 커스텀 프리셋 저장/불러오기/삭제 UI
 - [x] i18n: 새 기능 번역 키 추가 (20개 언어, 17개 키)
 - [x] 테스트: v5.2 기능 vitest 테스트 작성 (54개 통과)
+
+## 음성 클로닝 강화 v5.3
+### 다중 샘플 분석
+- [x] DB: voiceCloneSamples 테이블 추가 (클론별 여러 샘플 관리)
+- [x] 백엔드: voiceCloneSample.add 라우터 (기존 클론에 추가 샘플 업로드)
+- [x] 백엔드: voiceCloneSample.analyzeCombined 라우터 (다중 샘플 결합 분석 → 더 정확한 매칭)
+- [x] 프론트엔드: 기존 클론에 추가 샘플 업로드 UI
+- [x] 프론트엔드: 샘플 목록 표시 및 개별 삭제
+
+### 커뮤니티 프리셋 라이브러리
+- [x] DB: voiceEffectPresets에 isPublic, usageCount, likes, userName 컬럼 추가
+- [x] 백엔드: voiceEffectPreset.publish 라우터 (프리셋 공개)
+- [x] 백엔드: voiceEffectPreset.community 라우터 (공개 프리셋 목록, 정렬/검색)
+- [x] 백엔드: voiceEffectPreset.like 라우터 (좋아요)
+- [x] 백엔드: voiceEffectPreset.copy 라우터 (내 프리셋으로 복사)
+- [x] 프론트엔드: 커뮤니티 프리셋 라이브러리 탭 UI (인기순/최신순 정렬)
+- [x] 프론트엔드: 프리셋 공개/비공개 토글
+- [x] 프론트엔드: 좋아요 및 복사 버튼
+
+### 실시간 음성 분석
+- [x] 백엔드: voiceCloneSample.analyzeRealtime 라우터 (짧은 녹음 즉시 분석)
+- [x] 프론트엔드: 녹음 중/후 실시간 분석 결과 표시 (파형, 특성, 매칭 음성)
+- [x] 프론트엔드: 분석 진행 애니메이션
+
+### 공통
+- [x] i18n: 새 기능 번역 키 추가 (20개 언어, 30개 키)
+- [x] 테스트: v5.3 기능 vitest 테스트 작성 (49개 통과)

@@ -89,6 +89,8 @@ import {
   userAvatars, InsertUserAvatar,
   didVideoHistory, InsertDidVideoHistory,
   voiceEffectPresets, InsertVoiceEffectPreset,
+  voiceCloneSamples, InsertVoiceCloneSample,
+  presetLikes, InsertPresetLike,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -4084,4 +4086,85 @@ export async function createVoiceEffectPreset(data: InsertVoiceEffectPreset) {
 export async function deleteVoiceEffectPreset(id: number, userId: number) {
   const db = await getDb(); if (!db) return;
   await db.delete(voiceEffectPresets).where(and(eq(voiceEffectPresets.id, id), eq(voiceEffectPresets.userId, userId)));
+}
+
+
+// ============ Voice Clone Samples helpers ============
+export async function addVoiceCloneSample(data: InsertVoiceCloneSample) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(voiceCloneSamples).values(data).$returningId();
+  return result.id;
+}
+
+export async function getVoiceCloneSamples(voiceCloneId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(voiceCloneSamples).where(eq(voiceCloneSamples.voiceCloneId, voiceCloneId)).orderBy(asc(voiceCloneSamples.orderIndex));
+}
+
+export async function deleteVoiceCloneSample(id: number, userId: number) {
+  const db = await getDb(); if (!db) return;
+  await db.delete(voiceCloneSamples).where(and(eq(voiceCloneSamples.id, id), eq(voiceCloneSamples.userId, userId)));
+}
+
+export async function updateVoiceCloneSampleAnalysis(id: number, analysis: string) {
+  const db = await getDb(); if (!db) return;
+  await db.update(voiceCloneSamples).set({ analysis }).where(eq(voiceCloneSamples.id, id));
+}
+
+// ============ Preset Likes helpers ============
+export async function togglePresetLike(userId: number, presetId: number): Promise<boolean> {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(presetLikes).where(and(eq(presetLikes.userId, userId), eq(presetLikes.presetId, presetId))).limit(1);
+  if (existing.length > 0) {
+    await db.delete(presetLikes).where(eq(presetLikes.id, existing[0].id));
+    await db.update(voiceEffectPresets).set({ likes: sql`${voiceEffectPresets.likes} - 1` }).where(eq(voiceEffectPresets.id, presetId));
+    return false; // unliked
+  } else {
+    await db.insert(presetLikes).values({ userId, presetId });
+    await db.update(voiceEffectPresets).set({ likes: sql`${voiceEffectPresets.likes} + 1` }).where(eq(voiceEffectPresets.id, presetId));
+    return true; // liked
+  }
+}
+
+export async function getUserPresetLikes(userId: number): Promise<number[]> {
+  const db = await getDb(); if (!db) return [];
+  const rows = await db.select({ presetId: presetLikes.presetId }).from(presetLikes).where(eq(presetLikes.userId, userId));
+  return rows.map(r => r.presetId);
+}
+
+export async function getCommunityPresets(sortBy: "popular" | "newest" | "mostUsed" = "popular", search?: string) {
+  const db = await getDb(); if (!db) return [];
+  let query = db.select().from(voiceEffectPresets).where(eq(voiceEffectPresets.isPublic, true));
+  if (search) {
+    query = db.select().from(voiceEffectPresets).where(and(eq(voiceEffectPresets.isPublic, true), like(voiceEffectPresets.name, `%${search}%`)));
+  }
+  if (sortBy === "popular") return query.orderBy(desc(voiceEffectPresets.likes));
+  if (sortBy === "mostUsed") return query.orderBy(desc(voiceEffectPresets.usageCount));
+  return query.orderBy(desc(voiceEffectPresets.createdAt));
+}
+
+export async function publishPreset(id: number, userId: number, isPublic: boolean, userName?: string) {
+  const db = await getDb(); if (!db) return;
+  const data: Record<string, unknown> = { isPublic };
+  if (userName) data.userName = userName;
+  await db.update(voiceEffectPresets).set(data).where(and(eq(voiceEffectPresets.id, id), eq(voiceEffectPresets.userId, userId)));
+}
+
+export async function copyPreset(presetId: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const [original] = await db.select().from(voiceEffectPresets).where(eq(voiceEffectPresets.id, presetId)).limit(1);
+  if (!original) throw new Error("Preset not found");
+  // Increment usage count
+  await db.update(voiceEffectPresets).set({ usageCount: sql`${voiceEffectPresets.usageCount} + 1` }).where(eq(voiceEffectPresets.id, presetId));
+  // Create copy
+  const [result] = await db.insert(voiceEffectPresets).values({
+    userId,
+    name: `${original.name} (copy)`,
+    voiceId: original.voiceId,
+    speed: original.speed,
+    pitch: original.pitch,
+    description: original.description,
+    isPublic: false,
+  }).$returningId();
+  return result.id;
 }

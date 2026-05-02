@@ -8905,6 +8905,158 @@ Respond in JSON format:
         await db.deleteVoiceEffectPreset(input.id, ctx.user.id);
         return { success: true };
       }),
+    /** Publish/unpublish a preset to the community */
+    publish: protectedProcedure
+      .input(z.object({ id: z.number(), isPublic: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.publishPreset(input.id, ctx.user.id, input.isPublic, ctx.user.name || "Anonymous");
+        return { success: true };
+      }),
+    /** Get community presets (public, sorted) */
+    community: publicProcedure
+      .input(z.object({
+        sortBy: z.enum(["popular", "newest", "mostUsed"]).default("popular"),
+        search: z.string().optional(),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        const presets = await db.getCommunityPresets(input?.sortBy || "popular", input?.search);
+        const likedIds = ctx.user ? await db.getUserPresetLikes(ctx.user.id) : [];
+        return presets.map(p => ({ ...p, isLiked: likedIds.includes(p.id) }));
+      }),
+    /** Toggle like on a preset */
+    like: protectedProcedure
+      .input(z.object({ presetId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const liked = await db.togglePresetLike(ctx.user.id, input.presetId);
+        return { liked };
+      }),
+    /** Copy a community preset to own collection */
+    copy: protectedProcedure
+      .input(z.object({ presetId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const id = await db.copyPreset(input.presetId, ctx.user.id);
+        return { id };
+      }),
+  }),
+  // ========== Voice Clone Multi-Sample ==========
+  voiceCloneSample: router({
+    /** Add an additional sample to an existing voice clone */
+    add: protectedProcedure
+      .input(z.object({
+        voiceCloneId: z.number(),
+        audioData: z.string(), // base64
+        fileName: z.string(),
+        durationSec: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Upload to S3
+        const buffer = Buffer.from(input.audioData, "base64");
+        const key = `voice-samples/${ctx.user.id}/${Date.now()}-${input.fileName}`;
+        const { url } = await storagePut(key, buffer, "audio/webm");
+        // Get current sample count for ordering
+        const existing = await db.getVoiceCloneSamples(input.voiceCloneId);
+        const id = await db.addVoiceCloneSample({
+          voiceCloneId: input.voiceCloneId,
+          userId: ctx.user.id,
+          sampleUrl: url,
+          durationSec: input.durationSec || null,
+          orderIndex: existing.length,
+        });
+        return { id, sampleUrl: url };
+      }),
+    /** List all samples for a voice clone */
+    list: protectedProcedure
+      .input(z.object({ voiceCloneId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getVoiceCloneSamples(input.voiceCloneId);
+      }),
+    /** Delete a sample */
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteVoiceCloneSample(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    /** Analyze all samples combined for better voice matching */
+    analyzeCombined: protectedProcedure
+      .input(z.object({ voiceCloneId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const samples = await db.getVoiceCloneSamples(input.voiceCloneId);
+        if (samples.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No samples to analyze" });
+        // Analyze each sample with LLM (audio analysis)
+        const sampleAnalyses: string[] = [];
+        for (const sample of samples) {
+          try {
+            const resp = await invokeLLM({
+              messages: [
+                { role: "system", content: `You are a voice analysis expert. Analyze this audio sample and describe the voice characteristics in JSON format: { "gender": "male|female", "ageRange": "young|middle|senior", "tone": "warm|cool|neutral", "pitch": "high|medium|low", "speed": "fast|medium|slow", "style": "professional|casual|energetic|calm", "accent": "description", "quality": 1-10 }` },
+                { role: "user", content: [{ type: "file_url" as const, file_url: { url: sample.sampleUrl, mime_type: "audio/mpeg" as const } }] },
+              ],
+            });
+            const content = resp.choices?.[0]?.message?.content;
+            if (typeof content === "string") {
+              sampleAnalyses.push(content);
+              await db.updateVoiceCloneSampleAnalysis(sample.id, content);
+            }
+          } catch (e) {
+            console.error("Sample analysis error:", e);
+          }
+        }
+        // Combine analyses with LLM
+        const combinedResp = await invokeLLM({
+          messages: [
+            { role: "system", content: `You are a voice matching expert. Given multiple voice sample analyses, determine the BEST matching Gemini TTS voice. Available voices: Kore (female, firm, professional), Puck (male, upbeat, clear), Aoede (female, breezy, friendly), Charon (male, informative, deep), Sulafat (female, warm, empathetic), Fenrir (male, excitable, energetic), Leda (female, youthful, bright), Orus (male, firm, authoritative). Return JSON: { "matchedVoiceId": "voiceName", "confidence": 0-100, "combinedAnalysis": { "gender": "...", "tone": "...", "style": "...", "averagePitch": "...", "averageSpeed": "..." }, "reasoning": "why this voice matches" }` },
+            { role: "user", content: `Here are ${sampleAnalyses.length} voice sample analyses:\n${sampleAnalyses.map((a, i) => `Sample ${i + 1}: ${a}`).join("\n")}` },
+          ],
+        });
+        const combinedContent = combinedResp.choices?.[0]?.message?.content;
+        let matchedVoiceId = "Kore";
+        let analysisResult = combinedContent;
+        if (typeof combinedContent === "string") {
+          try {
+            const jsonMatch = combinedContent.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed.matchedVoiceId) matchedVoiceId = parsed.matchedVoiceId;
+            }
+          } catch (e) { /* use default */ }
+        }
+        // Update the voice clone with combined analysis
+        await db.updateVoiceClone(input.voiceCloneId, {
+          matchedVoiceId,
+          voiceAnalysis: typeof analysisResult === "string" ? analysisResult : JSON.stringify(analysisResult),
+          status: "ready",
+        });
+        return { matchedVoiceId, analysis: analysisResult, sampleCount: samples.length };
+      }),
+    /** Real-time analysis of a single audio sample (quick analysis without saving) */
+    analyzeRealtime: protectedProcedure
+      .input(z.object({
+        audioData: z.string(), // base64
+        fileName: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Upload temporarily to S3 for LLM analysis
+        const buffer = Buffer.from(input.audioData, "base64");
+        const key = `voice-realtime/${ctx.user.id}/${Date.now()}-${input.fileName}`;
+        const { url } = await storagePut(key, buffer, "audio/webm");
+        // Quick AI analysis
+        const resp = await invokeLLM({
+          messages: [
+            { role: "system", content: `You are a voice analysis expert. Analyze this audio and return a JSON object with: { "gender": "male|female", "ageRange": "young|middle|senior", "tone": "warm|cool|neutral", "pitch": "high|medium|low", "pitchHz": number, "speed": "fast|medium|slow", "speedWpm": number, "style": "professional|casual|energetic|calm", "clarity": 1-10, "emotion": "neutral|happy|serious|excited", "bestMatchVoice": "one of: Kore, Puck, Aoede, Charon, Sulafat, Fenrir, Leda, Orus", "matchConfidence": 0-100, "waveformDescription": "brief description of the audio waveform characteristics" }` },
+            { role: "user", content: [{ type: "file_url" as const, file_url: { url, mime_type: "audio/mpeg" as const } }] },
+          ],
+        });
+        const content = resp.choices?.[0]?.message?.content;
+        let analysis: Record<string, unknown> = {};
+        if (typeof content === "string") {
+          try {
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) analysis = JSON.parse(jsonMatch[0]);
+          } catch (e) { analysis = { raw: content }; }
+        }
+        return { analysis, audioUrl: url };
+      }),
   }),
   // ========== User Custom Avatars ==========
   userAvatar: router({
