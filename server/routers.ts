@@ -8781,6 +8781,8 @@ Respond in JSON format:
       .input(z.object({
         id: z.number(),
         text: z.string().min(1).max(500),
+        speed: z.number().min(0.5).max(2.0).optional(),
+        pitch: z.number().min(-12).max(12).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const clone = await db.getVoiceCloneById(input.id);
@@ -8793,6 +8795,8 @@ Respond in JSON format:
         const result = await generateGeminiTts({
           text: input.text,
           voiceId,
+          speed: input.speed,
+          pitch: input.pitch,
           _userId: ctx.user.id,
         });
 
@@ -8803,12 +8807,13 @@ Respond in JSON format:
         return { audioUrl: url, voiceName: clone.name, matchedVoiceId: voiceId };
       }),
 
-    /** Generate full TTS for a script using cloned voice */
+    /** Generate full TTS for a script using cloned voice with speed/pitch */
     generateTTS: protectedProcedure
       .input(z.object({
         cloneId: z.number(),
         text: z.string().min(1).max(5000),
         speed: z.number().min(0.5).max(2.0).optional(),
+        pitch: z.number().min(-12).max(12).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const clone = await db.getVoiceCloneById(input.cloneId);
@@ -8821,6 +8826,7 @@ Respond in JSON format:
           text: input.text,
           voiceId,
           speed: input.speed,
+          pitch: input.pitch,
           _userId: ctx.user.id,
         });
 
@@ -8830,6 +8836,42 @@ Respond in JSON format:
         const { url } = await storagePut(key, (result as any).audioBuffer, "audio/mpeg");
         return { audioUrl: url, voiceName: clone.name, matchedVoiceId: voiceId };
       }),
+
+    /** Test voice: generate TTS with a specific preset voice for comparison */
+    testVoice: protectedProcedure
+      .input(z.object({
+        voiceId: z.string(),
+        text: z.string().min(1).max(500),
+        speed: z.number().min(0.5).max(2.0).optional(),
+        pitch: z.number().min(-12).max(12).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { generateGeminiTts } = await import("./_core/geminiTts");
+        const result = await generateGeminiTts({
+          text: input.text,
+          voiceId: input.voiceId,
+          speed: input.speed,
+          pitch: input.pitch,
+          _userId: ctx.user.id,
+        });
+
+        if ("error" in result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: (result as any).error || "TTS generation failed" });
+
+        const key = `voice-test/${ctx.user.id}/${Date.now()}.mp3`;
+        const { url } = await storagePut(key, (result as any).audioBuffer, "audio/mpeg");
+        return { audioUrl: url, voiceId: input.voiceId };
+      }),
+
+    /** Get available voice presets (5 curated default voices) */
+    presets: publicProcedure.query(() => {
+      return [
+        { id: "Kore", name: "Kore", style: "Firm", gender: "female" as const, desc: "Calm and professional", emoji: "\uD83D\uDC69\u200D\uD83C\uDFEB", color: "blue" },
+        { id: "Puck", name: "Puck", style: "Upbeat", gender: "male" as const, desc: "Clear and objective", emoji: "\uD83D\uDCFA", color: "slate" },
+        { id: "Aoede", name: "Aoede", style: "Breezy", gender: "female" as const, desc: "Fresh and friendly", emoji: "\uD83C\uDF1F", color: "emerald" },
+        { id: "Charon", name: "Charon", style: "Informative", gender: "male" as const, desc: "Deep and authoritative", emoji: "\uD83C\uDFA4", color: "violet" },
+        { id: "Sulafat", name: "Sulafat", style: "Warm", gender: "female" as const, desc: "Warm and empathetic", emoji: "\u2764\uFE0F", color: "rose" },
+      ];
+    }),
   }),
   // ========== User Custom Avatars ==========
   userAvatar: router({
