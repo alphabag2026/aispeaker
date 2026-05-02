@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines } from "lucide-react";
+import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -21,6 +21,7 @@ interface AvatarData {
   ttsVoiceId: string | null;
   sampleFaceId: number | null;
   customFaceUrl: string | null;
+  voiceCloneId: number | null;
   sortOrder: number;
 }
 
@@ -67,7 +68,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [aiGeneratedUrl, setAiGeneratedUrl] = useState<string | null>(null);
 
   // Voice mode: "preset" or "clone"
-  const [voiceMode, setVoiceMode] = useState<string>("preset");
+  const [voiceMode, setVoiceMode] = useState<string>(avatar.voiceCloneId ? "clone" : "preset");
 
   // Voice clone recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -77,7 +78,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [cloneName, setCloneName] = useState("");
   const [cloneDesc, setCloneDesc] = useState("");
   const [isPlayingClone, setIsPlayingClone] = useState(false);
-  const [selectedCloneId, setSelectedCloneId] = useState<number | null>(null);
+  const [selectedCloneId, setSelectedCloneId] = useState<number | null>(avatar.voiceCloneId || null);
   const [previewText, setPreviewText] = useState(t("avatarSettingsDialog.welcomeMessage"));
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -99,7 +100,8 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
     setRecordDuration(0);
     setCloneName("");
     setCloneDesc("");
-    setSelectedCloneId(null);
+    setSelectedCloneId(avatar.voiceCloneId || null);
+    setVoiceMode(avatar.voiceCloneId ? "clone" : "preset");
   }, [avatar]);
 
   // Cleanup audio on unmount
@@ -137,7 +139,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   // Voice clone mutations
   const voiceClones = trpc.voiceClone.list.useQuery(undefined, { enabled: open });
   const createClone = trpc.voiceClone.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success(t("avatarSettingsDialog.voiceCloneCreated"));
       voiceClones.refetch();
       setRecordedBlob(null);
@@ -145,6 +147,10 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
       setRecordDuration(0);
       setCloneName("");
       setCloneDesc("");
+      // Auto-select the newly created clone
+      if (data.id) {
+        setSelectedCloneId(data.id);
+      }
     },
     onError: (e) => toast.error(e.message),
   });
@@ -169,13 +175,19 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
 
   const handleSave = () => {
     const faceUrl = faceTab === "ai" ? aiGeneratedUrl : faceTab === "custom" ? customFaceUrl : null;
+    const cloneId = voiceMode === "clone" && selectedCloneId ? selectedCloneId : null;
+    // If using clone voice, get the matched voice ID from the clone data
+    const selectedClone = voiceClones.data?.find(c => c.id === cloneId);
+    const finalVoiceId = cloneId && selectedClone?.matchedVoiceId ? selectedClone.matchedVoiceId : ttsVoiceId;
+
     updateMut.mutate({
       id: avatar.id,
       name: name.trim() || avatar.name,
       role: role as any,
-      ttsVoiceId,
+      ttsVoiceId: finalVoiceId,
       sampleFaceId: faceTab === "gallery" ? selectedFaceId : null,
       customFaceUrl: faceUrl,
+      voiceCloneId: cloneId,
     });
   };
 
@@ -270,7 +282,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const handleCreateClone = async () => {
     if (!recordedBlob) { toast.error(t("avatarSettingsDialog.recordFirst")); return; }
     if (!cloneName.trim()) { toast.error(t("avatarSettingsDialog.enterCloneName")); return; }
-    if (recordDuration < 3) { toast.error(t("avatarSettingsDialog.recordAtLeast3Seconds")); return; }
+    if (recordDuration < 3 && recordDuration !== 0) { toast.error(t("avatarSettingsDialog.recordAtLeast3Seconds")); return; }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -278,12 +290,19 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
       createClone.mutate({
         name: cloneName.trim(),
         audioData: base64,
-        fileName: `voice-clone-${Date.now()}.webm`,
+        fileName: `voice-clone-${Date.now()}.${recordedBlob.type.includes("webm") ? "webm" : recordedBlob.type.includes("mp3") || recordedBlob.type.includes("mpeg") ? "mp3" : recordedBlob.type.includes("wav") ? "wav" : recordedBlob.type.includes("m4a") || recordedBlob.type.includes("mp4") ? "m4a" : "webm"}`,
         language: "ko",
         description: cloneDesc || undefined,
       });
     };
     reader.readAsDataURL(recordedBlob);
+  };
+
+  // Parse voice analysis from clone
+  const getCloneAnalysis = (clone: any) => {
+    try {
+      return clone.voiceAnalysis ? JSON.parse(clone.voiceAnalysis) : null;
+    } catch { return null; }
   };
 
   const currentFace = faces.find((f) => f.id === selectedFaceId);
@@ -317,7 +336,10 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                 {AVATAR_ROLES.find((r) => r.value === role)?.label || role}
               </Badge>
               <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                <Volume2 className="w-3 h-3" /> {selectedCloneId ? `${t("avatarSettingsDialog.hardcoded7")}: ${voiceClones.data?.find(c => c.id === selectedCloneId)?.name || ""}` : ttsVoiceId}
+                <Volume2 className="w-3 h-3" />
+                {voiceMode === "clone" && selectedCloneId
+                  ? `🎤 ${t("avatarSettingsDialog.myVoiceClone")}: ${voiceClones.data?.find(c => c.id === selectedCloneId)?.name || ""}`
+                  : ttsVoiceId}
               </p>
             </div>
           </div>
@@ -325,15 +347,15 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
           {/* Face Selection - 3 Tabs */}
           <div>
             <Label className="text-base font-semibold mb-3 block flex items-center gap-2">
-              <Camera className="w-4 h-4" /> {t("avatarSettingsDialog.hardcoded2")}
+              <Camera className="w-4 h-4" /> {t("avatarSettingsDialog.faceAppearance")}
             </Label>
             <Tabs value={faceTab} onValueChange={setFaceTab}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="gallery" className="gap-1 text-xs">
-                  <Sparkles className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.hardcoded3")}
+                  <Sparkles className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.gallery")}
                 </TabsTrigger>
                 <TabsTrigger value="custom" className="gap-1 text-xs">
-                  <Upload className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.hardcoded4")}
+                  <Upload className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.myFace")}
                 </TabsTrigger>
                 <TabsTrigger value="ai" className="gap-1 text-xs">
                   <Wand2 className="w-3.5 h-3.5" /> {t("avatarSettingsDialog.aiGenerated")}
@@ -379,7 +401,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                     ) : (
                       <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
                         <User className="w-10 h-10 text-muted-foreground/50" />
-                        <span className="text-[10px] text-muted-foreground mt-1">{t("avatarSettingsDialog.hardcoded3")}</span>
+                        <span className="text-[10px] text-muted-foreground mt-1">{t("avatarSettingsDialog.gallery")}</span>
                       </div>
                     )}
                   </div>
@@ -405,7 +427,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                           <span className="text-[10px] text-muted-foreground mt-2">{t("avatarSettingsDialog.generating")}</span>
                         </div>
                       ) : aiGeneratedUrl ? (
-                        <img src={aiGeneratedUrl} alt={t("avatarSettingsDialog.hardcoded4")} className="w-full h-full object-cover" />
+                        <img src={aiGeneratedUrl} alt="AI" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-muted flex flex-col items-center justify-center">
                           <Wand2 className="w-8 h-8 text-muted-foreground/50" />
@@ -422,7 +444,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {AI_STYLES.map((s) => (
-                            <SelectItem key={s.value} value={s.value}><span className="text-xs">{s.label}</span></SelectItem>
+                            <SelectItem key={s.value} value={s.value}><span className="text-xs">{t(s.label)}</span></SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -452,7 +474,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   </div>
 
                   <div>
-                    <Label className="text-xs mb-1 block">{t("avatarSettingsDialog.hardcoded5")}</Label>
+                    <Label className="text-xs mb-1 block">{t("avatarSettingsDialog.faceFeaturesPrompt")}</Label>
                     <Textarea
                       placeholder={t("avatarSettingsDialog.facePromptPlaceholder")}
                       value={aiPrompt}
@@ -468,13 +490,10 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                     </Button>
                     {aiGeneratedUrl && (
                       <Button variant="outline" onClick={handleGenerateAiFace} disabled={generateFace.isPending} className="gap-1">
-                        <RefreshCw className="w-4 h-4" /> {t("avatarSettingsDialog.hardcoded5")}
+                        <RefreshCw className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground text-center">
-                    {t("avatarSettingsDialog.hardcoded6")}
-                  </p>
                 </div>
               </TabsContent>
             </Tabs>
@@ -486,7 +505,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-1.5 block">{t("avatarSettingsDialog.name")}</Label>
-              <Input placeholder={t("avatarSettingsDialog.hardcoded6")} value={name} onChange={(e) => setName(e.target.value)} />
+              <Input placeholder={avatar.name} value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
               <Label className="mb-1.5 block">{t("avatarSettingsDialog.role")}</Label>
@@ -496,8 +515,8 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   {AVATAR_ROLES.map((r) => (
                     <SelectItem key={r.value} value={r.value}>
                       <div className="flex items-center gap-2">
-                        <Badge className={`${r.color} text-[10px] px-1.5 py-0`}>{r.label}</Badge>
-                        <span className="text-xs text-muted-foreground">{r.desc}</span>
+                        <Badge className={`${r.color} text-[10px] px-1.5 py-0`}>{t(r.label)}</Badge>
+                        <span className="text-xs text-muted-foreground">{t(r.desc)}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -538,7 +557,6 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                               </span>
                               <span>{v.name}</span>
                               <span className="text-muted-foreground text-xs">({v.desc})</span>
-                              <span className="text-[9px] text-muted-foreground ml-auto">🌐 {(v.languages || []).length}+</span>
                             </span>
                           </SelectItem>
                         ))}
@@ -548,7 +566,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   </div>
                   {(() => { const sel = voices.find((v: any) => v.id === ttsVoiceId); return sel ? (
                     <p className="text-[10px] text-muted-foreground mt-1">
-                      {sel.gender === 'female' ? '👩 여성' : '👨 남성'} · {sel.style} · 지원: 한/영/일/중/스/프/독/포 외 {(sel.languages || []).length}개 언어
+                      {sel.gender === 'female' ? '👩' : '👨'} {sel.gender} · {sel.style} · {(sel.languages || []).length}+ languages
                     </p>
                   ) : null; })()}
                   <p className="text-xs text-muted-foreground">
@@ -560,72 +578,153 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
               {/* Voice Clone Tab */}
               <TabsContent value="clone">
                 <div className="space-y-4">
-                  {/* Existing Clones List */}
+                  {/* Existing Clones List with Analysis Results */}
                   {voiceClones.data && voiceClones.data.length > 0 && (
                     <div>
                       <Label className="text-xs mb-2 block text-muted-foreground">{t("avatarSettingsDialog.myVoiceCloneList")}</Label>
-                      <div className="space-y-2 max-h-[160px] overflow-y-auto">
-                        {voiceClones.data.map((clone) => (
-                          <div
-                            key={clone.id}
-                            className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-all ${
-                              selectedCloneId === clone.id
-                                ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                                : "border-border hover:border-muted-foreground/30"
-                            }`}
-                            onClick={() => setSelectedCloneId(clone.id === selectedCloneId ? null : clone.id)}
-                          >
-                            <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                              selectedCloneId === clone.id ? "bg-primary/20" : "bg-muted"
-                            }`}>
-                              <AudioLines className={`w-4 h-4 ${selectedCloneId === clone.id ? "text-primary" : "text-muted-foreground"}`} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium truncate">{clone.name}</span>
-                                <Badge variant={clone.status === "ready" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0 shrink-0">
-                                  {clone.status === "ready" ? t("avatarSettingsDialog.available") : clone.status === "processing" ? t("avatarSettingsDialog.processing") : t("avatarSettingsDialog.pending")}
-                                </Badge>
+                      <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                        {voiceClones.data.map((clone) => {
+                          const analysis = getCloneAnalysis(clone);
+                          const isSelected = selectedCloneId === clone.id;
+                          return (
+                            <div
+                              key={clone.id}
+                              className={`rounded-lg border cursor-pointer transition-all ${
+                                isSelected
+                                  ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                                  : "border-border hover:border-muted-foreground/30"
+                              }`}
+                              onClick={() => {
+                                setSelectedCloneId(clone.id === selectedCloneId ? null : clone.id);
+                                if (clone.id !== selectedCloneId) {
+                                  toast.success(t("avatarSettingsDialog.cloneSelected"));
+                                }
+                              }}
+                            >
+                              {/* Clone Header */}
+                              <div className="flex items-center gap-3 p-2.5">
+                                <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                                  isSelected ? "bg-primary/20" : "bg-muted"
+                                }`}>
+                                  {isSelected ? (
+                                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                                  ) : (
+                                    <AudioLines className={`w-4 h-4 text-muted-foreground`} />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium truncate">{clone.name}</span>
+                                    <Badge variant={clone.status === "ready" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0 shrink-0">
+                                      {clone.status === "ready" ? t("avatarSettingsDialog.available") : clone.status === "processing" ? t("avatarSettingsDialog.processing") : t("avatarSettingsDialog.pending")}
+                                    </Badge>
+                                    {(clone as any).matchedVoiceId && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 shrink-0 border-primary/30 text-primary">
+                                        🎯 {(clone as any).matchedVoiceId}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {clone.description && (
+                                    <p className="text-xs text-muted-foreground truncate">{clone.description}</p>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {/* Listen to original sample */}
+                                  {clone.sampleUrl && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7"
+                                      title={t("avatarSettingsDialog.listenSample")}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (audioRef.current) audioRef.current.pause();
+                                        const audio = new Audio(clone.sampleUrl);
+                                        audioRef.current = audio;
+                                        audio.play();
+                                        audio.onended = () => { audioRef.current = null; };
+                                      }}
+                                    >
+                                      <FileAudio className="w-3.5 h-3.5 text-orange-500" />
+                                    </Button>
+                                  )}
+                                  {/* Preview clone TTS */}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    title={t("avatarSettingsDialog.listenClone")}
+                                    disabled={clone.status !== "ready" || previewClone.isPending}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      previewClone.mutate({ id: clone.id, text: previewText });
+                                    }}
+                                  >
+                                    {previewClone.isPending && previewClone.variables?.id === clone.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : isPlayingClone ? (
+                                      <Square className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <Play className="w-3.5 h-3.5" />
+                                    )}
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm(t("avatarSettingsDialog.confirmDeleteClone"))) {
+                                        deleteClone.mutate({ id: clone.id });
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
                               </div>
-                              {clone.description && (
-                                <p className="text-xs text-muted-foreground truncate">{clone.description}</p>
+
+                              {/* Analysis Result (shown when selected) */}
+                              {isSelected && analysis && (
+                                <div className="px-3 pb-3 pt-0">
+                                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                                    <div className="flex items-center gap-2 text-xs font-medium text-primary">
+                                      <Brain className="w-3.5 h-3.5" />
+                                      {t("avatarSettingsDialog.analysisResult")}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t("avatarSettingsDialog.matchedVoice")}:</span>
+                                        <span className="font-medium">{analysis.matchedVoiceId || "-"}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t("avatarSettingsDialog.confidence")}:</span>
+                                        <span className="font-medium">{analysis.confidence ? `${Math.round(analysis.confidence * 100)}%` : "-"}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t("avatarSettingsDialog.voiceGender")}:</span>
+                                        <span className="font-medium">{analysis.gender || "-"}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t("avatarSettingsDialog.voiceTone")}:</span>
+                                        <span className="font-medium">{analysis.tone || "-"}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-muted-foreground">{t("avatarSettingsDialog.voiceStyle")}:</span>
+                                        <span className="font-medium">{analysis.style || "-"}</span>
+                                      </div>
+                                    </div>
+                                    {analysis.reason && (
+                                      <p className="text-[11px] text-muted-foreground mt-1 italic">
+                                        💡 {analysis.reason}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7"
-                                disabled={clone.status !== "ready" || previewClone.isPending}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  previewClone.mutate({ id: clone.id, text: previewText });
-                                }}
-                              >
-                                {previewClone.isPending && previewClone.variables?.id === clone.id ? (
-                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : isPlayingClone ? (
-                                  <Square className="w-3.5 h-3.5" />
-                                ) : (
-                                  <Play className="w-3.5 h-3.5" />
-                                )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (confirm(t("avatarSettingsDialog.confirmDeleteClone"))) {
-                                    deleteClone.mutate({ id: clone.id });
-                                  }
-                                }}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -633,10 +732,10 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                   {/* Upload Voice File */}
                   <div className="border rounded-lg p-3 space-y-2 bg-muted/20">
                     <Label className="text-sm font-medium flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-primary" /> 음성 파일 업로드
+                      <Upload className="w-4 h-4 text-primary" /> {t("avatarSettingsDialog.uploadVoiceFile")}
                     </Label>
                     <p className="text-xs text-muted-foreground">
-                      강사의 실제 음성 파일을 업로드하여 음성 클론을 생성할 수 있습니다. (MP3, WAV, M4A, 5초~30초)
+                      {t("avatarSettingsDialog.uploadVoiceDesc")}
                     </p>
                     <div className="flex items-center gap-2">
                       <Button
@@ -644,7 +743,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                         className="flex-1 gap-2"
                         onClick={() => voiceFileInputRef.current?.click()}
                       >
-                        <Upload className="w-4 h-4" /> 음성 파일 선택
+                        <Upload className="w-4 h-4" /> {t("avatarSettingsDialog.selectVoiceFile")}
                       </Button>
                       <input
                         ref={voiceFileInputRef}
@@ -654,8 +753,8 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          if (file.size > 10 * 1024 * 1024) {
-                            toast.error("파일 크기는 10MB 이하여야 합니다.");
+                          if (file.size > 100 * 1024 * 1024) {
+                            toast.error(t("avatarSettingsDialog.fileSizeLimit"));
                             return;
                           }
                           const reader = new FileReader();
@@ -665,7 +764,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                             setRecordedBlob(blob);
                             setRecordedUrl(URL.createObjectURL(blob));
                             setRecordDuration(0);
-                            toast.success(`"${file.name}" 파일이 로드되었습니다.`);
+                            toast.success(t("avatarSettingsDialog.fileLoaded"));
                           };
                           reader.readAsArrayBuffer(file);
                           e.target.value = "";
@@ -709,7 +808,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                       )}
                       {recordedBlob && !isRecording && (
                         <div className="flex items-center gap-2 flex-1">
-                          <Badge variant="secondary" className="text-xs">{recordDuration}s recorded</Badge>
+                          <Badge variant="secondary" className="text-xs">{recordDuration > 0 ? `${recordDuration}s` : "file"}</Badge>
                           <Button onClick={playRecordedAudio} variant="ghost" size="sm" className="gap-1">
                             <Play className="w-3 h-3" /> {t("avatarSettingsDialog.play")}
                           </Button>
@@ -741,11 +840,19 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
                           className="w-full gap-2"
                         >
                           {createClone.isPending ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              <span className="flex flex-col items-start">
+                                <span>{t("avatarSettingsDialog.voiceCloneAnalyzing")}</span>
+                                <span className="text-[10px] opacity-70">{t("avatarSettingsDialog.voiceCloneAnalyzingDesc")}</span>
+                              </span>
+                            </>
                           ) : (
-                            <MicVocal className="w-4 h-4" />
+                            <>
+                              <Brain className="w-4 h-4" />
+                              {t("avatarSettingsDialog.createVoiceClone")}
+                            </>
                           )}
-                          {createClone.isPending ? t("avatarSettingsDialog.creatingVoiceClone") : t("avatarSettingsDialog.createVoiceClone")}
                         </Button>
                       </div>
                     )}

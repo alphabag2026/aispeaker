@@ -3845,6 +3845,8 @@ export async function updateVoiceClone(id: number, data: Partial<{
   name: string;
   status: "uploading" | "processing" | "ready" | "failed";
   cloneVoiceId: string;
+  matchedVoiceId: string;
+  voiceAnalysis: string;
   errorMessage: string;
   description: string;
 }>) {

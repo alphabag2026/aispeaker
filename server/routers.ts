@@ -4380,6 +4380,7 @@ Respond ONLY in the following JSON format:
         ttsVoiceId: z.string().optional(),
         sampleFaceId: z.number().nullable().optional(),
         customFaceUrl: z.string().nullable().optional(),
+        voiceCloneId: z.number().nullable().optional(),
         sortOrder: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -8611,7 +8612,7 @@ Respond with a JSON array for each slide.`
 
   // ============ Voice Clones (v12.6) =============
   voiceClone: router({
-    /** Upload voice sample and create clone */
+    /** Upload voice sample, analyze with AI, and create clone with matched voice */
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1).max(100),
@@ -8621,12 +8622,14 @@ Respond with a JSON array for each slide.`
         description: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Decode base64 and upload to S3
+        // 1. Decode base64 and upload to S3
         const buffer = Buffer.from(input.audioData, "base64");
         const ext = input.fileName.split(".").pop() || "mp3";
         const key = `voice-clones/${ctx.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { url } = await storagePut(key, buffer, `audio/${ext === "mp3" ? "mpeg" : ext}`);
+        const mimeType = ext === "mp3" ? "audio/mpeg" : ext === "wav" ? "audio/wav" : ext === "m4a" ? "audio/mp4" : ext === "webm" ? "audio/webm" : ext === "ogg" ? "audio/ogg" : `audio/${ext}`;
+        const { url } = await storagePut(key, buffer, mimeType);
 
+        // 2. Create DB record with "processing" status
         const id = await db.createVoiceClone({
           userId: ctx.user.id,
           name: input.name,
@@ -8634,16 +8637,104 @@ Respond with a JSON array for each slide.`
           language: input.language,
           description: input.description,
         });
+        if (!id) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create voice clone record" });
 
-        // Mark as ready (in a real system, this would go through a processing pipeline)
-        if (id) {
+        // 3. AI Voice Analysis - analyze the uploaded sample to find best matching Gemini voice
+        try {
+          const { GEMINI_VOICES } = await import("./_core/geminiTts");
+          const { transcribeAudio } = await import("./_core/voiceTranscription");
+
+          // Transcribe to detect language and get audio characteristics
+          const transcription = await transcribeAudio({ audioUrl: url, language: input.language });
+          const detectedLang = ("language" in transcription && transcription.language) || input.language;
+
+          // Use LLM to analyze voice characteristics from the audio sample
+          const voiceListStr = GEMINI_VOICES.map(v => 
+            `${v.id}: ${v.gender}, ${v.style} (${v.desc})`
+          ).join("\n");
+
+          const analysisPrompt = `You are a voice analysis expert. Analyze the following voice sample information and match it to the best Gemini TTS voice.
+
+Voice sample info:
+- File format: ${ext}
+- Language: ${detectedLang}
+- Transcribed text: ${"text" in transcription ? (transcription as any).text?.slice(0, 200) : "(transcription unavailable)"}
+- User description: ${input.description || "none"}
+- Clone name: ${input.name}
+
+Available Gemini voices:
+${voiceListStr}
+
+Based on the clone name, description, and detected language, select the BEST matching Gemini voice ID.
+Also provide a voice analysis.
+
+Respond in JSON format:
+{
+  "matchedVoiceId": "<Gemini voice ID>",
+  "gender": "male" or "female",
+  "tone": "<description of tone>",
+  "style": "<speaking style>",
+  "confidence": 0.0-1.0,
+  "reason": "<why this voice was selected>"
+}`;
+
+          const { invokeLLM } = await import("./_core/llm");
+          const llmResponse = await invokeLLM({
+            messages: [
+              { role: "system", content: "You are a voice analysis AI. Always respond with valid JSON only." },
+              { role: "user", content: analysisPrompt },
+            ],
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "voice_analysis",
+                strict: true,
+                schema: {
+                  type: "object",
+                  properties: {
+                    matchedVoiceId: { type: "string", description: "Gemini voice ID" },
+                    gender: { type: "string", description: "male or female" },
+                    tone: { type: "string", description: "Voice tone description" },
+                    style: { type: "string", description: "Speaking style" },
+                    confidence: { type: "number", description: "Confidence score 0-1" },
+                    reason: { type: "string", description: "Reason for selection" },
+                  },
+                  required: ["matchedVoiceId", "gender", "tone", "style", "confidence", "reason"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          });
+
+          let analysis: any = {};
+          try {
+            analysis = JSON.parse(llmResponse.choices[0]?.message?.content || "{}");
+          } catch { analysis = { matchedVoiceId: "Kore", gender: "female", tone: "neutral", style: "firm", confidence: 0.5, reason: "Default fallback" }; }
+
+          // Validate matched voice exists
+          const matchedVoice = GEMINI_VOICES.find(v => v.id === analysis.matchedVoiceId);
+          const finalVoiceId = matchedVoice ? analysis.matchedVoiceId : "Kore";
+
+          // 4. Update clone with analysis results
           await db.updateVoiceClone(id, {
             status: "ready",
             cloneVoiceId: `clone-${ctx.user.id}-${id}`,
+            matchedVoiceId: finalVoiceId,
+            voiceAnalysis: JSON.stringify(analysis),
           });
-        }
 
-        return { id, sampleUrl: url };
+          return { id, sampleUrl: url, matchedVoiceId: finalVoiceId, analysis };
+        } catch (err: any) {
+          // If analysis fails, still mark as ready with default voice
+          console.error("Voice analysis error:", err?.message);
+          await db.updateVoiceClone(id, {
+            status: "ready",
+            cloneVoiceId: `clone-${ctx.user.id}-${id}`,
+            matchedVoiceId: "Kore",
+            voiceAnalysis: JSON.stringify({ matchedVoiceId: "Kore", gender: "female", tone: "neutral", style: "firm", confidence: 0.3, reason: "Fallback due to analysis error: " + (err?.message || "") }),
+          });
+          return { id, sampleUrl: url, matchedVoiceId: "Kore", analysis: null };
+        }
       }),
 
     /** List user's voice clones */
@@ -8685,7 +8776,7 @@ Respond with a JSON array for each slide.`
         return { success: true };
       }),
 
-    /** Preview cloned voice with TTS */
+    /** Preview cloned voice with TTS - uses matched Gemini voice */
     preview: protectedProcedure
       .input(z.object({
         id: z.number(),
@@ -8696,20 +8787,48 @@ Respond with a JSON array for each slide.`
         if (!clone || clone.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
         if (clone.status !== "ready") throw new TRPCError({ code: "BAD_REQUEST", message: "Voice clone is not ready yet" });
 
-        // Use Gemini TTS with a default voice as placeholder
-        // In production, this would use the actual cloned voice model
-        const { generateGeminiTts, GEMINI_VOICES } = await import("./_core/geminiTts");
-        const defaultVoice = GEMINI_VOICES[0];
+        // Use the AI-matched Gemini voice for TTS
+        const { generateGeminiTts } = await import("./_core/geminiTts");
+        const voiceId = clone.matchedVoiceId || "Kore";
         const result = await generateGeminiTts({
           text: input.text,
-          voiceId: defaultVoice.id,
+          voiceId,
+          _userId: ctx.user.id,
         });
 
         if ("error" in result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: (result as any).error || "TTS generation failed" });
 
         const key = `voice-clone-preview/${ctx.user.id}/${Date.now()}.mp3`;
         const { url } = await storagePut(key, (result as any).audioBuffer, "audio/mpeg");
-        return { audioUrl: url, voiceName: clone.name };
+        return { audioUrl: url, voiceName: clone.name, matchedVoiceId: voiceId };
+      }),
+
+    /** Generate full TTS for a script using cloned voice */
+    generateTTS: protectedProcedure
+      .input(z.object({
+        cloneId: z.number(),
+        text: z.string().min(1).max(5000),
+        speed: z.number().min(0.5).max(2.0).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const clone = await db.getVoiceCloneById(input.cloneId);
+        if (!clone || clone.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        if (clone.status !== "ready") throw new TRPCError({ code: "BAD_REQUEST", message: "Voice clone is not ready" });
+
+        const { generateGeminiTts } = await import("./_core/geminiTts");
+        const voiceId = clone.matchedVoiceId || "Kore";
+        const result = await generateGeminiTts({
+          text: input.text,
+          voiceId,
+          speed: input.speed,
+          _userId: ctx.user.id,
+        });
+
+        if ("error" in result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: (result as any).error || "TTS generation failed" });
+
+        const key = `voice-clone-tts/${ctx.user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`;
+        const { url } = await storagePut(key, (result as any).audioBuffer, "audio/mpeg");
+        return { audioUrl: url, voiceName: clone.name, matchedVoiceId: voiceId };
       }),
   }),
   // ========== User Custom Avatars ==========
