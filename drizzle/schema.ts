@@ -1212,6 +1212,8 @@ export const projectAvatars = mysqlTable("projectAvatars", {
   role: mysqlEnum("role", ["instructor", "host", "guest", "narrator"]).default("instructor").notNull(),
   /** TTS voice ID */
   ttsVoiceId: varchar("ttsVoiceId", { length: 128 }).default("Kore"),
+  /** Voice clone ID (references voiceClones table) */
+  voiceCloneId: int("voiceCloneId"),
   /** Sort order */
   sortOrder: int("sortOrder").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -2274,6 +2276,10 @@ export const voiceClones = mysqlTable("voiceClones", {
   status: mysqlEnum("status", ["uploading", "processing", "ready", "failed"]).default("uploading").notNull(),
   /** Custom TTS voice ID (assigned after processing) */
   cloneVoiceId: varchar("cloneVoiceId", { length: 255 }),
+  /** Matched Gemini voice ID based on AI analysis */
+  matchedVoiceId: varchar("matchedVoiceId", { length: 128 }),
+  /** AI voice analysis result (JSON: gender, tone, style, pitch, etc.) */
+  voiceAnalysis: text("voiceAnalysis"),
   /** Error message if processing failed */
   errorMessage: text("errorMessage"),
   /** Description or notes */

@@ -155,6 +155,31 @@ export default function LectureBuilder() {
     }
   };
 
+  // Save last working project to localStorage
+  useEffect(() => {
+    if (projectId) {
+      localStorage.setItem('aispeaker-last-project', String(projectId));
+    }
+  }, [projectId]);
+
+  // Auto-redirect to last project on list view
+  const [autoRedirectDone, setAutoRedirectDone] = useState(false);
+  useEffect(() => {
+    if (!projectId && !autoRedirectDone && user && projectsQuery.data) {
+      const lastId = localStorage.getItem('aispeaker-last-project');
+      if (lastId) {
+        const exists = projectsQuery.data.some((p: any) => p.id === parseInt(lastId));
+        if (exists) {
+          setAutoRedirectDone(true);
+          setLocation(`/lecture-builder/${lastId}`);
+          toast.info(t("lectureBuilder.resumeLastProject") || "\ub9c8\uc9c0\ub9c9 \uc791\uc5c5\uc73c\ub85c \ub3cc\uc544\uac11\ub2c8\ub2e4.");
+          return;
+        }
+      }
+      setAutoRedirectDone(true);
+    }
+  }, [projectId, autoRedirectDone, user, projectsQuery.data]);
+
   if (authLoading) return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   if (!user) return null;
 

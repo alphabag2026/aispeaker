@@ -2257,16 +2257,46 @@
 ## v4.9 초대 디자인 축소 + 음성 성별/언어 표기 + 강사 음성 업로드
 
 ### 초대 기능 디자인 축소
-- [ ] 공동 작업자 패널 크기 축소 (컴팩트 디자인)
-- [ ] 버튼 크기 줄이기
-- [ ] 전체 레이아웃 간결하게
+- [x] 공동 작업자 패널 크기 축소 (컴팩트 디자인)
+- [x] 버튼 크기 줄이기
+- [x] 전체 레이아웃 간결하게
 
 ### 음성 성별/언어 표기
-- [ ] 각 음성 옆에 성별 표시 (남/여)
-- [ ] 지원 언어 표시
-- [ ] 음성 선택 드롭다운 개선
+- [x] 각 음성 옆에 성별 표시 (♂/♀ 아이콘)
+- [x] 지원 언어 표시 (GEMINI_VOICES에 gender/languages 필드 추가)
+- [x] 음성 선택 드롭다운 개선 (LectureBuilder, AvatarSettingsDialog, AvatarCustomizePanel 모두 적용)
 
 ### 강사 음성 업로드 기능
-- [ ] 강사 음성 녹음/업로드 옵션 추가
-- [ ] 음성 클론 기능 연동 (기존 voiceClone 활용)
-- [ ] 업로드된 음성으로 TTS 생성
+- [x] 강사 음성 파일 업로드 옵션 추가 (MP3/WAV/M4A/WebM/OGG, 10MB 제한)
+- [x] 음성 클론 기능 연동 (기존 voiceClone 활용)
+- [x] 업로드된 음성으로 클론 생성 가능
+
+## v5.0 음성 업로드 100MB + 미리 듣기 + 작업 위치 자동 저장
+
+### 음성 파일 업로드 용량 100MB
+- [ ] AvatarSettingsDialog 파일 크기 제한 10MB → 100MB 변경
+- [ ] 서버 측 업로드 제한도 100MB로 변경
+
+### 음성 미리 듣기 버튼
+- [ ] 음성 선택 드롭다운에 미리 듣기 버튼(▶) 추가
+- [ ] 선택한 음성으로 샘플 문장 TTS 생성 후 재생
+- [ ] LectureBuilder, AvatarSettingsDialog, AvatarCustomizePanel 모두 적용
+
+### 마지막 작업 위치 자동 저장
+- [ ] 현재 스텝/프로젝트 ID를 localStorage에 자동 저장
+- [ ] 페이지 재방문 시 마지막 작업 위치로 자동 복귀
+- [ ] 복귀 시 토스트 알림 표시
+
+## 진짜 AI 음성 클로닝 기능 (v5.0)
+- [x] DB 스키마: voiceClones 테이블에 matchedVoiceId, voiceAnalysis 컬럼 추가
+- [x] DB 스키마: projectAvatars 테이블에 voiceCloneId 컬럼 추가
+- [x] 백엔드: voiceClone.create에 AI 음성 분석 파이프라인 추가 (LLM으로 음성 특성 분석 → Gemini 음성 매칭)
+- [x] 백엔드: voiceClone.preview에 매칭된 음성으로 TTS 생성하도록 수정
+- [x] 백엔드: voiceClone.generateTTS 라우터 추가 (클론 음성으로 스크립트 전체 TTS)
+- [x] 백엔드: lectureBuilder.updateAvatar에 voiceCloneId 저장 지원 추가
+- [x] 프론트엔드: Voice Clone 탭 UI 개선 (클로닝 진행 상태, 분석 결과 표시)
+- [x] 프론트엔드: 클론 음성 선택 시 아바타에 연결하여 저장
+- [x] 프론트엔드: 클론 음성으로 미리듣기 기능 강화
+- [x] i18n: 음성 클로닝 관련 번역 키 추가 (20개 언어)
+- [x] 테스트: 음성 클로닝 기능 테스트 작성 (29개 통과)
+- [x] 빌드 및 프로덕션 배포
