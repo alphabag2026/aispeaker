@@ -2351,3 +2351,6 @@
 ### 공통
 - [x] i18n: 새 기능 번역 키 추가 (20개 언어, 30개 키)
 - [x] 테스트: v5.3 기능 vitest 테스트 작성 (49개 통과)
+
+## 버그 수정: AI 얼굴 생성 404 에러
+- [x] gemini-2.0-flash-preview-image-generation 모델 404 에러 → gemini-2.5-flash-preview-image-generation으로 교체 + Forge 실패 시 Gemini fallback 추가
