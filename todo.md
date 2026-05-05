@@ -2404,3 +2404,41 @@
 ### 공통
 - [x] 테스트: v6.0 기능 vitest 테스트 작성 (5개 통과)
 - [ ] i18n: 새 기능 번역 키 추가 (20개 언어)
+
+## AI 클론 음성 TTS 실제 연동 (v6.1)
+### 백엔드
+- [x] lectureBuilder.generateCloneVoice - 프로필 음성 샘플 기반 AI 클로닝 TTS 생성
+- [x] 음성 프로필에서 voiceClone 데이터 조회 → Gemini TTS에 voice 파라미터 적용
+- [x] 생성된 클론 음성 S3 저장 및 slideScripts에 연결
+### 프론트엔드
+- [x] AI 클론 모드 선택 시 "클론 음성 생성" 버튼 활성화
+- [x] 생성 진행 상태 표시 및 완료 후 미리듣기
+
+## PPT 스크립트 자동 저장 (v6.1)
+### 백엔드
+- [x] lectureBuilder.applyPPTScripts - 생성된 스크립트를 slideScripts에 일괄 저장
+### 프론트엔드
+- [x] PPTAIScriptPanel에 "전체 적용" 버튼 추가
+- [x] 개별 슬라이드 스크립트 "적용" 버튼 추가
+- [x] 적용 완료 시 Step4 매칭 에디터에 반영
+
+## 크레딧 구매 전용 페이지 (v6.1)
+### 백엔드
+- [x] 기존 payment.createCreditCheckout 활용 (4개 패키지: 50/200/500/2000)
+### 프론트엔드
+- [x] CreditDashboard 페이지에 패키지 구매 섹션 직접 추가
+- [x] 4가지 패키지 카드 UI (인기 배지 포함)
+- [x] Stripe Checkout 연동 완료
+- [x] 기존 /credits 라우트 활용
+
+## 구간별 자동저장 + 직접 저장 버튼 (v6.1)
+### 백엔드
+- [x] lectureBuilder.saveSlideScripts - 슬라이드 스크립트 일괄 자동저장
+### 프론트엔드
+- [x] Step4 매칭 에디터에 "저장하기" 버튼 추가
+- [x] 30초 간격 자동저장 (debounce)
+- [x] 자동저장 상태 표시 (마지막 저장 시간)
+- [x] 변경 감지 시 "저장되지 않은 변경사항" 배지 표시
+
+### 공통
+- [x] 테스트: v6.1 기능 vitest 테스트 작성 (27개 통과)

@@ -6220,6 +6220,141 @@ Rules:
         }
         return { success: true };
       }),
+
+    // --- Generate Clone Voice TTS for a slide ---
+    generateCloneVoice: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+        text: z.string().min(1).max(5000),
+        speed: z.number().min(0.5).max(2.0).default(1.0),
+        pitch: z.number().min(-12).max(12).default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+
+        // Find user's voice clone profile (use the first ready clone)
+        const clones = await db.getVoiceClonesByUser(ctx.user.id);
+        const readyClone = clones.find((c: any) => c.status === "ready");
+        if (!readyClone) throw new TRPCError({ code: "BAD_REQUEST", message: "NO_VOICE_CLONE: 음성 프로필에서 음성 샘플을 먼저 등록해주세요." });
+
+        const voiceId = readyClone.matchedVoiceId || "Kore";
+        const { generateGeminiTts } = await import("./_core/geminiTts");
+        const result = await generateGeminiTts({
+          text: input.text,
+          voiceId,
+          speed: input.speed,
+          pitch: input.pitch,
+          _userId: ctx.user.id,
+        });
+
+        if ("error" in result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: (result as any).error || "TTS generation failed" });
+
+        const key = `clone-tts/${ctx.user.id}/${input.projectId}/${input.slideId}-${Date.now()}.mp3`;
+        const { url } = await storagePut(key, (result as any).audioBuffer, "audio/mpeg");
+
+        // Update slide script with clone audio
+        const existingScripts = await db.listSlideScripts(input.projectId);
+        const existing = existingScripts.find((s: any) => s.slideId === input.slideId);
+        if (existing) {
+          await db.updateSlideScript(existing.id, {
+            voiceMode: "ai_clone",
+            recordedAudioUrl: url,
+          } as any);
+        } else {
+          await db.setSlideScript({
+            projectId: input.projectId,
+            slideId: input.slideId,
+            scriptText: input.text,
+            voiceMode: "ai_clone",
+            recordedAudioUrl: url,
+          } as any);
+        }
+
+        return { audioUrl: url, voiceName: readyClone.name, matchedVoiceId: voiceId };
+      }),
+
+    // --- Apply PPT-generated scripts to slideScripts ---
+    applyPPTScripts: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        scripts: z.array(z.object({
+          slideId: z.number(),
+          text: z.string(),
+          estimatedDurationSec: z.number().optional(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const existingScripts = await db.listSlideScripts(input.projectId);
+        let applied = 0;
+
+        for (const script of input.scripts) {
+          const existing = existingScripts.find((s: any) => s.slideId === script.slideId);
+          if (existing) {
+            await db.updateSlideScript(existing.id, {
+              scriptText: script.text,
+              estimatedDurationSec: script.estimatedDurationSec || 30,
+            } as any);
+          } else {
+            await db.setSlideScript({
+              projectId: input.projectId,
+              slideId: script.slideId,
+              scriptText: script.text,
+              estimatedDurationSec: script.estimatedDurationSec || 30,
+            } as any);
+          }
+          applied++;
+        }
+
+        return { applied, total: input.scripts.length };
+      }),
+
+    // --- Auto-save / Manual save slide scripts ---
+    saveSlideScripts: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        scripts: z.array(z.object({
+          slideId: z.number(),
+          scriptText: z.string(),
+          estimatedDurationSec: z.number().optional(),
+          voiceMode: z.enum(["direct_record", "ai_clone", "ai_tts"]).optional(),
+          emotion: z.enum(["neutral", "happy", "serious", "excited", "empathetic", "confident", "questioning"]).optional(),
+          emotionIntensity: z.number().min(1).max(10).optional(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const existingScripts = await db.listSlideScripts(input.projectId);
+        let saved = 0;
+
+        for (const script of input.scripts) {
+          const existing = existingScripts.find((s: any) => s.slideId === script.slideId);
+          const updateData: any = { scriptText: script.scriptText };
+          if (script.estimatedDurationSec) updateData.estimatedDurationSec = script.estimatedDurationSec;
+          if (script.voiceMode) updateData.voiceMode = script.voiceMode;
+          if (script.emotion) updateData.emotion = script.emotion;
+          if (script.emotionIntensity) updateData.emotionIntensity = script.emotionIntensity;
+
+          if (existing) {
+            await db.updateSlideScript(existing.id, updateData);
+          } else {
+            await db.setSlideScript({
+              projectId: input.projectId,
+              slideId: script.slideId,
+              ...updateData,
+            });
+          }
+          saved++;
+        }
+
+        return { saved, savedAt: new Date().toISOString() };
+      }),
   }),
 
   // ============ Admin Dashboard ============

@@ -2459,6 +2459,50 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
   const saveDrawingMut = trpc.lectureBuilder.saveCanvasDrawing.useMutation();
   const deleteAnnotationMut = trpc.lectureBuilder.deleteAnnotation.useMutation();
 
+  // ── Auto-save / Manual save ──
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const saveScriptsMut = trpc.lectureBuilder.saveSlideScripts.useMutation({
+    onSuccess: (data) => {
+      setLastSavedAt(data.savedAt);
+      setHasUnsavedChanges(false);
+      setIsSaving(false);
+    },
+    onError: () => setIsSaving(false),
+  });
+
+  const doSave = useCallback(() => {
+    if (!slides.length) return;
+    const scriptsToSave = slides
+      .filter((s: any) => slideScriptMap[s.id])
+      .map((s: any) => ({
+        slideId: s.id,
+        scriptText: slideScriptMap[s.id]?.text || "",
+      }));
+    if (scriptsToSave.length === 0) return;
+    setIsSaving(true);
+    saveScriptsMut.mutate({ projectId, scripts: scriptsToSave });
+  }, [slides, slideScriptMap, projectId]);
+
+  // Auto-save every 30 seconds when there are unsaved changes
+  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (hasUnsavedChanges) {
+      if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+      autoSaveRef.current = setTimeout(() => {
+        doSave();
+      }, 30000);
+    }
+    return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current); };
+  }, [hasUnsavedChanges, doSave]);
+
+  // Track changes
+  const handleScriptChange = (slideId: number, text: string) => {
+    setSlideScriptMap((prev) => ({ ...prev, [slideId]: { ...prev[slideId], text } }));
+    setHasUnsavedChanges(true);
+  };
+
   // Interpreter mutations
   const updateInterpreterSettingsMut = trpc.lectureBuilder.updateInterpreterSettings.useMutation({
     onSuccess: () => {toast.success(t("lectureBuilder.stringLiteral186"));projectQuery.refetch();},
@@ -2957,8 +3001,33 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">{t("lectureBuilder.jsxText196")}</h2>
-      <p className="text-muted-foreground">{t("lectureBuilder.jsxText197")}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">{t("lectureBuilder.jsxText196")}</h2>
+          <p className="text-muted-foreground">{t("lectureBuilder.jsxText197")}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {lastSavedAt && (
+            <span className="text-xs text-muted-foreground">
+              마지막 저장: {new Date(lastSavedAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+          {hasUnsavedChanges && !isSaving && (
+            <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-xs">
+              저장되지 않은 변경사항
+            </Badge>
+          )}
+          <Button
+            size="sm"
+            className="gap-1.5"
+            onClick={doSave}
+            disabled={isSaving || !hasUnsavedChanges}
+          >
+            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+            저장하기
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-12 gap-4 overflow-hidden" style={{ minHeight: "60vh" }}>
         {/* Left: Slide Thumbnails */}
@@ -3471,10 +3540,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                     value={currentScript?.text || ""}
                     onChange={(e) => {
                       if (currentSlide) {
-                        setSlideScriptMap((prev) => ({
-                          ...prev,
-                          [currentSlide.id]: { ...prev[currentSlide.id], text: e.target.value }
-                        }));
+                        handleScriptChange(currentSlide.id, e.target.value);
                       }
                     }}
                     onBlur={() => {
@@ -4692,7 +4758,16 @@ function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, 
   const [selectedSlideIds, setSelectedSlideIds] = useState<Set<number>>(new Set());
   const [generating, setGenerating] = useState(false);
 
+  const [generatedScripts, setGeneratedScripts] = useState<Array<{slideId: number; text: string; estimatedDurationSec: number}>>([]);
+
   const creditsQuery = trpc.lectureBuilder.getPPTScriptCredits.useQuery();
+  const applyMut = trpc.lectureBuilder.applyPPTScripts.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.applied}개 슬라이드 스크립트가 저장되었습니다.`);
+      onRefresh();
+    },
+    onError: (e) => toast.error(e.message),
+  });
   const generateMut = trpc.lectureBuilder.generateScriptFromPPT.useMutation({
     onSuccess: (data) => {
       const newSections = data.scripts.map((s: any, i: number) => ({
@@ -4701,6 +4776,7 @@ function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, 
         text: s.text,
       }));
       setSections(newSections);
+      setGeneratedScripts(data.scripts);
       toast.success(`AI 스크립트 생성 완료! ${data.scripts.length}개 슬라이드, ${data.creditsUsed} 크레딧 사용`);
       setGenerating(false);
       creditsQuery.refetch();
@@ -4876,9 +4952,42 @@ function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, 
             </Button>
 
             {!creditsQuery.data?.canGenerate && creditsQuery.data && (
-              <p className="text-sm text-red-500 text-center">
-                크레딧이 부족합니다. 설정 &gt; 구독에서 크레딧을 충전해주세요.
-              </p>
+              <div className="text-center">
+                <p className="text-sm text-red-500 mb-2">
+                  크레딧이 부족합니다.
+                </p>
+                <Button variant="outline" size="sm" onClick={() => window.open('/credits', '_blank')} className="gap-1">
+                  <CreditCard className="w-3 h-3" />크레딧 충전하기
+                </Button>
+              </div>
+            )}
+
+            {/* Apply Generated Scripts */}
+            {generatedScripts.length > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span className="text-sm font-medium">{generatedScripts.length}개 스크립트 생성 완료</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => applyMut.mutate({ projectId, scripts: generatedScripts })}
+                    disabled={applyMut.isPending}
+                  >
+                    {applyMut.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                    전체 적용 (슬라이드 스크립트에 저장)
+                  </Button>
+                </div>
+                <div className="max-h-40 overflow-y-auto space-y-2">
+                  {generatedScripts.map((s, i) => (
+                    <div key={i} className="p-2 rounded bg-muted/50 text-xs">
+                      <span className="font-medium text-amber-600">슬라이드 {i + 1}:</span> {s.text.slice(0, 80)}...
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </>
         )}
@@ -5055,14 +5164,9 @@ function SlideVoiceModePanel({ projectId, slideId, slideIdx, scripts, onRefresh 
           </div>
         )}
 
-        {/* AI Clone Mode Info */}
+        {/* AI Clone Mode - Generate Clone TTS */}
         {voiceMode === "ai_clone" && (
-          <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
-            <p className="text-xs text-muted-foreground">
-              <Sparkles className="w-3 h-3 inline mr-1" />
-              프로필에 등록된 본인 음성 샘플을 기반으로 AI가 스크립트를 본인 목소리로 읽어줍니다. 음성 프로필에서 샘플을 먼저 등록해주세요.
-            </p>
-          </div>
+          <AICloneVoiceSection projectId={projectId} slideId={slideId} scripts={scripts} onRefresh={onRefresh} />
         )}
 
         {/* Direct Record Mode - Recording UI */}
@@ -5141,5 +5245,80 @@ function SlideVoiceModePanel({ projectId, slideId, slideIdx, scripts, onRefresh 
 
       </CardContent>
     </Card>
+  );
+}
+
+
+// ── AI Clone Voice Section ──
+function AICloneVoiceSection({ projectId, slideId, scripts, onRefresh }: {
+  projectId: number;
+  slideId: number;
+  scripts: any[];
+  onRefresh: () => void;
+}) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
+
+  const generateCloneMut = trpc.lectureBuilder.generateCloneVoice.useMutation({
+    onSuccess: (data) => {
+      setGeneratedUrl(data.audioUrl);
+      toast.success("AI 클론 음성이 생성되었습니다.");
+      setIsGenerating(false);
+      onRefresh();
+    },
+    onError: (e) => {
+      toast.error(e.message);
+      setIsGenerating(false);
+    },
+  });
+
+  // Load existing generated audio
+  useEffect(() => {
+    const script = scripts.find((s: any) => s.slideId === slideId);
+    if (script?.recordedAudioUrl && script?.voiceMode === "ai_clone") {
+      setGeneratedUrl(script.recordedAudioUrl);
+    } else {
+      setGeneratedUrl(null);
+    }
+  }, [slideId, scripts]);
+
+  const handleGenerate = () => {
+    const script = scripts.find((s: any) => s.slideId === slideId);
+    if (!script?.scriptText) {
+      toast.error("이 슬라이드에 스크립트가 없습니다. 먼저 스크립트를 작성해주세요.");
+      return;
+    }
+    setIsGenerating(true);
+    generateCloneMut.mutate({ projectId, slideId, text: script.scriptText, speed: 1.0, pitch: 0 });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+        <p className="text-xs text-muted-foreground mb-2">
+          <Sparkles className="w-3 h-3 inline mr-1" />
+          프로필에 등록된 본인 음성 샘플을 기반으로 AI가 스크립트를 본인 목소리로 읽어줍니다.
+        </p>
+        <Button
+          size="sm"
+          className="gap-1.5 bg-purple-600 hover:bg-purple-700 text-white"
+          onClick={handleGenerate}
+          disabled={isGenerating}
+        >
+          {isGenerating ? (
+            <><Loader2 className="w-3 h-3 animate-spin" />생성 중...</>
+          ) : (
+            <><Sparkles className="w-3 h-3" />AI 클론 음성 생성</>
+          )}
+        </Button>
+      </div>
+
+      {generatedUrl && (
+        <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+          <p className="text-xs text-green-600 mb-2 font-medium">AI 클론 음성 생성 완료</p>
+          <audio controls src={generatedUrl} className="w-full h-8" />
+        </div>
+      )}
+    </div>
   );
 }
