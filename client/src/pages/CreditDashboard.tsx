@@ -30,6 +30,75 @@ const FEATURE_INFO: Record<string, { label: string; icon: typeof Zap; color: str
   avatar_generation: { label: "아바타 생성", icon: Camera, color: "text-rose-400" },
 };
 
+const CREDIT_PACKAGES = [
+  { id: "credits_50", name: "Basic", credits: 50, price: 15, perCredit: 0.30, popular: false },
+  { id: "credits_200", name: "Standard", credits: 200, price: 50, perCredit: 0.25, popular: true },
+  { id: "credits_500", name: "Premium", credits: 500, price: 100, perCredit: 0.20, popular: false },
+  { id: "credits_2000", name: "Bulk", credits: 2000, price: 300, perCredit: 0.15, popular: false },
+];
+
+function CreditPackageGrid() {
+  const { user } = useAuth();
+  const [loadingPkg, setLoadingPkg] = useState<string | null>(null);
+  const purchaseMut = trpc.payment.createCreditCheckout.useMutation();
+
+  const handleBuy = async (pkgId: string) => {
+    if (!user) {
+      toast.error("로그인이 필요합니다.");
+      return;
+    }
+    setLoadingPkg(pkgId);
+    try {
+      const result = await purchaseMut.mutateAsync({ packageId: pkgId, origin: window.location.origin });
+      if (result.checkoutUrl) {
+        toast.info("결제 페이지로 이동합니다...");
+        window.open(result.checkoutUrl, "_blank");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "결제 오류가 발생했습니다.");
+    } finally {
+      setLoadingPkg(null);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {CREDIT_PACKAGES.map((pkg) => (
+        <div
+          key={pkg.id}
+          className={`relative p-4 rounded-xl border text-center transition-all hover:shadow-lg ${
+            pkg.popular ? "border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/20" : "border-border/50 hover:border-amber-500/30"
+          }`}
+        >
+          {pkg.popular && (
+            <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] px-2">
+              인기
+            </Badge>
+          )}
+          <p className="text-sm font-medium text-muted-foreground mb-1">{pkg.name}</p>
+          <p className="text-2xl font-bold text-amber-500">{pkg.credits.toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground mb-1">크레딧</p>
+          <p className="text-lg font-bold mb-0.5">${pkg.price}</p>
+          <p className="text-[10px] text-muted-foreground mb-3">개당 ${pkg.perCredit.toFixed(2)}</p>
+          <Button
+            size="sm"
+            className={`w-full gap-1 ${pkg.popular ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}`}
+            variant={pkg.popular ? "default" : "outline"}
+            onClick={() => handleBuy(pkg.id)}
+            disabled={loadingPkg === pkg.id}
+          >
+            {loadingPkg === pkg.id ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <><CreditCard className="w-3 h-3" />구매</>
+            )}
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function CreditDashboard() {
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -282,6 +351,18 @@ export default function CreditDashboard() {
                 })}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Credit Packages - Direct Purchase */}
+        <Card className="glass-card">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-amber-400" />크레딧 충전
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CreditPackageGrid />
           </CardContent>
         </Card>
 
