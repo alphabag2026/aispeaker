@@ -23,11 +23,15 @@ const FEATURE_INFO: Record<string, { label: string; icon: typeof Zap; color: str
   voice_change: { label: "음성 변환", icon: Headphones, color: "text-green-400" },
   video_effects: { label: "비디오 이펙트", icon: Film, color: "text-orange-400" },
   image_to_video: { label: "이미지→비디오", icon: Video, color: "text-red-400" },
-  face_swap: { label: "페이스 스왑", icon: Wand2, color: "text-amber-400" },
+  face_swap: { label: "페이스 스왕", icon: Wand2, color: "text-amber-400" },
   talking_avatar: { label: "토킹 아바타", icon: Camera, color: "text-indigo-400" },
   video_translate: { label: "비디오 번역", icon: Globe, color: "text-teal-400" },
   lecture_generation: { label: "강의 생성", icon: Sparkles, color: "text-violet-400" },
   avatar_generation: { label: "아바타 생성", icon: Camera, color: "text-rose-400" },
+  ppt_script_generation: { label: "PPT 스크립트 생성", icon: BarChart3, color: "text-emerald-400" },
+  script_generation: { label: "스크립트 생성", icon: Sparkles, color: "text-yellow-400" },
+  subtitle_generation: { label: "자막 생성", icon: Globe, color: "text-sky-400" },
+  thumbnail_generation: { label: "썸네일 생성", icon: ImageIcon, color: "text-lime-400" },
 };
 
 const CREDIT_PACKAGES = [
@@ -303,6 +307,9 @@ export default function CreditDashboard() {
           </CardContent>
         </Card>
 
+        {/* Detailed Usage Stats Widget */}
+        <CreditUsageStatsWidget />
+
         {/* Recent History */}
         <Card className="glass-card">
           <CardHeader className="pb-4">
@@ -404,5 +411,157 @@ export default function CreditDashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+
+// --- Detailed Credit Usage Stats Widget ---
+function CreditUsageStatsWidget() {
+  const [statsPeriod, setStatsPeriod] = useState<"7d" | "30d" | "all">("30d");
+  const statsQuery = trpc.credit.usageStats.useQuery({ period: statsPeriod });
+
+  const periodLabels: Record<string, string> = {
+    "7d": "최근 7일",
+    "30d": "최근 30일",
+    "all": "전체",
+  };
+
+  return (
+    <Card className="glass-card">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-emerald-400" />크레딧 사용 상세 분석
+          </CardTitle>
+          <div className="flex gap-1">
+            {(["7d", "30d", "all"] as const).map((p) => (
+              <Button
+                key={p}
+                size="sm"
+                variant={statsPeriod === p ? "default" : "ghost"}
+                className="text-xs h-7 px-2"
+                onClick={() => setStatsPeriod(p)}
+              >
+                {periodLabels[p]}
+              </Button>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {statsQuery.isLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : !statsQuery.data || statsQuery.data.totalCredits === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <BarChart3 className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">선택한 기간에 사용 내역이 없습니다.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Summary */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-lg bg-background/50 p-3 text-center">
+                <p className="text-2xl font-bold text-primary">{statsQuery.data.totalCredits}</p>
+                <p className="text-xs text-muted-foreground">총 사용 크레딧</p>
+              </div>
+              <div className="rounded-lg bg-background/50 p-3 text-center">
+                <p className="text-2xl font-bold text-blue-400">{Object.keys(statsQuery.data.byFeature).length}</p>
+                <p className="text-xs text-muted-foreground">사용 기능 수</p>
+              </div>
+              <div className="rounded-lg bg-background/50 p-3 text-center">
+                <p className="text-2xl font-bold text-amber-400">{statsQuery.data.dailyTrend.length}</p>
+                <p className="text-xs text-muted-foreground">활동 일수</p>
+              </div>
+            </div>
+
+            {/* Feature Breakdown - Pie-like bars */}
+            <div>
+              <h4 className="text-sm font-medium mb-3 text-muted-foreground">기능별 사용량</h4>
+              <div className="space-y-2">
+                {Object.entries(statsQuery.data.byFeature)
+                  .sort(([, a], [, b]) => (b as any).credits - (a as any).credits)
+                  .slice(0, 8)
+                  .map(([feature, data]: [string, any]) => {
+                    const info = FEATURE_INFO[feature];
+                    const Icon = info?.icon || Sparkles;
+                    const percent = (data.credits / statsQuery.data!.totalCredits) * 100;
+                    return (
+                      <div key={feature} className="flex items-center gap-3">
+                        <div className={`h-7 w-7 rounded-md bg-background/50 flex items-center justify-center ${info?.color || "text-muted-foreground"}`}>
+                          <Icon className="h-3.5 w-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-xs font-medium truncate">{info?.label || feature}</span>
+                            <span className="text-xs text-muted-foreground">{data.credits}cr ({data.count}회)</span>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-500/60 rounded-full transition-all"
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                          {percent.toFixed(0)}%
+                        </Badge>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Daily Trend - Mini bar chart */}
+            {statsQuery.data.dailyTrend.length > 1 && (
+              <div>
+                <h4 className="text-sm font-medium mb-3 text-muted-foreground">일별 사용 추이</h4>
+                <div className="flex items-end gap-0.5 h-20">
+                  {statsQuery.data.dailyTrend.slice(-14).map((day: any, idx: number) => {
+                    const maxCredits = Math.max(...statsQuery.data!.dailyTrend.slice(-14).map((d: any) => d.credits));
+                    const height = maxCredits > 0 ? (day.credits / maxCredits) * 100 : 0;
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-0.5" title={`${day.date}: ${day.credits}cr`}>
+                        <div
+                          className="w-full bg-gradient-to-t from-primary/80 to-primary/40 rounded-sm transition-all hover:from-primary hover:to-primary/60"
+                          style={{ height: `${Math.max(height, 4)}%` }}
+                        />
+                        {idx % 3 === 0 && (
+                          <span className="text-[8px] text-muted-foreground">{day.date.slice(5)}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Recent Usage Logs */}
+            {statsQuery.data.recentLogs.length > 0 && (
+              <div>
+                <h4 className="text-sm font-medium mb-3 text-muted-foreground">최근 사용 내역</h4>
+                <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+                  {statsQuery.data.recentLogs.map((log: any, idx: number) => {
+                    const info = FEATURE_INFO[log.feature];
+                    const Icon = info?.icon || Sparkles;
+                    return (
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-md bg-background/30 hover:bg-background/50 transition-colors">
+                        <Icon className={`h-3.5 w-3.5 ${info?.color || "text-muted-foreground"}`} />
+                        <span className="text-xs flex-1 truncate">{info?.label || log.feature}</span>
+                        <span className="text-xs font-medium text-red-400">-{log.creditsUsed}</span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(log.createdAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

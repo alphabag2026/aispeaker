@@ -3539,6 +3539,47 @@ Respond ONLY in the following JSON format:
         });
         return { success: true, creditsUsed: cost, remaining: balanceAfter };
       }),
+    // Usage stats by feature and period
+    usageStats: protectedProcedure
+      .input(z.object({
+        period: z.enum(["7d", "30d", "all"]).default("30d"),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        const logs = await db.getUserCreditUsageLogs(ctx.user.id, 500);
+        const period = input?.period || "30d";
+        const now = Date.now();
+        const cutoff = period === "7d" ? now - 7 * 86400000 : period === "30d" ? now - 30 * 86400000 : 0;
+
+        const filtered = cutoff > 0 ? logs.filter((l: any) => new Date(l.createdAt).getTime() >= cutoff) : logs;
+
+        // Group by feature
+        const byFeature: Record<string, { count: number; credits: number }> = {};
+        let totalCredits = 0;
+        for (const log of filtered) {
+          if (!byFeature[log.feature]) byFeature[log.feature] = { count: 0, credits: 0 };
+          byFeature[log.feature].count++;
+          byFeature[log.feature].credits += log.creditsUsed;
+          totalCredits += log.creditsUsed;
+        }
+
+        // Daily trend
+        const dailyMap: Record<string, number> = {};
+        for (const log of filtered) {
+          const day = new Date(log.createdAt).toISOString().slice(0, 10);
+          dailyMap[day] = (dailyMap[day] || 0) + log.creditsUsed;
+        }
+        const dailyTrend = Object.entries(dailyMap).sort(([a], [b]) => a.localeCompare(b)).map(([date, credits]) => ({ date, credits }));
+
+        // Recent logs (top 20)
+        const recentLogs = filtered.slice(0, 20).map((l: any) => ({
+          feature: l.feature,
+          creditsUsed: l.creditsUsed,
+          createdAt: l.createdAt,
+          resourceId: l.resourceId,
+        }));
+
+        return { byFeature, totalCredits, dailyTrend, recentLogs, period };
+      }),
   }),
 
   // ========== Payments (Stripe) ==========
@@ -6354,6 +6395,64 @@ Rules:
         }
 
         return { saved, savedAt: new Date().toISOString() };
+      }),
+
+    // --- Batch generate clone voice for all slides ---
+    batchGenerateCloneVoice: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        speed: z.number().min(0.5).max(2.0).default(1.0),
+        pitch: z.number().min(-12).max(12).default(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+
+        // Find user's voice clone profile
+        const clones = await db.getVoiceClonesByUser(ctx.user.id);
+        const readyClone = clones.find((c: any) => c.status === "ready");
+        if (!readyClone) throw new TRPCError({ code: "BAD_REQUEST", message: "NO_VOICE_CLONE: 음성 프로필에서 음성 샘플을 먼저 등록해주세요." });
+
+        const voiceId = readyClone.matchedVoiceId || "Kore";
+        const scripts = await db.listSlideScripts(input.projectId);
+        const scriptsWithText = scripts.filter((s: any) => s.scriptText && s.scriptText.trim().length > 0);
+
+        if (scriptsWithText.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "스크립트가 있는 슬라이드가 없습니다. 먼저 스크립트를 작성해주세요." });
+
+        const { generateGeminiTts } = await import("./_core/geminiTts");
+        const results: { slideId: number; audioUrl: string; success: boolean; error?: string }[] = [];
+
+        for (const script of scriptsWithText) {
+          try {
+            const result = await generateGeminiTts({
+              text: script.scriptText,
+              voiceId,
+              speed: input.speed,
+              pitch: input.pitch,
+              _userId: ctx.user.id,
+            });
+
+            if ("error" in result) {
+              results.push({ slideId: script.slideId, audioUrl: "", success: false, error: (result as any).error });
+              continue;
+            }
+
+            const key = `clone-tts/${ctx.user.id}/${input.projectId}/${script.slideId}-${Date.now()}.mp3`;
+            const { url } = await storagePut(key, (result as any).audioBuffer, "audio/mpeg");
+
+            await db.updateSlideScript(script.id, {
+              voiceMode: "ai_clone",
+              recordedAudioUrl: url,
+            } as any);
+
+            results.push({ slideId: script.slideId, audioUrl: url, success: true });
+          } catch (e: any) {
+            results.push({ slideId: script.slideId, audioUrl: "", success: false, error: e.message });
+          }
+        }
+
+        const successCount = results.filter(r => r.success).length;
+        return { results, total: scriptsWithText.length, success: successCount, voiceName: readyClone.name };
       }),
   }),
 
