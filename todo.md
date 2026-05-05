@@ -2470,3 +2470,35 @@
 
 ### 공통
 - [x] 테스트: v6.2 기능 vitest 테스트 작성 (17개 통과)
+
+## AI 클론 음성 품질 미리듣기 (v6.3)
+### 프론트엔드
+- [x] BatchCloneVoiceButton 클릭 시 바로 생성 대신 확인 모달 표시
+- [x] 확인 모달에서 첫 번째 슬라이드로 미리 테스트 생성 버튼
+- [x] 테스트 생성 완료 후 오디오 미리듣기 플레이어 표시
+- [x] "품질 확인 후 전체 생성" 버튼으로 일괄 생성 진행
+- [x] "취소" 버튼으로 모달 닫기
+
+## 크레딧 소진 알림 (v6.3)
+### 백엔드
+- [x] credit.checkLowBalance - 잔여 크레딧 10 이하 체크 프로시저
+- [x] notifyOwner 활용하여 크레딧 소진 알림 이메일 발송
+### 프론트엔드
+- [x] CreditDashboard 상단에 잔여 크레딧 10 이하 시 경고 배너 표시
+- [x] 크레딧 사용 시 잔여 10 이하면 토스트 경고 표시
+- [x] 배너에 "크레딧 충전하기" 바로가기 버튼
+
+## 스크립트 버전 관리 (v6.3)
+### DB 스키마
+- [x] 기존 slideScriptVersions 테이블 활용 (slideScriptId, version, scriptText, createdAt)
+### 백엔드
+- [x] lectureBuilder.listScriptVersions - 슬라이드별 스크립트 수정 이력 조회
+- [x] lectureBuilder.restoreScriptVersion - 이전 버전으로 복원
+- [x] 스크립트 저장 시 자동으로 버전 기록 (saveSlideScripts에 createSlideScriptVersion 연동)
+### 프론트엔드
+- [x] Step4 매칭 에디터에 "버전 이력" 버튼 추가 (VersionHistoryButton)
+- [x] 버전 이력 다이얼로그 (시간순 목록 + 복원 버튼)
+- [x] 복원 시 확인 다이얼로그
+
+### 공통
+- [x] 테스트: v6.3 기능 vitest 테스트 작성 (19개 통과)

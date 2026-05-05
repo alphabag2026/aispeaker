@@ -192,6 +192,9 @@ export default function CreditDashboard() {
       </header>
 
       <div className="container py-8 space-y-8">
+        {/* Low Balance Warning Banner */}
+        <LowBalanceBanner />
+
         {/* Balance Card */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="glass-card md:col-span-2">
@@ -563,5 +566,37 @@ function CreditUsageStatsWidget() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+
+// --- Low Balance Warning Banner ---
+function LowBalanceBanner() {
+  const lowBalanceQuery = trpc.credit.checkLowBalance.useQuery(undefined, {
+    refetchInterval: 60000, // Check every minute
+  });
+
+  if (!lowBalanceQuery.data?.isLow) return null;
+
+  return (
+    <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 flex items-center gap-4">
+      <div className="h-10 w-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+        <Zap className="h-5 w-5 text-amber-400" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-amber-200">
+          크레딧 잔액이 부족합니다
+        </p>
+        <p className="text-xs text-amber-400/80 mt-0.5">
+          현재 잔여 크레딧: <span className="font-bold">{lowBalanceQuery.data.credits}개</span> (임계값: {lowBalanceQuery.data.threshold}개 이하)
+        </p>
+      </div>
+      <Link href="/pricing">
+        <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-black font-medium gap-1.5">
+          <CreditCard className="h-3.5 w-3.5" />
+          충전하기
+        </Button>
+      </Link>
+    </div>
   );
 }
