@@ -2,7 +2,7 @@
  * Image generation helper with Gemini Imagen fallback
  *
  * - If BUILT_IN_FORGE_API_URL is set, use Forge ImageService
- * - Otherwise, if GEMINI_API_KEY is set, use Gemini Imagen API
+ * - If Forge fails or is unavailable, fall back to Gemini Imagen API
  * - If neither is available, throw a descriptive error
  */
 import { storagePut } from "server/storage";
@@ -23,6 +23,7 @@ export type GenerateImageResponse = {
 
 /**
  * Generate image using Gemini Imagen API (fallback when Forge is unavailable)
+ * Uses gemini-2.5-flash-preview-image-generation model
  */
 async function generateWithGemini(prompt: string): Promise<Buffer> {
   const apiKey = ENV.geminiApiKey;
@@ -30,7 +31,7 @@ async function generateWithGemini(prompt: string): Promise<Buffer> {
     throw new Error("GEMINI_API_KEY is not configured for image generation");
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-image-generation:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
     method: "POST",
@@ -118,9 +119,18 @@ export async function generateImage(
 
   // Try Forge first, then Gemini fallback
   if (ENV.forgeApiUrl && ENV.forgeApiKey) {
-    const result = await generateWithForge(options);
-    buffer = result.buffer;
-    mimeType = result.mimeType;
+    try {
+      const result = await generateWithForge(options);
+      buffer = result.buffer;
+      mimeType = result.mimeType;
+    } catch (forgeError: any) {
+      console.warn(`[ImageGen] Forge failed: ${forgeError.message}. Falling back to Gemini...`);
+      if (ENV.geminiApiKey) {
+        buffer = await generateWithGemini(options.prompt);
+      } else {
+        throw forgeError;
+      }
+    }
   } else if (ENV.geminiApiKey) {
     console.log("[ImageGen] Forge not available, using Gemini Imagen fallback");
     buffer = await generateWithGemini(options.prompt);
