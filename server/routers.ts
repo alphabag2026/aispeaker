@@ -3539,6 +3539,21 @@ Respond ONLY in the following JSON format:
         });
         return { success: true, creditsUsed: cost, remaining: balanceAfter };
       }),
+    // Check low balance and notify
+    checkLowBalance: protectedProcedure.query(async ({ ctx }) => {
+      const credits = await db.getUserCredits(ctx.user.id);
+      const LOW_THRESHOLD = 10;
+      const isLow = credits <= LOW_THRESHOLD;
+      if (isLow && credits > 0) {
+        // Notify owner about low balance (fire-and-forget)
+        const { notifyOwner } = await import("./_core/notification");
+        notifyOwner({
+          title: "\ud06c\ub808\ub527 \uc794\uc561 \ubd80\uc871 \uc54c\ub9bc",
+          content: `\uc0ac\uc6a9\uc790 ${ctx.user.name || ctx.user.openId}\uc758 \ud06c\ub808\ub527\uc774 ${credits}\uac1c \ub0a8\uc558\uc2b5\ub2c8\ub2e4. \ucda9\uc804\uc744 \uad8c\uc7a5\ud574\uc8fc\uc138\uc694.`,
+        }).catch(() => {});
+      }
+      return { credits, isLow, threshold: LOW_THRESHOLD };
+    }),
     // Usage stats by feature and period
     usageStats: protectedProcedure
       .input(z.object({
@@ -6393,6 +6408,26 @@ Rules:
           }
           saved++;
         }
+
+        // Auto-create version snapshot after save
+        try {
+          const latestVer = await db.getLatestSlideScriptVersionNumber(input.projectId);
+          const allScripts = await db.listSlideScripts(input.projectId);
+          const snapshot = allScripts.map((s: any) => ({
+            sortOrder: s.sortOrder || 0,
+            scriptText: s.scriptText,
+            avatarId: s.avatarId,
+          }));
+          await db.createSlideScriptVersion({
+            projectId: input.projectId,
+            userId: ctx.user.id,
+            versionNumber: latestVer + 1,
+            sectionsSnapshot: JSON.stringify(snapshot),
+            sectionCount: snapshot.length,
+            changeDescription: `Auto-save (${saved} slides)`,
+            changeType: "auto",
+          });
+        } catch (e) { /* non-critical, ignore version save errors */ }
 
         return { saved, savedAt: new Date().toISOString() };
       }),

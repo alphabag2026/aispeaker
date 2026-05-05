@@ -3027,6 +3027,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
             저장하기
           </Button>
           <BatchCloneVoiceButton projectId={projectId} slides={slides} slideScriptMap={slideScriptMap} onComplete={() => projectQuery.refetch()} />
+          <VersionHistoryButton projectId={projectId} onRestore={() => projectQuery.refetch()} />
         </div>
       </div>
 
@@ -5325,20 +5326,39 @@ function AICloneVoiceSection({ projectId, slideId, scripts, onRefresh }: {
 }
 
 
-// --- Batch Clone Voice Button Component ---
+// --- Batch Clone Voice Button Component with Preview Modal ---
 function BatchCloneVoiceButton({ projectId, slides, slideScriptMap, onComplete }: {
   projectId: number;
   slides: any[];
   slideScriptMap: Record<number, any>;
   onComplete: () => void;
 }) {
+  const [showModal, setShowModal] = useState(false);
+  const [step, setStep] = useState<"confirm" | "preview" | "generating">("confirm");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewVoiceName, setPreviewVoiceName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+
+  const previewMut = trpc.lectureBuilder.generateCloneVoice.useMutation({
+    onSuccess: (data) => {
+      setPreviewUrl(data.audioUrl);
+      setPreviewVoiceName(data.voiceName);
+      setStep("preview");
+    },
+    onError: (e) => {
+      if (e.message.includes("NO_VOICE_CLONE")) {
+        toast.error("음성 프로필에서 음성 샘플을 먼저 등록해주세요.");
+      } else {
+        toast.error(e.message);
+      }
+      setShowModal(false);
+    },
+  });
 
   const batchMut = trpc.lectureBuilder.batchGenerateCloneVoice.useMutation({
     onSuccess: (data) => {
       setIsGenerating(false);
-      setProgress({ current: data.success, total: data.total });
+      setShowModal(false);
       if (data.success === data.total) {
         toast.success(`전체 ${data.total}개 슬라이드 AI 클론 음성 생성 완료! (${data.voiceName})`);
       } else {
@@ -5348,44 +5368,207 @@ function BatchCloneVoiceButton({ projectId, slides, slideScriptMap, onComplete }
     },
     onError: (e) => {
       setIsGenerating(false);
-      if (e.message.includes("NO_VOICE_CLONE")) {
-        toast.error("음성 프로필에서 음성 샘플을 먼저 등록해주세요.");
-      } else {
-        toast.error(e.message);
-      }
+      toast.error(e.message);
     },
   });
 
-  const handleBatchGenerate = () => {
-    const scriptsWithText = slides.filter(s => slideScriptMap[s.id]?.text?.trim());
+  const scriptsWithText = slides.filter(s => slideScriptMap[s.id]?.text?.trim());
+
+  const handleOpenModal = () => {
     if (scriptsWithText.length === 0) {
       toast.error("스크립트가 있는 슬라이드가 없습니다.");
       return;
     }
+    setStep("confirm");
+    setPreviewUrl(null);
+    setShowModal(true);
+  };
+
+  const handlePreviewTest = () => {
+    const firstSlide = scriptsWithText[0];
+    const text = slideScriptMap[firstSlide.id]?.text || "";
+    previewMut.mutate({ projectId, slideId: firstSlide.id, text, speed: 1.0, pitch: 0 });
+  };
+
+  const handleBatchGenerate = () => {
     setIsGenerating(true);
-    setProgress({ current: 0, total: scriptsWithText.length });
+    setStep("generating");
     batchMut.mutate({ projectId, speed: 1.0, pitch: 0 });
   };
 
   return (
-    <Button
-      size="sm"
-      variant="outline"
-      className="gap-1.5 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
-      onClick={handleBatchGenerate}
-      disabled={isGenerating}
-    >
-      {isGenerating ? (
-        <>
-          <Loader2 className="w-3 h-3 animate-spin" />
-          AI 클론 생성중...
-        </>
-      ) : (
-        <>
-          <Headphones className="w-3 h-3" />
-          전체 AI 클론 음성 생성
-        </>
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1.5 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+        onClick={handleOpenModal}
+        disabled={isGenerating}
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="w-3 h-3 animate-spin" />
+            AI 클론 생성중...
+          </>
+        ) : (
+          <>
+            <Headphones className="w-3 h-3" />
+            전체 AI 클론 음성 생성
+          </>
+        )}
+      </Button>
+
+      <Dialog open={showModal} onOpenChange={(open) => { if (!isGenerating) setShowModal(open); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Headphones className="w-5 h-5 text-purple-400" />
+              AI 클론 음성 일괄 생성
+            </DialogTitle>
+          </DialogHeader>
+
+          {step === "confirm" && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                <p className="text-sm">총 <span className="font-bold text-primary">{scriptsWithText.length}개</span> 슬라이드의 스크립트를 AI 클론 음성으로 생성합니다.</p>
+                <p className="text-xs text-muted-foreground">먼저 첫 번째 슬라이드로 음성 품질을 테스트해보세요.</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 gap-1.5"
+                  onClick={handlePreviewTest}
+                  disabled={previewMut.isPending}
+                >
+                  {previewMut.isPending ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" />테스트 생성중...</>
+                  ) : (
+                    <><Mic className="w-4 h-4" />미리 테스트 (1개 슬라이드)</>
+                  )}
+                </Button>
+                <Button variant="outline" onClick={() => setShowModal(false)}>취소</Button>
+              </div>
+            </div>
+          )}
+
+          {step === "preview" && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-sm font-medium text-green-400">테스트 생성 완료</span>
+                </div>
+                <p className="text-xs text-muted-foreground">음성: {previewVoiceName}</p>
+                {previewUrl && (
+                  <audio controls className="w-full h-8" src={previewUrl}>
+                    Your browser does not support audio.
+                  </audio>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">음성 품질이 만족스러우면 전체 생성을 진행하세요.</p>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 gap-1.5 bg-purple-600 hover:bg-purple-700"
+                  onClick={handleBatchGenerate}
+                >
+                  <Headphones className="w-4 h-4" />
+                  전체 {scriptsWithText.length}개 생성하기
+                </Button>
+                <Button variant="outline" onClick={() => setShowModal(false)}>취소</Button>
+              </div>
+            </div>
+          )}
+
+          {step === "generating" && (
+            <div className="space-y-4 py-4">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-10 h-10 animate-spin text-purple-400" />
+                <p className="text-sm font-medium">AI 클론 음성 일괄 생성 중...</p>
+                <p className="text-xs text-muted-foreground">{scriptsWithText.length}개 슬라이드 처리 중 (잠시 기다려주세요)</p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+
+// --- Version History Button for Step4 Matching Editor ---
+function VersionHistoryButton({ projectId, onRestore }: { projectId: number; onRestore: () => void }) {
+  const [open, setOpen] = useState(false);
+  const versionsQuery = trpc.lectureBuilder.listScriptVersions.useQuery(
+    { projectId },
+    { enabled: open }
+  );
+  const restoreMut = trpc.lectureBuilder.restoreScriptVersion.useMutation({
+    onSuccess: (data) => {
+      toast.success(`버전 ${data.restoredVersion}으로 복원됨 (${data.sectionCount}개 섹션)`);
+      setOpen(false);
+      onRestore();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <>
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+        <History className="w-3 h-3" />
+        버전 이력
+      </Button>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setOpen(false)}>
+          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-md max-h-[70vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-semibold flex items-center gap-2">
+                <History className="w-4 h-4 text-blue-500" />
+                스크립트 버전 이력
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-4 overflow-y-auto max-h-[55vh] space-y-2">
+              {versionsQuery.isLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+              ) : !versionsQuery.data?.length ? (
+                <p className="text-center text-muted-foreground py-6">저장된 버전이 없습니다</p>
+              ) : (
+                versionsQuery.data.map((v: any) => (
+                  <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-bold text-blue-500">v{v.versionNumber}</span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${v.changeType === "manual" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300" : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"}`}>
+                          {v.changeType === "manual" ? "수동" : "자동"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{v.sectionCount}개 섹션</span>
+                      </div>
+                      {v.changeDescription && <p className="text-xs text-muted-foreground mt-0.5 truncate">{v.changeDescription}</p>}
+                      <p className="text-xs text-muted-foreground/60 mt-0.5">
+                        {new Date(v.createdAt).toLocaleString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1 text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950 flex-shrink-0"
+                      disabled={restoreMut.isPending}
+                      onClick={() => {
+                        if (confirm(`버전 ${v.versionNumber}으로 복원하시겠습니까?`)) {
+                          restoreMut.mutate({ projectId, versionId: v.id });
+                        }
+                      }}
+                    >
+                      <Undo2 className="w-3.5 h-3.5" /> 복원
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
-    </Button>
+    </>
   );
 }

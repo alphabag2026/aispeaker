@@ -2485,3 +2485,4 @@ export const presetLikes = mysqlTable("presetLikes", {
 });
 export type PresetLike = typeof presetLikes.$inferSelect;
 export type InsertPresetLike = typeof presetLikes.$inferInsert;
+
