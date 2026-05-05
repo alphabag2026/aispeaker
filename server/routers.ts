@@ -6022,6 +6022,204 @@ Rules:
         const { url } = await storagePut(fileKey, Buffer.from(srtContent, "utf-8"), "text/plain");
         return { srtUrl: url, subtitleCount: idx - 1, mode: input.mode };
       }),
+
+    // --- PPT → AI Script Generation (Premium Feature) ---
+    generateScriptFromPPT: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideIds: z.array(z.number()).min(1),
+        language: z.string().default("ko"),
+        style: z.enum(["professional", "casual", "academic", "storytelling"]).default("professional"),
+        additionalContext: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+
+        // Check credits
+        const { CREDIT_COSTS } = await import("./stripe");
+        const cost = CREDIT_COSTS.ppt_script_generation;
+        const currentCredits = await db.getUserCredits(ctx.user.id);
+        if (currentCredits < cost) {
+          throw new TRPCError({ code: "FORBIDDEN", message: `INSUFFICIENT_CREDITS:${cost}:${currentCredits}` });
+        }
+
+        // Get slide images for AI analysis
+        const slides = await db.listProjectSlides(input.projectId);
+        const targetSlides = slides.filter(s => input.slideIds.includes(s.id)).sort((a, b) => a.slideOrder - b.slideOrder);
+        if (targetSlides.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No matching slides found" });
+
+        const langMap: Record<string, string> = { ko: 'Korean', en: 'English', zh: 'Chinese', ja: 'Japanese', vi: 'Vietnamese', th: 'Thai', es: 'Spanish', fr: 'French', de: 'German' };
+        const langName = langMap[input.language] || input.language;
+
+        const styleMap: Record<string, string> = {
+          professional: 'professional and authoritative',
+          casual: 'friendly and conversational',
+          academic: 'academic and detailed',
+          storytelling: 'narrative and engaging storytelling'
+        };
+        const styleDesc = styleMap[input.style];
+
+        // Build messages with slide images for multimodal analysis
+        const slideContents: Array<{ type: string; image_url?: { url: string }; text?: string }> = [];
+        slideContents.push({ type: "text", text: `Analyze the following ${targetSlides.length} presentation slides and generate a ${styleDesc} lecture script for each slide. Write in ${langName}.${input.additionalContext ? `\n\nAdditional context: ${input.additionalContext}` : ''}\n\nFor each slide, write 3-6 natural sentences (30-60 seconds of speaking). Include smooth transitions between slides. Start with an engaging introduction and end with a clear conclusion.\n\nReturn JSON: {"scripts": [{"slideId": number, "text": "script text", "estimatedDurationSec": number}]}` });
+
+        for (const slide of targetSlides) {
+          slideContents.push({ type: "text", text: `--- Slide ${slide.slideOrder + 1} (ID: ${slide.id}) ---` });
+          slideContents.push({ type: "image_url", image_url: { url: slide.imageUrl } });
+        }
+
+        const { invokeLLM } = await import("./_core/llm");
+        const response = await invokeLLM({
+          messages: [
+            { role: "system", content: "You are a professional lecture script writer. Analyze presentation slides visually and generate natural, engaging lecture scripts. Always respond with valid JSON only." },
+            { role: "user", content: slideContents as any },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "ppt_scripts",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  scripts: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        slideId: { type: "integer" },
+                        text: { type: "string" },
+                        estimatedDurationSec: { type: "integer" },
+                      },
+                      required: ["slideId", "text", "estimatedDurationSec"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["scripts"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        let scripts: Array<{ slideId: number; text: string; estimatedDurationSec: number }> = [];
+        try {
+          const rawContent = response.choices?.[0]?.message?.content || "{}";
+          const content = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent);
+          const parsed = JSON.parse(content);
+          scripts = parsed.scripts || [];
+        } catch {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to parse AI response" });
+        }
+
+        // Deduct credits
+        await db.deductCredits(ctx.user.id, cost, `PPT Script Generation (${targetSlides.length} slides)`, "ppt_script", input.projectId);
+
+        return { scripts, creditsUsed: cost, creditsRemaining: currentCredits - cost };
+      }),
+
+    // --- Get PPT Script Credits Info ---
+    getPPTScriptCredits: protectedProcedure
+      .query(async ({ ctx }) => {
+        const { CREDIT_COSTS } = await import("./stripe");
+        const currentCredits = await db.getUserCredits(ctx.user.id);
+        return {
+          creditsRemaining: currentCredits,
+          costPerGeneration: CREDIT_COSTS.ppt_script_generation,
+          canGenerate: currentCredits >= CREDIT_COSTS.ppt_script_generation,
+        };
+      }),
+
+    // --- Set Voice Mode per Slide ---
+    setSlideVoiceMode: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+        voiceMode: z.enum(["direct_record", "ai_clone", "ai_tts"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        // Update existing script or create placeholder
+        const existingScripts = await db.listSlideScripts(input.projectId);
+        const existing = existingScripts.find((s: any) => s.slideId === input.slideId);
+        if (existing) {
+          await db.updateSlideScript(existing.id, { voiceMode: input.voiceMode } as any);
+        } else {
+          await db.setSlideScript({
+            projectId: input.projectId,
+            slideId: input.slideId,
+            scriptText: "",
+            voiceMode: input.voiceMode,
+          } as any);
+        }
+        return { success: true };
+      }),
+
+    // --- Upload Slide Recording (direct voice recording per slide) ---
+    uploadSlideRecording: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+        audioData: z.string(), // base64
+        fileName: z.string(),
+        duration: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+
+        // Upload audio to S3
+        const buffer = Buffer.from(input.audioData, "base64");
+        const ext = input.fileName.split(".").pop() || "webm";
+        const key = `slide-recordings/${input.projectId}/${input.slideId}-${Date.now()}.${ext}`;
+        const mimeType = ext === "mp3" ? "audio/mpeg" : ext === "wav" ? "audio/wav" : ext === "m4a" ? "audio/mp4" : `audio/${ext}`;
+        const { url } = await storagePut(key, buffer, mimeType);
+
+        // Update or create slide script with recording
+        const existingScripts = await db.listSlideScripts(input.projectId);
+        const existing = existingScripts.find((s: any) => s.slideId === input.slideId);
+        if (existing) {
+          await db.updateSlideScript(existing.id, {
+            voiceMode: "direct_record",
+            recordedAudioUrl: url,
+            recordedAudioDuration: input.duration || null,
+          } as any);
+        } else {
+          await db.setSlideScript({
+            projectId: input.projectId,
+            slideId: input.slideId,
+            scriptText: "",
+            voiceMode: "direct_record",
+            recordedAudioUrl: url,
+            recordedAudioDuration: input.duration || null,
+          } as any);
+        }
+
+        return { url, duration: input.duration };
+      }),
+
+    // --- Delete Slide Recording ---
+    deleteSlideRecording: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        slideId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const existingScripts = await db.listSlideScripts(input.projectId);
+        const existing = existingScripts.find((s: any) => s.slideId === input.slideId);
+        if (existing) {
+          await db.updateSlideScript(existing.id, {
+            recordedAudioUrl: null,
+            recordedAudioDuration: null,
+          } as any);
+        }
+        return { success: true };
+      }),
   }),
 
   // ============ Admin Dashboard ============
@@ -8710,7 +8908,7 @@ Respond in JSON format:
 
           let analysis: any = {};
           try {
-            analysis = JSON.parse(llmResponse.choices[0]?.message?.content || "{}");
+            analysis = JSON.parse((llmResponse.choices[0]?.message?.content as string) || "{}");
           } catch { analysis = { matchedVoiceId: "Kore", gender: "female", tone: "neutral", style: "firm", confidence: 0.5, reason: "Default fallback" }; }
 
           // Validate matched voice exists

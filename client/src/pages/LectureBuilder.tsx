@@ -21,7 +21,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket } from
+  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket, Presentation, Mic, CreditCard, Coins, StopCircle } from
 "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -1155,7 +1155,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
 
 }: {projectId: number;slides: any[];scripts: any[];avatars: any[];onRefresh: () => void;}) {const { t } = useLanguage();
   const AVATAR_ROLES = getAVATAR_ROLES(t);
-  const [mode, setMode] = useState<"generate" | "split" | "manual">("manual");
+  const [mode, setMode] = useState<"generate" | "split" | "manual" | "ppt_ai">("manual");
   const [prompt, setPrompt] = useState("");
   const [fullText, setFullText] = useState("");
   const [slideCount, setSlideCount] = useState(10);
@@ -1480,6 +1480,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       {/* Mode Tabs */}
       <div className="flex gap-2">
         {[
+        { id: "ppt_ai" as const, label: "PPT AI", icon: Presentation, desc: "PPT 슬라이드를 분석하여 AI가 스크립트 자동 생성" },
         { id: "generate" as const, label: t("lectureBuilder.stringLiteral81"), icon: Wand2, desc: t("lectureBuilder.stringLiteral82") },
         { id: "split" as const, label: t("lectureBuilder.stringLiteral83"), icon: Layers, desc: t("lectureBuilder.stringLiteral84") },
         { id: "manual" as const, label: t("lectureBuilder.stringLiteral85"), icon: FileText, desc: t("lectureBuilder.stringLiteral86") }].
@@ -1498,6 +1499,8 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       </div>
 
       {/* Mode Content */}
+      {mode === "ppt_ai" && <PPTAIScriptPanel projectId={projectId} slides={slides} sections={sections} setSections={setSections} language={language} setLanguage={setLanguage} onRefresh={onRefresh} />}
+
       {mode === "generate" &&
       <Card>
           <CardContent className="pt-6 space-y-4">
@@ -3512,6 +3515,9 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
               </CardContent>
             </Card>
 
+            {/* Voice Mode Selection per Slide */}
+            {currentSlide && <SlideVoiceModePanel projectId={projectId} slideId={currentSlide.id} slideIdx={selectedSlideIdx} scripts={scripts} onRefresh={onRefresh} />}
+
             {/* Interpreter Panel */}
             <Card>
               <CardHeader className="pb-2">
@@ -4669,4 +4675,471 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       </div>
     </div>);
 
+}
+// ============ PPT AI Script Generation Panel ============
+function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, setLanguage, onRefresh }: {
+  projectId: number;
+  slides: any[];
+  sections: any[];
+  setSections: (s: any[]) => void;
+  language: string;
+  setLanguage: (l: string) => void;
+  onRefresh: () => void;
+}) {
+  const { t } = useLanguage();
+  const [style, setStyle] = useState<"professional" | "casual" | "academic" | "storytelling">("professional");
+  const [additionalContext, setAdditionalContext] = useState("");
+  const [selectedSlideIds, setSelectedSlideIds] = useState<Set<number>>(new Set());
+  const [generating, setGenerating] = useState(false);
+
+  const creditsQuery = trpc.lectureBuilder.getPPTScriptCredits.useQuery();
+  const generateMut = trpc.lectureBuilder.generateScriptFromPPT.useMutation({
+    onSuccess: (data) => {
+      const newSections = data.scripts.map((s: any, i: number) => ({
+        id: `ppt-ai-${Date.now()}-${i}`,
+        section: i + 1,
+        text: s.text,
+      }));
+      setSections(newSections);
+      toast.success(`AI 스크립트 생성 완료! ${data.scripts.length}개 슬라이드, ${data.creditsUsed} 크레딧 사용`);
+      setGenerating(false);
+      creditsQuery.refetch();
+    },
+    onError: (e) => {
+      if (e.message.startsWith("INSUFFICIENT_CREDITS:")) {
+        const [, cost, current] = e.message.split(":");
+        toast.error(`크레딧 부족! 필요: ${cost}, 보유: ${current}. 크레딧을 충전해주세요.`);
+      } else {
+        toast.error(`스크립트 생성 실패: ${e.message}`);
+      }
+      setGenerating(false);
+    },
+  });
+
+  // Auto-select all slides
+  useEffect(() => {
+    if (slides.length > 0 && selectedSlideIds.size === 0) {
+      setSelectedSlideIds(new Set(slides.map((s: any) => s.id)));
+    }
+  }, [slides]);
+
+  const toggleSlide = (id: number) => {
+    setSelectedSlideIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleGenerate = () => {
+    if (selectedSlideIds.size === 0) {
+      toast.error("슬라이드를 선택해주세요.");
+      return;
+    }
+    if (!creditsQuery.data?.canGenerate) {
+      toast.error("크레딧이 부족합니다. 크레딧을 충전해주세요.");
+      return;
+    }
+    setGenerating(true);
+    generateMut.mutate({
+      projectId,
+      slideIds: Array.from(selectedSlideIds),
+      language,
+      style,
+      additionalContext: additionalContext.trim() || undefined,
+    });
+  };
+
+  return (
+    <Card className="border-2 border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Presentation className="w-5 h-5 text-amber-600" />
+            <CardTitle className="text-lg">PPT AI 스크립트 생성</CardTitle>
+            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+              <Coins className="w-3 h-3 mr-1" />Premium
+            </Badge>
+          </div>
+          {creditsQuery.data && (
+            <div className="flex items-center gap-2 text-sm">
+              <CreditCard className="w-4 h-4 text-muted-foreground" />
+              <span className="text-muted-foreground">잔여:</span>
+              <span className={`font-bold ${creditsQuery.data.canGenerate ? 'text-green-600' : 'text-red-500'}`}>
+                {creditsQuery.data.creditsRemaining} 크레딧
+              </span>
+              <span className="text-muted-foreground">(1회 {creditsQuery.data.costPerGeneration} 크레딧)</span>
+            </div>
+          )}
+        </div>
+        <CardDescription>업로드된 PPT 슬라이드 이미지를 AI가 분석하여 각 슬라이드에 맞는 강의 스크립트를 자동으로 생성합니다.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {slides.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Image className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p className="font-medium">슬라이드가 없습니다</p>
+            <p className="text-sm">Step 3에서 PPT/PDF 파일을 먼저 업로드해주세요.</p>
+          </div>
+        ) : (
+          <>
+            {/* Slide Selection */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">분석할 슬라이드 선택</Label>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedSlideIds(new Set(slides.map((s: any) => s.id)))}>
+                    전체 선택
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedSlideIds(new Set())}>
+                    전체 해제
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 border rounded-lg bg-background">
+                {slides.map((slide: any, idx: number) => (
+                  <button
+                    key={slide.id}
+                    onClick={() => toggleSlide(slide.id)}
+                    className={`relative aspect-video rounded-md overflow-hidden border-2 transition-all ${
+                      selectedSlideIds.has(slide.id) ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-muted-foreground/30'
+                    }`}
+                  >
+                    <img src={slide.imageUrl} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                    <div className="absolute top-0.5 left-0.5 bg-black/60 text-white text-[10px] px-1 rounded">
+                      {idx + 1}
+                    </div>
+                    {selectedSlideIds.has(slide.id) && (
+                      <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                        <Check className="w-4 h-4 text-primary" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{selectedSlideIds.size}/{slides.length}개 슬라이드 선택됨</p>
+            </div>
+
+            {/* Options */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm">언어</Label>
+                <Select value={language} onValueChange={setLanguage}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ko">한국어</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="zh">中文</SelectItem>
+                    <SelectItem value="ja">日本語</SelectItem>
+                    <SelectItem value="vi">Tiếng Việt</SelectItem>
+                    <SelectItem value="th">ภาษาไทย</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm">스타일</Label>
+                <Select value={style} onValueChange={(v: any) => setStyle(v)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="professional">전문적 (Professional)</SelectItem>
+                    <SelectItem value="casual">캐주얼 (Casual)</SelectItem>
+                    <SelectItem value="academic">학술적 (Academic)</SelectItem>
+                    <SelectItem value="storytelling">스토리텔링 (Storytelling)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Additional Context */}
+            <div>
+              <Label className="text-sm">추가 컨텍스트 (선택사항)</Label>
+              <Textarea
+                placeholder="강의 주제, 대상 청중, 특별 요구사항 등을 입력하세요..."
+                value={additionalContext}
+                onChange={(e) => setAdditionalContext(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            {/* Generate Button */}
+            <Button
+              className="w-full gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              size="lg"
+              disabled={generating || selectedSlideIds.size === 0 || !creditsQuery.data?.canGenerate}
+              onClick={handleGenerate}
+            >
+              {generating ? (
+                <><Loader2 className="w-4 h-4 animate-spin" />AI 분석 중... (약 30초 소요)</>
+              ) : (
+                <><Sparkles className="w-4 h-4" />PPT 분석 후 스크립트 생성 ({creditsQuery.data?.costPerGeneration || 10} 크레딧)</>
+              )}
+            </Button>
+
+            {!creditsQuery.data?.canGenerate && creditsQuery.data && (
+              <p className="text-sm text-red-500 text-center">
+                크레딧이 부족합니다. 설정 &gt; 구독에서 크레딧을 충전해주세요.
+              </p>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============ Slide Voice Mode Panel ============
+function SlideVoiceModePanel({ projectId, slideId, slideIdx, scripts, onRefresh }: {
+  projectId: number;
+  slideId: number;
+  slideIdx: number;
+  scripts: any[];
+  onRefresh: () => void;
+}) {
+  const { t } = useLanguage();
+  const [voiceMode, setVoiceMode] = useState<"ai_tts" | "direct_record" | "ai_clone">("ai_tts");
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load existing voice mode from scripts
+  useEffect(() => {
+    const script = scripts.find((s: any) => s.slideId === slideId);
+    if (script) {
+      setVoiceMode(script.voiceMode || "ai_tts");
+      setRecordedUrl(script.recordedAudioUrl || null);
+    } else {
+      setVoiceMode("ai_tts");
+      setRecordedUrl(null);
+    }
+  }, [slideId, scripts]);
+
+  const setVoiceModeMut = trpc.lectureBuilder.setSlideVoiceMode.useMutation({
+    onSuccess: () => {
+      toast.success("음성 모드가 변경되었습니다.");
+      onRefresh();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const uploadRecordingMut = trpc.lectureBuilder.uploadSlideRecording.useMutation({
+    onSuccess: (data) => {
+      setRecordedUrl(data.url);
+      toast.success("녹음이 저장되었습니다.");
+      onRefresh();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleVoiceModeChange = (mode: "ai_tts" | "direct_record" | "ai_clone") => {
+    setVoiceMode(mode);
+    setVoiceModeMut.mutate({ projectId, slideId, voiceMode: mode });
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      setRecordingTime(0);
+
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(",")[1];
+          uploadRecordingMut.mutate({
+            projectId,
+            slideId,
+            audioData: base64,
+            fileName: `slide-${slideIdx + 1}-recording-${Date.now()}.webm`,
+          });
+        };
+        reader.readAsDataURL(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      timerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      toast.error("마이크 접근이 거부되었습니다.");
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 16 * 1024 * 1024) {
+      toast.error("파일 크기가 16MB를 초과합니다.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      uploadRecordingMut.mutate({
+        projectId,
+        slideId,
+        audioData: base64,
+        fileName: file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  return (
+    <Card className="border-blue-500/20">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-1.5">
+          <Headphones className="h-4 w-4 text-blue-500" />
+          슬라이드 {slideIdx + 1} 음성 설정
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Voice Mode Selection */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { id: "ai_tts" as const, label: "AI 음성", icon: Volume2, desc: "AI TTS로 자동 생성" },
+            { id: "direct_record" as const, label: "직접 녹음", icon: Mic, desc: "본인 목소리 녹음" },
+            { id: "ai_clone" as const, label: "AI 클론", icon: Sparkles, desc: "AI가 본인 목소리로 읽기" },
+          ].map((m) => (
+            <button
+              key={m.id}
+              onClick={() => handleVoiceModeChange(m.id)}
+              className={`p-2.5 rounded-lg border-2 transition-all text-center ${
+                voiceMode === m.id
+                  ? "border-blue-500 bg-blue-500/10"
+                  : "border-muted hover:border-muted-foreground/30"
+              }`}
+            >
+              <m.icon className={`w-4 h-4 mx-auto mb-1 ${voiceMode === m.id ? "text-blue-500" : "text-muted-foreground"}`} />
+              <div className="text-xs font-medium">{m.label}</div>
+              <div className="text-[10px] text-muted-foreground">{m.desc}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* AI TTS Mode Info */}
+        {voiceMode === "ai_tts" && (
+          <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20">
+            <p className="text-xs text-muted-foreground">
+              <Volume2 className="w-3 h-3 inline mr-1" />
+              스크립트를 기반으로 AI가 자동으로 음성을 생성합니다. 프로필에서 설정한 TTS 음성이 사용됩니다.
+            </p>
+          </div>
+        )}
+
+        {/* AI Clone Mode Info */}
+        {voiceMode === "ai_clone" && (
+          <div className="p-3 rounded-lg bg-purple-500/5 border border-purple-500/20">
+            <p className="text-xs text-muted-foreground">
+              <Sparkles className="w-3 h-3 inline mr-1" />
+              프로필에 등록된 본인 음성 샘플을 기반으로 AI가 스크립트를 본인 목소리로 읽어줍니다. 음성 프로필에서 샘플을 먼저 등록해주세요.
+            </p>
+          </div>
+        )}
+
+        {/* Direct Record Mode - Recording UI */}
+        {voiceMode === "direct_record" && (
+          <div className="space-y-3">
+            {/* Recording Controls */}
+            <div className="flex items-center gap-2">
+              {isRecording ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={stopRecording}
+                >
+                  <StopCircle className="w-4 h-4" />
+                  녹음 중지 ({formatTime(recordingTime)})
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 border-red-500/30 text-red-500 hover:bg-red-500/10"
+                  onClick={startRecording}
+                  disabled={uploadRecordingMut.isPending}
+                >
+                  <Mic className="w-4 h-4" />
+                  직접 녹음하기
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadRecordingMut.isPending || isRecording}
+              >
+                <Upload className="w-4 h-4" />
+                파일 업로드
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </div>
+
+            {uploadRecordingMut.isPending && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                업로드 중...
+              </div>
+            )}
+
+            {/* Recorded Audio Preview */}
+            {recordedUrl && (
+              <div className="p-3 rounded-lg bg-green-500/5 border border-green-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span className="text-xs font-medium text-green-600">녹음 완료</span>
+                </div>
+                <audio controls src={recordedUrl} className="w-full h-8" />
+              </div>
+            )}
+
+            <div className="p-2 rounded bg-muted/50">
+              <p className="text-[10px] text-muted-foreground">
+                직접 녹음: 마이크로 스크립트를 읽어 녹음합니다.<br/>
+                파일 업로드: 미리 녹음한 음성 파일(mp3, wav, webm 등)을 업로드합니다.
+              </p>
+            </div>
+          </div>
+        )}
+
+
+      </CardContent>
+    </Card>
+  );
 }

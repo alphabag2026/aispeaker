@@ -2354,3 +2354,53 @@
 
 ## 버그 수정: AI 얼굴 생성 404 에러
 - [x] gemini-2.0-flash-preview-image-generation 모델 404 에러 → gemini-2.5-flash-preview-image-generation으로 교체 + Forge 실패 시 Gemini fallback 추가
+
+## PPT → AI 자동 스크립트 생성 (유료 기능) (v6.0)
+
+#### DB 스키마
+- [x] 기존 userSubscriptions.creditsRemaining + creditTransactions 테이블 활용
+- [x] creditUsageLogs feature enum에 ppt_script_generation 추가
+- [x] CREDIT_COSTS에 ppt_script_generation: 5 추가
+### 백엔드
+- [x] lectureBuilder.generateScriptFromPPT - AI가 PPT 슬라이드 분석 → 슬라이드별 스크립트 자동 생성 (크레딧 차감)
+- [x] lectureBuilder.getPPTScriptCredits - 사용자 크레딧 잔액 조회
+- [x] 기존 Stripe 크레딧 결제 시스탬 활용 (ppt_script_generation 크레딧 상품)
+- [x] 결제 완료 시 크레딧 자동 충전 (기존 webhook 처리 활용)
+
+### 프론트엔드
+- [x] LectureBuilder 슬라이드 단계에 "PPT 업로드 & AI 스크립트 생성" 버튼 추가
+- [x] PPT 업로드 모달 (파일 선택 → 업로드 → AI 분석 진행 표시)
+- [x] 생성된 스크립트 미리보기 및 슬라이드별 적용 UI
+- [x] 크레딧 부족 시 결제 유도 모달 (Stripe Checkout)
+- [x] 크레딧 잔액 표시 UI
+
+## 음성 파일 업로드 기능 (v6.0)
+
+### 백엔드
+- [x] voiceClone.uploadFile - 음성 파일(.mp3, .wav, .m4a, .ogg, .webm) 업로드 → S3 → AI 분석
+
+### 프론트엔드
+- [x] AvatarSettingsDialog Voice Clone 탭에 파일 업로드 버튼 추가 (녹음 버튼 옆)
+- [x] 지원 포맷 안내 및 파일 크기 제한 (16MB)
+- [x] 업로드 진행률 표시 및 분석 결과 연동
+
+## 슬라이드별 직접 녹음 + 음성 모드 선택 (v6.0)
+
+### DB 스키마
+- [x] slideScripts 테이블에 voiceMode 컨럼 추가 ('direct_record' | 'ai_clone' | 'ai_tts')
+- [x] slideScripts 테이블에 recordedAudioUrl 컨럼 추가
+
+### 백엔드
+- [x] lectureBuilder.setSlideVoiceMode - 슬라이드별 음성 모드 설정
+- [x] lectureBuilder.uploadSlideRecording - 슬라이드별 직접 녹음 파일 업로드
+
+### 프론트엔드
+- [x] LectureBuilder 매칭 에디터에 음성 모드 선택 UI (3가지 모드)
+- [x] 직접 녹음 모드: 슬라이드별 녹음 버튼 + 녹음 UI + 재생 미리듣기
+- [x] AI 클론 음성 모드: 선택된 아바타의 클론 음성으로 TTS 생성
+- [x] 기본 TTS 모드: 기본 Gemini TTS 음성 사용
+- [x] 각 슬라이드별 현재 음성 모드 시각적 표시
+
+### 공통
+- [x] 테스트: v6.0 기능 vitest 테스트 작성 (5개 통과)
+- [ ] i18n: 새 기능 번역 키 추가 (20개 언어)

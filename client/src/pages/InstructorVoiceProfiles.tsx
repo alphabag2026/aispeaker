@@ -62,6 +62,8 @@ export default function InstructorVoiceProfiles() {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingProfileId, setUploadingProfileId] = useState<number | null>(null);
 
   const createMutation = trpc.voiceProfile.create.useMutation({
     onSuccess: () => {
@@ -436,6 +438,44 @@ export default function InstructorVoiceProfiles() {
                         </>
                       )}
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => {
+                        setUploadingProfileId(profile.id);
+                        fileInputRef.current?.click();
+                      }}
+                      disabled={uploadSampleMutation.isPending}
+                    >
+                      <Upload className="h-3.5 w-3.5" />
+                      {"음성 파일 업로드"}
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="audio/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !uploadingProfileId) return;
+                        if (file.size > 16 * 1024 * 1024) {
+                          toast.error("파일 크기가 16MB를 초과합니다.");
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          const base64 = (reader.result as string).split(",")[1];
+                          uploadSampleMutation.mutate({
+                            profileId: uploadingProfileId,
+                            audioData: base64,
+                            fileName: file.name,
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = "";
+                      }}
+                    />
                     <Button
                       variant="outline"
                       size="sm"

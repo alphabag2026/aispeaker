@@ -1008,7 +1008,8 @@ export const creditUsageLogs = mysqlTable("creditUsageLogs", {
     "image_to_video",
     "face_swap",
     "talking_avatar",
-    "video_translate"
+    "video_translate",
+    "ppt_script_generation"
   ]).notNull(),
   /** Credits consumed */
   creditsUsed: int("creditsUsed").notNull(),
@@ -1269,6 +1270,12 @@ export const slideScripts = mysqlTable("slideScripts", {
   emotion: mysqlEnum("emotion", ["neutral", "happy", "serious", "excited", "empathetic", "confident", "questioning"]).default("neutral"),
   /** Emotion intensity (1-10) */
   emotionIntensity: int("emotionIntensity").default(5),
+  /** Voice mode for this slide: direct_record, ai_clone, ai_tts */
+  voiceMode: mysqlEnum("voiceMode", ["direct_record", "ai_clone", "ai_tts"]).default("ai_tts"),
+  /** Recorded audio URL (for direct_record mode) */
+  recordedAudioUrl: text("recordedAudioUrl"),
+  /** Recorded audio duration in seconds */
+  recordedAudioDuration: int("recordedAudioDuration"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

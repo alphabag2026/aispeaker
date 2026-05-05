@@ -76,6 +76,7 @@ export const CREDIT_COSTS = {
   face_swap: 25,           // Face swap per item
   talking_avatar: 20,      // Talking avatar per item
   video_translate: 30,     // Video translate per item
+  ppt_script_generation: 10, // PPT to AI script generation per project
 } as const;
 
 export type CreditFeature = keyof typeof CREDIT_COSTS;
