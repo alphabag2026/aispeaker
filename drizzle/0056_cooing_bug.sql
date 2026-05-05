@@ -1,0 +1,4 @@
+ALTER TABLE `creditUsageLogs` MODIFY COLUMN `feature` enum('script_generation','tts_conversion','avatar_video','deepfake_transform','thumbnail_generation','subtitle_generation','voice_modulation','live_broadcast','image_generation','bg_remove','voice_clone','voice_change','video_effects','image_to_video','face_swap','talking_avatar','video_translate','ppt_script_generation') NOT NULL;--> statement-breakpoint
+ALTER TABLE `slideScripts` ADD `voiceMode` enum('direct_record','ai_clone','ai_tts') DEFAULT 'ai_tts';--> statement-breakpoint
+ALTER TABLE `slideScripts` ADD `recordedAudioUrl` text;--> statement-breakpoint
+ALTER TABLE `slideScripts` ADD `recordedAudioDuration` int;
