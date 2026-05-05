@@ -3026,6 +3026,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
             저장하기
           </Button>
+          <BatchCloneVoiceButton projectId={projectId} slides={slides} slideScriptMap={slideScriptMap} onComplete={() => projectQuery.refetch()} />
         </div>
       </div>
 
@@ -3042,7 +3043,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                   className={`w-full rounded-lg overflow-hidden border-2 transition-all relative ${
                   selectedSlideIdx === idx ? "border-primary ring-2 ring-primary/30" : hasScript ? "border-green-500/50" : "border-muted"}`
                   }
-                  onClick={() => {setSelectedSlideIdx(idx);setUndoStack([]);setRedoStack([]);}}>
+                  onClick={() => {if (hasUnsavedChanges) doSave(); setSelectedSlideIdx(idx);setUndoStack([]);setRedoStack([]);}}>
                     
                     <div className="aspect-video">
                       <img src={slide.imageUrl} alt={`${idx + 1}`} className="w-full h-full object-contain" />
@@ -5320,5 +5321,71 @@ function AICloneVoiceSection({ projectId, slideId, scripts, onRefresh }: {
         </div>
       )}
     </div>
+  );
+}
+
+
+// --- Batch Clone Voice Button Component ---
+function BatchCloneVoiceButton({ projectId, slides, slideScriptMap, onComplete }: {
+  projectId: number;
+  slides: any[];
+  slideScriptMap: Record<number, any>;
+  onComplete: () => void;
+}) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+
+  const batchMut = trpc.lectureBuilder.batchGenerateCloneVoice.useMutation({
+    onSuccess: (data) => {
+      setIsGenerating(false);
+      setProgress({ current: data.success, total: data.total });
+      if (data.success === data.total) {
+        toast.success(`전체 ${data.total}개 슬라이드 AI 클론 음성 생성 완료! (${data.voiceName})`);
+      } else {
+        toast.info(`${data.success}/${data.total}개 슬라이드 생성 완료 (${data.total - data.success}개 실패)`);
+      }
+      onComplete();
+    },
+    onError: (e) => {
+      setIsGenerating(false);
+      if (e.message.includes("NO_VOICE_CLONE")) {
+        toast.error("음성 프로필에서 음성 샘플을 먼저 등록해주세요.");
+      } else {
+        toast.error(e.message);
+      }
+    },
+  });
+
+  const handleBatchGenerate = () => {
+    const scriptsWithText = slides.filter(s => slideScriptMap[s.id]?.text?.trim());
+    if (scriptsWithText.length === 0) {
+      toast.error("스크립트가 있는 슬라이드가 없습니다.");
+      return;
+    }
+    setIsGenerating(true);
+    setProgress({ current: 0, total: scriptsWithText.length });
+    batchMut.mutate({ projectId, speed: 1.0, pitch: 0 });
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="gap-1.5 border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+      onClick={handleBatchGenerate}
+      disabled={isGenerating}
+    >
+      {isGenerating ? (
+        <>
+          <Loader2 className="w-3 h-3 animate-spin" />
+          AI 클론 생성중...
+        </>
+      ) : (
+        <>
+          <Headphones className="w-3 h-3" />
+          전체 AI 클론 음성 생성
+        </>
+      )}
+    </Button>
   );
 }
