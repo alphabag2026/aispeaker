@@ -2530,3 +2530,23 @@
 
 ### 공통
 - [x] 테스트: v6.4 기능 vitest 테스트 작성 (18개 통과)
+
+## AI 클론 음성 발음 미세 조정 (v6.5)
+### DB 스키마
+- [x] pronunciationGuides 테이블 생성 (userId, projectId, word, phonetic, language, createdAt)
+### 백엔드
+- [x] lectureBuilder.addPronunciationGuide - 발음 가이드 추가
+- [x] lectureBuilder.getPronunciationGuides - 프로젝트별 발음 가이드 목록 조회
+- [x] lectureBuilder.updatePronunciationGuide - 발음 가이드 수정
+- [x] lectureBuilder.deletePronunciationGuide - 발음 가이드 삭제
+- [x] generateCloneVoice에 발음 가이드 적용 (스크립트 전처리)
+- [x] batchGenerateCloneVoice에 발음 가이드 적용
+### 프론트엔드
+- [x] 발음 가이드 편집기 패널 (단어 → 발음 매핑 테이블)
+- [x] 발음 가이드 추가/수정/삭제 UI
+- [x] 스크립트 내 발음 가이드 적용 단어 하이라이트 표시
+- [x] 개별 단어 발음 미리듣기 버튼
+- [x] Step4 매칭 에디터에 "발음 설정" 버튼 추가
+
+### 공통
+- [x] 테스트: v6.5 기능 vitest 테스트 작성 (25개 통과)

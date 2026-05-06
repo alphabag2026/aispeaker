@@ -6378,10 +6378,18 @@ Rules:
         const readyClone = clones.find((c: any) => c.status === "ready");
         if (!readyClone) throw new TRPCError({ code: "BAD_REQUEST", message: "NO_VOICE_CLONE: 음성 프로필에서 음성 샘플을 먼저 등록해주세요." });
 
+        // Apply pronunciation guides
+        const guides = await db.getPronunciationGuidesByProject(input.projectId);
+        let processedText = input.text;
+        for (const guide of guides) {
+          const regex = new RegExp(guide.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+          processedText = processedText.replace(regex, guide.phonetic);
+        }
+
         const voiceId = readyClone.matchedVoiceId || "Kore";
         const { generateGeminiTts } = await import("./_core/geminiTts");
         const result = await generateGeminiTts({
-          text: input.text,
+          text: processedText,
           voiceId,
           speed: input.speed,
           pitch: input.pitch,
@@ -6537,13 +6545,23 @@ Rules:
 
         if (scriptsWithText.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "스크립트가 있는 슬라이드가 없습니다. 먼저 스크립트를 작성해주세요." });
 
+        // Apply pronunciation guides to all scripts
+        const guides = await db.getPronunciationGuidesByProject(input.projectId);
+
         const { generateGeminiTts } = await import("./_core/geminiTts");
         const results: { slideId: number; audioUrl: string; success: boolean; error?: string }[] = [];
 
         for (const script of scriptsWithText) {
           try {
+            // Apply pronunciation guides
+            let processedText = script.scriptText;
+            for (const guide of guides) {
+              const regex = new RegExp(guide.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+              processedText = processedText.replace(regex, guide.phonetic);
+            }
+
             const result = await generateGeminiTts({
-              text: script.scriptText,
+              text: processedText,
               voiceId,
               speed: input.speed,
               pitch: input.pitch,
@@ -6571,6 +6589,90 @@ Rules:
 
         const successCount = results.filter(r => r.success).length;
         return { results, total: scriptsWithText.length, success: successCount, voiceName: readyClone.name };
+      }),
+
+    // --- Pronunciation Guide CRUD ---
+    addPronunciationGuide: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        word: z.string().min(1).max(500),
+        phonetic: z.string().min(1).max(500),
+        language: z.string().max(10).default("ko"),
+        description: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const id = await db.addPronunciationGuide({
+          userId: ctx.user.id,
+          projectId: input.projectId,
+          word: input.word,
+          phonetic: input.phonetic,
+          language: input.language,
+          description: input.description || null,
+        });
+        return { id, success: true };
+      }),
+
+    getPronunciationGuides: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        return db.getPronunciationGuides(input.projectId, ctx.user.id);
+      }),
+
+    updatePronunciationGuide: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        word: z.string().min(1).max(500).optional(),
+        phonetic: z.string().min(1).max(500).optional(),
+        language: z.string().max(10).optional(),
+        description: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updatePronunciationGuide(id, ctx.user.id, data);
+        return { success: true };
+      }),
+
+    deletePronunciationGuide: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deletePronunciationGuide(input.id, ctx.user.id);
+        return { success: true };
+      }),
+
+    // --- Preview pronunciation for a single word ---
+    previewPronunciation: protectedProcedure
+      .input(z.object({
+        projectId: z.number(),
+        word: z.string().min(1).max(500),
+        phonetic: z.string().min(1).max(500),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+
+        const clones = await db.getVoiceClonesByUser(ctx.user.id);
+        const readyClone = clones.find((c: any) => c.status === "ready");
+        if (!readyClone) throw new TRPCError({ code: "BAD_REQUEST", message: "NO_VOICE_CLONE" });
+
+        const voiceId = readyClone.matchedVoiceId || "Kore";
+        const { generateGeminiTts } = await import("./_core/geminiTts");
+        const result = await generateGeminiTts({
+          text: input.phonetic,
+          voiceId,
+          speed: 1.0,
+          pitch: 0,
+          _userId: ctx.user.id,
+        });
+
+        if ("error" in result) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: (result as any).error });
+
+        const key = `pronunciation-preview/${ctx.user.id}/${Date.now()}-${nanoid(6)}.mp3`;
+        const { url } = await storagePut(key, (result as any).audioBuffer, "audio/mpeg");
+        return { audioUrl: url, word: input.word, phonetic: input.phonetic };
       }),
   }),
 
