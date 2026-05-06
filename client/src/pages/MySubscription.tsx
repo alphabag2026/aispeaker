@@ -132,6 +132,22 @@ export default function MySubscription() {
               </CardContent>
             </Card>
 
+            {/* Monthly Credit Subscription Plans */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <TrendingDown className="w-5 h-5 text-emerald-500" /> 월정액 크레딧 구독
+                  </CardTitle>
+                  <Badge variant="outline" className="text-emerald-500 border-emerald-500/30">매월 자동 충전</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">매월 자동으로 크레딧이 충전됩니다. 언제든지 해지 가능합니다.</p>
+              </CardHeader>
+              <CardContent>
+                <SubscriptionPlansGrid />
+              </CardContent>
+            </Card>
+
             {/* Credits */}
             <Card className="border-border/50">
               <CardHeader>
@@ -191,3 +207,113 @@ export default function MySubscription() {
     </div>
   );
 }
+
+
+// SubscriptionPlansGrid - Monthly credit subscription plans
+function SubscriptionPlansGrid() {
+  const [billingCycle, setBillingCycle] = React.useState<"monthly" | "yearly">("monthly");
+  const createSub = trpc.payment.createCreditSubscription.useMutation();
+  const { data: subStatus } = trpc.payment.subscriptionStatus.useQuery();
+
+  const plans = [
+    { slug: "starter", name: "Starter", credits: 100, priceMonthly: 29, priceYearly: 278, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { slug: "professional", name: "Professional", credits: 500, priceMonthly: 99, priceYearly: 950, popular: true, color: "text-violet-500", bg: "bg-violet-500/10" },
+    { slug: "business", name: "Business", credits: 2000, priceMonthly: 299, priceYearly: 2870, color: "text-amber-500", bg: "bg-amber-500/10" },
+    { slug: "enterprise", name: "Enterprise", credits: 10000, priceMonthly: 799, priceYearly: 7670, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  ];
+
+  const handleSubscribe = async (planSlug: string) => {
+    try {
+      const result = await createSub.mutateAsync({
+        planSlug: planSlug as any,
+        billingCycle,
+        origin: window.location.origin,
+      });
+      if (result.checkoutUrl) {
+        toast.info("결제 페이지로 이동합니다...");
+        window.open(result.checkoutUrl, "_blank");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "구독 생성 실패");
+    }
+  };
+
+  const currentPlan = subStatus?.plan?.slug;
+
+  return (
+    <div className="space-y-4">
+      {/* Billing cycle toggle */}
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <button
+          onClick={() => setBillingCycle("monthly")}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${billingCycle === "monthly" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          월간
+        </button>
+        <button
+          onClick={() => setBillingCycle("yearly")}
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${billingCycle === "yearly" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          연간 <span className="text-xs text-emerald-500 ml-1">17% 할인</span>
+        </button>
+      </div>
+
+      {/* Plans grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        {plans.map((plan) => {
+          const price = billingCycle === "yearly" ? plan.priceYearly : plan.priceMonthly;
+          const monthlyEquiv = billingCycle === "yearly" ? (plan.priceYearly / 12).toFixed(2) : plan.priceMonthly.toFixed(2);
+          const isActive = currentPlan === plan.slug;
+
+          return (
+            <div key={plan.slug} className={`relative rounded-lg border p-4 transition-all hover:shadow-md ${plan.popular ? "border-violet-500/50 ring-1 ring-violet-500/20" : "border-border/50"} ${isActive ? "border-emerald-500/50 ring-1 ring-emerald-500/20" : ""}`}>
+              {plan.popular && (
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-violet-600 text-[10px] px-2 py-0.5">인기</Badge>
+                </div>
+              )}
+              {isActive && (
+                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
+                  <Badge className="bg-emerald-600 text-[10px] px-2 py-0.5">현재 구독중</Badge>
+                </div>
+              )}
+              <div className="text-center space-y-2">
+                <div className={`inline-flex p-2 rounded-lg ${plan.bg}`}>
+                  <Zap className={`w-4 h-4 ${plan.color}`} />
+                </div>
+                <h4 className="font-semibold text-sm">{plan.name}</h4>
+                <div>
+                  <span className="text-2xl font-bold">${monthlyEquiv}</span>
+                  <span className="text-xs text-muted-foreground">/월</span>
+                </div>
+                {billingCycle === "yearly" && (
+                  <p className="text-[10px] text-muted-foreground">연 ${price} 결제</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  매월 <span className="font-semibold text-foreground">{plan.credits.toLocaleString()}</span> 크레딧 충전
+                </p>
+                <Button
+                  size="sm"
+                  className="w-full text-xs"
+                  variant={isActive ? "outline" : plan.popular ? "default" : "outline"}
+                  disabled={isActive || createSub.isPending}
+                  onClick={() => handleSubscribe(plan.slug)}
+                >
+                  {isActive ? "구독중" : createSub.isPending ? "처리중..." : "구독하기"}
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {subStatus?.hasSubscription && subStatus.cancelAtPeriodEnd && (
+        <p className="text-xs text-amber-500 text-center mt-2">
+          현재 구독이 {subStatus.currentPeriodEnd ? new Date(subStatus.currentPeriodEnd).toLocaleDateString("ko-KR") : "기간 종료 후"} 해지 예정입니다.
+        </p>
+      )}
+    </div>
+  );
+}
+
+import React from "react";

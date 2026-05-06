@@ -3703,6 +3703,89 @@ Respond ONLY in the following JSON format:
         return { checkoutUrl: session.url };
       }),
 
+    // Create recurring subscription for monthly credit auto-refill
+    createCreditSubscription: protectedProcedure
+      .input(z.object({
+        planSlug: z.enum(["starter", "professional", "business", "enterprise"]),
+        billingCycle: z.enum(["monthly", "yearly"]).default("monthly"),
+        origin: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getStripe, SUBSCRIPTION_PRODUCTS } = await import("./stripe");
+        const stripe = getStripe();
+        if (!stripe) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Payment system is not configured." });
+        const product = SUBSCRIPTION_PRODUCTS[input.planSlug];
+        if (!product) throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid plan." });
+        const priceCents = input.billingCycle === "yearly" ? product.priceYearly : product.priceMonthly;
+        const interval = input.billingCycle === "yearly" ? "year" : "month";
+        const session = await stripe.checkout.sessions.create({
+          mode: "subscription",
+          payment_method_types: ["card"],
+          line_items: [{
+            price_data: {
+              currency: "usd",
+              product_data: {
+                name: `AI Speaker ${product.name} - ${product.credits} credits/${interval === "year" ? "year" : "month"}`,
+                description: product.description,
+              },
+              unit_amount: priceCents,
+              recurring: { interval },
+            },
+            quantity: 1,
+          }],
+          client_reference_id: ctx.user.id.toString(),
+          customer_email: ctx.user.email || undefined,
+          allow_promotion_codes: true,
+          metadata: {
+            user_id: ctx.user.id.toString(),
+            plan_slug: input.planSlug,
+            billing_cycle: input.billingCycle,
+            credits: product.credits.toString(),
+            type: "credit_subscription",
+          },
+          success_url: `${input.origin}/payment/success?session_id={CHECKOUT_SESSION_ID}&type=subscription`,
+          cancel_url: `${input.origin}/pricing`,
+        });
+        return { checkoutUrl: session.url };
+      }),
+
+    // Cancel credit subscription
+    cancelCreditSubscription: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const sub = await db.getUserSubscription(ctx.user.id);
+        if (!sub || !sub.externalPaymentId) throw new TRPCError({ code: "NOT_FOUND", message: "No active subscription found." });
+        const { getStripe } = await import("./stripe");
+        const stripe = getStripe();
+        if (!stripe) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Payment system is not configured." });
+        try {
+          await stripe.subscriptions.update(sub.externalPaymentId, {
+            cancel_at_period_end: true,
+          });
+        } catch (e: any) {
+          console.warn("[Stripe] Cancel subscription error:", e.message);
+        }
+        await db.updateUserSubscription(sub.id, { cancelAtPeriodEnd: true });
+        return { success: true, cancelAt: sub.currentPeriodEnd };
+      }),
+
+    // Get subscription status
+    subscriptionStatus: protectedProcedure
+      .query(async ({ ctx }) => {
+        const sub = await db.getUserSubscription(ctx.user.id);
+        if (!sub) return { hasSubscription: false, plan: null, status: null };
+        const plan = await db.getSubscriptionPlan(sub.planId);
+        return {
+          hasSubscription: true,
+          plan,
+          status: sub.status,
+          billingCycle: sub.billingCycle,
+          currentPeriodEnd: sub.currentPeriodEnd,
+          cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+          creditsRemaining: sub.creditsRemaining,
+          externalPaymentId: sub.externalPaymentId,
+        };
+      }),
+
     // Get user's payment history
     myPayments: protectedProcedure
       .input(z.object({ limit: z.number().optional() }).optional())

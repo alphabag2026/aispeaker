@@ -134,11 +134,46 @@ async function startServer() {
         } catch (e) { console.warn("[Webhook] Notification failed:", e); }
       }
 
-      // Handle invoice.payment_succeeded (subscription renewal)
+      // Handle invoice.payment_succeeded (subscription renewal - auto credit refill)
       if (event.type === "invoice.payment_succeeded") {
         const invoice = event.data.object as any;
-        if (invoice.billing_reason === "subscription_cycle") {
-          console.log(`[Webhook] Subscription renewed: ${invoice.subscription}`);
+        if (invoice.billing_reason === "subscription_cycle" || invoice.billing_reason === "subscription_create") {
+          console.log(`[Webhook] Subscription invoice paid: ${invoice.subscription}, reason: ${invoice.billing_reason}`);
+          // Auto-refill credits based on subscription metadata
+          const subscriptionId = invoice.subscription;
+          try {
+            const stripeModule = await import("../stripe");
+            const dbMod = await import("../db");
+            const stripe = stripeModule.getStripe();
+            if (stripe && subscriptionId) {
+              const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+              const metadata = stripeSub.metadata || {};
+              const userId = metadata.user_id ? parseInt(metadata.user_id) : null;
+              const planSlug = metadata.plan_slug;
+              const credits = metadata.credits ? parseInt(metadata.credits) : 0;
+              if (userId && credits > 0) {
+                // Add credits to user subscription
+                const sub = await dbMod.getUserSubscription(userId);
+                if (sub) {
+                  await dbMod.updateUserSubscription(sub.id, {
+                    creditsRemaining: (sub.creditsRemaining || 0) + credits,
+                    externalPaymentId: subscriptionId,
+                    status: "active",
+                    cancelAtPeriodEnd: false,
+                  });
+                  // Record credit transaction
+                  await dbMod.addCreditTransaction({
+                    userId,
+                    type: "purchase",
+                    amount: credits,
+                    balanceAfter: (sub.creditsRemaining || 0) + credits,
+                    description: `Monthly subscription auto-refill: ${credits} credits (${planSlug || "subscription"})`,
+                  });
+                  console.log(`[Webhook] Auto-refilled ${credits} credits for user ${userId}`);
+                }
+              }
+            }
+          } catch (e: any) { console.warn("[Webhook] Auto-refill error:", e.message); }
           try {
             const { notifyOwner } = await import("./notification");
             await notifyOwner({
