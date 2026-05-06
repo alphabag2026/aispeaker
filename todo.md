@@ -2502,3 +2502,31 @@
 
 ### 공통
 - [x] 테스트: v6.3 기능 vitest 테스트 작성 (19개 통과)
+
+## AI 클론 음성 속도/피치 슬라이더 (v6.4)
+### 백엔드
+- [x] generateCloneVoice 라우터에 speed, pitch 파라미터 추가
+- [x] batchGenerateCloneVoice 라우터에 speed, pitch 파라미터 추가
+- [x] Gemini TTS 호출 시 speed/pitch 설정 적용
+### 프론트엔드
+- [x] BatchCloneVoiceButton 미리듣기 모달에 속도 슬라이더 (0.5x~2.0x)
+- [x] BatchCloneVoiceButton 미리듣기 모달에 피치 슬라이더 (-12~+12)
+- [x] 슬라이더 값 변경 시 미리 테스트 재생성 가능
+- [x] 전체 생성 시 설정된 속도/피치 값 적용
+
+## 월정액 구독 크레딧 자동 충전 (v6.4)
+### 백엔드
+- [x] Stripe Subscription 상품 정의 (Starter/Professional/Business/Enterprise 월정액)
+- [x] payment.createCreditSubscription - 구독 결제 세션 생성 (mode: subscription)
+- [x] payment.subscriptionStatus - 현재 구독 상태 조회
+- [x] payment.cancelSubscription - 구독 취소 (cancel_at_period_end)
+- [x] Stripe webhook: invoice.payment_succeeded 이벤트 시 크레딧 자동 충전
+- [x] 기존 userSubscriptions 테이블 활용 (stripeSubscriptionId, status, cancelAtPeriodEnd)
+### 프론트엔드
+- [x] MySubscription 페이지에 4가지 구독 플랜 카드 UI (월/연 전환)
+- [x] 현재 구독 상태 표시 (활성/비활성/취소 예정)
+- [x] 구독 취소 버튼 + 확인 다이얼로그
+- [x] 가격 정보 실제 SUBSCRIPTION_PRODUCTS와 동기화
+
+### 공통
+- [x] 테스트: v6.4 기능 vitest 테스트 작성 (18개 통과)

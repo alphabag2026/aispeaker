@@ -5338,6 +5338,8 @@ function BatchCloneVoiceButton({ projectId, slides, slideScriptMap, onComplete }
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewVoiceName, setPreviewVoiceName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [speed, setSpeed] = useState(1.0);
+  const [pitch, setPitch] = useState(0);
 
   const previewMut = trpc.lectureBuilder.generateCloneVoice.useMutation({
     onSuccess: (data) => {
@@ -5381,19 +5383,26 @@ function BatchCloneVoiceButton({ projectId, slides, slideScriptMap, onComplete }
     }
     setStep("confirm");
     setPreviewUrl(null);
+    setSpeed(1.0);
+    setPitch(0);
     setShowModal(true);
   };
 
   const handlePreviewTest = () => {
     const firstSlide = scriptsWithText[0];
     const text = slideScriptMap[firstSlide.id]?.text || "";
-    previewMut.mutate({ projectId, slideId: firstSlide.id, text, speed: 1.0, pitch: 0 });
+    previewMut.mutate({ projectId, slideId: firstSlide.id, text, speed, pitch });
+  };
+
+  const handleRegenPreview = () => {
+    setPreviewUrl(null);
+    handlePreviewTest();
   };
 
   const handleBatchGenerate = () => {
     setIsGenerating(true);
     setStep("generating");
-    batchMut.mutate({ projectId, speed: 1.0, pitch: 0 });
+    batchMut.mutate({ projectId, speed, pitch });
   };
 
   return (
@@ -5431,8 +5440,53 @@ function BatchCloneVoiceButton({ projectId, slides, slideScriptMap, onComplete }
             <div className="space-y-4">
               <div className="rounded-lg bg-muted/50 p-4 space-y-2">
                 <p className="text-sm">총 <span className="font-bold text-primary">{scriptsWithText.length}개</span> 슬라이드의 스크립트를 AI 클론 음성으로 생성합니다.</p>
-                <p className="text-xs text-muted-foreground">먼저 첫 번째 슬라이드로 음성 품질을 테스트해보세요.</p>
+                <p className="text-xs text-muted-foreground">속도와 피치를 조절한 뒤, 첫 번째 슬라이드로 음성 품질을 테스트해보세요.</p>
               </div>
+
+              {/* Speed Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">속도</label>
+                  <span className="text-xs font-mono text-primary">{speed.toFixed(1)}x</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2.0"
+                  step="0.1"
+                  value={speed}
+                  onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <span>0.5x (느리게)</span>
+                  <span>1.0x</span>
+                  <span>2.0x (빠르게)</span>
+                </div>
+              </div>
+
+              {/* Pitch Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">피치</label>
+                  <span className="text-xs font-mono text-primary">{pitch > 0 ? `+${pitch}` : pitch}</span>
+                </div>
+                <input
+                  type="range"
+                  min="-12"
+                  max="12"
+                  step="1"
+                  value={pitch}
+                  onChange={(e) => setPitch(parseInt(e.target.value))}
+                  className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+                <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <span>-12 (낮게)</span>
+                  <span>0</span>
+                  <span>+12 (높게)</span>
+                </div>
+              </div>
+
               <div className="flex gap-2">
                 <Button
                   className="flex-1 gap-1.5"
@@ -5457,13 +5511,56 @@ function BatchCloneVoiceButton({ projectId, slides, slideScriptMap, onComplete }
                   <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                   <span className="text-sm font-medium text-green-400">테스트 생성 완료</span>
                 </div>
-                <p className="text-xs text-muted-foreground">음성: {previewVoiceName}</p>
+                <p className="text-xs text-muted-foreground">음성: {previewVoiceName} | 속도: {speed.toFixed(1)}x | 피치: {pitch > 0 ? `+${pitch}` : pitch}</p>
                 {previewUrl && (
                   <audio controls className="w-full h-8" src={previewUrl}>
                     Your browser does not support audio.
                   </audio>
                 )}
               </div>
+
+              {/* Speed/Pitch adjustment in preview */}
+              <div className="rounded-lg bg-muted/30 p-3 space-y-3">
+                <p className="text-xs font-medium text-muted-foreground">설정 변경 후 다시 테스트할 수 있습니다</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] text-muted-foreground">속도</label>
+                      <span className="text-[10px] font-mono text-primary">{speed.toFixed(1)}x</span>
+                    </div>
+                    <input
+                      type="range" min="0.5" max="2.0" step="0.1" value={speed}
+                      onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                      className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-purple-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] text-muted-foreground">피치</label>
+                      <span className="text-[10px] font-mono text-primary">{pitch > 0 ? `+${pitch}` : pitch}</span>
+                    </div>
+                    <input
+                      type="range" min="-12" max="12" step="1" value={pitch}
+                      onChange={(e) => setPitch(parseInt(e.target.value))}
+                      className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-purple-500"
+                    />
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full gap-1.5 text-xs"
+                  onClick={handleRegenPreview}
+                  disabled={previewMut.isPending}
+                >
+                  {previewMut.isPending ? (
+                    <><Loader2 className="w-3 h-3 animate-spin" />재생성 중...</>
+                  ) : (
+                    <><Mic className="w-3 h-3" />설정 변경 후 다시 테스트</>
+                  )}
+                </Button>
+              </div>
+
               <p className="text-xs text-muted-foreground">음성 품질이 만족스러우면 전체 생성을 진행하세요.</p>
               <div className="flex gap-2">
                 <Button
