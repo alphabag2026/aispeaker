@@ -3026,6 +3026,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
             저장하기
           </Button>
+          <PronunciationGuideButton projectId={projectId} />
           <BatchCloneVoiceButton projectId={projectId} slides={slides} slideScriptMap={slideScriptMap} onComplete={() => projectQuery.refetch()} />
           <VersionHistoryButton projectId={projectId} onRestore={() => projectQuery.refetch()} />
         </div>
@@ -3552,6 +3553,7 @@ function Step4Matching({ projectId, slides, scripts, avatars, annotations, avata
                     }}
                     placeholder={t("lectureBuilder.stringLiteral276")}
                     rows={5} />
+                    <PronunciationHighlight text={currentScript?.text || ""} projectId={projectId} />
                   
                     {avatars.length > 0 &&
                   <div>
@@ -5667,5 +5669,298 @@ function VersionHistoryButton({ projectId, onRestore }: { projectId: number; onR
         </div>
       )}
     </>
+  );
+}
+
+
+// --- Pronunciation Guide Button & Panel for Step4 Matching Editor ---
+function PronunciationGuideButton({ projectId }: { projectId: number }) {
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [word, setWord] = useState("");
+  const [phonetic, setPhonetic] = useState("");
+  const [language, setLanguage] = useState("ko");
+  const [description, setDescription] = useState("");
+  const [previewingId, setPreviewingId] = useState<number | null>(null);
+
+  const guidesQuery = trpc.lectureBuilder.getPronunciationGuides.useQuery(
+    { projectId },
+    { enabled: open }
+  );
+  const addMut = trpc.lectureBuilder.addPronunciationGuide.useMutation({
+    onSuccess: () => {
+      toast.success("발음 가이드가 추가되었습니다");
+      resetForm();
+      guidesQuery.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const updateMut = trpc.lectureBuilder.updatePronunciationGuide.useMutation({
+    onSuccess: () => {
+      toast.success("발음 가이드가 수정되었습니다");
+      resetForm();
+      guidesQuery.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteMut = trpc.lectureBuilder.deletePronunciationGuide.useMutation({
+    onSuccess: () => {
+      toast.success("발음 가이드가 삭제되었습니다");
+      guidesQuery.refetch();
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const previewMut = trpc.lectureBuilder.previewPronunciation.useMutation({
+    onSuccess: (data) => {
+      const audio = new Audio(data.audioUrl);
+      audio.play();
+      setPreviewingId(null);
+    },
+    onError: (e: any) => {
+      toast.error("미리듣기 실패: " + e.message);
+      setPreviewingId(null);
+    },
+  });
+
+  const resetForm = () => {
+    setEditingId(null);
+    setWord("");
+    setPhonetic("");
+    setLanguage("ko");
+    setDescription("");
+  };
+
+  const handleSubmit = () => {
+    if (!word.trim() || !phonetic.trim()) {
+      toast.error("원본 단어와 발음을 모두 입력해주세요");
+      return;
+    }
+    if (editingId) {
+      updateMut.mutate({ id: editingId, word: word.trim(), phonetic: phonetic.trim(), language, description: description.trim() || undefined });
+    } else {
+      addMut.mutate({ projectId, word: word.trim(), phonetic: phonetic.trim(), language, description: description.trim() || undefined });
+    }
+  };
+
+  const handleEdit = (guide: any) => {
+    setEditingId(guide.id);
+    setWord(guide.word);
+    setPhonetic(guide.phonetic);
+    setLanguage(guide.language || "ko");
+    setDescription(guide.description || "");
+  };
+
+  const handlePreview = (guide: any) => {
+    setPreviewingId(guide.id);
+    previewMut.mutate({ projectId, word: guide.word, phonetic: guide.phonetic });
+  };
+
+  const LANG_OPTIONS = [
+    { value: "ko", label: "한국어" },
+    { value: "en", label: "English" },
+    { value: "ja", label: "日本語" },
+    { value: "zh", label: "中文" },
+    { value: "es", label: "Español" },
+    { value: "fr", label: "Français" },
+    { value: "de", label: "Deutsch" },
+  ];
+
+  return (
+    <>
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+        <Languages className="w-3 h-3" />
+        발음 설정
+      </Button>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setOpen(false)}>
+          <div className="bg-card border rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Languages className="w-4 h-4 text-purple-500" />
+                발음 미세 조정
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Add/Edit Form */}
+            <div className="p-4 border-b bg-muted/30">
+              <div className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-3">
+                  <Label className="text-xs text-muted-foreground mb-1 block">원본 단어</Label>
+                  <Input
+                    value={word}
+                    onChange={(e) => setWord(e.target.value)}
+                    placeholder="예: blockchain"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="col-span-1 flex items-center justify-center pb-1">
+                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="col-span-3">
+                  <Label className="text-xs text-muted-foreground mb-1 block">발음 표기</Label>
+                  <Input
+                    value={phonetic}
+                    onChange={(e) => setPhonetic(e.target.value)}
+                    placeholder="예: 블록체인"
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs text-muted-foreground mb-1 block">언어</Label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full h-8 rounded-md border bg-background px-2 text-sm"
+                  >
+                    {LANG_OPTIONS.map(l => (
+                      <option key={l.value} value={l.value}>{l.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-3 flex gap-1">
+                  <Button
+                    size="sm"
+                    className="h-8 gap-1 flex-1"
+                    onClick={handleSubmit}
+                    disabled={addMut.isPending || updateMut.isPending}
+                  >
+                    {(addMut.isPending || updateMut.isPending) ? <Loader2 className="w-3 h-3 animate-spin" /> : editingId ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+                    {editingId ? "수정" : "추가"}
+                  </Button>
+                  {editingId && (
+                    <Button variant="ghost" size="sm" className="h-8" onClick={resetForm}>
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              {/* Optional description */}
+              <div className="mt-2">
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="설명 (선택사항): 이 발음 규칙에 대한 메모"
+                  className="h-7 text-xs"
+                />
+              </div>
+            </div>
+
+            {/* Guide List */}
+            <div className="p-4 overflow-y-auto max-h-[45vh]">
+              {guidesQuery.isLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+              ) : !guidesQuery.data?.length ? (
+                <div className="text-center py-8">
+                  <Languages className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                  <p className="text-muted-foreground text-sm">등록된 발음 가이드가 없습니다</p>
+                  <p className="text-muted-foreground/60 text-xs mt-1">
+                    특정 단어의 발음을 미세 조정하려면 위 폼에서 추가해주세요
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <div className="text-xs text-muted-foreground mb-2">
+                    총 {guidesQuery.data.length}개의 발음 가이드
+                  </div>
+                  {guidesQuery.data.map((guide: any) => (
+                    <div
+                      key={guide.id}
+                      className="flex items-center gap-2 p-2.5 rounded-lg border hover:bg-accent/30 transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-semibold text-foreground">{guide.word}</span>
+                          <ArrowRight className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                          <span className="font-mono text-sm text-purple-500 font-medium">{guide.phonetic}</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">{guide.language || "ko"}</Badge>
+                        </div>
+                        {guide.description && (
+                          <p className="text-xs text-muted-foreground/70 mt-0.5 truncate">{guide.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => handlePreview(guide)}
+                          disabled={previewingId === guide.id}
+                        >
+                          {previewingId === guide.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Volume2 className="w-3.5 h-3.5 text-blue-500" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => handleEdit(guide)}
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-amber-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => {
+                            if (confirm(`"${guide.word}" 발음 가이드를 삭제하시겠습니까?`)) {
+                              deleteMut.mutate({ id: guide.id });
+                            }
+                          }}
+                          disabled={deleteMut.isPending}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Footer info */}
+            <div className="p-3 border-t bg-muted/20">
+              <p className="text-xs text-muted-foreground text-center">
+                💡 발음 가이드는 AI 클론 음성 생성 시 자동으로 적용됩니다. 원본 단어가 스크립트에 포함되면 지정한 발음으로 TTS가 생성됩니다.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+
+// --- Pronunciation Highlight: shows which words in the script have pronunciation guides ---
+function PronunciationHighlight({ text, projectId }: { text: string; projectId: number }) {
+  const guidesQuery = trpc.lectureBuilder.getPronunciationGuides.useQuery({ projectId });
+  
+  if (!text || !guidesQuery.data?.length) return null;
+
+  const guides = guidesQuery.data;
+  const matchedWords: { word: string; phonetic: string }[] = [];
+  
+  for (const guide of guides) {
+    const regex = new RegExp(guide.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    if (regex.test(text)) {
+      matchedWords.push({ word: guide.word, phonetic: guide.phonetic });
+    }
+  }
+
+  if (matchedWords.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-1">
+      <span className="text-[10px] text-muted-foreground/60 mr-1">발음 적용:</span>
+      {matchedWords.map((m, i) => (
+        <span key={i} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-[10px]">
+          <span className="font-medium text-purple-700 dark:text-purple-300">{m.word}</span>
+          <ArrowRight className="w-2.5 h-2.5 text-purple-400" />
+          <span className="text-purple-500 dark:text-purple-400">{m.phonetic}</span>
+        </span>
+      ))}
+    </div>
   );
 }

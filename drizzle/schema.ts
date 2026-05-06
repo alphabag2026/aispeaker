@@ -2486,3 +2486,26 @@ export const presetLikes = mysqlTable("presetLikes", {
 export type PresetLike = typeof presetLikes.$inferSelect;
 export type InsertPresetLike = typeof presetLikes.$inferInsert;
 
+
+/**
+ * Pronunciation Guides - per-project word/phrase pronunciation mappings for AI clone voice TTS
+ * Users define word → phonetic pronunciation mappings that are applied as preprocessing
+ * before TTS generation to fine-tune pronunciation of specific terms.
+ */
+export const pronunciationGuides = mysqlTable("pronunciationGuides", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  projectId: int("projectId").notNull(),
+  /** Original word or phrase to match in script */
+  word: varchar("word", { length: 500 }).notNull(),
+  /** Phonetic pronunciation or replacement text for TTS */
+  phonetic: varchar("phonetic", { length: 500 }).notNull(),
+  /** Language context (e.g., 'ko', 'en', 'ja') */
+  language: varchar("language", { length: 10 }).default("ko"),
+  /** Optional description/note about this pronunciation rule */
+  description: text("description"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type PronunciationGuide = typeof pronunciationGuides.$inferSelect;
+export type InsertPronunciationGuide = typeof pronunciationGuides.$inferInsert;

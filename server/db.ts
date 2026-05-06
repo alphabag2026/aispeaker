@@ -91,6 +91,7 @@ import {
   voiceEffectPresets, InsertVoiceEffectPreset,
   voiceCloneSamples, InsertVoiceCloneSample,
   presetLikes, InsertPresetLike,
+  pronunciationGuides, InsertPronunciationGuide,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -4167,4 +4168,43 @@ export async function copyPreset(presetId: number, userId: number) {
     isPublic: false,
   }).$returningId();
   return result.id;
+}
+
+
+// ============ Pronunciation Guides CRUD ============
+
+export async function addPronunciationGuide(data: InsertPronunciationGuide) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const [result] = await db.insert(pronunciationGuides).values(data).$returningId();
+  return result.id;
+}
+
+export async function getPronunciationGuides(projectId: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  return db.select().from(pronunciationGuides)
+    .where(and(eq(pronunciationGuides.projectId, projectId), eq(pronunciationGuides.userId, userId)))
+    .orderBy(pronunciationGuides.createdAt);
+}
+
+export async function updatePronunciationGuide(id: number, userId: number, data: Partial<Pick<InsertPronunciationGuide, "word" | "phonetic" | "language" | "description">>) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const [existing] = await db.select().from(pronunciationGuides).where(and(eq(pronunciationGuides.id, id), eq(pronunciationGuides.userId, userId))).limit(1);
+  if (!existing) throw new Error("Pronunciation guide not found");
+  await db.update(pronunciationGuides).set(data).where(eq(pronunciationGuides.id, id));
+  return true;
+}
+
+export async function deletePronunciationGuide(id: number, userId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  const [existing] = await db.select().from(pronunciationGuides).where(and(eq(pronunciationGuides.id, id), eq(pronunciationGuides.userId, userId))).limit(1);
+  if (!existing) throw new Error("Pronunciation guide not found");
+  await db.delete(pronunciationGuides).where(eq(pronunciationGuides.id, id));
+  return true;
+}
+
+export async function getPronunciationGuidesByProject(projectId: number) {
+  const db = await getDb(); if (!db) throw new Error("Database not available");
+  return db.select().from(pronunciationGuides)
+    .where(eq(pronunciationGuides.projectId, projectId))
+    .orderBy(pronunciationGuides.createdAt);
 }

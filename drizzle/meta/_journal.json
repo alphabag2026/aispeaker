@@ -400,6 +400,13 @@
       "when": 1777942982911,
       "tag": "0056_cooing_bug",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "5",
+      "when": 1778046546110,
+      "tag": "0057_amused_silhouette",
+      "breakpoints": true
     }
   ]
 }
