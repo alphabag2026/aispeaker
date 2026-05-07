@@ -2550,3 +2550,8 @@
 
 ### 공통
 - [x] 테스트: v6.5 기능 vitest 테스트 작성 (25개 통과)
+
+## 발음 미세 조정 UI 다국어 번역 (v6.5.1)
+- [x] PronunciationGuideButton 하드코딩 텍스트를 i18n 키로 교체
+- [x] PronunciationHighlight 하드코딩 텍스트를 i18n 키로 교체
+- [x] LectureBuilder.ts i18n 파일에 20개 언어 번역 추가 (ko, en, zh, ja, vi, th, id, ms, es, fr, de, pt, ru, ar, hi, it, nl, pl, sv, tr)
