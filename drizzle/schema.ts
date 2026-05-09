@@ -2389,6 +2389,10 @@ export const userAvatars = mysqlTable("userAvatars", {
   lastUsedAt: timestamp("lastUsedAt"),
   /** Number of times this avatar has been used */
   useCount: int("useCount").default(0).notNull(),
+  /** Default TTS voice ID for this avatar (Gemini voice name) */
+  defaultTtsVoiceId: varchar("defaultTtsVoiceId", { length: 100 }),
+  /** Default voice clone ID for this avatar */
+  defaultVoiceCloneId: int("defaultVoiceCloneId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

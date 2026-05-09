@@ -181,6 +181,13 @@ registerTranslations("ko", {
   "avatarSettingsDialog.bestMatchResult": "최적 매칭 음성",
   "avatarSettingsDialog.matchConfidenceResult": "매칭 정확도",
   "avatarSettingsDialog.searchPresets": "프리셋 검색...",
+  "avatarSettingsDialog.voiceAppliedToProject": "음성이 프로젝트에 적용되었습니다",
+  "avatarSettingsDialog.applyToProjectTitle": "최근 프로젝트에 적용",
+  "avatarSettingsDialog.applyToProjectDesc": "새로 생성된 음성 클론을 최근 프로젝트의 아바타에 바로 적용할 수 있습니다.",
+  "avatarSettingsDialog.avatarsLabel": "아바타",
+  "avatarSettingsDialog.applyToAll": "전체 아바타에 적용",
+  "avatarSettingsDialog.noProjectsToApply": "적용할 프로젝트가 없습니다.",
+  "avatarSettingsDialog.skipApply": "나중에 적용",
 });
 
 registerTranslations("en", {
@@ -364,6 +371,13 @@ registerTranslations("en", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Voice applied to project",
+  "avatarSettingsDialog.applyToProjectTitle": "Apply to Recent Project",
+  "avatarSettingsDialog.applyToProjectDesc": "Apply the newly created voice clone to avatars in your recent projects.",
+  "avatarSettingsDialog.avatarsLabel": "avatars",
+  "avatarSettingsDialog.applyToAll": "Apply to All Avatars",
+  "avatarSettingsDialog.noProjectsToApply": "No projects to apply.",
+  "avatarSettingsDialog.skipApply": "Apply Later",
 });
 
 registerTranslations("zh", {
@@ -547,6 +561,13 @@ registerTranslations("zh", {
   "avatarSettingsDialog.bestMatchResult": "最佳匹配语音",
   "avatarSettingsDialog.matchConfidenceResult": "匹配置信度",
   "avatarSettingsDialog.searchPresets": "搜索预设...",
+  "avatarSettingsDialog.voiceAppliedToProject": "语音已应用到项目",
+  "avatarSettingsDialog.applyToProjectTitle": "应用到最近项目",
+  "avatarSettingsDialog.applyToProjectDesc": "将新创建的语音克隆应用到最近项目的头像。",
+  "avatarSettingsDialog.avatarsLabel": "头像",
+  "avatarSettingsDialog.applyToAll": "应用到所有头像",
+  "avatarSettingsDialog.noProjectsToApply": "没有可应用的项目。",
+  "avatarSettingsDialog.skipApply": "稍后应用",
 });
 
 registerTranslations("ja", {
@@ -730,6 +751,13 @@ registerTranslations("ja", {
   "avatarSettingsDialog.bestMatchResult": "最適マッチ音声",
   "avatarSettingsDialog.matchConfidenceResult": "マッチ精度",
   "avatarSettingsDialog.searchPresets": "プリセットを検索...",
+  "avatarSettingsDialog.voiceAppliedToProject": "音声がプロジェクトに適用されました",
+  "avatarSettingsDialog.applyToProjectTitle": "最近のプロジェクトに適用",
+  "avatarSettingsDialog.applyToProjectDesc": "新しく作成した音声クローンを最近のプロジェクトのアバターに適用できます。",
+  "avatarSettingsDialog.avatarsLabel": "アバター",
+  "avatarSettingsDialog.applyToAll": "全アバターに適用",
+  "avatarSettingsDialog.noProjectsToApply": "適用するプロジェクトがありません。",
+  "avatarSettingsDialog.skipApply": "後で適用",
 });
 
 registerTranslations("vi", {
@@ -913,6 +941,13 @@ registerTranslations("vi", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Đã áp dụng giọng nói cho dự án",
+  "avatarSettingsDialog.applyToProjectTitle": "Áp dụng cho dự án gần đây",
+  "avatarSettingsDialog.applyToProjectDesc": "Áp dụng giọng nói mới cho avatar trong dự án gần đây.",
+  "avatarSettingsDialog.avatarsLabel": "avatar",
+  "avatarSettingsDialog.applyToAll": "Áp dụng cho tất cả avatar",
+  "avatarSettingsDialog.noProjectsToApply": "Không có dự án để áp dụng.",
+  "avatarSettingsDialog.skipApply": "Áp dụng sau",
 });
 
 registerTranslations("th", {
@@ -1096,6 +1131,13 @@ registerTranslations("th", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "ใช้เสียงกับโปรเจกต์แล้ว",
+  "avatarSettingsDialog.applyToProjectTitle": "ใช้กับโปรเจกต์ล่าสุด",
+  "avatarSettingsDialog.applyToProjectDesc": "ใช้เสียงโคลนใหม่กับอวาตาร์ในโปรเจกต์ล่าสุด",
+  "avatarSettingsDialog.avatarsLabel": "อวาตาร์",
+  "avatarSettingsDialog.applyToAll": "ใช้กับอวาตาร์ทั้งหมด",
+  "avatarSettingsDialog.noProjectsToApply": "ไม่มีโปรเจกต์ที่จะใช้",
+  "avatarSettingsDialog.skipApply": "ใช้ทีหลัง",
 });
 
 registerTranslations("id", {
@@ -1279,6 +1321,13 @@ registerTranslations("id", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Suara diterapkan ke proyek",
+  "avatarSettingsDialog.applyToProjectTitle": "Terapkan ke proyek terbaru",
+  "avatarSettingsDialog.applyToProjectDesc": "Terapkan klon suara baru ke avatar di proyek terbaru.",
+  "avatarSettingsDialog.avatarsLabel": "avatar",
+  "avatarSettingsDialog.applyToAll": "Terapkan ke semua avatar",
+  "avatarSettingsDialog.noProjectsToApply": "Tidak ada proyek untuk diterapkan.",
+  "avatarSettingsDialog.skipApply": "Terapkan nanti",
 });
 
 registerTranslations("ms", {
@@ -1462,6 +1511,13 @@ registerTranslations("ms", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Suara digunakan pada projek",
+  "avatarSettingsDialog.applyToProjectTitle": "Gunakan pada projek terkini",
+  "avatarSettingsDialog.applyToProjectDesc": "Gunakan klon suara baharu pada avatar dalam projek terkini.",
+  "avatarSettingsDialog.avatarsLabel": "avatar",
+  "avatarSettingsDialog.applyToAll": "Gunakan pada semua avatar",
+  "avatarSettingsDialog.noProjectsToApply": "Tiada projek untuk digunakan.",
+  "avatarSettingsDialog.skipApply": "Gunakan kemudian",
 });
 
 registerTranslations("es", {
@@ -1645,6 +1701,13 @@ registerTranslations("es", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Voz aplicada al proyecto",
+  "avatarSettingsDialog.applyToProjectTitle": "Aplicar a proyecto reciente",
+  "avatarSettingsDialog.applyToProjectDesc": "Aplica el clon de voz a los avatares de tus proyectos recientes.",
+  "avatarSettingsDialog.avatarsLabel": "avatares",
+  "avatarSettingsDialog.applyToAll": "Aplicar a todos los avatares",
+  "avatarSettingsDialog.noProjectsToApply": "No hay proyectos para aplicar.",
+  "avatarSettingsDialog.skipApply": "Aplicar después",
 });
 
 registerTranslations("fr", {
@@ -1828,6 +1891,13 @@ registerTranslations("fr", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Voix appliquée au projet",
+  "avatarSettingsDialog.applyToProjectTitle": "Appliquer au projet récent",
+  "avatarSettingsDialog.applyToProjectDesc": "Appliquez le clone vocal aux avatars de vos projets récents.",
+  "avatarSettingsDialog.avatarsLabel": "avatars",
+  "avatarSettingsDialog.applyToAll": "Appliquer à tous les avatars",
+  "avatarSettingsDialog.noProjectsToApply": "Aucun projet à appliquer.",
+  "avatarSettingsDialog.skipApply": "Appliquer plus tard",
 });
 
 registerTranslations("de", {
@@ -2011,6 +2081,13 @@ registerTranslations("de", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Stimme auf Projekt angewendet",
+  "avatarSettingsDialog.applyToProjectTitle": "Auf aktuelles Projekt anwenden",
+  "avatarSettingsDialog.applyToProjectDesc": "Wenden Sie den Stimmklon auf Avatare in Ihren aktuellen Projekten an.",
+  "avatarSettingsDialog.avatarsLabel": "Avatare",
+  "avatarSettingsDialog.applyToAll": "Auf alle Avatare anwenden",
+  "avatarSettingsDialog.noProjectsToApply": "Keine Projekte zum Anwenden.",
+  "avatarSettingsDialog.skipApply": "Später anwenden",
 });
 
 registerTranslations("pt", {
@@ -2194,6 +2271,13 @@ registerTranslations("pt", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Voz aplicada ao projeto",
+  "avatarSettingsDialog.applyToProjectTitle": "Aplicar ao projeto recente",
+  "avatarSettingsDialog.applyToProjectDesc": "Aplique o clone de voz aos avatares dos seus projetos recentes.",
+  "avatarSettingsDialog.avatarsLabel": "avatares",
+  "avatarSettingsDialog.applyToAll": "Aplicar a todos os avatares",
+  "avatarSettingsDialog.noProjectsToApply": "Nenhum projeto para aplicar.",
+  "avatarSettingsDialog.skipApply": "Aplicar depois",
 });
 
 registerTranslations("ru", {
@@ -2377,6 +2461,13 @@ registerTranslations("ru", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Голос применён к проекту",
+  "avatarSettingsDialog.applyToProjectTitle": "Применить к недавнему проекту",
+  "avatarSettingsDialog.applyToProjectDesc": "Примените клон голоса к аватарам в ваших недавних проектах.",
+  "avatarSettingsDialog.avatarsLabel": "аватаров",
+  "avatarSettingsDialog.applyToAll": "Применить ко всем аватарам",
+  "avatarSettingsDialog.noProjectsToApply": "Нет проектов для применения.",
+  "avatarSettingsDialog.skipApply": "Применить позже",
 });
 
 registerTranslations("ar", {
@@ -2560,6 +2651,13 @@ registerTranslations("ar", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "تم تطبيق الصوت على المشروع",
+  "avatarSettingsDialog.applyToProjectTitle": "تطبيق على المشروع الأخير",
+  "avatarSettingsDialog.applyToProjectDesc": "طبّق استنساخ الصوت على الصور الرمزية في مشاريعك الأخيرة.",
+  "avatarSettingsDialog.avatarsLabel": "صور رمزية",
+  "avatarSettingsDialog.applyToAll": "تطبيق على جميع الصور الرمزية",
+  "avatarSettingsDialog.noProjectsToApply": "لا توجد مشاريع للتطبيق.",
+  "avatarSettingsDialog.skipApply": "تطبيق لاحقاً",
 });
 
 registerTranslations("hi", {
@@ -2743,6 +2841,13 @@ registerTranslations("hi", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "आवाज़ प्रोजेक्ट पर लागू",
+  "avatarSettingsDialog.applyToProjectTitle": "हाल के प्रोजेक्ट पर लागू करें",
+  "avatarSettingsDialog.applyToProjectDesc": "हाल के प्रोजेक्ट के अवतारों पर नया वॉइस क्लोन लागू करें।",
+  "avatarSettingsDialog.avatarsLabel": "अवतार",
+  "avatarSettingsDialog.applyToAll": "सभी अवतारों पर लागू करें",
+  "avatarSettingsDialog.noProjectsToApply": "लागू करने के लिए कोई प्रोजेक्ट नहीं।",
+  "avatarSettingsDialog.skipApply": "बाद में लागू करें",
 });
 
 registerTranslations("it", {
@@ -2887,6 +2992,13 @@ registerTranslations("it", {
   "avatarSettingsDialog.presetDeleted": "Preset deleted",
   "avatarSettingsDialog.presetLoaded": "Preset loaded",
   "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?",
+  "avatarSettingsDialog.voiceAppliedToProject": "Voce applicata al progetto",
+  "avatarSettingsDialog.applyToProjectTitle": "Applica al progetto recente",
+  "avatarSettingsDialog.applyToProjectDesc": "Applica il clone vocale agli avatar nei tuoi progetti recenti.",
+  "avatarSettingsDialog.avatarsLabel": "avatar",
+  "avatarSettingsDialog.applyToAll": "Applica a tutti gli avatar",
+  "avatarSettingsDialog.noProjectsToApply": "Nessun progetto da applicare.",
+  "avatarSettingsDialog.skipApply": "Applica dopo",
 });
 
 registerTranslations("nl", {
@@ -3031,6 +3143,13 @@ registerTranslations("nl", {
   "avatarSettingsDialog.presetDeleted": "Preset deleted",
   "avatarSettingsDialog.presetLoaded": "Preset loaded",
   "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?",
+  "avatarSettingsDialog.voiceAppliedToProject": "Stem toegepast op project",
+  "avatarSettingsDialog.applyToProjectTitle": "Toepassen op recent project",
+  "avatarSettingsDialog.applyToProjectDesc": "Pas de nieuwe stemkloon toe op avatars in uw recente projecten.",
+  "avatarSettingsDialog.avatarsLabel": "avatars",
+  "avatarSettingsDialog.applyToAll": "Toepassen op alle avatars",
+  "avatarSettingsDialog.noProjectsToApply": "Geen projecten om toe te passen.",
+  "avatarSettingsDialog.skipApply": "Later toepassen",
 });
 
 registerTranslations("pl", {
@@ -3214,6 +3333,13 @@ registerTranslations("pl", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Głos zastosowany do projektu",
+  "avatarSettingsDialog.applyToProjectTitle": "Zastosuj do ostatniego projektu",
+  "avatarSettingsDialog.applyToProjectDesc": "Zastosuj nowy klon głosu do awatarów w ostatnich projektach.",
+  "avatarSettingsDialog.avatarsLabel": "awatarów",
+  "avatarSettingsDialog.applyToAll": "Zastosuj do wszystkich awatarów",
+  "avatarSettingsDialog.noProjectsToApply": "Brak projektów do zastosowania.",
+  "avatarSettingsDialog.skipApply": "Zastosuj później",
 });
 
 registerTranslations("sv", {
@@ -3358,6 +3484,13 @@ registerTranslations("sv", {
   "avatarSettingsDialog.presetDeleted": "Preset deleted",
   "avatarSettingsDialog.presetLoaded": "Preset loaded",
   "avatarSettingsDialog.confirmDeletePreset": "Delete this preset?",
+  "avatarSettingsDialog.voiceAppliedToProject": "Röst tillämpad på projekt",
+  "avatarSettingsDialog.applyToProjectTitle": "Tillämpa på senaste projekt",
+  "avatarSettingsDialog.applyToProjectDesc": "Tillämpa den nya röstklonen på avatarer i dina senaste projekt.",
+  "avatarSettingsDialog.avatarsLabel": "avatarer",
+  "avatarSettingsDialog.applyToAll": "Tillämpa på alla avatarer",
+  "avatarSettingsDialog.noProjectsToApply": "Inga projekt att tillämpa.",
+  "avatarSettingsDialog.skipApply": "Tillämpa senare",
 });
 
 registerTranslations("tr", {
@@ -3541,5 +3674,12 @@ registerTranslations("tr", {
   "avatarSettingsDialog.bestMatchResult": "Best Match Voice",
   "avatarSettingsDialog.matchConfidenceResult": "Match Confidence",
   "avatarSettingsDialog.searchPresets": "Search presets...",
+  "avatarSettingsDialog.voiceAppliedToProject": "Ses projeye uygulandı",
+  "avatarSettingsDialog.applyToProjectTitle": "Son projeye uygula",
+  "avatarSettingsDialog.applyToProjectDesc": "Yeni ses klonunu son projenizdeki avatarlara uygulayın.",
+  "avatarSettingsDialog.avatarsLabel": "avatar",
+  "avatarSettingsDialog.applyToAll": "Tüm avatarlara uygula",
+  "avatarSettingsDialog.noProjectsToApply": "Uygulanacak proje yok.",
+  "avatarSettingsDialog.skipApply": "Sonra uygula",
 });
 

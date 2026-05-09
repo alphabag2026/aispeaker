@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Crown, Globe, Sparkles, User, ChevronRight, Volume2, Mic, Pencil, Loader2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Search, Crown, Globe, Sparkles, User, ChevronRight, Volume2, Mic, Pencil, Loader2, Star, UserCircle2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -41,16 +42,34 @@ export default function FaceGallery() {
   const [selectedFace, setSelectedFace] = useState<any>(null);
   const [editingAvatarId, setEditingAvatarId] = useState<number | null>(null);
   const [newVoiceId, setNewVoiceId] = useState("");
+  const [activeTab, setActiveTab] = useState<"gallery" | "my">("gallery");
+  const [editingDefaultVoiceId, setEditingDefaultVoiceId] = useState<number | null>(null);
+  const [defaultVoiceSelection, setDefaultVoiceSelection] = useState("");
 
   const { data: faces = [], isLoading } = trpc.sampleFace.list.useQuery({
     category: selectedCategory === "all" ? undefined : selectedCategory,
     gender: selectedGender === "all" ? undefined : selectedGender,
   });
 
-  const voicesQuery = trpc.tts.voices.useQuery(undefined, { enabled: !!selectedFace });
-  const voices = voicesQuery.data || [];
+  // My avatars queries
+  const myAvatarsQuery = trpc.userAvatar.list.useQuery({ sortBy: "favorite" }, { enabled: !!user });
+  const myAvatars = myAvatarsQuery.data || [];
+  const toggleFavorite = trpc.userAvatar.toggleFavorite.useMutation({
+    onSuccess: () => myAvatarsQuery.refetch(),
+  });
+  const updateDefaultVoice = trpc.userAvatar.updateDefaultVoice.useMutation({
+    onSuccess: () => {
+      toast.success(t("fg.default_voice_saved"));
+      setEditingDefaultVoiceId(null);
+      setDefaultVoiceSelection("");
+      myAvatarsQuery.refetch();
+    },
+    onError: () => toast.error(t("fg.default_voice_failed")),
+  });
 
-  const voiceClonesQuery = trpc.voiceClone.list.useQuery(undefined, { enabled: !!selectedFace && !!user });
+   const voicesQuery = trpc.tts.voices.useQuery(undefined, { enabled: !!selectedFace || (activeTab === "my" && !!user) });
+  const voices = voicesQuery.data || [];
+  const voiceClonesQuery = trpc.voiceClone.list.useQuery(undefined, { enabled: (!!selectedFace || activeTab === "my") && !!user });
   const myVoiceClones = (voiceClonesQuery.data?.filter((c: any) => c.status === "ready") || []) as any[];
 
   // Query avatars using this face
@@ -141,6 +160,120 @@ export default function FaceGallery() {
       </div>
 
       <div className="container py-8">
+        {/* Tabs: Gallery / My Avatars */}
+        {user && (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mb-6">
+            <TabsList>
+              <TabsTrigger value="gallery" className="gap-1.5"><Globe className="w-4 h-4" />{t("fg.gallery_tab")}</TabsTrigger>
+              <TabsTrigger value="my" className="gap-1.5"><UserCircle2 className="w-4 h-4" />{t("fg.my_avatars_tab")}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
+        {/* My Avatars Tab */}
+        {activeTab === "my" && user && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">{t("fg.my_avatars_title")}</h3>
+              <Badge variant="outline">{myAvatars.length} {t("fg.avatars_count")}</Badge>
+            </div>
+            {myAvatars.length === 0 ? (
+              <div className="text-center py-16">
+                <UserCircle2 className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">{t("fg.no_my_avatars")}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {myAvatars.map((av: any) => (
+                  <Card key={av.id} className="overflow-hidden">
+                    <div className="relative aspect-square">
+                      <img src={av.imageUrl} alt={av.name} className="w-full h-full object-cover" />
+                      {/* Favorite toggle */}
+                      <button
+                        className={`absolute top-2 right-2 p-1.5 rounded-full transition-colors ${av.isFavorite ? "bg-yellow-400 text-yellow-900" : "bg-black/40 text-white hover:bg-yellow-400 hover:text-yellow-900"}`}
+                        onClick={() => toggleFavorite.mutate({ id: av.id })}
+                      >
+                        <Star className={`w-4 h-4 ${av.isFavorite ? "fill-current" : ""}`} />
+                      </button>
+                      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 p-3">
+                        <h4 className="text-sm font-medium text-white">{av.name}</h4>
+                        <p className="text-[10px] text-white/70">{av.type === "ai" ? "AI" : av.type === "photo" ? t("fg.photo") : t("fg.custom")}</p>
+                      </div>
+                    </div>
+                    <CardContent className="p-3 space-y-2">
+                      {/* Default voice display/edit */}
+                      <div className="text-xs">
+                        <span className="text-muted-foreground">{t("fg.default_voice")}:</span>
+                        {editingDefaultVoiceId === av.id ? (
+                          <div className="mt-1.5 space-y-2">
+                            <Select value={defaultVoiceSelection} onValueChange={setDefaultVoiceSelection}>
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder={t("fg.select_voice")} />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[200px]">
+                                {myVoiceClones.length > 0 && (
+                                  <>
+                                    <div className="px-2 py-1 text-[10px] font-semibold text-primary border-b">🎤 {t("fg.my_clone_voices")}</div>
+                                    {myVoiceClones.map((clone: any) => (
+                                      <SelectItem key={`clone-${clone.id}`} value={`clone-${clone.id}`}>🎤 {clone.name}</SelectItem>
+                                    ))}
+                                    <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground border-b border-t">🌐 {t("fg.preset_voices")}</div>
+                                  </>
+                                )}
+                                {voices.map((v: any) => (
+                                  <SelectItem key={v.id} value={v.id}>{v.gender === "female" ? "♀" : "♂"} {v.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="flex gap-1.5">
+                              <Button size="sm" className="h-7 text-xs flex-1" disabled={!defaultVoiceSelection || updateDefaultVoice.isPending}
+                                onClick={() => {
+                                  const isClone = defaultVoiceSelection.startsWith("clone-");
+                                  if (isClone) {
+                                    const cloneId = parseInt(defaultVoiceSelection.replace("clone-", ""));
+                                    const clone = myVoiceClones.find((c: any) => c.id === cloneId);
+                                    updateDefaultVoice.mutate({ id: av.id, defaultTtsVoiceId: clone?.matchedVoiceId || "Kore", defaultVoiceCloneId: cloneId });
+                                  } else {
+                                    updateDefaultVoice.mutate({ id: av.id, defaultTtsVoiceId: defaultVoiceSelection, defaultVoiceCloneId: null });
+                                  }
+                                }}>
+                                {updateDefaultVoice.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : t("fg.save")}
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { setEditingDefaultVoiceId(null); setDefaultVoiceSelection(""); }}>
+                                {t("fg.cancel")}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="font-medium">
+                              {av.defaultVoiceCloneId
+                                ? getVoiceName(av.defaultTtsVoiceId, av.defaultVoiceCloneId)
+                                : av.defaultTtsVoiceId
+                                  ? getVoiceName(av.defaultTtsVoiceId, null)
+                                  : t("fg.no_voice")}
+                            </span>
+                            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1"
+                              onClick={() => {
+                                setEditingDefaultVoiceId(av.id);
+                                setDefaultVoiceSelection(av.defaultVoiceCloneId ? `clone-${av.defaultVoiceCloneId}` : (av.defaultTtsVoiceId || ""));
+                              }}>
+                              <Pencil className="w-3 h-3" /> {t("fg.set_default_voice")}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Gallery Tab */}
+        {(activeTab === "gallery" || !user) && (
+        <>
         {/* Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="relative flex-1">
@@ -232,6 +365,8 @@ export default function FaceGallery() {
               </Card>
             ))}
           </div>
+        )}
+        </>
         )}
       </div>
 

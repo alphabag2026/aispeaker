@@ -9527,6 +9527,67 @@ Respond in JSON format:
         return { audioUrl: url, voiceId: input.voiceId };
       }),
 
+    /** Apply voice clone to recent project's avatar(s) */
+    applyToRecentProject: protectedProcedure
+      .input(z.object({
+        cloneId: z.number(),
+        projectId: z.number().optional(), // if not provided, use most recent project
+        avatarId: z.number().optional(), // if not provided, apply to all avatars in project
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const clone = await db.getVoiceCloneById(input.cloneId);
+        if (!clone || clone.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Voice clone not found" });
+        if (clone.status !== "ready") throw new TRPCError({ code: "BAD_REQUEST", message: "Voice clone is not ready" });
+        // Get target project
+        let projectId = input.projectId;
+        if (!projectId) {
+          const projects = await db.listLectureProjects(ctx.user.id);
+          if (projects.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "No projects found" });
+          projectId = projects[0].id;
+        }
+        const project = await db.getLectureProject(projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        // Get avatars
+        const avatars = await db.listProjectAvatars(projectId);
+        if (avatars.length === 0) throw new TRPCError({ code: "NOT_FOUND", message: "No avatars in project" });
+        const matchedVoiceId = clone.matchedVoiceId || "Kore";
+        let updatedCount = 0;
+        if (input.avatarId) {
+          const target = avatars.find(a => a.id === input.avatarId);
+          if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "Avatar not found in project" });
+          await db.updateProjectAvatar(input.avatarId, { ttsVoiceId: matchedVoiceId, voiceCloneId: input.cloneId });
+          updatedCount = 1;
+        } else {
+          for (const avatar of avatars) {
+            await db.updateProjectAvatar(avatar.id, { ttsVoiceId: matchedVoiceId, voiceCloneId: input.cloneId });
+            updatedCount++;
+          }
+        }
+        return { success: true, updatedCount, projectId, projectTitle: project.title };
+      }),
+    /** Get recent projects with avatars for voice clone apply UI */
+    recentProjectsForApply: protectedProcedure.query(async ({ ctx }) => {
+      const projects = await db.listLectureProjects(ctx.user.id);
+      const recentProjects = projects.slice(0, 5);
+      const result = [];
+      for (const p of recentProjects) {
+        const avatars = await db.listProjectAvatars(p.id);
+        result.push({
+          id: p.id,
+          title: p.title,
+          updatedAt: p.updatedAt,
+          avatars: avatars.map(a => ({
+            id: a.id,
+            name: a.name,
+            role: a.role,
+            customFaceUrl: a.customFaceUrl,
+            ttsVoiceId: a.ttsVoiceId,
+            voiceCloneId: a.voiceCloneId,
+          })),
+        });
+      }
+      return result;
+    }),
     /** Get available voice presets (5 curated default voices) */
     presets: publicProcedure.query(() => {
       return [
@@ -9775,6 +9836,20 @@ Respond in JSON format:
         name: z.string().min(1).max(100).optional(),
         description: z.string().optional(),
         isDefault: z.boolean().optional(),
+        defaultTtsVoiceId: z.string().nullable().optional(),
+        defaultVoiceCloneId: z.number().nullable().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { id, ...data } = input;
+        await db.updateUserAvatar(id, ctx.user.id, data);
+        return { success: true };
+      }),
+    /** Update default voice for a user avatar */
+    updateDefaultVoice: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        defaultTtsVoiceId: z.string().nullable(),
+        defaultVoiceCloneId: z.number().nullable(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;

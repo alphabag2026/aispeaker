@@ -580,6 +580,10 @@ registerTranslations("ko", {
   "lectureBuilder.noCloneVoiceYet": "아직 개인 클론 음성이 없습니다.",
   "lectureBuilder.createCloneVoice": "음성 클론 만들기",
   "lectureBuilder.myCloneVoices": "내 클론 음성",
+  "lectureBuilder.changeFormat": "포맷 변경",
+  "lectureBuilder.changeFormatTitle": "강의 포맷 설정 변경",
+  "lectureBuilder.currentFormatInfo": "현재 저장된 포맷이 선택되어 있습니다. 변경하려면 새로운 포맷을 선택하세요.",
+  "lectureBuilder.formatChangeSuccess": "강의 포맷이 변경되었습니다",
 });
 registerTranslations("en", {
   "lectureBuilder.stringLiteral0": "Select Avatar",
@@ -1162,6 +1166,10 @@ registerTranslations("en", {
   "lectureBuilder.noCloneVoiceYet": "No personal clone voices yet.",
   "lectureBuilder.createCloneVoice": "Create Voice Clone",
   "lectureBuilder.myCloneVoices": "My Clone Voices",
+  "lectureBuilder.changeFormat": "Change Format",
+  "lectureBuilder.changeFormatTitle": "Change Lecture Format Settings",
+  "lectureBuilder.currentFormatInfo": "The currently saved format is selected. Choose a new format to change it.",
+  "lectureBuilder.formatChangeSuccess": "Lecture format has been changed",
 });
 registerTranslations("zh", {
   "lectureBuilder.stringLiteral0": "选择头像",
@@ -1744,6 +1752,10 @@ registerTranslations("zh", {
   "lectureBuilder.noCloneVoiceYet": "暂无个人克隆语音。",
   "lectureBuilder.createCloneVoice": "创建语音克隆",
   "lectureBuilder.myCloneVoices": "我的克隆语音",
+  "lectureBuilder.changeFormat": "更改格式",
+  "lectureBuilder.changeFormatTitle": "更改讲座格式设置",
+  "lectureBuilder.currentFormatInfo": "当前已保存的格式已被选中。选择新格式进行更改。",
+  "lectureBuilder.formatChangeSuccess": "讲座格式已更改",
 });
 registerTranslations("ja", {
   "lectureBuilder.stringLiteral0": "アバター選択",
@@ -2326,6 +2338,10 @@ registerTranslations("ja", {
   "lectureBuilder.noCloneVoiceYet": "個人クローン音声がまだありません。",
   "lectureBuilder.createCloneVoice": "音声クローンを作成",
   "lectureBuilder.myCloneVoices": "マイクローン音声",
+  "lectureBuilder.changeFormat": "フォーマット変更",
+  "lectureBuilder.changeFormatTitle": "講義フォーマット設定変更",
+  "lectureBuilder.currentFormatInfo": "現在保存されているフォーマットが選択されています。変更するには新しいフォーマットを選択してください。",
+  "lectureBuilder.formatChangeSuccess": "講義フォーマットが変更されました",
 });
 registerTranslations("vi", {
   "lectureBuilder.stringLiteral0": "Chọn avatar",
@@ -2908,6 +2924,10 @@ registerTranslations("vi", {
   "lectureBuilder.noCloneVoiceYet": "Chưa có giọng nói nhân bản cá nhân.",
   "lectureBuilder.createCloneVoice": "Tạo giọng nói nhân bản",
   "lectureBuilder.myCloneVoices": "Giọng nói nhân bản của tôi",
+  "lectureBuilder.changeFormat": "Đổi định dạng",
+  "lectureBuilder.changeFormatTitle": "Thay đổi cài đặt định dạng bài giảng",
+  "lectureBuilder.currentFormatInfo": "Định dạng đã lưu hiện tại đang được chọn. Chọn định dạng mới để thay đổi.",
+  "lectureBuilder.formatChangeSuccess": "Định dạng bài giảng đã được thay đổi",
 });
 registerTranslations("th", {
   "lectureBuilder.stringLiteral0": "เลือกอวาตาร์",
@@ -3490,6 +3510,10 @@ registerTranslations("th", {
   "lectureBuilder.noCloneVoiceYet": "ยังไม่มีเสียงโคลนส่วนตัว",
   "lectureBuilder.createCloneVoice": "สร้างเสียงโคลน",
   "lectureBuilder.myCloneVoices": "เสียงโคลนของฉัน",
+  "lectureBuilder.changeFormat": "เปลี่ยนรูปแบบ",
+  "lectureBuilder.changeFormatTitle": "เปลี่ยนการตั้งค่ารูปแบบการบรรยาย",
+  "lectureBuilder.currentFormatInfo": "รูปแบบที่บันทึกไว้ถูกเลือกอยู่ เลือกรูปแบบใหม่เพื่อเปลี่ยน",
+  "lectureBuilder.formatChangeSuccess": "รูปแบบการบรรยายถูกเปลี่ยนแล้ว",
 });
 registerTranslations("id", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4072,6 +4096,10 @@ registerTranslations("id", {
   "lectureBuilder.noCloneVoiceYet": "Belum ada suara klon pribadi.",
   "lectureBuilder.createCloneVoice": "Buat klon suara",
   "lectureBuilder.myCloneVoices": "Suara klon saya",
+  "lectureBuilder.changeFormat": "Ubah Format",
+  "lectureBuilder.changeFormatTitle": "Ubah Pengaturan Format Kuliah",
+  "lectureBuilder.currentFormatInfo": "Format yang tersimpan saat ini dipilih. Pilih format baru untuk mengubahnya.",
+  "lectureBuilder.formatChangeSuccess": "Format kuliah telah diubah",
 });
 registerTranslations("ms", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4654,6 +4682,10 @@ registerTranslations("ms", {
   "lectureBuilder.noCloneVoiceYet": "Tiada suara klon peribadi lagi.",
   "lectureBuilder.createCloneVoice": "Cipta klon suara",
   "lectureBuilder.myCloneVoices": "Suara klon saya",
+  "lectureBuilder.changeFormat": "Tukar Format",
+  "lectureBuilder.changeFormatTitle": "Tukar Tetapan Format Kuliah",
+  "lectureBuilder.currentFormatInfo": "Format yang disimpan semasa dipilih. Pilih format baharu untuk menukarnya.",
+  "lectureBuilder.formatChangeSuccess": "Format kuliah telah ditukar",
 });
 registerTranslations("es", {
   "lectureBuilder.stringLiteral0": "Seleccionar avatar",
@@ -5236,6 +5268,10 @@ registerTranslations("es", {
   "lectureBuilder.noCloneVoiceYet": "Aún no hay voces clonadas personales.",
   "lectureBuilder.createCloneVoice": "Crear clon de voz",
   "lectureBuilder.myCloneVoices": "Mis voces clonadas",
+  "lectureBuilder.changeFormat": "Cambiar formato",
+  "lectureBuilder.changeFormatTitle": "Cambiar configuración de formato de clase",
+  "lectureBuilder.currentFormatInfo": "El formato guardado actualmente está seleccionado. Elige un nuevo formato para cambiarlo.",
+  "lectureBuilder.formatChangeSuccess": "El formato de la clase ha sido cambiado",
 });
 registerTranslations("fr", {
   "lectureBuilder.stringLiteral0": "Sélection de l'avatar",
@@ -5818,6 +5854,10 @@ registerTranslations("fr", {
   "lectureBuilder.noCloneVoiceYet": "Pas encore de voix clonée personnelle.",
   "lectureBuilder.createCloneVoice": "Créer un clone vocal",
   "lectureBuilder.myCloneVoices": "Mes voix clonées",
+  "lectureBuilder.changeFormat": "Changer le format",
+  "lectureBuilder.changeFormatTitle": "Modifier les paramètres de format du cours",
+  "lectureBuilder.currentFormatInfo": "Le format actuellement enregistré est sélectionné. Choisissez un nouveau format pour le modifier.",
+  "lectureBuilder.formatChangeSuccess": "Le format du cours a été modifié",
 });
 registerTranslations("de", {
   "lectureBuilder.stringLiteral0": "Avatar auswählen",
@@ -6400,6 +6440,10 @@ registerTranslations("de", {
   "lectureBuilder.noCloneVoiceYet": "Noch keine persönlichen geklonten Stimmen.",
   "lectureBuilder.createCloneVoice": "Stimmklon erstellen",
   "lectureBuilder.myCloneVoices": "Meine geklonten Stimmen",
+  "lectureBuilder.changeFormat": "Format ändern",
+  "lectureBuilder.changeFormatTitle": "Vorlesungsformat-Einstellungen ändern",
+  "lectureBuilder.currentFormatInfo": "Das aktuell gespeicherte Format ist ausgewählt. Wählen Sie ein neues Format zum Ändern.",
+  "lectureBuilder.formatChangeSuccess": "Das Vorlesungsformat wurde geändert",
 });
 registerTranslations("pt", {
   "lectureBuilder.stringLiteral0": "Selecionar avatar",
@@ -6982,6 +7026,10 @@ registerTranslations("pt", {
   "lectureBuilder.noCloneVoiceYet": "Nenhuma voz clonada pessoal ainda.",
   "lectureBuilder.createCloneVoice": "Criar clone de voz",
   "lectureBuilder.myCloneVoices": "Minhas vozes clonadas",
+  "lectureBuilder.changeFormat": "Alterar formato",
+  "lectureBuilder.changeFormatTitle": "Alterar configurações de formato da aula",
+  "lectureBuilder.currentFormatInfo": "O formato salvo atualmente está selecionado. Escolha um novo formato para alterá-lo.",
+  "lectureBuilder.formatChangeSuccess": "O formato da aula foi alterado",
 });
 registerTranslations("ru", {
   "lectureBuilder.stringLiteral0": "Выбор аватара",
@@ -7564,6 +7612,10 @@ registerTranslations("ru", {
   "lectureBuilder.noCloneVoiceYet": "Личных клонированных голосов пока нет.",
   "lectureBuilder.createCloneVoice": "Создать клон голоса",
   "lectureBuilder.myCloneVoices": "Мои клонированные голоса",
+  "lectureBuilder.changeFormat": "Изменить формат",
+  "lectureBuilder.changeFormatTitle": "Изменить настройки формата лекции",
+  "lectureBuilder.currentFormatInfo": "Текущий сохранённый формат выбран. Выберите новый формат для изменения.",
+  "lectureBuilder.formatChangeSuccess": "Формат лекции был изменён",
 });
 registerTranslations("ar", {
   "lectureBuilder.stringLiteral0": "اختيار الصورة الرمزية",
@@ -8146,6 +8198,10 @@ registerTranslations("ar", {
   "lectureBuilder.noCloneVoiceYet": "لا توجد أصوات مستنسخة شخصية بعد.",
   "lectureBuilder.createCloneVoice": "إنشاء استنساخ صوتي",
   "lectureBuilder.myCloneVoices": "أصواتي المستنسخة",
+  "lectureBuilder.changeFormat": "تغيير التنسيق",
+  "lectureBuilder.changeFormatTitle": "تغيير إعدادات تنسيق المحاضرة",
+  "lectureBuilder.currentFormatInfo": "التنسيق المحفوظ حالياً محدد. اختر تنسيقاً جديداً لتغييره.",
+  "lectureBuilder.formatChangeSuccess": "تم تغيير تنسيق المحاضرة",
 });
 registerTranslations("hi", {
   "lectureBuilder.stringLiteral0": "अवतार चुनें",
@@ -8728,6 +8784,10 @@ registerTranslations("hi", {
   "lectureBuilder.noCloneVoiceYet": "अभी तक कोई व्यक्तिगत क्लोन आवाज नहीं।",
   "lectureBuilder.createCloneVoice": "वॉइस क्लोन बनाएं",
   "lectureBuilder.myCloneVoices": "मेरी क्लोन आवाजें",
+  "lectureBuilder.changeFormat": "प्रारूप बदलें",
+  "lectureBuilder.changeFormatTitle": "व्याख्यान प्रारूप सेटिंग बदलें",
+  "lectureBuilder.currentFormatInfo": "वर्तमान में सहेजा गया प्रारूप चयनित है। बदलने के लिए नया प्रारूप चुनें।",
+  "lectureBuilder.formatChangeSuccess": "व्याख्यान प्रारूप बदल दिया गया है",
 });
 registerTranslations("it", {
   "lectureBuilder.stringLiteral0": "Seleziona avatar",
@@ -9310,6 +9370,10 @@ registerTranslations("it", {
   "lectureBuilder.noCloneVoiceYet": "Nessuna voce clonata personale ancora.",
   "lectureBuilder.createCloneVoice": "Crea clone vocale",
   "lectureBuilder.myCloneVoices": "Le mie voci clonate",
+  "lectureBuilder.changeFormat": "Cambia formato",
+  "lectureBuilder.changeFormatTitle": "Modifica impostazioni formato lezione",
+  "lectureBuilder.currentFormatInfo": "Il formato attualmente salvato è selezionato. Scegli un nuovo formato per cambiarlo.",
+  "lectureBuilder.formatChangeSuccess": "Il formato della lezione è stato modificato",
 });
 registerTranslations("nl", {
   "lectureBuilder.stringLiteral0": "Avatar selecteren",
@@ -9892,6 +9956,10 @@ registerTranslations("nl", {
   "lectureBuilder.noCloneVoiceYet": "Nog geen persoonlijke gekloonde stemmen.",
   "lectureBuilder.createCloneVoice": "Stemkloon maken",
   "lectureBuilder.myCloneVoices": "Mijn gekloonde stemmen",
+  "lectureBuilder.changeFormat": "Formaat wijzigen",
+  "lectureBuilder.changeFormatTitle": "Collegeopmaak-instellingen wijzigen",
+  "lectureBuilder.currentFormatInfo": "Het huidige opgeslagen formaat is geselecteerd. Kies een nieuw formaat om het te wijzigen.",
+  "lectureBuilder.formatChangeSuccess": "Het collegeopmaak is gewijzigd",
 });
 registerTranslations("pl", {
   "lectureBuilder.stringLiteral0": "Wybierz awatara",
@@ -10474,6 +10542,10 @@ registerTranslations("pl", {
   "lectureBuilder.noCloneVoiceYet": "Brak osobistych sklonowanych głosów.",
   "lectureBuilder.createCloneVoice": "Utwórz klon głosu",
   "lectureBuilder.myCloneVoices": "Moje sklonowane głosy",
+  "lectureBuilder.changeFormat": "Zmień format",
+  "lectureBuilder.changeFormatTitle": "Zmień ustawienia formatu wykładu",
+  "lectureBuilder.currentFormatInfo": "Aktualnie zapisany format jest wybrany. Wybierz nowy format, aby go zmienić.",
+  "lectureBuilder.formatChangeSuccess": "Format wykładu został zmieniony",
 });
 registerTranslations("sv", {
   "lectureBuilder.stringLiteral0": "Välj avatar",
@@ -11056,6 +11128,10 @@ registerTranslations("sv", {
   "lectureBuilder.noCloneVoiceYet": "Inga personliga klonade röster ännu.",
   "lectureBuilder.createCloneVoice": "Skapa röstklon",
   "lectureBuilder.myCloneVoices": "Mina klonade röster",
+  "lectureBuilder.changeFormat": "Ändra format",
+  "lectureBuilder.changeFormatTitle": "Ändra föreläsningsformatinställningar",
+  "lectureBuilder.currentFormatInfo": "Det aktuellt sparade formatet är valt. Välj ett nytt format för att ändra det.",
+  "lectureBuilder.formatChangeSuccess": "Föreläsningsformatet har ändrats",
 });
 registerTranslations("tr", {
   "lectureBuilder.stringLiteral0": "Avatar Seçimi",
@@ -11638,4 +11714,8 @@ registerTranslations("tr", {
   "lectureBuilder.noCloneVoiceYet": "Henüz kişisel klonlanmış ses yok.",
   "lectureBuilder.createCloneVoice": "Ses klonu oluştur",
   "lectureBuilder.myCloneVoices": "Klonlanmış seslerim",
+  "lectureBuilder.changeFormat": "Formatı değiştir",
+  "lectureBuilder.changeFormatTitle": "Ders formatı ayarlarını değiştir",
+  "lectureBuilder.currentFormatInfo": "Şu anda kaydedilen format seçili. Değiştirmek için yeni bir format seçin.",
+  "lectureBuilder.formatChangeSuccess": "Ders formatı değiştirildi",
 });
