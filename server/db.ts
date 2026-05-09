@@ -92,6 +92,7 @@ import {
   voiceCloneSamples, InsertVoiceCloneSample,
   presetLikes, InsertPresetLike,
   pronunciationGuides, InsertPronunciationGuide,
+  voiceCloneApplyLogs, InsertVoiceCloneApplyLog,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -1888,6 +1889,11 @@ export async function deleteSlideScriptsBySlide(slideId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(slideScripts).where(eq(slideScripts.slideId, slideId));
+}
+export async function deleteSlideScripts(projectId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(slideScripts).where(eq(slideScripts.projectId, projectId));
 }
 
 // --- Slide Annotations ---
@@ -4240,4 +4246,21 @@ export async function getFavoriteUserAvatarsWithVoice(userId: number) {
       eq(userAvatars.isFavorite, true)
     ))
     .orderBy(desc(userAvatars.lastUsedAt));
+}
+
+// --- Voice Clone Apply Logs ---
+export async function addVoiceCloneApplyLog(data: InsertVoiceCloneApplyLog) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(voiceCloneApplyLogs).values(data);
+  return result.insertId;
+}
+
+export async function listVoiceCloneApplyLogs(userId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select().from(voiceCloneApplyLogs)
+    .where(eq(voiceCloneApplyLogs.userId, userId))
+    .orderBy(desc(voiceCloneApplyLogs.createdAt))
+    .limit(limit);
 }

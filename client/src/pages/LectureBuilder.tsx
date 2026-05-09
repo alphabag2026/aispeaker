@@ -650,10 +650,26 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
                     {scripts && scripts.length > 0 && <li>• {t("lectureBuilder.formatWarningScripts", { count: String(scripts.length) })}</li>}
                   </ul>
                 </div>
+                {scripts && scripts.length > 0 && (
+                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <p className="text-sm font-medium text-blue-400">{t("lectureBuilder.formatMigrateOption")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("lectureBuilder.formatMigrateDesc")}</p>
+                  </div>
+                )}
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" className="flex-1" onClick={() => { setShowFormatWarning(false); setPendingFormatChange(null); }}>
                     {t("lectureBuilder.formatWarningCancel")}
                   </Button>
+                  {scripts && scripts.length > 0 && (
+                    <Button className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={updateProjectFormat.isPending} onClick={() => {
+                      if (pendingFormatChange) {
+                        updateProjectFormat.mutate({ id: projectId, formatSelection: pendingFormatChange, migrateScripts: true });
+                      }
+                    }}>
+                      {updateProjectFormat.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                      {t("lectureBuilder.formatMigrateBtn")}
+                    </Button>
+                  )}
                   <Button className="flex-1 bg-amber-600 hover:bg-amber-700" disabled={updateProjectFormat.isPending} onClick={() => {
                     if (pendingFormatChange) {
                       updateProjectFormat.mutate({ id: projectId, formatSelection: pendingFormatChange });

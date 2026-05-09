@@ -2393,6 +2393,8 @@ export const userAvatars = mysqlTable("userAvatars", {
   defaultTtsVoiceId: varchar("defaultTtsVoiceId", { length: 100 }),
   /** Default voice clone ID for this avatar */
   defaultVoiceCloneId: int("defaultVoiceCloneId"),
+  /** Default role for this avatar when used in projects */
+  defaultRole: mysqlEnum("defaultRole", ["instructor", "host", "guest", "narrator"]).default("instructor"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -2515,3 +2517,28 @@ export const pronunciationGuides = mysqlTable("pronunciationGuides", {
 });
 export type PronunciationGuide = typeof pronunciationGuides.$inferSelect;
 export type InsertPronunciationGuide = typeof pronunciationGuides.$inferInsert;
+
+/**
+ * Voice Clone Apply Logs - tracks which clones were applied to which projects/avatars
+ */
+export const voiceCloneApplyLogs = mysqlTable("voiceCloneApplyLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Voice clone that was applied */
+  voiceCloneId: int("voiceCloneId").notNull(),
+  /** Clone name at time of application (for history even if clone is deleted) */
+  cloneName: varchar("cloneName", { length: 255 }).notNull(),
+  /** Project where clone was applied */
+  projectId: int("projectId").notNull(),
+  /** Project title at time of application */
+  projectTitle: varchar("projectTitle", { length: 500 }).notNull(),
+  /** Number of avatars that received the clone */
+  avatarCount: int("avatarCount").default(1).notNull(),
+  /** Comma-separated avatar names that received the clone */
+  avatarNames: text("avatarNames"),
+  /** Whether it was applied to all avatars or specific ones */
+  applyMode: mysqlEnum("applyMode", ["all", "selected"]).default("all").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type VoiceCloneApplyLog = typeof voiceCloneApplyLogs.$inferSelect;
+export type InsertVoiceCloneApplyLog = typeof voiceCloneApplyLogs.$inferInsert;
