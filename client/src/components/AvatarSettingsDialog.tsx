@@ -1699,32 +1699,69 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           ) : recentProjectsQuery.data && recentProjectsQuery.data.length > 0 ? (
-            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {recentProjectsQuery.data.map((project: any) => (
                 <div key={project.id} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">{project.title}</span>
                     <Badge variant="outline" className="text-[10px]">{project.avatars.length} {t("avatarSettingsDialog.avatarsLabel") || "아바타"}</Badge>
                   </div>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {project.avatars.slice(0, 3).map((av: any) => (
-                      <Badge key={av.id} variant="secondary" className="text-[10px]">{av.name} ({av.role})</Badge>
+                  {/* Individual avatar selection */}
+                  <div className="space-y-1 mb-2">
+                    {project.avatars.map((av: any) => (
+                      <label key={av.id} className="flex items-center gap-2 p-1.5 rounded hover:bg-muted/30 cursor-pointer text-xs">
+                        <input
+                          type="checkbox"
+                          className="rounded border-muted-foreground/30 w-3.5 h-3.5"
+                          defaultChecked={true}
+                          data-avatar-id={av.id}
+                          data-project-id={project.id}
+                        />
+                        <span className="flex-1">{av.name}</span>
+                        <Badge variant="secondary" className="text-[9px] px-1">{av.role}</Badge>
+                      </label>
                     ))}
-                    {project.avatars.length > 3 && <Badge variant="secondary" className="text-[10px]">+{project.avatars.length - 3}</Badge>}
                   </div>
-                  <Button
-                    size="sm"
-                    className="w-full h-7 text-xs gap-1"
-                    disabled={applyToProject.isPending}
-                    onClick={() => {
-                      if (newlyCreatedCloneId) {
-                        applyToProject.mutate({ cloneId: newlyCreatedCloneId, projectId: project.id });
-                      }
-                    }}
-                  >
-                    {applyToProject.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
-                    {t("avatarSettingsDialog.applyToAll") || "전체 아바타에 적용"}
-                  </Button>
+                  <div className="flex gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-7 text-xs gap-1"
+                      disabled={applyToProject.isPending}
+                      onClick={() => {
+                        if (!newlyCreatedCloneId) return;
+                        // Get selected avatars
+                        const checkboxes = document.querySelectorAll(`input[data-project-id="${project.id}"]:checked`);
+                        const selectedIds = Array.from(checkboxes).map((cb: any) => parseInt(cb.dataset.avatarId));
+                        if (selectedIds.length === 0) { toast.error(t("avatarSettingsDialog.selectAtLeastOne") || "최소 1개 아바타를 선택하세요"); return; }
+                        // Apply to each selected avatar individually
+                        if (selectedIds.length === project.avatars.length) {
+                          applyToProject.mutate({ cloneId: newlyCreatedCloneId, projectId: project.id });
+                        } else {
+                          // Apply one by one for selected avatars
+                          selectedIds.forEach(avatarId => {
+                            applyToProject.mutate({ cloneId: newlyCreatedCloneId, projectId: project.id, avatarId });
+                          });
+                        }
+                      }}
+                    >
+                      {applyToProject.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                      {t("avatarSettingsDialog.applySelected") || "선택 적용"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 h-7 text-xs gap-1"
+                      disabled={applyToProject.isPending}
+                      onClick={() => {
+                        if (newlyCreatedCloneId) {
+                          applyToProject.mutate({ cloneId: newlyCreatedCloneId, projectId: project.id });
+                        }
+                      }}
+                    >
+                      {applyToProject.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                      {t("avatarSettingsDialog.applyToAll") || "전체 적용"}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
