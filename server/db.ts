@@ -1788,6 +1788,28 @@ export async function listProjectAvatars(projectId: number) {
   return db.select().from(projectAvatars).where(eq(projectAvatars.projectId, projectId)).orderBy(projectAvatars.sortOrder);
 }
 
+/** List all avatars using a specific sampleFaceId for a given user */
+export async function listAvatarsBySampleFace(userId: number, sampleFaceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select({
+    id: projectAvatars.id,
+    projectId: projectAvatars.projectId,
+    name: projectAvatars.name,
+    role: projectAvatars.role,
+    ttsVoiceId: projectAvatars.ttsVoiceId,
+    voiceCloneId: projectAvatars.voiceCloneId,
+    voiceSpeed: projectAvatars.voiceSpeed,
+    voicePitch: projectAvatars.voicePitch,
+    projectTitle: lectureProjects.title,
+  }).from(projectAvatars)
+    .innerJoin(lectureProjects, eq(projectAvatars.projectId, lectureProjects.id))
+    .where(and(
+      eq(projectAvatars.sampleFaceId, sampleFaceId),
+      eq(lectureProjects.userId, userId)
+    ));
+}
+
 export async function updateProjectAvatar(id: number, data: Partial<InsertProjectAvatar>) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");

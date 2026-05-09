@@ -1,0 +1,1 @@
+ALTER TABLE `lectureProjects` ADD `formatSelection` json;

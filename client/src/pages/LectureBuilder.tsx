@@ -1004,6 +1004,14 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
                     <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
                     <SelectContent className="max-h-[300px]">
                       {/* Personal clone voices first */}
+                      {myVoiceClones.length === 0 && (
+                        <div className="px-3 py-2 border-b bg-muted/30">
+                          <p className="text-xs text-muted-foreground mb-1">{t("lectureBuilder.noCloneVoiceYet") || "아직 개인 클론 음성이 없습니다."}</p>
+                          <a href="/ai-studio/voice-clone" className="text-xs text-primary hover:underline font-medium inline-flex items-center gap-1">
+                            <Mic className="w-3 h-3" /> {t("lectureBuilder.createCloneVoice") || "음성 클론 만들기"}
+                          </a>
+                        </div>
+                      )}
                       {myVoiceClones.length > 0 && (
                         <>
                           <div className="px-2 py-1.5 text-[10px] font-semibold text-primary uppercase tracking-wider border-b">

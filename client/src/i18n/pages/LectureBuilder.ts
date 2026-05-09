@@ -577,6 +577,9 @@ registerTranslations("ko", {
   "lectureBuilder.pronunciation.deleteConfirm": "\"{word}\" 발음 가이드를 삭제하시겠습니까?",
   "lectureBuilder.pronunciation.footerInfo": "💡 발음 가이드는 AI 클론 음성 생성 시 자동으로 적용됩니다. 원본 단어가 스크립트에 포함되면 지정한 발음으로 TTS가 생성됩니다.",
   "lectureBuilder.pronunciation.applied": "발음 적용",
+  "lectureBuilder.noCloneVoiceYet": "아직 개인 클론 음성이 없습니다.",
+  "lectureBuilder.createCloneVoice": "음성 클론 만들기",
+  "lectureBuilder.myCloneVoices": "내 클론 음성",
 });
 registerTranslations("en", {
   "lectureBuilder.stringLiteral0": "Select Avatar",
@@ -1156,6 +1159,9 @@ registerTranslations("en", {
   "lectureBuilder.pronunciation.deleteConfirm": "Delete pronunciation guide for \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Pronunciation guides are automatically applied when generating AI clone voice. When the original word appears in the script, TTS will use the specified pronunciation.",
   "lectureBuilder.pronunciation.applied": "Pronunciation applied",
+  "lectureBuilder.noCloneVoiceYet": "No personal clone voices yet.",
+  "lectureBuilder.createCloneVoice": "Create Voice Clone",
+  "lectureBuilder.myCloneVoices": "My Clone Voices",
 });
 registerTranslations("zh", {
   "lectureBuilder.stringLiteral0": "选择头像",
@@ -1735,6 +1741,9 @@ registerTranslations("zh", {
   "lectureBuilder.pronunciation.deleteConfirm": "确定删除 \"{word}\" 的发音指南吗？",
   "lectureBuilder.pronunciation.footerInfo": "💡 发音指南在生成AI克隆语音时自动应用。当脚本中包含原始单词时，TTS将使用指定的发音。",
   "lectureBuilder.pronunciation.applied": "发音已应用",
+  "lectureBuilder.noCloneVoiceYet": "暂无个人克隆语音。",
+  "lectureBuilder.createCloneVoice": "创建语音克隆",
+  "lectureBuilder.myCloneVoices": "我的克隆语音",
 });
 registerTranslations("ja", {
   "lectureBuilder.stringLiteral0": "アバター選択",
@@ -2314,6 +2323,9 @@ registerTranslations("ja", {
   "lectureBuilder.pronunciation.deleteConfirm": "「{word}」の発音ガイドを削除しますか？",
   "lectureBuilder.pronunciation.footerInfo": "💡 発音ガイドはAIクローン音声生成時に自動的に適用されます。スクリプトに元の単語が含まれている場合、指定された発音でTTSが生成されます。",
   "lectureBuilder.pronunciation.applied": "発音適用",
+  "lectureBuilder.noCloneVoiceYet": "個人クローン音声がまだありません。",
+  "lectureBuilder.createCloneVoice": "音声クローンを作成",
+  "lectureBuilder.myCloneVoices": "マイクローン音声",
 });
 registerTranslations("vi", {
   "lectureBuilder.stringLiteral0": "Chọn avatar",
@@ -2893,6 +2905,9 @@ registerTranslations("vi", {
   "lectureBuilder.pronunciation.deleteConfirm": "Xóa hướng dẫn phát âm cho \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Hướng dẫn phát âm được tự động áp dụng khi tạo giọng nói AI clone. Khi từ gốc xuất hiện trong kịch bản, TTS sẽ sử dụng cách phát âm đã chỉ định.",
   "lectureBuilder.pronunciation.applied": "Đã áp dụng phát âm",
+  "lectureBuilder.noCloneVoiceYet": "Chưa có giọng nói nhân bản cá nhân.",
+  "lectureBuilder.createCloneVoice": "Tạo giọng nói nhân bản",
+  "lectureBuilder.myCloneVoices": "Giọng nói nhân bản của tôi",
 });
 registerTranslations("th", {
   "lectureBuilder.stringLiteral0": "เลือกอวาตาร์",
@@ -3472,6 +3487,9 @@ registerTranslations("th", {
   "lectureBuilder.pronunciation.deleteConfirm": "ลบคู่มือการออกเสียงสำหรับ \"{word}\" หรือไม่?",
   "lectureBuilder.pronunciation.footerInfo": "💡 คู่มือการออกเสียงจะถูกนำไปใช้โดยอัตโนมัติเมื่อสร้างเสียง AI clone เมื่อคำต้นฉบับปรากฏในสคริปต์ TTS จะใช้การออกเสียงที่กำหนด",
   "lectureBuilder.pronunciation.applied": "ใช้การออกเสียงแล้ว",
+  "lectureBuilder.noCloneVoiceYet": "ยังไม่มีเสียงโคลนส่วนตัว",
+  "lectureBuilder.createCloneVoice": "สร้างเสียงโคลน",
+  "lectureBuilder.myCloneVoices": "เสียงโคลนของฉัน",
 });
 registerTranslations("id", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4051,6 +4069,9 @@ registerTranslations("id", {
   "lectureBuilder.pronunciation.deleteConfirm": "Hapus panduan pelafalan untuk \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Panduan pelafalan diterapkan secara otomatis saat menghasilkan suara AI clone. Ketika kata asli muncul di skrip, TTS akan menggunakan pelafalan yang ditentukan.",
   "lectureBuilder.pronunciation.applied": "Pelafalan diterapkan",
+  "lectureBuilder.noCloneVoiceYet": "Belum ada suara klon pribadi.",
+  "lectureBuilder.createCloneVoice": "Buat klon suara",
+  "lectureBuilder.myCloneVoices": "Suara klon saya",
 });
 registerTranslations("ms", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4630,6 +4651,9 @@ registerTranslations("ms", {
   "lectureBuilder.pronunciation.deleteConfirm": "Padam panduan sebutan untuk \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Panduan sebutan digunakan secara automatik semasa menjana suara AI clone. Apabila perkataan asal muncul dalam skrip, TTS akan menggunakan sebutan yang ditetapkan.",
   "lectureBuilder.pronunciation.applied": "Sebutan digunakan",
+  "lectureBuilder.noCloneVoiceYet": "Tiada suara klon peribadi lagi.",
+  "lectureBuilder.createCloneVoice": "Cipta klon suara",
+  "lectureBuilder.myCloneVoices": "Suara klon saya",
 });
 registerTranslations("es", {
   "lectureBuilder.stringLiteral0": "Seleccionar avatar",
@@ -5209,6 +5233,9 @@ registerTranslations("es", {
   "lectureBuilder.pronunciation.deleteConfirm": "¿Eliminar guía de pronunciación para \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Las guías de pronunciación se aplican automáticamente al generar voz AI clone. Cuando la palabra original aparece en el guión, TTS usará la pronunciación especificada.",
   "lectureBuilder.pronunciation.applied": "Pronunciación aplicada",
+  "lectureBuilder.noCloneVoiceYet": "Aún no hay voces clonadas personales.",
+  "lectureBuilder.createCloneVoice": "Crear clon de voz",
+  "lectureBuilder.myCloneVoices": "Mis voces clonadas",
 });
 registerTranslations("fr", {
   "lectureBuilder.stringLiteral0": "Sélection de l'avatar",
@@ -5788,6 +5815,9 @@ registerTranslations("fr", {
   "lectureBuilder.pronunciation.deleteConfirm": "Supprimer le guide de prononciation pour \"{word}\" ?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Les guides de prononciation sont automatiquement appliqués lors de la génération de voix AI clone. Lorsque le mot original apparaît dans le script, le TTS utilisera la prononciation spécifiée.",
   "lectureBuilder.pronunciation.applied": "Prononciation appliquée",
+  "lectureBuilder.noCloneVoiceYet": "Pas encore de voix clonée personnelle.",
+  "lectureBuilder.createCloneVoice": "Créer un clone vocal",
+  "lectureBuilder.myCloneVoices": "Mes voix clonées",
 });
 registerTranslations("de", {
   "lectureBuilder.stringLiteral0": "Avatar auswählen",
@@ -6367,6 +6397,9 @@ registerTranslations("de", {
   "lectureBuilder.pronunciation.deleteConfirm": "Ausspracheführer für \"{word}\" löschen?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Ausspracheführer werden automatisch bei der Erzeugung von AI-Klonstimmen angewendet. Wenn das Originalwort im Skript erscheint, verwendet TTS die angegebene Aussprache.",
   "lectureBuilder.pronunciation.applied": "Aussprache angewendet",
+  "lectureBuilder.noCloneVoiceYet": "Noch keine persönlichen geklonten Stimmen.",
+  "lectureBuilder.createCloneVoice": "Stimmklon erstellen",
+  "lectureBuilder.myCloneVoices": "Meine geklonten Stimmen",
 });
 registerTranslations("pt", {
   "lectureBuilder.stringLiteral0": "Selecionar avatar",
@@ -6946,6 +6979,9 @@ registerTranslations("pt", {
   "lectureBuilder.pronunciation.deleteConfirm": "Excluir guia de pronúncia para \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Os guias de pronúncia são aplicados automaticamente ao gerar voz AI clone. Quando a palavra original aparece no roteiro, o TTS usará a pronúncia especificada.",
   "lectureBuilder.pronunciation.applied": "Pronúncia aplicada",
+  "lectureBuilder.noCloneVoiceYet": "Nenhuma voz clonada pessoal ainda.",
+  "lectureBuilder.createCloneVoice": "Criar clone de voz",
+  "lectureBuilder.myCloneVoices": "Minhas vozes clonadas",
 });
 registerTranslations("ru", {
   "lectureBuilder.stringLiteral0": "Выбор аватара",
@@ -7525,6 +7561,9 @@ registerTranslations("ru", {
   "lectureBuilder.pronunciation.deleteConfirm": "Удалить руководство по произношению для \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Руководства по произношению автоматически применяются при генерации AI-клон голоса. Когда исходное слово встречается в сценарии, TTS будет использовать указанное произношение.",
   "lectureBuilder.pronunciation.applied": "Произношение применено",
+  "lectureBuilder.noCloneVoiceYet": "Личных клонированных голосов пока нет.",
+  "lectureBuilder.createCloneVoice": "Создать клон голоса",
+  "lectureBuilder.myCloneVoices": "Мои клонированные голоса",
 });
 registerTranslations("ar", {
   "lectureBuilder.stringLiteral0": "اختيار الصورة الرمزية",
@@ -8104,6 +8143,9 @@ registerTranslations("ar", {
   "lectureBuilder.pronunciation.deleteConfirm": "حذف دليل النطق لـ \"{word}\"؟",
   "lectureBuilder.pronunciation.footerInfo": "💡 يتم تطبيق أدلة النطق تلقائياً عند إنشاء صوت AI المستنسخ. عندما تظهر الكلمة الأصلية في النص، سيستخدم TTS النطق المحدد.",
   "lectureBuilder.pronunciation.applied": "تم تطبيق النطق",
+  "lectureBuilder.noCloneVoiceYet": "لا توجد أصوات مستنسخة شخصية بعد.",
+  "lectureBuilder.createCloneVoice": "إنشاء استنساخ صوتي",
+  "lectureBuilder.myCloneVoices": "أصواتي المستنسخة",
 });
 registerTranslations("hi", {
   "lectureBuilder.stringLiteral0": "अवतार चुनें",
@@ -8683,6 +8725,9 @@ registerTranslations("hi", {
   "lectureBuilder.pronunciation.deleteConfirm": "\"{word}\" के लिए उच्चारण गाइड हटाएं?",
   "lectureBuilder.pronunciation.footerInfo": "💡 AI क्लोन वॉइस जनरेट करते समय उच्चारण गाइड स्वचालित रूप से लागू होते हैं। जब मूल शब्द स्क्रिप्ट में दिखाई देता है, TTS निर्दिष्ट उच्चारण का उपयोग करेगा।",
   "lectureBuilder.pronunciation.applied": "उच्चारण लागू",
+  "lectureBuilder.noCloneVoiceYet": "अभी तक कोई व्यक्तिगत क्लोन आवाज नहीं।",
+  "lectureBuilder.createCloneVoice": "वॉइस क्लोन बनाएं",
+  "lectureBuilder.myCloneVoices": "मेरी क्लोन आवाजें",
 });
 registerTranslations("it", {
   "lectureBuilder.stringLiteral0": "Seleziona avatar",
@@ -9262,6 +9307,9 @@ registerTranslations("it", {
   "lectureBuilder.pronunciation.deleteConfirm": "Eliminare la guida alla pronuncia per \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Le guide alla pronuncia vengono applicate automaticamente durante la generazione della voce AI clone. Quando la parola originale appare nello script, il TTS utilizzerà la pronuncia specificata.",
   "lectureBuilder.pronunciation.applied": "Pronuncia applicata",
+  "lectureBuilder.noCloneVoiceYet": "Nessuna voce clonata personale ancora.",
+  "lectureBuilder.createCloneVoice": "Crea clone vocale",
+  "lectureBuilder.myCloneVoices": "Le mie voci clonate",
 });
 registerTranslations("nl", {
   "lectureBuilder.stringLiteral0": "Avatar selecteren",
@@ -9841,6 +9889,9 @@ registerTranslations("nl", {
   "lectureBuilder.pronunciation.deleteConfirm": "Uitspraakgids voor \"{word}\" verwijderen?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Uitspraakgidsen worden automatisch toegepast bij het genereren van AI-kloonstem. Wanneer het originele woord in het script verschijnt, zal TTS de opgegeven uitspraak gebruiken.",
   "lectureBuilder.pronunciation.applied": "Uitspraak toegepast",
+  "lectureBuilder.noCloneVoiceYet": "Nog geen persoonlijke gekloonde stemmen.",
+  "lectureBuilder.createCloneVoice": "Stemkloon maken",
+  "lectureBuilder.myCloneVoices": "Mijn gekloonde stemmen",
 });
 registerTranslations("pl", {
   "lectureBuilder.stringLiteral0": "Wybierz awatara",
@@ -10420,6 +10471,9 @@ registerTranslations("pl", {
   "lectureBuilder.pronunciation.deleteConfirm": "Usunąć przewodnik wymowy dla \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Przewodniki wymowy są automatycznie stosowane podczas generowania głosu AI clone. Gdy oryginalne słowo pojawia się w skrypcie, TTS użyje określonej wymowy.",
   "lectureBuilder.pronunciation.applied": "Wymowa zastosowana",
+  "lectureBuilder.noCloneVoiceYet": "Brak osobistych sklonowanych głosów.",
+  "lectureBuilder.createCloneVoice": "Utwórz klon głosu",
+  "lectureBuilder.myCloneVoices": "Moje sklonowane głosy",
 });
 registerTranslations("sv", {
   "lectureBuilder.stringLiteral0": "Välj avatar",
@@ -10999,6 +11053,9 @@ registerTranslations("sv", {
   "lectureBuilder.pronunciation.deleteConfirm": "Ta bort uttalsguide för \"{word}\"?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Uttalsguider tillämpas automatiskt vid generering av AI-klonröst. När originalordet förekommer i manuset kommer TTS att använda det angivna uttalet.",
   "lectureBuilder.pronunciation.applied": "Uttal tillämpat",
+  "lectureBuilder.noCloneVoiceYet": "Inga personliga klonade röster ännu.",
+  "lectureBuilder.createCloneVoice": "Skapa röstklon",
+  "lectureBuilder.myCloneVoices": "Mina klonade röster",
 });
 registerTranslations("tr", {
   "lectureBuilder.stringLiteral0": "Avatar Seçimi",
@@ -11578,4 +11635,7 @@ registerTranslations("tr", {
   "lectureBuilder.pronunciation.deleteConfirm": "\"{word}\" için telaffuz kılavuzunu sil?",
   "lectureBuilder.pronunciation.footerInfo": "💡 Telaffuz kılavuzları, AI klon ses oluştururken otomatik olarak uygulanır. Orijinal kelime senaryoda göründüğünde, TTS belirtilen telaffuzu kullanacaktır.",
   "lectureBuilder.pronunciation.applied": "Telaffuz uygulandı",
+  "lectureBuilder.noCloneVoiceYet": "Henüz kişisel klonlanmış ses yok.",
+  "lectureBuilder.createCloneVoice": "Ses klonu oluştur",
+  "lectureBuilder.myCloneVoices": "Klonlanmış seslerim",
 });
