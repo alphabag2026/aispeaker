@@ -297,12 +297,11 @@ describe("Voice Clone v5.1 - Preset Voices Router", () => {
 });
 
 describe("Voice Clone v5.1 - Frontend Speed/Pitch UI", () => {
-  it("has speed state variable", () => {
-    expect(avatarDialogSource).toContain("const [speed, setSpeed] = useState(1.0)");
+   it("has speed state variable", () => {
+    expect(avatarDialogSource).toContain("const [speed, setSpeed] = useState(avatar.voiceSpeed ?? 1.0)");
   });
-
   it("has pitch state variable", () => {
-    expect(avatarDialogSource).toContain("const [pitch, setPitch] = useState(0)");
+    expect(avatarDialogSource).toContain("const [pitch, setPitch] = useState(avatar.voicePitch ?? 0)");
   });
 
   it("has speed Slider component with correct range", () => {

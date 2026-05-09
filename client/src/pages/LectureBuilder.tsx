@@ -415,6 +415,7 @@ export default function LectureBuilder() {
             avatars={avatars}
             faces={faces}
             voices={voices}
+            project={project}
             onRefresh={() => fullProjectQuery.refetch()} />
 
           }
@@ -499,13 +500,13 @@ export default function LectureBuilder() {
 }
 
 // ============ STEP 1: AVATAR SELECTION ============
-function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
-
-
-
-
-
-}: {projectId: number;avatars: any[];faces: any[];voices: any[];onRefresh: () => void;}) {const { t } = useLanguage();
+function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project
+}: {projectId: number;avatars: any[];faces: any[];voices: any[];onRefresh: () => void; project?: any;}) {const { t } = useLanguage();
+  const [showFormatDialog, setShowFormatDialog] = useState(false);
+  const updateProjectFormat = trpc.lectureBuilder.updateProject.useMutation({
+    onSuccess: () => { toast.success(t("lectureBuilder.formatChangeSuccess")); onRefresh(); setShowFormatDialog(false); },
+    onError: (e) => toast.error(e.message)
+  });
   const AVATAR_ROLES = getAVATAR_ROLES(t);
   const [selectedFaceId, setSelectedFaceId] = useState<number | null>(null);
   const [avatarName, setAvatarName] = useState("");
@@ -592,6 +593,38 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh
           <p className="text-muted-foreground">{t("lectureBuilder.jsxText52")}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Format Change Button */}
+          <Dialog open={showFormatDialog} onOpenChange={setShowFormatDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 border-amber-500/30 text-amber-600 hover:bg-amber-500/10">
+                <Settings2 className="w-4 h-4" />{t("lectureBuilder.changeFormat")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader><DialogTitle className="flex items-center gap-2"><Settings2 className="w-5 h-5 text-amber-500" />{t("lectureBuilder.changeFormatTitle")}</DialogTitle></DialogHeader>
+              {project?.formatSelection && (
+                <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border">
+                  <p className="text-sm text-muted-foreground">{t("lectureBuilder.currentFormatInfo")}</p>
+                </div>
+              )}
+              <LectureFormatSelector
+                initialSelection={project?.formatSelection ? {
+                  personnelId: project.formatSelection.personnelId ?? null,
+                  styleId: project.formatSelection.styleId ?? null,
+                  insertIds: project.formatSelection.insertIds ?? []
+                } : undefined}
+                onApply={(formats, templates) => {
+                  updateProjectFormat.mutate({
+                    id: projectId,
+                    formatSelection: {
+                      personnelId: formats.personnel,
+                      styleId: formats.style,
+                      insertIds: formats.inserts
+                    }
+                  });
+                }} />
+            </DialogContent>
+          </Dialog>
           <Dialog open={showKlingDialog} onOpenChange={setShowKlingDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10">

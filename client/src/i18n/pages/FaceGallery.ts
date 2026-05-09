@@ -39,6 +39,17 @@ registerTranslations("ko", {
   "fg.voice_changed_success": "음성이 변경되었습니다.",
   "fg.voice_change_failed": "음성 변경에 실패했습니다.",
   "fg.no_avatars_using_face": "이 얼굴을 사용 중인 아바타가 없습니다.",
+  "fg.gallery_tab": "갤러리",
+  "fg.my_avatars_tab": "내 아바타",
+  "fg.my_avatars_title": "내 아바타 관리",
+  "fg.avatars_count": "개",
+  "fg.no_my_avatars": "아직 등록된 아바타가 없습니다. 스튜디오에서 아바타를 추가해보세요.",
+  "fg.photo": "사진",
+  "fg.custom": "커스텀",
+  "fg.default_voice": "기본 음성",
+  "fg.set_default_voice": "설정",
+  "fg.default_voice_saved": "기본 음성이 저장되었습니다",
+  "fg.default_voice_failed": "기본 음성 저장에 실패했습니다",
 });
 
 registerTranslations("en", {
@@ -80,6 +91,17 @@ registerTranslations("en", {
   "fg.voice_changed_success": "Voice changed successfully.",
   "fg.voice_change_failed": "Failed to change voice.",
   "fg.no_avatars_using_face": "No avatars are using this face.",
+  "fg.gallery_tab": "Gallery",
+  "fg.my_avatars_tab": "My Avatars",
+  "fg.my_avatars_title": "Manage My Avatars",
+  "fg.avatars_count": "avatars",
+  "fg.no_my_avatars": "No avatars yet. Add one from the studio.",
+  "fg.photo": "Photo",
+  "fg.custom": "Custom",
+  "fg.default_voice": "Default Voice",
+  "fg.set_default_voice": "Set",
+  "fg.default_voice_saved": "Default voice saved",
+  "fg.default_voice_failed": "Failed to save default voice",
 });
 
 registerTranslations("zh", {
@@ -121,6 +143,17 @@ registerTranslations("zh", {
   "fg.voice_changed_success": "语音已更改。",
   "fg.voice_change_failed": "语音更改失败。",
   "fg.no_avatars_using_face": "没有虚拟形象使用此面孔。",
+  "fg.gallery_tab": "画廊",
+  "fg.my_avatars_tab": "我的头像",
+  "fg.my_avatars_title": "管理我的头像",
+  "fg.avatars_count": "个",
+  "fg.no_my_avatars": "还没有头像。请从工作室添加。",
+  "fg.photo": "照片",
+  "fg.custom": "自定义",
+  "fg.default_voice": "默认语音",
+  "fg.set_default_voice": "设置",
+  "fg.default_voice_saved": "默认语音已保存",
+  "fg.default_voice_failed": "保存默认语音失败",
 });
 
 registerTranslations("ja", {
@@ -162,6 +195,17 @@ registerTranslations("ja", {
   "fg.voice_changed_success": "音声が変更されました。",
   "fg.voice_change_failed": "音声の変更に失敗しました。",
   "fg.no_avatars_using_face": "この顔を使用中のアバターはありません。",
+  "fg.gallery_tab": "ギャラリー",
+  "fg.my_avatars_tab": "マイアバター",
+  "fg.my_avatars_title": "マイアバター管理",
+  "fg.avatars_count": "個",
+  "fg.no_my_avatars": "まだアバターがありません。スタジオから追加してください。",
+  "fg.photo": "写真",
+  "fg.custom": "カスタム",
+  "fg.default_voice": "デフォルト音声",
+  "fg.set_default_voice": "設定",
+  "fg.default_voice_saved": "デフォルト音声が保存されました",
+  "fg.default_voice_failed": "デフォルト音声の保存に失敗しました",
 });
 
 registerTranslations("vi", {
@@ -203,6 +247,17 @@ registerTranslations("vi", {
   "fg.voice_changed_success": "Đã thay đổi giọng nói.",
   "fg.voice_change_failed": "Thay đổi giọng nói thất bại.",
   "fg.no_avatars_using_face": "Không có avatar nào đang sử dụng khuôn mặt này.",
+  "fg.gallery_tab": "Bộ sưu tập",
+  "fg.my_avatars_tab": "Avatar của tôi",
+  "fg.my_avatars_title": "Quản lý avatar",
+  "fg.avatars_count": "avatar",
+  "fg.no_my_avatars": "Chưa có avatar. Thêm từ studio.",
+  "fg.photo": "Ảnh",
+  "fg.custom": "Tùy chỉnh",
+  "fg.default_voice": "Giọng mặc định",
+  "fg.set_default_voice": "Đặt",
+  "fg.default_voice_saved": "Đã lưu giọng mặc định",
+  "fg.default_voice_failed": "Lưu giọng mặc định thất bại",
 });
 
 registerTranslations("th", {
@@ -244,6 +299,17 @@ registerTranslations("th", {
   "fg.voice_changed_success": "เปลี่ยนเสียงสำเร็จ",
   "fg.voice_change_failed": "เปลี่ยนเสียงล้มเหลว",
   "fg.no_avatars_using_face": "ไม่มีอวาตาร์ที่ใช้ใบหน้านี้",
+  "fg.gallery_tab": "แกลเลอรี",
+  "fg.my_avatars_tab": "อวาตาร์ของฉัน",
+  "fg.my_avatars_title": "จัดการอวาตาร์",
+  "fg.avatars_count": "อวาตาร์",
+  "fg.no_my_avatars": "ยังไม่มีอวาตาร์ เพิ่มจากสตูดิโอ",
+  "fg.photo": "รูปถ่าย",
+  "fg.custom": "กำหนดเอง",
+  "fg.default_voice": "เสียงเริ่มต้น",
+  "fg.set_default_voice": "ตั้งค่า",
+  "fg.default_voice_saved": "บันทึกเสียงเริ่มต้นแล้ว",
+  "fg.default_voice_failed": "บันทึกเสียงเริ่มต้นล้มเหลว",
 });
 
 registerTranslations("es", {
@@ -285,6 +351,17 @@ registerTranslations("es", {
   "fg.voice_changed_success": "Voz cambiada con éxito.",
   "fg.voice_change_failed": "Error al cambiar la voz.",
   "fg.no_avatars_using_face": "No hay avatares usando esta cara.",
+  "fg.gallery_tab": "Galería",
+  "fg.my_avatars_tab": "Mis avatares",
+  "fg.my_avatars_title": "Gestionar avatares",
+  "fg.avatars_count": "avatares",
+  "fg.no_my_avatars": "Sin avatares. Añade uno desde el estudio.",
+  "fg.photo": "Foto",
+  "fg.custom": "Personalizado",
+  "fg.default_voice": "Voz predeterminada",
+  "fg.set_default_voice": "Configurar",
+  "fg.default_voice_saved": "Voz predeterminada guardada",
+  "fg.default_voice_failed": "Error al guardar la voz",
 });
 
 registerTranslations("fr", {
@@ -326,6 +403,17 @@ registerTranslations("fr", {
   "fg.voice_changed_success": "Voix modifiée avec succès.",
   "fg.voice_change_failed": "Échec de la modification de la voix.",
   "fg.no_avatars_using_face": "Aucun avatar n'utilise ce visage.",
+  "fg.gallery_tab": "Galerie",
+  "fg.my_avatars_tab": "Mes avatars",
+  "fg.my_avatars_title": "Gérer mes avatars",
+  "fg.avatars_count": "avatars",
+  "fg.no_my_avatars": "Pas d'avatars. Ajoutez-en depuis le studio.",
+  "fg.photo": "Photo",
+  "fg.custom": "Personnalisé",
+  "fg.default_voice": "Voix par défaut",
+  "fg.set_default_voice": "Définir",
+  "fg.default_voice_saved": "Voix par défaut enregistrée",
+  "fg.default_voice_failed": "Échec de l'enregistrement",
 });
 
 registerTranslations("de", {
@@ -367,6 +455,17 @@ registerTranslations("de", {
   "fg.voice_changed_success": "Stimme erfolgreich geändert.",
   "fg.voice_change_failed": "Stimme konnte nicht geändert werden.",
   "fg.no_avatars_using_face": "Kein Avatar verwendet dieses Gesicht.",
+  "fg.gallery_tab": "Galerie",
+  "fg.my_avatars_tab": "Meine Avatare",
+  "fg.my_avatars_title": "Avatare verwalten",
+  "fg.avatars_count": "Avatare",
+  "fg.no_my_avatars": "Keine Avatare. Fügen Sie einen aus dem Studio hinzu.",
+  "fg.photo": "Foto",
+  "fg.custom": "Benutzerdefiniert",
+  "fg.default_voice": "Standardstimme",
+  "fg.set_default_voice": "Festlegen",
+  "fg.default_voice_saved": "Standardstimme gespeichert",
+  "fg.default_voice_failed": "Speichern fehlgeschlagen",
 });
 
 registerTranslations("pt", {
@@ -408,6 +507,17 @@ registerTranslations("pt", {
   "fg.voice_changed_success": "Voz alterada com sucesso.",
   "fg.voice_change_failed": "Falha ao alterar a voz.",
   "fg.no_avatars_using_face": "Nenhum avatar está usando este rosto.",
+  "fg.gallery_tab": "Galeria",
+  "fg.my_avatars_tab": "Meus avatares",
+  "fg.my_avatars_title": "Gerenciar avatares",
+  "fg.avatars_count": "avatares",
+  "fg.no_my_avatars": "Sem avatares. Adicione um do estúdio.",
+  "fg.photo": "Foto",
+  "fg.custom": "Personalizado",
+  "fg.default_voice": "Voz padrão",
+  "fg.set_default_voice": "Definir",
+  "fg.default_voice_saved": "Voz padrão salva",
+  "fg.default_voice_failed": "Falha ao salvar",
 });
 
 registerTranslations("ru", {
@@ -449,6 +559,17 @@ registerTranslations("ru", {
   "fg.voice_changed_success": "Голос успешно изменён.",
   "fg.voice_change_failed": "Не удалось изменить голос.",
   "fg.no_avatars_using_face": "Нет аватаров, использующих это лицо.",
+  "fg.gallery_tab": "Галерея",
+  "fg.my_avatars_tab": "Мои аватары",
+  "fg.my_avatars_title": "Управление аватарами",
+  "fg.avatars_count": "аватаров",
+  "fg.no_my_avatars": "Нет аватаров. Добавьте из студии.",
+  "fg.photo": "Фото",
+  "fg.custom": "Пользовательский",
+  "fg.default_voice": "Голос по умолчанию",
+  "fg.set_default_voice": "Установить",
+  "fg.default_voice_saved": "Голос по умолчанию сохранён",
+  "fg.default_voice_failed": "Ошибка сохранения",
 });
 
 registerTranslations("ar", {
@@ -490,6 +611,17 @@ registerTranslations("ar", {
   "fg.voice_changed_success": "تم تغيير الصوت بنجاح.",
   "fg.voice_change_failed": "فشل في تغيير الصوت.",
   "fg.no_avatars_using_face": "لا توجد صور رمزية تستخدم هذا الوجه.",
+  "fg.gallery_tab": "معرض",
+  "fg.my_avatars_tab": "صوري الرمزية",
+  "fg.my_avatars_title": "إدارة الصور الرمزية",
+  "fg.avatars_count": "صور رمزية",
+  "fg.no_my_avatars": "لا توجد صور رمزية. أضف واحدة من الاستوديو.",
+  "fg.photo": "صورة",
+  "fg.custom": "مخصص",
+  "fg.default_voice": "الصوت الافتراضي",
+  "fg.set_default_voice": "تعيين",
+  "fg.default_voice_saved": "تم حفظ الصوت الافتراضي",
+  "fg.default_voice_failed": "فشل في الحفظ",
 });
 
 registerTranslations("hi", {
@@ -531,6 +663,17 @@ registerTranslations("hi", {
   "fg.voice_changed_success": "आवाज सफलतापूर्वक बदली गई।",
   "fg.voice_change_failed": "आवाज बदलने में विफल।",
   "fg.no_avatars_using_face": "इस चेहरे का उपयोग करने वाला कोई अवतार नहीं।",
+  "fg.gallery_tab": "गैलरी",
+  "fg.my_avatars_tab": "मेरे अवतार",
+  "fg.my_avatars_title": "अवतार प्रबंधित करें",
+  "fg.avatars_count": "अवतार",
+  "fg.no_my_avatars": "कोई अवतार नहीं। स्टूडियो से जोड़ें।",
+  "fg.photo": "फ़ोटो",
+  "fg.custom": "कस्टम",
+  "fg.default_voice": "डिफ़ॉल्ट आवाज़",
+  "fg.set_default_voice": "सेट करें",
+  "fg.default_voice_saved": "डिफ़ॉल्ट आवाज़ सहेजी गई",
+  "fg.default_voice_failed": "सहेजने में विफल",
 });
 
 registerTranslations("id", {
@@ -572,6 +715,17 @@ registerTranslations("id", {
   "fg.voice_changed_success": "Suara berhasil diubah.",
   "fg.voice_change_failed": "Gagal mengubah suara.",
   "fg.no_avatars_using_face": "Tidak ada avatar yang menggunakan wajah ini.",
+  "fg.gallery_tab": "Galeri",
+  "fg.my_avatars_tab": "Avatar saya",
+  "fg.my_avatars_title": "Kelola avatar",
+  "fg.avatars_count": "avatar",
+  "fg.no_my_avatars": "Belum ada avatar. Tambahkan dari studio.",
+  "fg.photo": "Foto",
+  "fg.custom": "Kustom",
+  "fg.default_voice": "Suara default",
+  "fg.set_default_voice": "Atur",
+  "fg.default_voice_saved": "Suara default disimpan",
+  "fg.default_voice_failed": "Gagal menyimpan",
 });
 
 registerTranslations("ms", {
@@ -613,6 +767,17 @@ registerTranslations("ms", {
   "fg.voice_changed_success": "Suara berjaya ditukar.",
   "fg.voice_change_failed": "Gagal menukar suara.",
   "fg.no_avatars_using_face": "Tiada avatar menggunakan wajah ini.",
+  "fg.gallery_tab": "Galeri",
+  "fg.my_avatars_tab": "Avatar saya",
+  "fg.my_avatars_title": "Urus avatar",
+  "fg.avatars_count": "avatar",
+  "fg.no_my_avatars": "Tiada avatar lagi. Tambah dari studio.",
+  "fg.photo": "Foto",
+  "fg.custom": "Tersuai",
+  "fg.default_voice": "Suara lalai",
+  "fg.set_default_voice": "Tetapkan",
+  "fg.default_voice_saved": "Suara lalai disimpan",
+  "fg.default_voice_failed": "Gagal menyimpan",
 });
 
 registerTranslations("tr", {
@@ -654,6 +819,17 @@ registerTranslations("tr", {
   "fg.voice_changed_success": "Ses başarıyla değiştirildi.",
   "fg.voice_change_failed": "Ses değiştirilemedi.",
   "fg.no_avatars_using_face": "Bu yüzü kullanan avatar yok.",
+  "fg.gallery_tab": "Galeri",
+  "fg.my_avatars_tab": "Avatarlarım",
+  "fg.my_avatars_title": "Avatarları yönet",
+  "fg.avatars_count": "avatar",
+  "fg.no_my_avatars": "Henüz avatar yok. Stüdyodan ekleyin.",
+  "fg.photo": "Fotoğraf",
+  "fg.custom": "Özel",
+  "fg.default_voice": "Varsayılan ses",
+  "fg.set_default_voice": "Ayarla",
+  "fg.default_voice_saved": "Varsayılan ses kaydedildi",
+  "fg.default_voice_failed": "Kaydetme başarısız",
 });
 
 registerTranslations("it", {
@@ -695,6 +871,17 @@ registerTranslations("it", {
   "fg.voice_changed_success": "Voce cambiata con successo.",
   "fg.voice_change_failed": "Impossibile cambiare la voce.",
   "fg.no_avatars_using_face": "Nessun avatar sta usando questo volto.",
+  "fg.gallery_tab": "Galleria",
+  "fg.my_avatars_tab": "I miei avatar",
+  "fg.my_avatars_title": "Gestisci avatar",
+  "fg.avatars_count": "avatar",
+  "fg.no_my_avatars": "Nessun avatar. Aggiungine uno dallo studio.",
+  "fg.photo": "Foto",
+  "fg.custom": "Personalizzato",
+  "fg.default_voice": "Voce predefinita",
+  "fg.set_default_voice": "Imposta",
+  "fg.default_voice_saved": "Voce predefinita salvata",
+  "fg.default_voice_failed": "Salvataggio fallito",
 });
 
 registerTranslations("nl", {
@@ -736,6 +923,17 @@ registerTranslations("nl", {
   "fg.voice_changed_success": "Stem succesvol gewijzigd.",
   "fg.voice_change_failed": "Stem wijzigen mislukt.",
   "fg.no_avatars_using_face": "Geen avatars gebruiken dit gezicht.",
+  "fg.gallery_tab": "Galerij",
+  "fg.my_avatars_tab": "Mijn avatars",
+  "fg.my_avatars_title": "Avatars beheren",
+  "fg.avatars_count": "avatars",
+  "fg.no_my_avatars": "Nog geen avatars. Voeg er een toe vanuit de studio.",
+  "fg.photo": "Foto",
+  "fg.custom": "Aangepast",
+  "fg.default_voice": "Standaardstem",
+  "fg.set_default_voice": "Instellen",
+  "fg.default_voice_saved": "Standaardstem opgeslagen",
+  "fg.default_voice_failed": "Opslaan mislukt",
 });
 
 registerTranslations("pl", {
@@ -777,6 +975,17 @@ registerTranslations("pl", {
   "fg.voice_changed_success": "Głos zmieniony pomyślnie.",
   "fg.voice_change_failed": "Nie udało się zmienić głosu.",
   "fg.no_avatars_using_face": "Żaden awatar nie używa tej twarzy.",
+  "fg.gallery_tab": "Galeria",
+  "fg.my_avatars_tab": "Moje awatary",
+  "fg.my_avatars_title": "Zarządzaj awatarami",
+  "fg.avatars_count": "awatarów",
+  "fg.no_my_avatars": "Brak awatarów. Dodaj ze studia.",
+  "fg.photo": "Zdjęcie",
+  "fg.custom": "Niestandardowy",
+  "fg.default_voice": "Domyślny głos",
+  "fg.set_default_voice": "Ustaw",
+  "fg.default_voice_saved": "Domyślny głos zapisany",
+  "fg.default_voice_failed": "Zapisywanie nie powiodło się",
 });
 
 registerTranslations("sv", {
@@ -818,4 +1027,15 @@ registerTranslations("sv", {
   "fg.voice_changed_success": "Röst ändrad.",
   "fg.voice_change_failed": "Misslyckades att ändra röst.",
   "fg.no_avatars_using_face": "Inga avatarer använder detta ansikte.",
+  "fg.gallery_tab": "Galleri",
+  "fg.my_avatars_tab": "Mina avatarer",
+  "fg.my_avatars_title": "Hantera avatarer",
+  "fg.avatars_count": "avatarer",
+  "fg.no_my_avatars": "Inga avatarer ännu. Lägg till en från studion.",
+  "fg.photo": "Foto",
+  "fg.custom": "Anpassad",
+  "fg.default_voice": "Standardröst",
+  "fg.set_default_voice": "Ställ in",
+  "fg.default_voice_saved": "Standardröst sparad",
+  "fg.default_voice_failed": "Sparande misslyckades",
 });

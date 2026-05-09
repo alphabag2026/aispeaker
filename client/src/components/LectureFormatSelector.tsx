@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,7 @@ interface SelectedFormats {
 interface LectureFormatSelectorProps {
   onApply: (formats: SelectedFormats, templates: any[]) => void;
   className?: string;
+  initialSelection?: { personnelId: number | null; styleId: number | null; insertIds: number[] };
 }
 
 // ============ LAYOUT PREVIEW COMPONENT ============
@@ -274,10 +275,15 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
 }
 
 // ============ MAIN COMPONENT ============
-export function LectureFormatSelector({ onApply, className }: LectureFormatSelectorProps) {
+export function LectureFormatSelector({ onApply, className, initialSelection }: LectureFormatSelectorProps) {
   const { t } = useLanguage();
   const { data: templates, isLoading, error } = trpc.scriptTemplate.list.useQuery();
-  const [selected, setSelected] = useState<SelectedFormats>({ personnel: null, style: null, inserts: [] });
+  const [selected, setSelected] = useState<SelectedFormats>(() => {
+    if (initialSelection) {
+      return { personnel: initialSelection.personnelId, style: initialSelection.styleId, inserts: initialSelection.insertIds || [] };
+    }
+    return { personnel: null, style: null, inserts: [] };
+  });
 
   const personnelTemplates = useMemo(() => templates?.filter((t: any) => t.type === 'PERSONNEL') || [], [templates]);
   const styleTemplates = useMemo(() => templates?.filter((t: any) => t.type === 'STYLE') || [], [templates]);

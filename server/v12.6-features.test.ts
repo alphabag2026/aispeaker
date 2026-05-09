@@ -65,8 +65,8 @@ describe("v12.6 - Avatar Settings Dialog with AI Face & Voice Clone", () => {
   it("should have voice clone tab with preset and clone modes", () => {
     expect(dialogCode).toContain('value="preset"');
     expect(dialogCode).toContain('value="clone"');
-    expect(dialogCode).toContain("기본 음성");
-    expect(dialogCode).toContain("내 목소리 클론");
+    expect(dialogCode).toContain("avatarSettingsDialog.defaultVoice");
+    expect(dialogCode).toContain("avatarSettingsDialog.myVoiceClone");
   });
 
   it("should have voice recording functionality", () => {
@@ -84,8 +84,8 @@ describe("v12.6 - Avatar Settings Dialog with AI Face & Voice Clone", () => {
   });
 
   it("should display clone list with status badges", () => {
-    expect(dialogCode).toContain("사용 가능");
-    expect(dialogCode).toContain("처리 중");
+    expect(dialogCode).toContain("avatarSettingsDialog.available");
+    expect(dialogCode).toContain("avatarSettingsDialog.processing");
   });
 
   it("should have recording duration limit of 30 seconds", () => {
@@ -157,7 +157,7 @@ describe("v12.6 - Voice Clone Backend", () => {
     expect(routersCode).toContain("voiceClone: router({");
     // Check procedures exist within the router
     const vcIdx = routersCode.indexOf("voiceClone: router({");
-    const vcSection = routersCode.substring(vcIdx, vcIdx + 5000);
+    const vcSection = routersCode.substring(vcIdx, vcIdx + 8000);
     expect(vcSection).toContain("create: protectedProcedure");
     expect(vcSection).toContain("list: protectedProcedure");
     expect(vcSection).toContain("delete: protectedProcedure");
@@ -165,7 +165,7 @@ describe("v12.6 - Voice Clone Backend", () => {
 
   it("should have voice clone preview procedure", () => {
     const vcIdx = routersCode.indexOf("voiceClone: router({");
-    const vcSection = routersCode.substring(vcIdx, vcIdx + 5000);
+    const vcSection = routersCode.substring(vcIdx, vcIdx + 8000);
     expect(vcSection).toContain("preview: protectedProcedure");
     // Should use TTS for preview
     expect(vcSection).toContain("Tts");

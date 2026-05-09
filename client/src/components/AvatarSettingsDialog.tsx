@@ -91,6 +91,8 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const [cloneDesc, setCloneDesc] = useState("");
   const [isPlayingClone, setIsPlayingClone] = useState(false);
   const [selectedCloneId, setSelectedCloneId] = useState<number | null>(avatar.voiceCloneId || null);
+  const [showApplyToProjectDialog, setShowApplyToProjectDialog] = useState(false);
+  const [newlyCreatedCloneId, setNewlyCreatedCloneId] = useState<number | null>(null);
   const [previewText, setPreviewText] = useState(t("avatarSettingsDialog.welcomeMessage"));
 
   // Speed/Pitch controls
@@ -185,6 +187,15 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   // Voice clone mutations
   const voiceClones = trpc.voiceClone.list.useQuery(undefined, { enabled: open });
   const voicePresets = trpc.voiceClone.presets.useQuery(undefined, { enabled: open });
+  const recentProjectsQuery = trpc.voiceClone.recentProjectsForApply.useQuery(undefined, { enabled: open && showApplyToProjectDialog });
+  const applyToProject = trpc.voiceClone.applyToRecentProject.useMutation({
+    onSuccess: (data) => {
+      toast.success(t("avatarSettingsDialog.voiceAppliedToProject") || `${data.updatedCount}개 아바타에 음성이 적용되었습니다 (${data.projectTitle})`);
+      setShowApplyToProjectDialog(false);
+      setNewlyCreatedCloneId(null);
+    },
+    onError: (e) => toast.error(e.message),
+  });
   const createClone = trpc.voiceClone.create.useMutation({
     onSuccess: (data) => {
       toast.success(t("avatarSettingsDialog.voiceCloneCreated"));
@@ -197,6 +208,8 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
       // Auto-select the newly created clone
       if (data.id) {
         setSelectedCloneId(data.id);
+        setNewlyCreatedCloneId(data.id);
+        setShowApplyToProjectDialog(true);
       }
     },
     onError: (e) => toast.error(e.message),
@@ -495,6 +508,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const stablePreviewText = useMemo(() => previewText, [previewText]);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
@@ -1665,7 +1679,67 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+     </Dialog>
+
+    {/* Apply to Recent Project Dialog */}
+    <Dialog open={showApplyToProjectDialog} onOpenChange={setShowApplyToProjectDialog}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" />
+            {t("avatarSettingsDialog.applyToProjectTitle") || "최근 프로젝트에 적용"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {t("avatarSettingsDialog.applyToProjectDesc") || "새로 생성된 음성 클론을 최근 프로젝트의 아바타에 바로 적용할 수 있습니다."}
+          </p>
+          {recentProjectsQuery.isLoading ? (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : recentProjectsQuery.data && recentProjectsQuery.data.length > 0 ? (
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {recentProjectsQuery.data.map((project: any) => (
+                <div key={project.id} className="p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{project.title}</span>
+                    <Badge variant="outline" className="text-[10px]">{project.avatars.length} {t("avatarSettingsDialog.avatarsLabel") || "아바타"}</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {project.avatars.slice(0, 3).map((av: any) => (
+                      <Badge key={av.id} variant="secondary" className="text-[10px]">{av.name} ({av.role})</Badge>
+                    ))}
+                    {project.avatars.length > 3 && <Badge variant="secondary" className="text-[10px]">+{project.avatars.length - 3}</Badge>}
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full h-7 text-xs gap-1"
+                    disabled={applyToProject.isPending}
+                    onClick={() => {
+                      if (newlyCreatedCloneId) {
+                        applyToProject.mutate({ cloneId: newlyCreatedCloneId, projectId: project.id });
+                      }
+                    }}
+                  >
+                    {applyToProject.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                    {t("avatarSettingsDialog.applyToAll") || "전체 아바타에 적용"}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-center text-muted-foreground py-4">
+              {t("avatarSettingsDialog.noProjectsToApply") || "적용할 프로젝트가 없습니다."}
+            </p>
+          )}
+          <Button variant="outline" className="w-full" onClick={() => setShowApplyToProjectDialog(false)}>
+            {t("avatarSettingsDialog.skipApply") || "나중에 적용"}
+          </Button>
+        </div>
+      </DialogContent>
+     </Dialog>
+    </>
   );
 }
 
