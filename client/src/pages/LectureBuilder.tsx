@@ -416,6 +416,8 @@ export default function LectureBuilder() {
             faces={faces}
             voices={voices}
             project={project}
+            slides={slides}
+            scripts={scripts}
             onRefresh={() => fullProjectQuery.refetch()} />
 
           }
@@ -500,11 +502,14 @@ export default function LectureBuilder() {
 }
 
 // ============ STEP 1: AVATAR SELECTION ============
-function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project
-}: {projectId: number;avatars: any[];faces: any[];voices: any[];onRefresh: () => void; project?: any;}) {const { t } = useLanguage();
+function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, slides, scripts
+}: {projectId: number;avatars: any[];faces: any[];voices: any[];onRefresh: () => void; project?: any; slides?: any[]; scripts?: any[];}) {const { t } = useLanguage();
   const [showFormatDialog, setShowFormatDialog] = useState(false);
+  const [showFormatWarning, setShowFormatWarning] = useState(false);
+  const [pendingFormatChange, setPendingFormatChange] = useState<{personnelId: number|null; styleId: number|null; insertIds: number[]} | null>(null);
+  const hasExistingContent = (slides && slides.length > 0) || (scripts && scripts.length > 0);
   const updateProjectFormat = trpc.lectureBuilder.updateProject.useMutation({
-    onSuccess: () => { toast.success(t("lectureBuilder.formatChangeSuccess")); onRefresh(); setShowFormatDialog(false); },
+    onSuccess: () => { toast.success(t("lectureBuilder.formatChangeSuccess")); onRefresh(); setShowFormatDialog(false); setShowFormatWarning(false); setPendingFormatChange(null); },
     onError: (e) => toast.error(e.message)
   });
   const AVATAR_ROLES = getAVATAR_ROLES(t);
@@ -614,15 +619,51 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project
                   insertIds: project.formatSelection.insertIds ?? []
                 } : undefined}
                 onApply={(formats, templates) => {
-                  updateProjectFormat.mutate({
-                    id: projectId,
-                    formatSelection: {
-                      personnelId: formats.personnel,
-                      styleId: formats.style,
-                      insertIds: formats.inserts
-                    }
-                  });
+                  const newFormat = {
+                    personnelId: formats.personnel,
+                    styleId: formats.style,
+                    insertIds: formats.inserts
+                  };
+                  if (hasExistingContent) {
+                    setPendingFormatChange(newFormat);
+                    setShowFormatWarning(true);
+                  } else {
+                    updateProjectFormat.mutate({ id: projectId, formatSelection: newFormat });
+                  }
                 }} />
+            </DialogContent>
+          </Dialog>
+          {/* Format change warning dialog */}
+          <Dialog open={showFormatWarning} onOpenChange={setShowFormatWarning}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-amber-500">
+                  <Settings2 className="w-5 h-5" />{t("lectureBuilder.formatWarningTitle")}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">{t("lectureBuilder.formatWarningDesc")}</p>
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <p className="text-sm font-medium text-amber-600">{t("lectureBuilder.formatWarningImpact")}</p>
+                  <ul className="mt-2 text-xs text-muted-foreground space-y-1">
+                    {slides && slides.length > 0 && <li>• {t("lectureBuilder.formatWarningSlides", { count: String(slides.length) })}</li>}
+                    {scripts && scripts.length > 0 && <li>• {t("lectureBuilder.formatWarningScripts", { count: String(scripts.length) })}</li>}
+                  </ul>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" className="flex-1" onClick={() => { setShowFormatWarning(false); setPendingFormatChange(null); }}>
+                    {t("lectureBuilder.formatWarningCancel")}
+                  </Button>
+                  <Button className="flex-1 bg-amber-600 hover:bg-amber-700" disabled={updateProjectFormat.isPending} onClick={() => {
+                    if (pendingFormatChange) {
+                      updateProjectFormat.mutate({ id: projectId, formatSelection: pendingFormatChange });
+                    }
+                  }}>
+                    {updateProjectFormat.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                    {t("lectureBuilder.formatWarningConfirm")}
+                  </Button>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
           <Dialog open={showKlingDialog} onOpenChange={setShowKlingDialog}>

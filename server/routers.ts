@@ -4447,6 +4447,26 @@ Respond ONLY in the following JSON format:
           }
         }
 
+        // Auto-apply favorite avatar's default voice to project avatars
+        try {
+          const favoriteAvatars = await db.getFavoriteUserAvatarsWithVoice(ctx.user.id);
+          if (favoriteAvatars.length > 0) {
+            const projectAvatarsList = await db.listProjectAvatars(id);
+            // Match by role: find favorite avatar with matching role and apply its voice
+            for (const pAvatar of projectAvatarsList) {
+              const matchingFav = favoriteAvatars.find(f => f.defaultTtsVoiceId || f.defaultVoiceCloneId);
+              if (matchingFav) {
+                const updateData: any = {};
+                if (matchingFav.defaultTtsVoiceId) updateData.ttsVoiceId = matchingFav.defaultTtsVoiceId;
+                if (matchingFav.defaultVoiceCloneId) updateData.voiceCloneId = matchingFav.defaultVoiceCloneId;
+                if (Object.keys(updateData).length > 0) {
+                  await db.updateProjectAvatar(pAvatar.id, updateData);
+                }
+              }
+            }
+          }
+        } catch (e) { console.error('Failed to apply favorite avatar voice:', e); }
+
         return { id };
       }),
 

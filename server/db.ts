@@ -4230,3 +4230,14 @@ export async function getPronunciationGuidesByProject(projectId: number) {
     .where(eq(pronunciationGuides.projectId, projectId))
     .orderBy(pronunciationGuides.createdAt);
 }
+
+/** Get favorite user avatars with default voice settings */
+export async function getFavoriteUserAvatarsWithVoice(userId: number) {
+  const db = await getDb(); if (!db) return [];
+  return db.select().from(userAvatars)
+    .where(and(
+      eq(userAvatars.userId, userId),
+      eq(userAvatars.isFavorite, true)
+    ))
+    .orderBy(desc(userAvatars.lastUsedAt));
+}

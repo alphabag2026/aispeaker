@@ -584,6 +584,13 @@ registerTranslations("ko", {
   "lectureBuilder.changeFormatTitle": "강의 포맷 설정 변경",
   "lectureBuilder.currentFormatInfo": "현재 저장된 포맷이 선택되어 있습니다. 변경하려면 새로운 포맷을 선택하세요.",
   "lectureBuilder.formatChangeSuccess": "강의 포맷이 변경되었습니다",
+  "lectureBuilder.formatWarningTitle": "포맷 변경 경고",
+  "lectureBuilder.formatWarningDesc": "이 프로젝트에는 이미 작업된 콘텐츠가 있습니다. 포맷을 변경하면 기존 슬라이드 배치와 스크립트 구조에 영향을 줄 수 있습니다.",
+  "lectureBuilder.formatWarningImpact": "영향을 받을 수 있는 콘텐츠:",
+  "lectureBuilder.formatWarningSlides": "슬라이드 {{count}}개",
+  "lectureBuilder.formatWarningScripts": "스크립트 {{count}}개",
+  "lectureBuilder.formatWarningCancel": "취소",
+  "lectureBuilder.formatWarningConfirm": "변경 적용",
 });
 registerTranslations("en", {
   "lectureBuilder.stringLiteral0": "Select Avatar",
@@ -1170,6 +1177,13 @@ registerTranslations("en", {
   "lectureBuilder.changeFormatTitle": "Change Lecture Format Settings",
   "lectureBuilder.currentFormatInfo": "The currently saved format is selected. Choose a new format to change it.",
   "lectureBuilder.formatChangeSuccess": "Lecture format has been changed",
+  "lectureBuilder.formatWarningTitle": "Format Change Warning",
+  "lectureBuilder.formatWarningDesc": "This project already has existing content. Changing the format may affect the current slide layout and script structure.",
+  "lectureBuilder.formatWarningImpact": "Content that may be affected:",
+  "lectureBuilder.formatWarningSlides": "{{count}} slides",
+  "lectureBuilder.formatWarningScripts": "{{count}} scripts",
+  "lectureBuilder.formatWarningCancel": "Cancel",
+  "lectureBuilder.formatWarningConfirm": "Apply Changes",
 });
 registerTranslations("zh", {
   "lectureBuilder.stringLiteral0": "选择头像",
@@ -1756,6 +1770,13 @@ registerTranslations("zh", {
   "lectureBuilder.changeFormatTitle": "更改讲座格式设置",
   "lectureBuilder.currentFormatInfo": "当前已保存的格式已被选中。选择新格式进行更改。",
   "lectureBuilder.formatChangeSuccess": "讲座格式已更改",
+  "lectureBuilder.formatWarningTitle": "格式更改警告",
+  "lectureBuilder.formatWarningDesc": "此项目已有现有内容。更改格式可能会影响当前幻灯片布局和脚本结构。",
+  "lectureBuilder.formatWarningImpact": "可能受影响的内容：",
+  "lectureBuilder.formatWarningSlides": "{{count}}个幻灯片",
+  "lectureBuilder.formatWarningScripts": "{{count}}个脚本",
+  "lectureBuilder.formatWarningCancel": "取消",
+  "lectureBuilder.formatWarningConfirm": "应用更改",
 });
 registerTranslations("ja", {
   "lectureBuilder.stringLiteral0": "アバター選択",
@@ -2342,6 +2363,13 @@ registerTranslations("ja", {
   "lectureBuilder.changeFormatTitle": "講義フォーマット設定変更",
   "lectureBuilder.currentFormatInfo": "現在保存されているフォーマットが選択されています。変更するには新しいフォーマットを選択してください。",
   "lectureBuilder.formatChangeSuccess": "講義フォーマットが変更されました",
+  "lectureBuilder.formatWarningTitle": "フォーマット変更の警告",
+  "lectureBuilder.formatWarningDesc": "このプロジェクトには既存のコンテンツがあります。フォーマットを変更すると、現在のスライドレイアウトとスクリプト構造に影響する可能性があります。",
+  "lectureBuilder.formatWarningImpact": "影響を受ける可能性のあるコンテンツ：",
+  "lectureBuilder.formatWarningSlides": "スライド{{count}}枚",
+  "lectureBuilder.formatWarningScripts": "スクリプト{{count}}件",
+  "lectureBuilder.formatWarningCancel": "キャンセル",
+  "lectureBuilder.formatWarningConfirm": "変更を適用",
 });
 registerTranslations("vi", {
   "lectureBuilder.stringLiteral0": "Chọn avatar",
@@ -2928,6 +2956,13 @@ registerTranslations("vi", {
   "lectureBuilder.changeFormatTitle": "Thay đổi cài đặt định dạng bài giảng",
   "lectureBuilder.currentFormatInfo": "Định dạng đã lưu hiện tại đang được chọn. Chọn định dạng mới để thay đổi.",
   "lectureBuilder.formatChangeSuccess": "Định dạng bài giảng đã được thay đổi",
+  "lectureBuilder.formatWarningTitle": "Cảnh báo thay đổi định dạng",
+  "lectureBuilder.formatWarningDesc": "Dự án này đã có nội dung. Thay đổi định dạng có thể ảnh hưởng đến bố cục slide và cấu trúc kịch bản hiện tại.",
+  "lectureBuilder.formatWarningImpact": "Nội dung có thể bị ảnh hưởng:",
+  "lectureBuilder.formatWarningSlides": "{{count}} slide",
+  "lectureBuilder.formatWarningScripts": "{{count}} kịch bản",
+  "lectureBuilder.formatWarningCancel": "Hủy",
+  "lectureBuilder.formatWarningConfirm": "Áp dụng thay đổi",
 });
 registerTranslations("th", {
   "lectureBuilder.stringLiteral0": "เลือกอวาตาร์",
@@ -3514,6 +3549,13 @@ registerTranslations("th", {
   "lectureBuilder.changeFormatTitle": "เปลี่ยนการตั้งค่ารูปแบบการบรรยาย",
   "lectureBuilder.currentFormatInfo": "รูปแบบที่บันทึกไว้ถูกเลือกอยู่ เลือกรูปแบบใหม่เพื่อเปลี่ยน",
   "lectureBuilder.formatChangeSuccess": "รูปแบบการบรรยายถูกเปลี่ยนแล้ว",
+  "lectureBuilder.formatWarningTitle": "คำเตือนการเปลี่ยนรูปแบบ",
+  "lectureBuilder.formatWarningDesc": "โปรเจกต์นี้มีเนื้อหาอยู่แล้ว การเปลี่ยนรูปแบบอาจส่งผลต่อเลย์เอาต์สไลด์และโครงสร้างสคริปต์ปัจจุบัน",
+  "lectureBuilder.formatWarningImpact": "เนื้อหาที่อาจได้รับผลกระทบ:",
+  "lectureBuilder.formatWarningSlides": "สไลด์ {{count}} รายการ",
+  "lectureBuilder.formatWarningScripts": "สคริปต์ {{count}} รายการ",
+  "lectureBuilder.formatWarningCancel": "ยกเลิก",
+  "lectureBuilder.formatWarningConfirm": "ใช้การเปลี่ยนแปลง",
 });
 registerTranslations("id", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4100,6 +4142,13 @@ registerTranslations("id", {
   "lectureBuilder.changeFormatTitle": "Ubah Pengaturan Format Kuliah",
   "lectureBuilder.currentFormatInfo": "Format yang tersimpan saat ini dipilih. Pilih format baru untuk mengubahnya.",
   "lectureBuilder.formatChangeSuccess": "Format kuliah telah diubah",
+  "lectureBuilder.formatWarningTitle": "Peringatan Perubahan Format",
+  "lectureBuilder.formatWarningDesc": "Proyek ini sudah memiliki konten. Mengubah format dapat memengaruhi tata letak slide dan struktur skrip saat ini.",
+  "lectureBuilder.formatWarningImpact": "Konten yang mungkin terpengaruh:",
+  "lectureBuilder.formatWarningSlides": "{{count}} slide",
+  "lectureBuilder.formatWarningScripts": "{{count}} skrip",
+  "lectureBuilder.formatWarningCancel": "Batal",
+  "lectureBuilder.formatWarningConfirm": "Terapkan Perubahan",
 });
 registerTranslations("ms", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4686,6 +4735,13 @@ registerTranslations("ms", {
   "lectureBuilder.changeFormatTitle": "Tukar Tetapan Format Kuliah",
   "lectureBuilder.currentFormatInfo": "Format yang disimpan semasa dipilih. Pilih format baharu untuk menukarnya.",
   "lectureBuilder.formatChangeSuccess": "Format kuliah telah ditukar",
+  "lectureBuilder.formatWarningTitle": "Amaran Perubahan Format",
+  "lectureBuilder.formatWarningDesc": "Projek ini sudah mempunyai kandungan. Menukar format mungkin menjejaskan susun atur slaid dan struktur skrip semasa.",
+  "lectureBuilder.formatWarningImpact": "Kandungan yang mungkin terjejas:",
+  "lectureBuilder.formatWarningSlides": "{{count}} slaid",
+  "lectureBuilder.formatWarningScripts": "{{count}} skrip",
+  "lectureBuilder.formatWarningCancel": "Batal",
+  "lectureBuilder.formatWarningConfirm": "Gunakan Perubahan",
 });
 registerTranslations("es", {
   "lectureBuilder.stringLiteral0": "Seleccionar avatar",
@@ -5272,6 +5328,13 @@ registerTranslations("es", {
   "lectureBuilder.changeFormatTitle": "Cambiar configuración de formato de clase",
   "lectureBuilder.currentFormatInfo": "El formato guardado actualmente está seleccionado. Elige un nuevo formato para cambiarlo.",
   "lectureBuilder.formatChangeSuccess": "El formato de la clase ha sido cambiado",
+  "lectureBuilder.formatWarningTitle": "Advertencia de cambio de formato",
+  "lectureBuilder.formatWarningDesc": "Este proyecto ya tiene contenido existente. Cambiar el formato puede afectar el diseño actual de diapositivas y la estructura del guión.",
+  "lectureBuilder.formatWarningImpact": "Contenido que puede verse afectado:",
+  "lectureBuilder.formatWarningSlides": "{{count}} diapositivas",
+  "lectureBuilder.formatWarningScripts": "{{count}} guiones",
+  "lectureBuilder.formatWarningCancel": "Cancelar",
+  "lectureBuilder.formatWarningConfirm": "Aplicar cambios",
 });
 registerTranslations("fr", {
   "lectureBuilder.stringLiteral0": "Sélection de l'avatar",
@@ -5858,6 +5921,13 @@ registerTranslations("fr", {
   "lectureBuilder.changeFormatTitle": "Modifier les paramètres de format du cours",
   "lectureBuilder.currentFormatInfo": "Le format actuellement enregistré est sélectionné. Choisissez un nouveau format pour le modifier.",
   "lectureBuilder.formatChangeSuccess": "Le format du cours a été modifié",
+  "lectureBuilder.formatWarningTitle": "Avertissement de changement de format",
+  "lectureBuilder.formatWarningDesc": "Ce projet contient déjà du contenu. Changer le format peut affecter la mise en page actuelle des diapositives et la structure du script.",
+  "lectureBuilder.formatWarningImpact": "Contenu pouvant être affecté :",
+  "lectureBuilder.formatWarningSlides": "{{count}} diapositives",
+  "lectureBuilder.formatWarningScripts": "{{count}} scripts",
+  "lectureBuilder.formatWarningCancel": "Annuler",
+  "lectureBuilder.formatWarningConfirm": "Appliquer les modifications",
 });
 registerTranslations("de", {
   "lectureBuilder.stringLiteral0": "Avatar auswählen",
@@ -6444,6 +6514,13 @@ registerTranslations("de", {
   "lectureBuilder.changeFormatTitle": "Vorlesungsformat-Einstellungen ändern",
   "lectureBuilder.currentFormatInfo": "Das aktuell gespeicherte Format ist ausgewählt. Wählen Sie ein neues Format zum Ändern.",
   "lectureBuilder.formatChangeSuccess": "Das Vorlesungsformat wurde geändert",
+  "lectureBuilder.formatWarningTitle": "Warnung bei Formatänderung",
+  "lectureBuilder.formatWarningDesc": "Dieses Projekt enthält bereits Inhalte. Eine Formatänderung kann das aktuelle Folienlayout und die Skriptstruktur beeinflussen.",
+  "lectureBuilder.formatWarningImpact": "Möglicherweise betroffene Inhalte:",
+  "lectureBuilder.formatWarningSlides": "{{count}} Folien",
+  "lectureBuilder.formatWarningScripts": "{{count}} Skripte",
+  "lectureBuilder.formatWarningCancel": "Abbrechen",
+  "lectureBuilder.formatWarningConfirm": "Änderungen anwenden",
 });
 registerTranslations("pt", {
   "lectureBuilder.stringLiteral0": "Selecionar avatar",
@@ -7030,6 +7107,13 @@ registerTranslations("pt", {
   "lectureBuilder.changeFormatTitle": "Alterar configurações de formato da aula",
   "lectureBuilder.currentFormatInfo": "O formato salvo atualmente está selecionado. Escolha um novo formato para alterá-lo.",
   "lectureBuilder.formatChangeSuccess": "O formato da aula foi alterado",
+  "lectureBuilder.formatWarningTitle": "Aviso de alteração de formato",
+  "lectureBuilder.formatWarningDesc": "Este projeto já possui conteúdo existente. Alterar o formato pode afetar o layout atual dos slides e a estrutura do roteiro.",
+  "lectureBuilder.formatWarningImpact": "Conteúdo que pode ser afetado:",
+  "lectureBuilder.formatWarningSlides": "{{count}} slides",
+  "lectureBuilder.formatWarningScripts": "{{count}} roteiros",
+  "lectureBuilder.formatWarningCancel": "Cancelar",
+  "lectureBuilder.formatWarningConfirm": "Aplicar alterações",
 });
 registerTranslations("ru", {
   "lectureBuilder.stringLiteral0": "Выбор аватара",
@@ -7616,6 +7700,13 @@ registerTranslations("ru", {
   "lectureBuilder.changeFormatTitle": "Изменить настройки формата лекции",
   "lectureBuilder.currentFormatInfo": "Текущий сохранённый формат выбран. Выберите новый формат для изменения.",
   "lectureBuilder.formatChangeSuccess": "Формат лекции был изменён",
+  "lectureBuilder.formatWarningTitle": "Предупреждение об изменении формата",
+  "lectureBuilder.formatWarningDesc": "В этом проекте уже есть контент. Изменение формата может повлиять на текущую компоновку слайдов и структуру сценария.",
+  "lectureBuilder.formatWarningImpact": "Контент, который может быть затронут:",
+  "lectureBuilder.formatWarningSlides": "{{count}} слайдов",
+  "lectureBuilder.formatWarningScripts": "{{count}} сценариев",
+  "lectureBuilder.formatWarningCancel": "Отмена",
+  "lectureBuilder.formatWarningConfirm": "Применить изменения",
 });
 registerTranslations("ar", {
   "lectureBuilder.stringLiteral0": "اختيار الصورة الرمزية",
@@ -8202,6 +8293,13 @@ registerTranslations("ar", {
   "lectureBuilder.changeFormatTitle": "تغيير إعدادات تنسيق المحاضرة",
   "lectureBuilder.currentFormatInfo": "التنسيق المحفوظ حالياً محدد. اختر تنسيقاً جديداً لتغييره.",
   "lectureBuilder.formatChangeSuccess": "تم تغيير تنسيق المحاضرة",
+  "lectureBuilder.formatWarningTitle": "تحذير تغيير التنسيق",
+  "lectureBuilder.formatWarningDesc": "يحتوي هذا المشروع بالفعل على محتوى. قد يؤثر تغيير التنسيق على تخطيط الشرائح الحالي وبنية النص.",
+  "lectureBuilder.formatWarningImpact": "المحتوى الذي قد يتأثر:",
+  "lectureBuilder.formatWarningSlides": "{{count}} شريحة",
+  "lectureBuilder.formatWarningScripts": "{{count}} نص",
+  "lectureBuilder.formatWarningCancel": "إلغاء",
+  "lectureBuilder.formatWarningConfirm": "تطبيق التغييرات",
 });
 registerTranslations("hi", {
   "lectureBuilder.stringLiteral0": "अवतार चुनें",
@@ -8788,6 +8886,13 @@ registerTranslations("hi", {
   "lectureBuilder.changeFormatTitle": "व्याख्यान प्रारूप सेटिंग बदलें",
   "lectureBuilder.currentFormatInfo": "वर्तमान में सहेजा गया प्रारूप चयनित है। बदलने के लिए नया प्रारूप चुनें।",
   "lectureBuilder.formatChangeSuccess": "व्याख्यान प्रारूप बदल दिया गया है",
+  "lectureBuilder.formatWarningTitle": "प्रारूप परिवर्तन चेतावनी",
+  "lectureBuilder.formatWarningDesc": "इस प्रोजेक्ट में पहले से सामग्री मौजूद है। प्रारूप बदलने से वर्तमान स्लाइड लेआउट और स्क्रिप्ट संरचना प्रभावित हो सकती है।",
+  "lectureBuilder.formatWarningImpact": "प्रभावित हो सकने वाली सामग्री:",
+  "lectureBuilder.formatWarningSlides": "{{count}} स्लाइड",
+  "lectureBuilder.formatWarningScripts": "{{count}} स्क्रिप्ट",
+  "lectureBuilder.formatWarningCancel": "रद्द करें",
+  "lectureBuilder.formatWarningConfirm": "परिवर्तन लागू करें",
 });
 registerTranslations("it", {
   "lectureBuilder.stringLiteral0": "Seleziona avatar",
@@ -9374,6 +9479,13 @@ registerTranslations("it", {
   "lectureBuilder.changeFormatTitle": "Modifica impostazioni formato lezione",
   "lectureBuilder.currentFormatInfo": "Il formato attualmente salvato è selezionato. Scegli un nuovo formato per cambiarlo.",
   "lectureBuilder.formatChangeSuccess": "Il formato della lezione è stato modificato",
+  "lectureBuilder.formatWarningTitle": "Avviso cambio formato",
+  "lectureBuilder.formatWarningDesc": "Questo progetto ha già contenuti esistenti. Cambiare il formato potrebbe influire sul layout attuale delle slide e sulla struttura dello script.",
+  "lectureBuilder.formatWarningImpact": "Contenuti che potrebbero essere interessati:",
+  "lectureBuilder.formatWarningSlides": "{{count}} slide",
+  "lectureBuilder.formatWarningScripts": "{{count}} script",
+  "lectureBuilder.formatWarningCancel": "Annulla",
+  "lectureBuilder.formatWarningConfirm": "Applica modifiche",
 });
 registerTranslations("nl", {
   "lectureBuilder.stringLiteral0": "Avatar selecteren",
@@ -9960,6 +10072,13 @@ registerTranslations("nl", {
   "lectureBuilder.changeFormatTitle": "Collegeopmaak-instellingen wijzigen",
   "lectureBuilder.currentFormatInfo": "Het huidige opgeslagen formaat is geselecteerd. Kies een nieuw formaat om het te wijzigen.",
   "lectureBuilder.formatChangeSuccess": "Het collegeopmaak is gewijzigd",
+  "lectureBuilder.formatWarningTitle": "Waarschuwing formaatwijziging",
+  "lectureBuilder.formatWarningDesc": "Dit project heeft al bestaande inhoud. Het wijzigen van het formaat kan de huidige dia-indeling en scriptstructuur beïnvloeden.",
+  "lectureBuilder.formatWarningImpact": "Inhoud die mogelijk wordt beïnvloed:",
+  "lectureBuilder.formatWarningSlides": "{{count}} dia's",
+  "lectureBuilder.formatWarningScripts": "{{count}} scripts",
+  "lectureBuilder.formatWarningCancel": "Annuleren",
+  "lectureBuilder.formatWarningConfirm": "Wijzigingen toepassen",
 });
 registerTranslations("pl", {
   "lectureBuilder.stringLiteral0": "Wybierz awatara",
@@ -10546,6 +10665,13 @@ registerTranslations("pl", {
   "lectureBuilder.changeFormatTitle": "Zmień ustawienia formatu wykładu",
   "lectureBuilder.currentFormatInfo": "Aktualnie zapisany format jest wybrany. Wybierz nowy format, aby go zmienić.",
   "lectureBuilder.formatChangeSuccess": "Format wykładu został zmieniony",
+  "lectureBuilder.formatWarningTitle": "Ostrzeżenie o zmianie formatu",
+  "lectureBuilder.formatWarningDesc": "Ten projekt ma już istniejącą treść. Zmiana formatu może wpłynąć na obecny układ slajdów i strukturę skryptu.",
+  "lectureBuilder.formatWarningImpact": "Treść, która może zostać zmieniona:",
+  "lectureBuilder.formatWarningSlides": "{{count}} slajdów",
+  "lectureBuilder.formatWarningScripts": "{{count}} skryptów",
+  "lectureBuilder.formatWarningCancel": "Anuluj",
+  "lectureBuilder.formatWarningConfirm": "Zastosuj zmiany",
 });
 registerTranslations("sv", {
   "lectureBuilder.stringLiteral0": "Välj avatar",
@@ -11132,6 +11258,13 @@ registerTranslations("sv", {
   "lectureBuilder.changeFormatTitle": "Ändra föreläsningsformatinställningar",
   "lectureBuilder.currentFormatInfo": "Det aktuellt sparade formatet är valt. Välj ett nytt format för att ändra det.",
   "lectureBuilder.formatChangeSuccess": "Föreläsningsformatet har ändrats",
+  "lectureBuilder.formatWarningTitle": "Varning för formatändring",
+  "lectureBuilder.formatWarningDesc": "Detta projekt har redan befintligt innehåll. Att ändra formatet kan påverka den nuvarande bildlayouten och skriptstrukturen.",
+  "lectureBuilder.formatWarningImpact": "Innehåll som kan påverkas:",
+  "lectureBuilder.formatWarningSlides": "{{count}} bilder",
+  "lectureBuilder.formatWarningScripts": "{{count}} skript",
+  "lectureBuilder.formatWarningCancel": "Avbryt",
+  "lectureBuilder.formatWarningConfirm": "Tillämpa ändringar",
 });
 registerTranslations("tr", {
   "lectureBuilder.stringLiteral0": "Avatar Seçimi",
@@ -11718,4 +11851,11 @@ registerTranslations("tr", {
   "lectureBuilder.changeFormatTitle": "Ders formatı ayarlarını değiştir",
   "lectureBuilder.currentFormatInfo": "Şu anda kaydedilen format seçili. Değiştirmek için yeni bir format seçin.",
   "lectureBuilder.formatChangeSuccess": "Ders formatı değiştirildi",
+  "lectureBuilder.formatWarningTitle": "Format Değişikliği Uyarısı",
+  "lectureBuilder.formatWarningDesc": "Bu projede zaten mevcut içerik var. Formatı değiştirmek mevcut slayt düzenini ve senaryo yapısını etkileyebilir.",
+  "lectureBuilder.formatWarningImpact": "Etkilenebilecek içerik:",
+  "lectureBuilder.formatWarningSlides": "{{count}} slayt",
+  "lectureBuilder.formatWarningScripts": "{{count}} senaryo",
+  "lectureBuilder.formatWarningCancel": "İptal",
+  "lectureBuilder.formatWarningConfirm": "Değişiklikleri Uygula",
 });
