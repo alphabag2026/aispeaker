@@ -1,0 +1,26 @@
+{
+  "query": "SELECT type, COUNT(*) as cnt FROM scriptTemplates GROUP BY type;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZhmXq2fuwbq2e6E.3b045a7fef56 --database JNDtxB2WrDuBzbhLtHkGn8 --execute SELECT type, COUNT(*) as cnt FROM scriptTemplates GROUP BY type;",
+  "rows": [
+    {
+      "type": "PERSONNEL",
+      "cnt": "4"
+    },
+    {
+      "type": "INSERT",
+      "cnt": "4"
+    },
+    {
+      "type": "GENERAL",
+      "cnt": "12"
+    },
+    {
+      "type": "STYLE",
+      "cnt": "5"
+    }
+  ],
+  "messages": [],
+  "stdout": "type\tcnt\nPERSONNEL\t4\nINSERT\t4\nGENERAL\t12\nSTYLE\t5\n",
+  "stderr": "",
+  "execution_time_ms": 1809
+}

@@ -980,7 +980,7 @@ export const appRouter = router({
   // ============ Script Templates (v2.3) ============
   scriptTemplate: router({
     /** List all script templates */
-    list: instructorProcedure
+    list: protectedProcedure
       .input(z.object({ category: z.string().optional() }).optional())
       .query(async ({ ctx, input }) => db.getScriptTemplates(input?.category)),
 
