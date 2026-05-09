@@ -1,0 +1,114 @@
+{
+  "query": "SELECT id, name, type, icon, themeColor, isRecommended FROM scriptTemplates WHERE type IN ('PERSONNEL', 'STYLE', 'INSERT') ORDER BY type, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZhmXq2fuwbq2e6E.3b045a7fef56 --database JNDtxB2WrDuBzbhLtHkGn8 --execute SELECT id, name, type, icon, themeColor, isRecommended FROM scriptTemplates WHERE type IN ('PERSONNEL', 'STYLE', 'INSERT') ORDER BY type, id;",
+  "rows": [
+    {
+      "id": "540010",
+      "name": "Q&A 세션",
+      "type": "INSERT",
+      "icon": "HelpCircle",
+      "themeColor": "orange",
+      "isRecommended": "1"
+    },
+    {
+      "id": "540011",
+      "name": "쉬는 시간",
+      "type": "INSERT",
+      "icon": "Coffee",
+      "themeColor": "amber",
+      "isRecommended": "0"
+    },
+    {
+      "id": "540012",
+      "name": "영상 클립 삽입",
+      "type": "INSERT",
+      "icon": "Film",
+      "themeColor": "red",
+      "isRecommended": "0"
+    },
+    {
+      "id": "540013",
+      "name": "실습/퀴즈",
+      "type": "INSERT",
+      "icon": "ListChecks",
+      "themeColor": "teal",
+      "isRecommended": "0"
+    },
+    {
+      "id": "540001",
+      "name": "1인 강사",
+      "type": "PERSONNEL",
+      "icon": "User",
+      "themeColor": "blue",
+      "isRecommended": "1"
+    },
+    {
+      "id": "540002",
+      "name": "강사 + MC",
+      "type": "PERSONNEL",
+      "icon": "Users",
+      "themeColor": "purple",
+      "isRecommended": "0"
+    },
+    {
+      "id": "540003",
+      "name": "패널 토론",
+      "type": "PERSONNEL",
+      "icon": "UsersRound",
+      "themeColor": "cyan",
+      "isRecommended": "0"
+    },
+    {
+      "id": "540004",
+      "name": "강사 + 통역사",
+      "type": "PERSONNEL",
+      "icon": "MessageSquare",
+      "themeColor": "green",
+      "isRecommended": "0"
+    },
+    {
+      "id": "540005",
+      "name": "전면 강사 뷰",
+      "type": "STYLE",
+      "icon": "Monitor",
+      "themeColor": "blue",
+      "isRecommended": "1"
+    },
+    {
+      "id": "540006",
+      "name": "슬라이드 + 강사 PIP",
+      "type": "STYLE",
+      "icon": "Presentation",
+      "themeColor": "green",
+      "isRecommended": "1"
+    },
+    {
+      "id": "540007",
+      "name": "슬라이드 전체 화면",
+      "type": "STYLE",
+      "icon": "LayoutPanelLeft",
+      "themeColor": "indigo",
+      "isRecommended": "0"
+    },
+    {
+      "id": "540008",
+      "name": "화이트보드 강의",
+      "type": "STYLE",
+      "icon": "PenTool",
+      "themeColor": "amber",
+      "isRecommended": "0"
+    },
+    {
+      "id": "540009",
+      "name": "화면 공유",
+      "type": "STYLE",
+      "icon": "ScreenShare",
+      "themeColor": "violet",
+      "isRecommended": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttype\ticon\tthemeColor\tisRecommended\n540010\tQ&A 세션\tINSERT\tHelpCircle\torange\t1\n540011\t쉬는 시간\tINSERT\tCoffee\tamber\t0\n540012\t영상 클립 삽입\tINSERT\tFilm\tred\t0\n540013\t실습/퀴즈\tINSERT\tListChecks\tteal\t0\n540001\t1인 강사\tPERSONNEL\tUser\tblue\t1\n540002\t강사 + MC\tPERSONNEL\tUsers\tpurple\t0\n540003\t패널 토론\tPERSONNEL\tUsersRound\tcyan\t0\n540004\t강사 + 통역사\tPERSONNEL\tMessageSquare\tgreen\t0\n540005\t전면 강사 뷰\tSTYLE\tMonitor\tblue\t1\n540006\t슬라이드 + 강사 PIP\tSTYLE\tPresentation\tgreen\t1\n540007\t슬라이드 전체 화면\tSTYLE\tLayoutPanelLeft\tindigo\t0\n540008\t화이트보드 강의\tSTYLE\tPenTool\tamber\t0\n540009\t화면 공유\tSTYLE\tScreenShare\tviolet\t0\n",
+  "stderr": "",
+  "execution_time_ms": 1683
+}

@@ -276,7 +276,7 @@ function LayoutPreview({ personnelTemplate, styleTemplate, insertTemplates }: {
 // ============ MAIN COMPONENT ============
 export function LectureFormatSelector({ onApply, className }: LectureFormatSelectorProps) {
   const { t } = useLanguage();
-  const { data: templates, isLoading } = trpc.scriptTemplate.list.useQuery();
+  const { data: templates, isLoading, error } = trpc.scriptTemplate.list.useQuery();
   const [selected, setSelected] = useState<SelectedFormats>({ personnel: null, style: null, inserts: [] });
 
   const personnelTemplates = useMemo(() => templates?.filter((t: any) => t.type === 'PERSONNEL') || [], [templates]);
@@ -356,6 +356,17 @@ export function LectureFormatSelector({ onApply, className }: LectureFormatSelec
     return (
       <div className="flex items-center justify-center h-96 w-full">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !templates) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 w-full gap-4">
+        <p className="text-muted-foreground text-sm">{t("lectureFormatSelector.loadError") || "포맷 데이터를 불러올 수 없습니다."}</p>
+        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+          {t("lectureFormatSelector.retry") || "다시 시도"}
+        </Button>
       </div>
     );
   }
