@@ -3225,6 +3225,12 @@ Respond ONLY in the following JSON format:
       .query(async ({ input }) => {
         return db.getSampleFace(input.id);
       }),
+    /** Get all project avatars using this face (for current user) */
+    avatarsByFace: protectedProcedure
+      .input(z.object({ sampleFaceId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.listAvatarsBySampleFace(ctx.user.id, input.sampleFaceId);
+      }),
     create: protectedProcedure
       .input(z.object({
         name: z.string().min(1).max(255),
@@ -4322,7 +4328,7 @@ Respond ONLY in the following JSON format:
         }).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        const id = await db.createLectureProject({ userId: ctx.user.id, title: input.title, description: input.description || null });
+        const id = await db.createLectureProject({ userId: ctx.user.id, title: input.title, description: input.description || null, formatSelection: input.formatSelection || null });
 
         // Auto-configure avatars and scripts based on format selection
         if (input.formatSelection) {
@@ -4467,6 +4473,11 @@ Respond ONLY in the following JSON format:
         avatarSize: z.enum(["small", "medium", "large"]).optional(),
         avatarShape: z.enum(["circle", "rounded", "rectangle"]).optional(),
         avatarOpacity: z.number().min(0).max(100).optional(),
+        formatSelection: z.object({
+          personnelId: z.number().nullable(),
+          styleId: z.number().nullable(),
+          insertIds: z.array(z.number()),
+        }).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.id);

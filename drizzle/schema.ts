@@ -1183,6 +1183,8 @@ export const lectureProjects = mysqlTable("lectureProjects", {
   generationStep: varchar("generationStep", { length: 255 }),
   /** Error message if generation failed */
   errorMessage: text("errorMessage"),
+  /** Saved format selection (JSON: { personnelId, styleId, insertIds }) */
+  formatSelection: json("formatSelection"),
   /** Interpreter mode enabled */
   interpreterEnabled: boolean("interpreterEnabled").default(false),
   /** Interpreter target language code */

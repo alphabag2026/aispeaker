@@ -6,15 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Crown, Globe, Sparkles, User, ChevronRight } from "lucide-react";
+import { Search, Crown, Globe, Sparkles, User, ChevronRight, Volume2, Mic, Pencil, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import VoicePreviewButton from "@/components/VoicePreviewButton";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { useLocation } from "wouter";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function FaceGallery() {
   const { t } = useTranslation();
+  const [, setLocation] = useLocation();
 
   const CATEGORIES = [
     { value: "all", label: t("fg.all") },
@@ -36,10 +39,35 @@ export default function FaceGallery() {
   const [selectedGender, setSelectedGender] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFace, setSelectedFace] = useState<any>(null);
+  const [editingAvatarId, setEditingAvatarId] = useState<number | null>(null);
+  const [newVoiceId, setNewVoiceId] = useState("");
 
   const { data: faces = [], isLoading } = trpc.sampleFace.list.useQuery({
     category: selectedCategory === "all" ? undefined : selectedCategory,
     gender: selectedGender === "all" ? undefined : selectedGender,
+  });
+
+  const voicesQuery = trpc.tts.voices.useQuery(undefined, { enabled: !!selectedFace });
+  const voices = voicesQuery.data || [];
+
+  const voiceClonesQuery = trpc.voiceClone.list.useQuery(undefined, { enabled: !!selectedFace && !!user });
+  const myVoiceClones = (voiceClonesQuery.data?.filter((c: any) => c.status === "ready") || []) as any[];
+
+  // Query avatars using this face
+  const avatarsByFaceQuery = trpc.sampleFace.avatarsByFace.useQuery(
+    { sampleFaceId: selectedFace?.id },
+    { enabled: !!selectedFace && !!user }
+  );
+  const avatarsUsingFace = avatarsByFaceQuery.data || [];
+
+  const updateAvatarMut = trpc.lectureBuilder.updateAvatar.useMutation({
+    onSuccess: () => {
+      toast.success(t("fg.voice_changed_success") || "음성이 변경되었습니다.");
+      setEditingAvatarId(null);
+      setNewVoiceId("");
+      avatarsByFaceQuery.refetch();
+    },
+    onError: () => toast.error(t("fg.voice_change_failed") || "음성 변경에 실패했습니다."),
   });
 
   const filteredFaces = faces.filter((face: any) => {
@@ -51,6 +79,38 @@ export default function FaceGallery() {
       (face.tags as string[])?.some((t: string) => t.toLowerCase().includes(q))
     );
   });
+
+  const getVoiceName = (voiceId: string | null, cloneId: number | null) => {
+    if (cloneId) {
+      const clone = myVoiceClones.find((c: any) => c.id === cloneId);
+      return clone ? `🎤 ${clone.name}` : `🎤 Clone #${cloneId}`;
+    }
+    if (voiceId) {
+      const voice = voices.find((v: any) => v.id === voiceId);
+      return voice ? voice.name : voiceId;
+    }
+    return t("fg.no_voice") || "미설정";
+  };
+
+  const handleVoiceChange = (avatarId: number) => {
+    if (!newVoiceId) return;
+    const isClone = newVoiceId.startsWith("clone-");
+    if (isClone) {
+      const cloneId = parseInt(newVoiceId.replace("clone-", ""));
+      const clone = myVoiceClones.find((c: any) => c.id === cloneId);
+      updateAvatarMut.mutate({
+        id: avatarId,
+        ttsVoiceId: clone?.matchedVoiceId || "Kore",
+        voiceCloneId: cloneId,
+      });
+    } else {
+      updateAvatarMut.mutate({
+        id: avatarId,
+        ttsVoiceId: newVoiceId,
+        voiceCloneId: null,
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -176,8 +236,8 @@ export default function FaceGallery() {
       </div>
 
       {/* Face Detail Dialog */}
-      <Dialog open={!!selectedFace} onOpenChange={() => setSelectedFace(null)}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={!!selectedFace} onOpenChange={() => { setSelectedFace(null); setEditingAvatarId(null); setNewVoiceId(""); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {selectedFace?.name}
@@ -223,6 +283,103 @@ export default function FaceGallery() {
                   ))}
                 </div>
               </div>
+
+              {/* Avatars using this face - voice management */}
+              {user && avatarsUsingFace.length > 0 && (
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Volume2 className="w-4 h-4" />
+                    {t("fg.matched_voices_title") || "이 얼굴을 사용 중인 아바타"}
+                  </h4>
+                  <div className="space-y-3">
+                    {avatarsUsingFace.map((avatar: any) => (
+                      <div key={avatar.id} className="p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center justify-between mb-1">
+                          <div>
+                            <span className="text-sm font-medium">{avatar.name}</span>
+                            <span className="text-xs text-muted-foreground ml-2">({avatar.projectTitle})</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">{avatar.role}</Badge>
+                        </div>
+                        
+                        {editingAvatarId === avatar.id ? (
+                          <div className="mt-2 space-y-2">
+                            <Select value={newVoiceId} onValueChange={setNewVoiceId}>
+                              <SelectTrigger className="h-8 text-xs">
+                                <SelectValue placeholder={t("fg.select_voice") || "음성 선택"} />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-[200px]">
+                                {myVoiceClones.length > 0 && (
+                                  <>
+                                    <div className="px-2 py-1 text-[10px] font-semibold text-primary border-b">
+                                      🎤 {t("fg.my_clone_voices") || "내 클론 음성"}
+                                    </div>
+                                    {myVoiceClones.map((clone: any) => (
+                                      <SelectItem key={`clone-${clone.id}`} value={`clone-${clone.id}`}>
+                                        🎤 {clone.name}
+                                      </SelectItem>
+                                    ))}
+                                    <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground border-b border-t">
+                                      🌐 {t("fg.preset_voices") || "프리셋 음성"}
+                                    </div>
+                                  </>
+                                )}
+                                {myVoiceClones.length === 0 && (
+                                  <div className="px-3 py-2 border-b bg-muted/30">
+                                    <p className="text-[10px] text-muted-foreground mb-1">{t("fg.no_clone_voice") || "클론 음성이 없습니다."}</p>
+                                    <a href="/ai-studio/voice-clone" className="text-[10px] text-primary hover:underline font-medium">
+                                      + {t("fg.create_clone_voice") || "음성 클론 만들기"}
+                                    </a>
+                                  </div>
+                                )}
+                                {voices.map((v: any) => (
+                                  <SelectItem key={v.id} value={v.id}>
+                                    {v.gender === "female" ? "♀" : "♂"} {v.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="flex gap-2">
+                              <Button size="sm" className="h-7 text-xs flex-1" disabled={!newVoiceId || updateAvatarMut.isPending}
+                                onClick={() => handleVoiceChange(avatar.id)}>
+                                {updateAvatarMut.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                                {t("fg.save") || "저장"}
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 text-xs"
+                                onClick={() => { setEditingAvatarId(null); setNewVoiceId(""); }}>
+                                {t("fg.cancel") || "취소"}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {getVoiceName(avatar.ttsVoiceId, avatar.voiceCloneId)}
+                              </span>
+                              <VoicePreviewButton voiceId={avatar.ttsVoiceId || "Kore"} size="sm" variant="ghost" />
+                            </div>
+                            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1"
+                              onClick={() => { setEditingAvatarId(avatar.id); setNewVoiceId(avatar.voiceCloneId ? `clone-${avatar.voiceCloneId}` : (avatar.ttsVoiceId || "")); }}>
+                              <Pencil className="w-3 h-3" /> {t("fg.change_voice") || "변경"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No avatars using this face */}
+              {user && avatarsUsingFace.length === 0 && !avatarsByFaceQuery.isLoading && (
+                <div className="border-t pt-4">
+                  <p className="text-xs text-muted-foreground text-center">
+                    {t("fg.no_avatars_using_face") || "이 얼굴을 사용 중인 아바타가 없습니다."}
+                  </p>
+                </div>
+              )}
+
               <Button
                 className="w-full"
                 onClick={() => {

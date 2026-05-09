@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `lectureProjects` ADD `formatSelection` json;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZhmXq2fuwbq2e6E.3b045a7fef56 --database JNDtxB2WrDuBzbhLtHkGn8 --execute ALTER TABLE `lectureProjects` ADD `formatSelection` json;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1933
+}
