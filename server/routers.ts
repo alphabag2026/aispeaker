@@ -4447,14 +4447,21 @@ Respond ONLY in the following JSON format:
           }
         }
 
-        // Auto-apply favorite avatar's default voice to project avatars
+        // Auto-apply favorite avatar's default voice to project avatars (role-based matching)
         try {
           const favoriteAvatars = await db.getFavoriteUserAvatarsWithVoice(ctx.user.id);
           if (favoriteAvatars.length > 0) {
             const projectAvatarsList = await db.listProjectAvatars(id);
-            // Match by role: find favorite avatar with matching role and apply its voice
             for (const pAvatar of projectAvatarsList) {
-              const matchingFav = favoriteAvatars.find(f => f.defaultTtsVoiceId || f.defaultVoiceCloneId);
+              // Priority 1: Match by same role (instructor→instructor, host→host, etc.)
+              let matchingFav = favoriteAvatars.find(f => 
+                (f.defaultRole === pAvatar.role || (!f.defaultRole && pAvatar.role === 'instructor')) &&
+                (f.defaultTtsVoiceId || f.defaultVoiceCloneId)
+              );
+              // Priority 2: Fall back to any favorite with voice settings
+              if (!matchingFav) {
+                matchingFav = favoriteAvatars.find(f => f.defaultTtsVoiceId || f.defaultVoiceCloneId);
+              }
               if (matchingFav) {
                 const updateData: any = {};
                 if (matchingFav.defaultTtsVoiceId) updateData.ttsVoiceId = matchingFav.defaultTtsVoiceId;
@@ -4498,12 +4505,116 @@ Respond ONLY in the following JSON format:
           styleId: z.number().nullable(),
           insertIds: z.array(z.number()),
         }).optional(),
+        migrateScripts: z.boolean().optional(), // auto-rearrange scripts to new format
       }))
       .mutation(async ({ ctx, input }) => {
         const project = await db.getLectureProject(input.id);
         if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
-        const { id, ...data } = input;
+        const { id, migrateScripts, ...data } = input;
         await db.updateLectureProject(id, data as any);
+
+        // Auto-rearrange scripts when format changes
+        if (migrateScripts && input.formatSelection) {
+          try {
+            const existingScripts = await db.listSlideScripts(id);
+            if (existingScripts.length > 0) {
+              const { styleId, insertIds } = input.formatSelection;
+              // Build new section structure based on format
+              const newSections: string[] = [];
+              // Check for intro inserts
+              for (const insertId of insertIds) {
+                const insertTpl = await db.getLectureFormatTemplate(insertId);
+                if (insertTpl?.insertElements) {
+                  try {
+                    const elems = typeof insertTpl.insertElements === 'string' ? JSON.parse(insertTpl.insertElements) : insertTpl.insertElements;
+                    if (elems.type === 'intro_outro' || elems.position === 'start_end') {
+                      newSections.push(`[${insertTpl.name} - Opening]`);
+                    }
+                  } catch (e) {}
+                }
+              }
+              // Main body sections from style
+              if (styleId) {
+                const styleTpl = await db.getLectureFormatTemplate(styleId);
+                const styleName = styleTpl?.name || 'Lecture';
+                newSections.push(`[Intro] ${styleName}`, `[Body 1] ${styleName}`, `[Body 2] ${styleName}`, `[Body 3] ${styleName}`);
+              } else {
+                newSections.push('[Intro]', '[Body 1]', '[Body 2]');
+              }
+              // Middle inserts
+              for (const insertId of insertIds) {
+                const insertTpl = await db.getLectureFormatTemplate(insertId);
+                if (insertTpl?.insertElements) {
+                  try {
+                    const elems = typeof insertTpl.insertElements === 'string' ? JSON.parse(insertTpl.insertElements) : insertTpl.insertElements;
+                    if (elems.type !== 'intro_outro' && elems.position !== 'start_end') {
+                      newSections.push(`[${insertTpl.name}]`);
+                    }
+                  } catch (e) {}
+                }
+              }
+              newSections.push('[Closing]');
+              // Outro inserts
+              for (const insertId of insertIds) {
+                const insertTpl = await db.getLectureFormatTemplate(insertId);
+                if (insertTpl?.insertElements) {
+                  try {
+                    const elems = typeof insertTpl.insertElements === 'string' ? JSON.parse(insertTpl.insertElements) : insertTpl.insertElements;
+                    if (elems.type === 'intro_outro' || elems.position === 'start_end') {
+                      newSections.push(`[${insertTpl.name} - Closing]`);
+                    }
+                  } catch (e) {}
+                }
+              }
+              // Redistribute existing scripts into new sections
+              // Strategy: map existing scripts to closest matching section, or redistribute evenly
+              const newScriptCount = newSections.length;
+              const existingTexts = existingScripts.map(s => s.scriptText);
+              // Try to match by section markers [Intro], [Body], [Closing]
+              const redistributed: { text: string; sortOrder: number }[] = [];
+              const usedExisting = new Set<number>();
+              for (let i = 0; i < newScriptCount; i++) {
+                const sectionLabel = newSections[i].toLowerCase();
+                // Find matching existing script by label
+                let matched = -1;
+                for (let j = 0; j < existingTexts.length; j++) {
+                  if (usedExisting.has(j)) continue;
+                  const existingLower = existingTexts[j].toLowerCase();
+                  if (sectionLabel.includes('intro') && existingLower.includes('intro')) { matched = j; break; }
+                  if (sectionLabel.includes('body 1') && (existingLower.includes('body 1') || existingLower.includes('section 1'))) { matched = j; break; }
+                  if (sectionLabel.includes('body 2') && (existingLower.includes('body 2') || existingLower.includes('section 2'))) { matched = j; break; }
+                  if (sectionLabel.includes('body 3') && (existingLower.includes('body 3') || existingLower.includes('section 3'))) { matched = j; break; }
+                  if (sectionLabel.includes('closing') && existingLower.includes('clos')) { matched = j; break; }
+                }
+                if (matched >= 0) {
+                  usedExisting.add(matched);
+                  redistributed.push({ text: existingTexts[matched], sortOrder: i });
+                } else {
+                  // Use next unmatched existing script or create placeholder
+                  const nextUnused = existingTexts.findIndex((_, idx) => !usedExisting.has(idx));
+                  if (nextUnused >= 0) {
+                    usedExisting.add(nextUnused);
+                    redistributed.push({ text: existingTexts[nextUnused], sortOrder: i });
+                  } else {
+                    redistributed.push({ text: `${newSections[i]} - Write your content here`, sortOrder: i });
+                  }
+                }
+              }
+              // Append any remaining unmatched scripts at the end
+              for (let j = 0; j < existingTexts.length; j++) {
+                if (!usedExisting.has(j)) {
+                  redistributed.push({ text: existingTexts[j], sortOrder: redistributed.length });
+                }
+              }
+              // Delete old scripts and insert new ones
+              await db.deleteSlideScripts(id);
+              for (const section of redistributed) {
+                await db.setSlideScript({ projectId: id, slideId: 0, scriptText: section.text, sortOrder: section.sortOrder });
+              }
+            }
+          } catch (e) { console.error('Failed to migrate scripts:', e); }
+        }
+
         return { success: true };
       }),
 
@@ -9583,6 +9694,23 @@ Respond in JSON format:
             updatedCount++;
           }
         }
+        // Log the application
+        try {
+          const appliedAvatars = input.avatarId 
+            ? avatars.filter(a => a.id === input.avatarId)
+            : avatars;
+          const avatarNames = appliedAvatars.map(a => a.name || 'Avatar').join(', ');
+          await db.addVoiceCloneApplyLog({
+            userId: ctx.user.id,
+            voiceCloneId: input.cloneId,
+            cloneName: clone.name,
+            projectId,
+            projectTitle: project.title,
+            avatarCount: updatedCount,
+            avatarNames,
+            applyMode: input.avatarId ? 'selected' : 'all',
+          });
+        } catch (e) { console.error('Failed to log voice clone apply:', e); }
         return { success: true, updatedCount, projectId, projectTitle: project.title };
       }),
     /** Get recent projects with avatars for voice clone apply UI */
@@ -9607,6 +9735,10 @@ Respond in JSON format:
         });
       }
       return result;
+    }),
+    /** Get voice clone apply history logs */
+    applyLogs: protectedProcedure.query(async ({ ctx }) => {
+      return db.listVoiceCloneApplyLogs(ctx.user.id);
     }),
     /** Get available voice presets (5 curated default voices) */
     presets: publicProcedure.query(() => {
@@ -9858,18 +9990,20 @@ Respond in JSON format:
         isDefault: z.boolean().optional(),
         defaultTtsVoiceId: z.string().nullable().optional(),
         defaultVoiceCloneId: z.number().nullable().optional(),
+        defaultRole: z.enum(["instructor", "host", "guest", "narrator"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
         await db.updateUserAvatar(id, ctx.user.id, data);
         return { success: true };
       }),
-    /** Update default voice for a user avatar */
+    /** Update default voice and role for a user avatar */
     updateDefaultVoice: protectedProcedure
       .input(z.object({
         id: z.number(),
         defaultTtsVoiceId: z.string().nullable(),
         defaultVoiceCloneId: z.number().nullable(),
+        defaultRole: z.enum(["instructor", "host", "guest", "narrator"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio, SlidersHorizontal, RotateCcw, TestTube, Save, BookmarkPlus, Headphones, Plus, Heart, Copy, Globe, Search, Zap, BarChart3, Layers } from "lucide-react";
+import { Camera, Upload, Users, Volume2, Loader2, Check, Mic, User, Sparkles, Wand2, RefreshCw, MicVocal, Play, Square, Trash2, AudioLines, Brain, CheckCircle2, FileAudio, SlidersHorizontal, RotateCcw, TestTube, Save, BookmarkPlus, Headphones, Plus, Heart, Copy, Globe, Search, Zap, BarChart3, Layers, Clock } from "lucide-react";
 import VoicePreviewButton from "@/components/VoicePreviewButton";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -188,6 +188,7 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
   const voiceClones = trpc.voiceClone.list.useQuery(undefined, { enabled: open });
   const voicePresets = trpc.voiceClone.presets.useQuery(undefined, { enabled: open });
   const recentProjectsQuery = trpc.voiceClone.recentProjectsForApply.useQuery(undefined, { enabled: open && showApplyToProjectDialog });
+  const applyLogsQuery = trpc.voiceClone.applyLogs.useQuery(undefined, { enabled: open && showApplyToProjectDialog });
   const applyToProject = trpc.voiceClone.applyToRecentProject.useMutation({
     onSuccess: (data) => {
       toast.success(t("avatarSettingsDialog.voiceAppliedToProject") || `${data.updatedCount}개 아바타에 음성이 적용되었습니다 (${data.projectTitle})`);
@@ -1769,6 +1770,30 @@ export default function AvatarSettingsDialog({ open, onOpenChange, avatar, faces
             <p className="text-sm text-center text-muted-foreground py-4">
               {t("avatarSettingsDialog.noProjectsToApply") || "적용할 프로젝트가 없습니다."}
             </p>
+          )}
+          {/* Apply history logs */}
+          {applyLogsQuery.data && applyLogsQuery.data.length > 0 && (
+            <div className="border-t pt-3 mt-2">
+              <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {t("avatarSettingsDialog.applyHistory") || "적용 이력"}
+              </p>
+              <div className="space-y-1.5 max-h-[150px] overflow-y-auto">
+                {applyLogsQuery.data.slice(0, 5).map((log: any) => (
+                  <div key={log.id} className="flex items-center justify-between text-[10px] p-1.5 rounded bg-muted/30">
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium">{log.cloneName}</span>
+                      <span className="text-muted-foreground"> → </span>
+                      <span>{log.projectTitle}</span>
+                      <span className="text-muted-foreground ml-1">({log.avatarCount}{t("avatarSettingsDialog.avatarsLabel") || "아바타"})</span>
+                    </div>
+                    <span className="text-muted-foreground shrink-0 ml-2">
+                      {new Date(log.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
           <Button variant="outline" className="w-full" onClick={() => setShowApplyToProjectDialog(false)}>
             {t("avatarSettingsDialog.skipApply") || "나중에 적용"}

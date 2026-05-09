@@ -201,6 +201,23 @@ export default function FaceGallery() {
                       </div>
                     </div>
                     <CardContent className="p-3 space-y-2">
+                      {/* Default role selector */}
+                      <div className="text-xs">
+                        <span className="text-muted-foreground">{t("fg.default_role")}:</span>
+                        <Select value={av.defaultRole || "instructor"} onValueChange={(val) => {
+                          updateDefaultVoice.mutate({ id: av.id, defaultTtsVoiceId: av.defaultTtsVoiceId || null, defaultVoiceCloneId: av.defaultVoiceCloneId || null, defaultRole: val as any });
+                        }}>
+                          <SelectTrigger className="h-7 text-xs mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="instructor">{t("fg.role_instructor")}</SelectItem>
+                            <SelectItem value="host">{t("fg.role_host")}</SelectItem>
+                            <SelectItem value="guest">{t("fg.role_guest")}</SelectItem>
+                            <SelectItem value="narrator">{t("fg.role_narrator")}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       {/* Default voice display/edit */}
                       <div className="text-xs">
                         <span className="text-muted-foreground">{t("fg.default_voice")}:</span>
