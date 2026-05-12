@@ -29,6 +29,8 @@ registerTranslations("ko", {
   "lectureFormatSelector.style": "스타일",
   "lectureFormatSelector.insert": "삽입",
   "lectureFormatSelector.applyFormat": "이 포맷으로 강의 구성하기",
+  "lectureFormatSelector.loadError": "포맷 데이터를 불러올 수 없습니다.",
+  "lectureFormatSelector.retry": "다시 시도",
 });
 
 registerTranslations("en", {
@@ -60,6 +62,8 @@ registerTranslations("en", {
   "lectureFormatSelector.style": "Style",
   "lectureFormatSelector.insert": "Insert",
   "lectureFormatSelector.applyFormat": "Configure Lecture with This Format",
+  "lectureFormatSelector.loadError": "Unable to load format data.",
+  "lectureFormatSelector.retry": "Retry",
 });
 
 registerTranslations("zh", {
@@ -91,6 +95,8 @@ registerTranslations("zh", {
   "lectureFormatSelector.style": "风格",
   "lectureFormatSelector.insert": "插入",
   "lectureFormatSelector.applyFormat": "使用此格式配置讲座",
+  "lectureFormatSelector.loadError": "无法加载格式数据。",
+  "lectureFormatSelector.retry": "重试",
 });
 
 registerTranslations("ja", {
@@ -122,6 +128,8 @@ registerTranslations("ja", {
   "lectureFormatSelector.style": "スタイル",
   "lectureFormatSelector.insert": "挿入",
   "lectureFormatSelector.applyFormat": "このフォーマットで講義を構成する",
+  "lectureFormatSelector.loadError": "フォーマットデータを読み込めません。",
+  "lectureFormatSelector.retry": "再試行",
 });
 
 registerTranslations("vi", {
@@ -153,6 +161,8 @@ registerTranslations("vi", {
   "lectureFormatSelector.style": "Phong cách",
   "lectureFormatSelector.insert": "Chèn",
   "lectureFormatSelector.applyFormat": "Định cấu hình bài giảng với định dạng này",
+  "lectureFormatSelector.loadError": "Không thể tải dữ liệu định dạng.",
+  "lectureFormatSelector.retry": "Thử lại",
 });
 
 registerTranslations("th", {
@@ -184,6 +194,8 @@ registerTranslations("th", {
   "lectureFormatSelector.style": "สไตล์",
   "lectureFormatSelector.insert": "แทรก",
   "lectureFormatSelector.applyFormat": "กำหนดค่าการบรรยายด้วยรูปแบบนี้",
+  "lectureFormatSelector.loadError": "ไม่สามารถโหลดข้อมูลรูปแบบได้",
+  "lectureFormatSelector.retry": "ลองอีกครั้ง",
 });
 
 registerTranslations("id", {
@@ -215,6 +227,8 @@ registerTranslations("id", {
   "lectureFormatSelector.style": "Gaya",
   "lectureFormatSelector.insert": "Sisipkan",
   "lectureFormatSelector.applyFormat": "Konfigurasikan Kuliah dengan Format Ini",
+  "lectureFormatSelector.loadError": "Tidak dapat memuat data format.",
+  "lectureFormatSelector.retry": "Coba lagi",
 });
 
 registerTranslations("ms", {
@@ -246,6 +260,8 @@ registerTranslations("ms", {
   "lectureFormatSelector.style": "Gaya",
   "lectureFormatSelector.insert": "Sisipkan",
   "lectureFormatSelector.applyFormat": "Konfigurasikan Kuliah dengan Format Ini",
+  "lectureFormatSelector.loadError": "Tidak dapat memuatkan data format.",
+  "lectureFormatSelector.retry": "Cuba lagi",
 });
 
 registerTranslations("es", {
@@ -277,6 +293,8 @@ registerTranslations("es", {
   "lectureFormatSelector.style": "Estilo",
   "lectureFormatSelector.insert": "Insertar",
   "lectureFormatSelector.applyFormat": "Configurar la conferencia con este formato",
+  "lectureFormatSelector.loadError": "No se pueden cargar los datos del formato.",
+  "lectureFormatSelector.retry": "Reintentar",
 });
 
 registerTranslations("fr", {
@@ -308,6 +326,8 @@ registerTranslations("fr", {
   "lectureFormatSelector.style": "Style",
   "lectureFormatSelector.insert": "Insérer",
   "lectureFormatSelector.applyFormat": "Configurer la conférence avec ce format",
+  "lectureFormatSelector.loadError": "Impossible de charger les données du format.",
+  "lectureFormatSelector.retry": "Réessayer",
 });
 
 registerTranslations("de", {
@@ -339,6 +359,8 @@ registerTranslations("de", {
   "lectureFormatSelector.style": "Stil",
   "lectureFormatSelector.insert": "Einfügen",
   "lectureFormatSelector.applyFormat": "Vorlesung mit diesem Format konfigurieren",
+  "lectureFormatSelector.loadError": "Formatdaten können nicht geladen werden.",
+  "lectureFormatSelector.retry": "Erneut versuchen",
 });
 
 registerTranslations("pt", {
@@ -370,6 +392,8 @@ registerTranslations("pt", {
   "lectureFormatSelector.style": "Estilo",
   "lectureFormatSelector.insert": "Inserir",
   "lectureFormatSelector.applyFormat": "Configurar palestra com este formato",
+  "lectureFormatSelector.loadError": "Não foi possível carregar os dados do formato.",
+  "lectureFormatSelector.retry": "Tentar novamente",
 });
 
 registerTranslations("ru", {
@@ -401,6 +425,8 @@ registerTranslations("ru", {
   "lectureFormatSelector.style": "Стиль",
   "lectureFormatSelector.insert": "Вставить",
   "lectureFormatSelector.applyFormat": "Настроить лекцию с этим форматом",
+  "lectureFormatSelector.loadError": "Не удалось загрузить данные формата.",
+  "lectureFormatSelector.retry": "Повторить",
 });
 
 registerTranslations("ar", {
@@ -432,6 +458,8 @@ registerTranslations("ar", {
   "lectureFormatSelector.style": "أسلوب",
   "lectureFormatSelector.insert": "إدراج",
   "lectureFormatSelector.applyFormat": "تكوين المحاضرة بهذا التنسيق",
+  "lectureFormatSelector.loadError": "تعذر تحميل بيانات التنسيق.",
+  "lectureFormatSelector.retry": "إعادة المحاولة",
 });
 
 registerTranslations("hi", {
@@ -463,6 +491,8 @@ registerTranslations("hi", {
   "lectureFormatSelector.style": "शैली",
   "lectureFormatSelector.insert": "सम्मिलित करें",
   "lectureFormatSelector.applyFormat": "इस प्रारूप के साथ व्याख्यान कॉन्फ़िगर करें",
+  "lectureFormatSelector.loadError": "प्रारूप डेटा लोड नहीं हो सका।",
+  "lectureFormatSelector.retry": "पुनः प्रयास करें",
 });
 
 registerTranslations("it", {
@@ -494,6 +524,8 @@ registerTranslations("it", {
   "lectureFormatSelector.style": "Stile",
   "lectureFormatSelector.insert": "Inserisci",
   "lectureFormatSelector.applyFormat": "Configura la lezione con questo formato",
+  "lectureFormatSelector.loadError": "Impossibile caricare i dati del formato.",
+  "lectureFormatSelector.retry": "Riprova",
 });
 
 registerTranslations("nl", {
@@ -525,6 +557,8 @@ registerTranslations("nl", {
   "lectureFormatSelector.style": "Stijl",
   "lectureFormatSelector.insert": "Invoegen",
   "lectureFormatSelector.applyFormat": "Les configureren met deze indeling",
+  "lectureFormatSelector.loadError": "Kan formaatgegevens niet laden.",
+  "lectureFormatSelector.retry": "Opnieuw proberen",
 });
 
 registerTranslations("pl", {
@@ -556,6 +590,8 @@ registerTranslations("pl", {
   "lectureFormatSelector.style": "Styl",
   "lectureFormatSelector.insert": "Wstaw",
   "lectureFormatSelector.applyFormat": "Skonfiguruj wykład przy użyciu tego formatu",
+  "lectureFormatSelector.loadError": "Nie można załadować danych formatu.",
+  "lectureFormatSelector.retry": "Ponów próbę",
 });
 
 registerTranslations("sv", {
@@ -587,6 +623,8 @@ registerTranslations("sv", {
   "lectureFormatSelector.style": "Stil",
   "lectureFormatSelector.insert": "Infoga",
   "lectureFormatSelector.applyFormat": "Konfigurera föreläsning med det här formatet",
+  "lectureFormatSelector.loadError": "Kan inte ladda formatdata.",
+  "lectureFormatSelector.retry": "Försök igen",
 });
 
 registerTranslations("tr", {
@@ -618,6 +656,8 @@ registerTranslations("tr", {
   "lectureFormatSelector.style": "Stil",
   "lectureFormatSelector.insert": "Ekle",
   "lectureFormatSelector.applyFormat": "Dersi Bu Formatla Yapılandır",
+  "lectureFormatSelector.loadError": "Format verileri yüklenemiyor.",
+  "lectureFormatSelector.retry": "Tekrar dene",
 });
 
 
