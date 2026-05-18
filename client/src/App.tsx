@@ -104,7 +104,9 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/login" component={Login} />
+        <Route path="/signin" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/signup" component={Register} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/features" component={Features} />

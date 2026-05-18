@@ -13,3 +13,22 @@ export const ENV = {
   klingSecretKey: process.env.KLING_SECRET_KEY ?? "",
   didApiKey: process.env.DID_API_KEY ?? "",
 };
+
+export function validateServerEnv() {
+  const required = [
+    ["DATABASE_URL", ENV.databaseUrl],
+    ["JWT_SECRET", ENV.cookieSecret],
+  ] as const;
+
+  const missing = required
+    .filter(([, value]) => !value || value.trim().length === 0)
+    .map(([name]) => name);
+
+  if (missing.length > 0) {
+    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+  }
+
+  if (ENV.cookieSecret.length < 32) {
+    throw new Error("JWT_SECRET must be at least 32 characters long");
+  }
+}
