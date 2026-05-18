@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { setupWebSocket } from "../websocket";
 import { loadKlingKeysFromDb } from "./systemRouter";
+import { validateServerEnv } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -30,6 +31,8 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  validateServerEnv();
+
   const app = express();
   const server = createServer(app);
 
@@ -128,8 +131,8 @@ async function startServer() {
         try {
           const { notifyOwner } = await import("./notification");
           await notifyOwner({
-            title: `\u274c \uacb0\uc81c \uc2e4\ud328 \uc54c\ub9bc`,
-            content: `Payment Intent: ${paymentIntent.id}\n\uc2e4\ud328 \uc0ac\uc720: ${lastError?.message || "\uc54c \uc218 \uc5c6\uc74c"}\n\uc5d0\ub7ec \ucf54\ub4dc: ${lastError?.code || "N/A"}\n\uae08\uc561: $${(paymentIntent.amount / 100).toFixed(2)}\n\uc2dc\uac04: ${new Date().toISOString()}`,
+            title: `❌ 결제 실패 알림`,
+            content: `Payment Intent: ${paymentIntent.id}\n실패 사유: ${lastError?.message || "알 수 없음"}\n에러 코드: ${lastError?.code || "N/A"}\n금액: $${(paymentIntent.amount / 100).toFixed(2)}\n시간: ${new Date().toISOString()}`,
           });
         } catch (e) { console.warn("[Webhook] Notification failed:", e); }
       }
@@ -177,8 +180,8 @@ async function startServer() {
           try {
             const { notifyOwner } = await import("./notification");
             await notifyOwner({
-              title: `\ud83d\udd04 \uad6c\ub3c5 \uac31\uc2e0 \uc644\ub8cc`,
-              content: `\uad6c\ub3c5 ID: ${invoice.subscription}\n\uace0\uac1d: ${invoice.customer_email || "N/A"}\n\uae08\uc561: $${(invoice.amount_paid / 100).toFixed(2)}\n\uc2dc\uac04: ${new Date().toISOString()}`,
+              title: `🔄 구독 갱신 완료`,
+              content: `구독 ID: ${invoice.subscription}\n고객: ${invoice.customer_email || "N/A"}\n금액: $${(invoice.amount_paid / 100).toFixed(2)}\n시간: ${new Date().toISOString()}`,
             });
           } catch (e) { console.warn("[Webhook] Notification failed:", e); }
         }
@@ -191,8 +194,8 @@ async function startServer() {
         try {
           const { notifyOwner } = await import("./notification");
           await notifyOwner({
-            title: `\u26a0\ufe0f \uad6c\ub3c5 \ud574\uc9c0`,
-            content: `\uad6c\ub3c5 ID: ${subscription.id}\n\uace0\uac1d ID: ${subscription.customer}\n\uc0c1\ud0dc: ${subscription.status}\n\uc2dc\uac04: ${new Date().toISOString()}`,
+            title: `⚠️ 구독 해지`,
+            content: `구독 ID: ${subscription.id}\n고객 ID: ${subscription.customer}\n상태: ${subscription.status}\n시간: ${new Date().toISOString()}`,
           });
         } catch (e) { console.warn("[Webhook] Notification failed:", e); }
       }
