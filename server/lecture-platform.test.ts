@@ -104,24 +104,24 @@ describe("Auth", () => {
 });
 
 describe("User Profile", () => {
-  it("user.switchRole changes platform role", async () => {
+  it("user.setRole changes platform role", async () => {
     const { ctx } = createUserContext();
     const caller = appRouter.createCaller(ctx);
-    // This will call db.updateUserPlatformRole which may fail without DB
-    // We test that the procedure is callable and properly typed
+    // This will call db.updateUserPlatformRole which may fail without DB.
+    // We test that the procedure is callable and properly typed.
     try {
-      await caller.user.switchRole({ platformRole: "instructor" });
+      await caller.user.setRole({ platformRole: "instructor" });
     } catch (e: any) {
-      // DB not available in test, but procedure should not throw type errors
+      // DB not available in test, but procedure should not throw type errors.
       expect(e.code).not.toBe("BAD_REQUEST");
     }
   });
 
-  it("user.switchRole rejects invalid role", async () => {
+  it("user.setRole rejects invalid role", async () => {
     const { ctx } = createUserContext();
     const caller = appRouter.createCaller(ctx);
     await expect(
-      caller.user.switchRole({ platformRole: "invalid" as any })
+      caller.user.setRole({ platformRole: "invalid" as any })
     ).rejects.toThrow();
   });
 
@@ -147,7 +147,7 @@ describe("Instructor Access Control", () => {
     try {
       await caller.voiceProfile.list();
     } catch (e: any) {
-      // DB not available, but should not be FORBIDDEN
+      // DB not available, but should not be FORBIDDEN.
       expect(e.message).not.toBe("Instructor permission required.");
     }
   });
@@ -187,10 +187,10 @@ describe("Public Lecture Access", () => {
     const caller = appRouter.createCaller(ctx);
     try {
       const result = await caller.lecture.list();
-      // Should return an array (empty if no DB)
+      // Should return an array (empty if no DB).
       expect(Array.isArray(result)).toBe(true);
     } catch (e: any) {
-      // DB not available, but should not be auth error
+      // DB not available, but should not be auth error.
       expect(e.code).not.toBe("UNAUTHORIZED");
     }
   });
@@ -242,7 +242,7 @@ describe("Q&A", () => {
   it("qa.ask validates inputMethod parameter enum", async () => {
     const { ctx } = createUserContext();
     const caller = appRouter.createCaller(ctx);
-    // Invalid inputMethod should fail validation
+    // Invalid inputMethod should fail validation.
     await expect(
       caller.qa.ask({
         lectureId: 1,
@@ -315,8 +315,8 @@ describe("Material Management", () => {
       caller.material.upload({
         lectureId: 1,
         title: "test.pdf",
-        fileBase64: "dGVzdA==",
-        filename: "test.pdf",
+        fileData: "dGVzdA==",
+        fileName: "test.pdf",
         fileType: "pdf",
       })
     ).rejects.toThrow("Instructor permission required.");
