@@ -32,6 +32,9 @@ const PreviewPlayer = lazy(() => import("./pages/PreviewPlayer"));
 const BroadcastManager = lazy(() => import("./pages/BroadcastManager"));
 const BroadcastStudio = lazy(() => import("./pages/BroadcastStudio"));
 const BroadcastViewer = lazy(() => import("./pages/BroadcastViewer"));
+const BroadcastStudio = lazy(() => import("./pages/BroadcastStudio"));
+const BroadcastViewer = lazy(() => import("./pages/BroadcastViewer"));
+const BroadcastViewer = lazy(() => import("./pages/BroadcastViewer"));
 const BrowserStudio = lazy(() => import("./pages/BrowserStudio"));
 const FaceGallery = lazy(() => import("./pages/FaceGallery"));
 const VoiceGallery = lazy(() => import("./pages/VoiceGallery"));
@@ -104,7 +107,9 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/login" component={Login} />
+        <Route path="/signin" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/signup" component={Register} />
         <Route path="/forgot-password" component={ForgotPassword} />
         <Route path="/reset-password" component={ResetPassword} />
         <Route path="/features" component={Features} />
