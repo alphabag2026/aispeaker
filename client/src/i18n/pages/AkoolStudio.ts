@@ -190,13 +190,13 @@ registerTranslations("ko", {
   "akoolStudio.hardcoded73": "효과 프리셋 갤러리",
   "akoolStudio.hardcoded74": "12종 비디오 효과 프리셋을 미리보기합니다",
   "akoolStudio.hardcoded75": "25+ AI 도구를 하나의 플랫폼에서",
-  "akoolStudio.hardcoded1": "얼굴 교환",
-  "akoolStudio.hardcoded2": "얼굴 교환 시작",
-  "akoolStudio.hardcoded3": "상태 확인",
-  "akoolStudio.hardcoded4": "음성 복제",
-  "akoolStudio.hardcoded5": "음성 샘플을 분석하여 가장 유사한 AI 음성을 자동 매칭합니다.",
-  "akoolStudio.hardcoded6": "짧은 음성 샘플(5초 이상)로도 높은 정확도의 매칭이 가능합니다.",
-  "akoolStudio.hardcoded7": "음성 복제 시작",
+  "akoolStudio.voiceClone.faceSwapTitle": "얼굴 교환",
+  "akoolStudio.voiceClone.faceSwapStart": "얼굴 교환 시작",
+  "akoolStudio.voiceClone.checkStatus": "상태 확인",
+  "akoolStudio.voiceClone.label": "음성 복제",
+  "akoolStudio.voiceClone.matchDesc": "음성 샘플을 분석하여 가장 유사한 AI 음성을 자동 매칭합니다.",
+  "akoolStudio.voiceClone.sampleDesc": "짧은 음성 샘플(5초 이상)로도 높은 정확도의 매칭이 가능합니다.",
+  "akoolStudio.voiceClone.startBtn": "음성 복제 시작",
 });
 
 registerTranslations("en", {
