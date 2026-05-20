@@ -1189,7 +1189,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
           const isCustomizing = customizingAvatar?.id === av.id;
           return (
             <Card key={av.id} className={`relative group cursor-pointer transition-all ${isCustomizing ? "ring-2 ring-primary" : "hover:ring-2 hover:ring-primary/30"}`}
-            onClick={() => { setCustomizingAvatar(av); setEditingAvatar(null); }}>
+            onClick={() => { setCustomizingAvatar(av); setEditingAvatar(null); setTimeout(() => { document.getElementById('avatar-customize-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100); }}>
                 <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
               onClick={(e) => {e.stopPropagation();deleteAvatar.mutate({ id: av.id });}}>
                   <X className="w-5 h-5 text-destructive hover:text-destructive/80" />
@@ -1226,6 +1226,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
 
       {/* Inline Customize Panel */}
       {avatars.length > 0 && (
+        <div id="avatar-customize-panel">
         <AvatarCustomizePanel
           avatar={customizingAvatar}
           faces={faces}
@@ -1233,6 +1234,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
           onUpdated={() => { onRefresh(); setCustomizingAvatar(null); }}
           onClose={() => setCustomizingAvatar(null)}
         />
+        </div>
       )}
 
       {/* User Avatar Edit Dialog */}

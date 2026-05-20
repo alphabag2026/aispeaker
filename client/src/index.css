@@ -189,6 +189,9 @@
     border: 1px solid oklch(0.28 0.03 280 / 0.5);
     color: oklch(0.96 0.008 280);
   }
+  :is(.dark) .glass-card .text-muted-foreground {
+    color: oklch(0.75 0.02 280);
+  }
   :is(.dark) .glass-card:hover {
     border-color: oklch(0.72 0.25 280 / 0.5);
     box-shadow: 0 0 30px oklch(0.72 0.25 280 / 0.15);
@@ -342,6 +345,7 @@
     background: oklch(0.08 0.018 280 / 0.98);
     border: 1px solid oklch(0.2 0.02 280);
     box-shadow: 0 25px 50px oklch(0 0 0 / 0.5);
+    color: oklch(0.92 0.008 280);
   }
 }
 
