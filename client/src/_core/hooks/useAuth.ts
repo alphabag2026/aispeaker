@@ -63,7 +63,12 @@ export function useAuth(options?: UseAuthOptions) {
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;
     if (typeof window === "undefined") return;
-    if (window.location.pathname === "/login" || window.location.pathname === "/register") return;
+    if (
+      window.location.pathname === "/login" ||
+      window.location.pathname === "/signin" ||
+      window.location.pathname === "/register" ||
+      window.location.pathname === "/signup"
+    ) return;
 
     navigate(redirectPath);
   }, [

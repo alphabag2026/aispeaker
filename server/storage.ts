@@ -3,8 +3,8 @@
 // 2. Local filesystem fallback (for self-hosted production)
 
 import { ENV } from './_core/env';
-import { writeFile, mkdir, readFile } from 'fs/promises';
-import { join, dirname } from 'path';
+import { writeFile, mkdir } from 'fs/promises';
+import { join, dirname, resolve } from 'path';
 import { existsSync } from 'fs';
 
 type StorageConfig = { baseUrl: string; apiKey: string };
@@ -66,7 +66,14 @@ function ensureTrailingSlash(value: string): string {
 }
 
 function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
+  const key = relKey.replace(/\\/g, "/").replace(/^\/+/, "");
+  const parts = key.split("/").filter(Boolean);
+
+  if (parts.length === 0 || parts.some(part => part === "." || part === "..")) {
+    throw new Error("Invalid storage key");
+  }
+
+  return parts.join("/");
 }
 
 function toFormData(
@@ -98,7 +105,13 @@ async function localStoragePut(
   _contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
   const key = normalizeKey(relKey);
-  const filePath = join(LOCAL_STORAGE_DIR, key);
+  const storageRoot = resolve(LOCAL_STORAGE_DIR);
+  const filePath = resolve(join(storageRoot, key));
+
+  if (filePath !== storageRoot && !filePath.startsWith(`${storageRoot}/`)) {
+    throw new Error("Invalid storage path");
+  }
+
   const dir = dirname(filePath);
 
   // Ensure directory exists
