@@ -192,7 +192,7 @@ export default function Navbar() {
                           key={item.label}
                           href={item.href}
                           onClick={() => setMegaMenuOpen(false)}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                         >
                           {t(item.label)}
                           {item.badge && <span className={badgeClass(item.badge)}>{item.badge}</span>}
@@ -212,7 +212,7 @@ export default function Navbar() {
                               key={item.label}
                               href={item.href}
                               onClick={() => setMegaMenuOpen(false)}
-                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-foreground/70 hover:text-foreground hover:bg-accent/10 transition-colors group/item"
+                              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-foreground hover:text-primary hover:bg-accent/10 transition-colors group/item"
                             >
                               <item.icon className="h-4 w-4 text-muted-foreground group-hover/item:text-primary transition-colors shrink-0" />
                               <span className="truncate">{t(item.label)}</span>
