@@ -605,7 +605,7 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
                 <Settings2 className="w-4 h-4" />{t("lectureBuilder.changeFormat")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto">
               <DialogHeader><DialogTitle className="flex items-center gap-2"><Settings2 className="w-5 h-5 text-amber-500" />{t("lectureBuilder.changeFormatTitle")}</DialogTitle></DialogHeader>
               {project?.formatSelection && (
                 <div className="mb-4 p-3 rounded-lg bg-muted/50 border border-border">

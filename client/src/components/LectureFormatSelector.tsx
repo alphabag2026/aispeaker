@@ -339,13 +339,13 @@ export function LectureFormatSelector({ onApply, className, initialSelection }: 
           </Badge>
         )}
         <CardHeader className="p-4">
-          <div className="flex items-start gap-4">
-            <div className={`p-2 rounded-lg bg-background/50 ${ICON_COLOR_MAP[template.themeColor] || ICON_COLOR_MAP.blue}`}>
-              <Icon className="w-6 h-6" />
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-lg bg-background/50 shrink-0 ${ICON_COLOR_MAP[template.themeColor] || ICON_COLOR_MAP.blue}`}>
+              <Icon className="w-5 h-5" />
             </div>
-            <div className="flex-1">
-              <CardTitle className="text-base font-semibold leading-tight">{template.name}</CardTitle>
-              <CardDescription className="text-xs mt-1 leading-snug">{template.description}</CardDescription>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-sm font-semibold leading-tight break-keep">{template.name}</CardTitle>
+              <CardDescription className="text-xs mt-1 leading-snug break-keep">{template.description}</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -380,9 +380,9 @@ export function LectureFormatSelector({ onApply, className, initialSelection }: 
   const isAnyFormatSelected = selected.personnel || selected.style || selected.inserts.length > 0;
 
   return (
-    <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 ${className}`}>
+    <div className={`grid grid-cols-1 xl:grid-cols-3 gap-6 ${className}`}>
       {/* Left: Format Library */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="xl:col-span-2 space-y-6">
         <Card className="bg-transparent border-none shadow-none">
           <CardHeader className="p-0">
             <CardTitle className="text-2xl font-bold">{t("lectureFormatSelector.formatLibrary")}</CardTitle>
@@ -394,7 +394,7 @@ export function LectureFormatSelector({ onApply, className, initialSelection }: 
         <div className="space-y-3">
           <h3 className="font-semibold text-lg">{t("lectureFormatSelector.personnelComposition")}</h3>
           <p className="text-sm text-muted-foreground -mt-2">{t("lectureFormatSelector.personnelCompositionDescription")}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {personnelTemplates.map(renderTemplateCard)}
           </div>
         </div>
@@ -405,7 +405,7 @@ export function LectureFormatSelector({ onApply, className, initialSelection }: 
         <div className="space-y-3">
           <h3 className="font-semibold text-lg">{t("lectureFormatSelector.lectureStyle")}</h3>
           <p className="text-sm text-muted-foreground -mt-2">{t("lectureFormatSelector.lectureStyleDescription")}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {styleTemplates.map(renderTemplateCard)}
           </div>
         </div>
@@ -416,18 +416,18 @@ export function LectureFormatSelector({ onApply, className, initialSelection }: 
         <div className="space-y-3">
           <h3 className="font-semibold text-lg">{t("lectureFormatSelector.additionalInsertElements")}</h3>
           <p className="text-sm text-muted-foreground -mt-2">{t("lectureFormatSelector.additionalInsertElementsDescription")}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {insertTemplates.map(renderTemplateCard)}
           </div>
         </div>
       </div>
 
       {/* Right: Preview and Apply */}
-      <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6 self-start">
+      <div className="xl:col-span-1 space-y-6 xl:sticky xl:top-6 self-start">
         <Card>
           <CardHeader>
-            <CardTitle>{t("lectureFormatSelector.layoutPreview")}</CardTitle>
-            <CardDescription>{t("lectureFormatSelector.layoutPreviewDescription")}</CardDescription>
+            <CardTitle className="break-keep">{t("lectureFormatSelector.layoutPreview")}</CardTitle>
+            <CardDescription className="break-keep">{t("lectureFormatSelector.layoutPreviewDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <LayoutPreview
@@ -442,8 +442,8 @@ export function LectureFormatSelector({ onApply, className, initialSelection }: 
           <>
             <Card className="bg-gradient-to-br from-card to-muted/30">
               <CardHeader>
-                <CardTitle>{t("lectureFormatSelector.formatSelectionComplete")}</CardTitle>
-                <CardDescription>{t("lectureFormatSelector.formatSelectionCompleteDescription")}</CardDescription>
+                <CardTitle className="break-keep">{t("lectureFormatSelector.formatSelectionComplete")}</CardTitle>
+                <CardDescription className="break-keep">{t("lectureFormatSelector.formatSelectionCompleteDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3 p-4 rounded-lg border bg-background/50">
