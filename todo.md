@@ -2586,3 +2586,12 @@
 - [x] 즐겨찾기 아바타별 역할(강사/호스트/게스트) 매칭으로 프로젝트 아바타에 역할별 음성 자동 배정
 - [x] 음성 클론 적용 이력 관리 - 어떤 프로젝트에 어떤 클론이 적용되었는지 추적하는 로그 기능
 - [x] 모든 새 UI 텍스트 20개 언어 번역
+
+## 보안 패치 및 버그 수정 (v6.5.8)
+- [x] generateScriptFromPPT 버그 수정 - 상대 URL을 절대 URL로 변환 (Gemini API 호환)
+- [x] 쿠키 보안 강화 - HTTPS 프록시 뒤에서 secure/sameSite 동적 설정
+- [x] 스토리지 키 정규화 강화 - path traversal 방지 (normalizeKey + resolve 검증)
+- [x] SSRF 방지 - voiceTranscription에서 private IP/localhost 차단
+- [x] 인증 라우트 alias 추가 - /signin, /signup 경로 지원
+- [x] useAuth에 /signin, /signup 경로 리다이렉트 제외 추가
+- [x] aispeaker.cc 프로덕션 배포 완료

@@ -64,6 +64,45 @@ export type TranscriptionError = {
   details?: string;
 };
 
+const PRIVATE_HOST_PATTERNS = [
+  /^localhost$/i,
+  /^127\./,
+  /^10\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^172\.(1[6-9]|2\d|3[0-1])\./,
+  /^0\./,
+  /^::1$/,
+  /^fc00:/i,
+  /^fd[0-9a-f]{2}:/i,
+  /^fe80:/i,
+];
+
+function validateAudioUrl(audioUrl: string): { ok: true; url: string } | { ok: false; reason: string } {
+  let parsed: URL;
+
+  try {
+    parsed = new URL(audioUrl);
+  } catch {
+    return { ok: false, reason: "Audio URL is not a valid URL" };
+  }
+
+  if (parsed.username || parsed.password) {
+    return { ok: false, reason: "Audio URL must not contain credentials" };
+  }
+
+  if (!["https:", "http:"].includes(parsed.protocol)) {
+    return { ok: false, reason: "Audio URL must use http or https" };
+  }
+
+  const hostname = parsed.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  if (!hostname || PRIVATE_HOST_PATTERNS.some(pattern => pattern.test(hostname)) || hostname.endsWith(".local")) {
+    return { ok: false, reason: "Audio URL host is not allowed" };
+  }
+
+  return { ok: true, url: parsed.toString() };
+}
+
 /**
  * Transcribe audio to text using the internal Speech-to-Text service
  * 
@@ -90,11 +129,21 @@ export async function transcribeAudio(
       };
     }
 
+    // Step 1.5: Validate audio URL (SSRF mitigation)
+    const validatedAudioUrl = validateAudioUrl(options.audioUrl);
+    if (!validatedAudioUrl.ok) {
+      return {
+        error: "Invalid audio URL",
+        code: "INVALID_FORMAT",
+        details: validatedAudioUrl.reason,
+      };
+    }
+
     // Step 2: Download audio from URL
     let audioBuffer: Buffer;
     let mimeType: string;
     try {
-      const response = await fetch(options.audioUrl);
+      const response = await fetch(validatedAudioUrl.url);
       if (!response.ok) {
         return {
           error: "Failed to download audio file",

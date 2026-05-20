@@ -1190,10 +1190,16 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
           return (
             <Card key={av.id} className={`relative group cursor-pointer transition-all ${isCustomizing ? "ring-2 ring-primary" : "hover:ring-2 hover:ring-primary/30"}`}
             onClick={() => { setCustomizingAvatar(av); setEditingAvatar(null); setTimeout(() => { document.getElementById('avatar-customize-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100); }}>
-                <button className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-              onClick={(e) => {e.stopPropagation();deleteAvatar.mutate({ id: av.id });}}>
-                  <X className="w-5 h-5 text-destructive hover:text-destructive/80" />
-                </button>
+                <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <button className="p-1 rounded-md hover:bg-primary/10 transition-colors" title="설정"
+                    onClick={(e) => { e.stopPropagation(); setCustomizingAvatar(av); setEditingAvatar(null); setTimeout(() => { document.getElementById('avatar-customize-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100); }}>
+                    <Settings2 className="w-4 h-4 text-primary" />
+                  </button>
+                  <button className="p-1 rounded-md hover:bg-destructive/10 transition-colors" title="삭제"
+                    onClick={(e) => {e.stopPropagation();deleteAvatar.mutate({ id: av.id });}}>
+                    <X className="w-5 h-5 text-destructive hover:text-destructive/80" />
+                  </button>
+                </div>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
@@ -1214,7 +1220,10 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
                         <Volume2 className="w-3 h-3" /> {av.ttsVoiceId}
                         <VoicePreviewButton voiceId={av.ttsVoiceId || ""} size="sm" variant="ghost" className="ml-1 h-6 w-6 p-0" />
                       </p>
-                      <p className="text-[11px] text-primary/70 mt-1">{t("lectureBuilder.jsxText66")}</p>
+                      <p className="text-[11px] text-primary/70 mt-1 flex items-center gap-1">
+                        <Settings2 className="w-3 h-3" />
+                        {isCustomizing ? t("lectureBuilder.jsxText66") : "클릭하여 얼굴/목소리 설정"}
+                      </p>
                     </div>
                   </div>
                 </CardContent>

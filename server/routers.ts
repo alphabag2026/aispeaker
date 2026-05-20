@@ -6345,9 +6345,17 @@ Rules:
         const slideContents: Array<{ type: string; image_url?: { url: string }; text?: string }> = [];
         slideContents.push({ type: "text", text: `Analyze the following ${targetSlides.length} presentation slides and generate a ${styleDesc} lecture script for each slide. Write in ${langName}.${input.additionalContext ? `\n\nAdditional context: ${input.additionalContext}` : ''}\n\nFor each slide, write 3-6 natural sentences (30-60 seconds of speaking). Include smooth transitions between slides. Start with an engaging introduction and end with a clear conclusion.\n\nReturn JSON: {"scripts": [{"slideId": number, "text": "script text", "estimatedDurationSec": number}]}` });
 
+        // Resolve relative storage URLs to absolute public URLs for Gemini API
+        const origin = ctx.req.headers.origin || `${ctx.req.protocol}://${ctx.req.get('host')}`;
+        const resolveImageUrl = (url: string) => {
+          if (url.startsWith('http://') || url.startsWith('https://')) return url;
+          // Relative path like /storage/... needs full origin prefix
+          return `${origin}${url.startsWith('/') ? '' : '/'}${url}`;
+        };
+
         for (const slide of targetSlides) {
           slideContents.push({ type: "text", text: `--- Slide ${slide.slideOrder + 1} (ID: ${slide.id}) ---` });
-          slideContents.push({ type: "image_url", image_url: { url: slide.imageUrl } });
+          slideContents.push({ type: "image_url", image_url: { url: resolveImageUrl(slide.imageUrl) } });
         }
 
         const { invokeLLM } = await import("./_core/llm");
