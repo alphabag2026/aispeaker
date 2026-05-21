@@ -5379,6 +5379,18 @@ Return a JSON object with a "sections" array. Each section has:
             totalDuration: result.totalDuration,
             completedAt: new Date(),
           });
+          // Send notification to owner on completion
+          try {
+            const { notifyOwner } = await import("./_core/notification");
+            const durationMin = Math.floor((result.totalDuration || 0) / 60);
+            const durationSec = Math.round((result.totalDuration || 0) % 60);
+            await notifyOwner({
+              title: `🎬 영상 생성 완료`,
+              content: `프로젝트 #${input.projectId} 영상 생성이 완료되었습니다.\n슬라이드: ${segments.length}장\n총 길이: ${durationMin}분 ${durationSec}초\n사용자: ${ctx.user.name || ctx.user.email}`,
+            });
+          } catch (notifErr) {
+            console.error("[Notification] Failed to send completion notice:", notifErr);
+          }
           return { videoUrl: result.videoUrl, totalDuration: result.totalDuration };
         } catch (error: any) {
           await db.updateLectureProject(input.projectId, {
