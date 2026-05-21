@@ -22,7 +22,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket, Presentation, Mic, CreditCard, Coins, StopCircle, Pin, Clock } from
+  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket, Presentation, Mic, CreditCard, Coins, StopCircle, Pin, Clock, Share2, ExternalLink, MessageCircle } from
 "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -4808,18 +4808,55 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
               </CardHeader>
               <CardContent className="space-y-3">
                 <video src={generatedVideoUrl} controls className="w-full rounded-lg" />
+                {/* Download & Share Buttons */}
                 <div className="grid grid-cols-2 gap-2">
                   <a href={generatedVideoUrl} target="_blank" rel="noopener noreferrer" download>
                     <Button variant="outline" size="sm" className="gap-1 w-full">
                       <Download className="w-3 h-3" />{t("lectureBuilder.jsxText339")}
-                  </Button>
+                    </Button>
                   </a>
                   <Button variant="outline" size="sm" className="gap-1" onClick={() => {
-                  navigator.clipboard.writeText(generatedVideoUrl);
-                  toast.success(t("lectureBuilder.stringLiteral340"));
-                }}>
+                    navigator.clipboard.writeText(generatedVideoUrl);
+                    toast.success(t("lectureBuilder.stringLiteral340"));
+                  }}>
                     <Link2 className="w-3 h-3" />{t("lectureBuilder.jsxText341")}
-                </Button>
+                  </Button>
+                </div>
+                {/* SNS Share Buttons */}
+                <div className="grid grid-cols-4 gap-2">
+                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: project?.title || t("lectureBuilder.shareVideoTitle"),
+                        text: t("lectureBuilder.shareVideoText"),
+                        url: generatedVideoUrl
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(generatedVideoUrl);
+                      toast.success(t("lectureBuilder.stringLiteral340"));
+                    }
+                  }}>
+                    <Share2 className="w-3 h-3" />{t("lectureBuilder.shareBtn")}
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
+                    const text = encodeURIComponent(project?.title || t("lectureBuilder.shareVideoTitle"));
+                    const url = encodeURIComponent(generatedVideoUrl);
+                    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
+                  }}>
+                    <ExternalLink className="w-3 h-3" />X
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
+                    const text = encodeURIComponent(`${project?.title || t("lectureBuilder.shareVideoTitle")}\n${generatedVideoUrl}`);
+                    window.open(`https://t.me/share/url?url=${encodeURIComponent(generatedVideoUrl)}&text=${text}`, "_blank");
+                  }}>
+                    <MessageCircle className="w-3 h-3" />{t("lectureBuilder.shareTelegram")}
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
+                    const url = encodeURIComponent(generatedVideoUrl);
+                    window.open(`https://wa.me/?text=${encodeURIComponent((project?.title || '') + '\n' + generatedVideoUrl)}`, "_blank");
+                  }}>
+                    <MessageCircle className="w-3 h-3" />{t("lectureBuilder.shareWhatsApp")}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
