@@ -1755,7 +1755,17 @@ export async function getLectureProject(id: number) {
 export async function listLectureProjects(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  return db.select().from(lectureProjects).where(eq(lectureProjects.userId, userId)).orderBy(desc(lectureProjects.updatedAt));
+  return db.select().from(lectureProjects).where(eq(lectureProjects.userId, userId)).orderBy(desc(lectureProjects.isPinned), desc(lectureProjects.updatedAt));
+}
+
+export async function toggleProjectPin(projectId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [project] = await db.select({ isPinned: lectureProjects.isPinned }).from(lectureProjects).where(eq(lectureProjects.id, projectId));
+  if (!project) throw new Error("Project not found");
+  const newValue = !project.isPinned;
+  await db.update(lectureProjects).set({ isPinned: newValue }).where(eq(lectureProjects.id, projectId));
+  return newValue;
 }
 
 export async function updateLectureProject(id: number, data: Partial<InsertLectureProject>) {

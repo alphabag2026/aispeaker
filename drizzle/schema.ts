@@ -1191,6 +1191,8 @@ export const lectureProjects = mysqlTable("lectureProjects", {
   interpreterLanguage: varchar("interpreterLanguage", { length: 10 }),
   /** Interpreter voice ID */
   interpreterVoiceId: varchar("interpreterVoiceId", { length: 128 }),
+  /** Whether the project is pinned to the top */
+  isPinned: boolean("isPinned").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

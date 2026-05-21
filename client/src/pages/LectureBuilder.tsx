@@ -21,7 +21,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket, Presentation, Mic, CreditCard, Coins, StopCircle } from
+  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket, Presentation, Mic, CreditCard, Coins, StopCircle, Pin } from
 "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -155,6 +155,15 @@ export default function LectureBuilder() {
     }
   };
 
+  // Toggle pin mutation
+  const togglePinMut = trpc.lectureBuilder.togglePin.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.isPinned ? t("lectureBuilder.hardcoded.pinned") : t("lectureBuilder.hardcoded.unpinned"));
+      projectsQuery.refetch();
+    },
+    onError: () => toast.error("Failed to toggle pin")
+  });
+
   // Save last working project to localStorage
   useEffect(() => {
     if (projectId) {
@@ -279,12 +288,19 @@ export default function LectureBuilder() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {projectsQuery.data.map((p) =>
-            <Card key={p.id} className="group cursor-pointer hover:border-primary/50 transition-colors relative"
+            <Card key={p.id} className={`group cursor-pointer hover:border-primary/50 transition-colors relative ${p.isPinned ? 'border-amber-500/50 bg-amber-500/5' : ''}`}
             onClick={() => setLocation(`/lecture-builder/${p.id}`)}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg truncate">{p.title}</CardTitle>
+                      <CardTitle className="text-lg truncate flex items-center gap-1.5">
+                        {p.isPinned && <Pin className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                        {p.title}
+                      </CardTitle>
                       <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className={`h-7 w-7 transition-opacity ${p.isPinned ? 'opacity-100 text-amber-500' : 'opacity-0 group-hover:opacity-100'}`}
+                    onClick={(e) => {e.stopPropagation();togglePinMut.mutate({ projectId: p.id });}}>
+                          <Pin className="w-3.5 h-3.5" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {e.stopPropagation();handleCloneProject(p.id, p.title);}}>
                           <Copy className="w-3.5 h-3.5" />
@@ -1315,6 +1331,8 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
   const [showVersionPanel, setShowVersionPanel] = useState(false);
+  const [unsavedGenerated, setUnsavedGenerated] = useState(false);
+  const [savingGenerated, setSavingGenerated] = useState(false);
 
   const saveVersionMut = trpc.lectureBuilder.saveScriptVersion.useMutation({
     onSuccess: (data) => {toast.success(`\uBC84\uC804 ${data.versionNumber} \uC800\uC7A5\uB428`);versionsQuery.refetch();}
@@ -1363,10 +1381,8 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
         };
       });
       setSections(newSections);
+      setUnsavedGenerated(true);
       toast.success(t("lectureBuilder.hardcoded.sectionsCreated", { count: String(newSections.length) }));
-      setTimeout(() => {
-        toast("스크립트 저장 후 Step 4(매칭 에디터)에서 슬라이드와 연결해보세요!", { icon: "👉", duration: 5000 });
-      }, 1500);
     },
     onError: (e) => toast.error(e.message)
   });
@@ -1379,6 +1395,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
         text: s.text
       }));
       setSections(newSections);
+      setUnsavedGenerated(true);
       toast.success(t("lectureBuilder.hardcoded.sectionsClassified", { count: String(newSections.length) }));
     },
     onError: (e) => toast.error(e.message)
@@ -1571,9 +1588,12 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
         });
       }
       toast.success(t("lectureBuilder.stringLiteral77"));
+      setUnsavedGenerated(false);
+      setSavingGenerated(false);
       onRefresh();
     } catch (e: any) {
       toast.error(e.message || t("lectureBuilder.stringLiteral78"));
+      setSavingGenerated(false);
     }
   };
 
@@ -1649,7 +1669,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       </div>
 
       {/* Mode Content */}
-      {mode === "ppt_ai" && <PPTAIScriptPanel projectId={projectId} slides={slides} sections={sections} setSections={setSections} language={language} setLanguage={setLanguage} onRefresh={onRefresh} />}
+      {mode === "ppt_ai" && <PPTAIScriptPanel projectId={projectId} slides={slides} sections={sections} setSections={setSections} language={language} setLanguage={setLanguage} onRefresh={onRefresh} onGenerated={() => setUnsavedGenerated(true)} />}
 
       {mode === "generate" &&
       <Card>
@@ -1758,6 +1778,32 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       <Button variant="outline" onClick={addSection} className="gap-2">
           <Plus className="w-4 h-4" />{t("lectureBuilder.jsxText102")}
       </Button>
+      }
+
+      {/* Save Script CTA Banner */}
+      {unsavedGenerated && sections.length > 0 &&
+      <div className="p-4 rounded-xl border-2 border-green-500/50 bg-green-500/10 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+              <Save className="w-5 h-5 text-green-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t("lectureBuilder.hardcoded.scriptReadyToSave") || "스크립트가 준비되었습니다!"}</p>
+              <p className="text-xs text-muted-foreground">{sections.length}{t("lectureBuilder.hardcoded.sectionsReadyDesc") || "개 섹션을 저장하여 다음 단계로 진행하세요"}</p>
+            </div>
+          </div>
+          <Button
+            className="gap-2 bg-green-600 hover:bg-green-700 text-white shadow-lg"
+            disabled={savingGenerated}
+            onClick={async () => {
+              setSavingGenerated(true);
+              await saveAllScripts();
+              saveVersionMut.mutate({ projectId, changeDescription: `AI 생성 스크립트 저장 (${sections.length}개 섹션)`, changeType: "manual" });
+            }}>
+            {savingGenerated ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {savingGenerated ? (t("lectureBuilder.hardcoded.saving") || "저장 중...") : (t("lectureBuilder.hardcoded.saveNow") || "지금 저장")}
+          </Button>
+        </div>
       }
 
       {/* Script Sections List */}
@@ -4921,7 +4967,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
 
 }
 // ============ PPT AI Script Generation Panel ============
-function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, setLanguage, onRefresh }: {
+function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, setLanguage, onRefresh, onGenerated }: {
   projectId: number;
   slides: any[];
   sections: any[];
@@ -4929,6 +4975,7 @@ function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, 
   language: string;
   setLanguage: (l: string) => void;
   onRefresh: () => void;
+  onGenerated?: () => void;
 }) {
   const { t } = useLanguage();
   const [style, setStyle] = useState<"professional" | "casual" | "academic" | "storytelling">("professional");
@@ -4955,10 +5002,8 @@ function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, 
       }));
       setSections(newSections);
       setGeneratedScripts(data.scripts);
+      onGenerated?.();
       toast.success(`AI 스크립트 생성 완료! ${data.scripts.length}개 슬라이드, ${data.creditsUsed} 크레딧 사용`);
-      setTimeout(() => {
-        toast("스크립트를 적용한 후 Step 4(매칭 에디터)에서 슬라이드와 연결해보세요!", { icon: "👉", duration: 5000 });
-      }, 1500);
       setGenerating(false);
       creditsQuery.refetch();
     },
