@@ -2595,3 +2595,8 @@
 - [x] 인증 라우트 alias 추가 - /signin, /signup 경로 지원
 - [x] useAuth에 /signin, /signup 경로 리다이렉트 제외 추가
 - [x] aispeaker.cc 프로덕션 배포 완료
+
+## UX 개선 v6.6.1
+- [ ] 일반 스크립트 생성(Step 2)에 동일한 로딩 UI 패턴 적용
+- [ ] 아바타 카드 얼굴 사진 변경 시 fade-in 미리보기 애니메이션
+- [ ] PPT 스크립트 생성 완료 후 자동으로 Step 4 이동 가이드 토스트

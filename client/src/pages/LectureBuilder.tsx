@@ -1202,11 +1202,11 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
                 </div>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/30 shrink-0 transition-transform duration-300 group-hover:scale-105">
                       {av.customFaceUrl ?
-                    <img src={av.customFaceUrl} alt={av.name} className="w-full h-full object-cover" /> :
+                    <img src={av.customFaceUrl} alt={av.name} className="w-full h-full object-cover animate-[fadeIn_0.5s_ease-in-out]" key={av.customFaceUrl} /> :
                     face?.imageUrl ?
-                    <img src={face.imageUrl} alt={av.name} className="w-full h-full object-cover" /> :
+                    <img src={face.imageUrl} alt={av.name} className="w-full h-full object-cover animate-[fadeIn_0.5s_ease-in-out]" key={face.imageUrl} /> :
 
                     <div className="w-full h-full bg-muted flex items-center justify-center">
                           <Users className="w-8 h-8 text-muted-foreground" />
@@ -1364,6 +1364,9 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       });
       setSections(newSections);
       toast.success(t("lectureBuilder.hardcoded.sectionsCreated", { count: String(newSections.length) }));
+      setTimeout(() => {
+        toast("스크립트 저장 후 Step 4(매칭 에디터)에서 슬라이드와 연결해보세요!", { icon: "👉", duration: 5000 });
+      }, 1500);
     },
     onError: (e) => toast.error(e.message)
   });
@@ -1685,24 +1688,48 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
                 </label>
               </div>
           }
-            <div className="grid grid-cols-2 gap-2">
-              <Button className="w-full" disabled={!prompt.trim() || generateScript.isPending}
-            onClick={() => generateScript.mutate({ projectId, prompt: prompt.trim(), language, slideCount, useFormatContext: !!(avatars.length > 0 && (document.getElementById('useFormatCtx') as HTMLInputElement)?.checked) })}>
-                {generateScript.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Wand2 className="w-4 h-4 mr-2" />}{t("lectureBuilder.jsxText95")}
-
-            </Button>
-              {scripts.length > 0 &&
-            <Button variant="outline" className="w-full" disabled={!prompt.trim() || generateScript.isPending}
-            onClick={() => {
-              if (confirm(t("lectureBuilder.stringLiteral96"))) {
-                generateScript.mutate({ projectId, prompt: t("lectureBuilder.hardcoded.addToExistingScript", { content: prompt.trim() }), language, slideCount, useFormatContext: true });
+            {generateScript.isPending ? (
+              <div className="w-full space-y-4 py-4 px-4 border border-primary/20 rounded-lg bg-primary/5">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full border-4 border-primary/20"></div>
+                    <div className="absolute inset-0 w-10 h-10 rounded-full border-4 border-transparent border-t-primary animate-spin"></div>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-sm">AI가 스크립트를 생성하고 있습니다...</p>
+                    <p className="text-xs text-muted-foreground">{slideCount}개 섹션 · 약 20초 소요</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-2 bg-primary/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full" style={{ animation: 'loading-progress 3s ease-in-out infinite' }}></div>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Wand2 className="w-3 h-3 text-primary animate-pulse" />프롬프트 분석 → 구조화 → 스크립트 생성
+                    </span>
+                    <span>잠시만 기다려주세요</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Button className="w-full" disabled={!prompt.trim()}
+              onClick={() => generateScript.mutate({ projectId, prompt: prompt.trim(), language, slideCount, useFormatContext: !!(avatars.length > 0 && (document.getElementById('useFormatCtx') as HTMLInputElement)?.checked) })}>
+                  <Wand2 className="w-4 h-4 mr-2" />{t("lectureBuilder.jsxText95")}
+                </Button>
+                {scripts.length > 0 &&
+              <Button variant="outline" className="w-full" disabled={!prompt.trim()}
+              onClick={() => {
+                if (confirm(t("lectureBuilder.stringLiteral96"))) {
+                  generateScript.mutate({ projectId, prompt: t("lectureBuilder.hardcoded.addToExistingScript", { content: prompt.trim() }), language, slideCount, useFormatContext: true });
+                }
+              }}>
+                    <Plus className="w-4 h-4 mr-2" />{t("lectureBuilder.jsxText97")}
+              </Button>
               }
-            }}>
-                  <Plus className="w-4 h-4 mr-2" />{t("lectureBuilder.jsxText97")}
-
-            </Button>
-            }
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       }
@@ -4929,6 +4956,9 @@ function PPTAIScriptPanel({ projectId, slides, sections, setSections, language, 
       setSections(newSections);
       setGeneratedScripts(data.scripts);
       toast.success(`AI 스크립트 생성 완료! ${data.scripts.length}개 슬라이드, ${data.creditsUsed} 크레딧 사용`);
+      setTimeout(() => {
+        toast("스크립트를 적용한 후 Step 4(매칭 에디터)에서 슬라이드와 연결해보세요!", { icon: "👉", duration: 5000 });
+      }, 1500);
       setGenerating(false);
       creditsQuery.refetch();
     },
