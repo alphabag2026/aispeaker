@@ -2611,3 +2611,6 @@
 - [x] 스크립트 TXT/DOCX 내보내기 다운로드 기능
 - [x] AI 생성 시 "이어서 추가" vs "새로 작성" 선택 UI
 - [x] 섹션별 화자 배정 시 각 화자의 발표 시간 비율 시각화
+
+## 버그 수정
+- [x] "No segments with scripts found" 에러 - slideId=0인 legacy 스크립트를 sortOrder로 매칭하도록 수정
