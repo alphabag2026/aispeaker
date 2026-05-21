@@ -1653,6 +1653,36 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh, onGoToSt
             <Button variant="outline" size="sm" onClick={() => setShowVersionPanel(!showVersionPanel)} className="gap-1">
               <History className="w-4 h-4" /> {t("lectureBuilder.hardcoded.version")}
             </Button>
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => {
+              const text = sections.map((s, i) => `[${i + 1}] ${s.avatarId ? `(${avatars.find((a: any) => a.id === s.avatarId)?.name || 'Speaker'})` : ''} ${s.text}`).join('\n\n');
+              const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `script_${projectId}_${new Date().toISOString().slice(0,10)}.txt`;
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.success(t("lectureBuilder.hardcoded.exportSuccess") || 'TXT 내보내기 완료');
+            }}>
+              <Download className="w-4 h-4" /> {t("lectureBuilder.hardcoded.exportTxt") || "TXT"}
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1" onClick={() => {
+              const lines = sections.map((s, i) => {
+                const speaker = s.avatarId ? avatars.find((a: any) => a.id === s.avatarId)?.name || 'Speaker' : t("lectureBuilder.jsxText112");
+                return `<h2>Section ${i + 1} - ${speaker}</h2><p>${s.text.replace(/\n/g, '<br/>')}</p><hr/>`;
+              }).join('');
+              const html = `<html><head><meta charset="utf-8"><style>body{font-family:sans-serif;padding:2rem;line-height:1.8;}h2{color:#333;border-bottom:1px solid #ddd;padding-bottom:0.5rem;}hr{margin:2rem 0;border:none;border-top:1px solid #eee;}</style></head><body><h1>${t("lectureBuilder.hardcoded.scriptExportTitle") || '강의 스크립트'}</h1>${lines}</body></html>`;
+              const blob = new Blob([html], { type: 'application/vnd.ms-word;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `script_${projectId}_${new Date().toISOString().slice(0,10)}.doc`;
+              a.click();
+              URL.revokeObjectURL(url);
+              toast.success(t("lectureBuilder.hardcoded.exportDocSuccess") || 'DOC 내보내기 완료');
+            }}>
+              <Download className="w-4 h-4" /> {t("lectureBuilder.hardcoded.exportDoc") || "DOC"}
+            </Button>
           </div>
         }
       </div>
@@ -1831,6 +1861,47 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh, onGoToSt
           </Button>
         </div>
       }
+
+      {/* Speaker Duration Distribution */}
+      {sections.length > 0 && avatars.length > 0 && (() => {
+        const speakerColors = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500'];
+        const totalChars = sections.reduce((acc, s) => acc + s.text.length, 0);
+        const speakerStats = avatars.map((av: any, i: number) => {
+          const chars = sections.filter(s => s.avatarId === av.id).reduce((acc, s) => acc + s.text.length, 0);
+          const defaultChars = sections.filter(s => !s.avatarId).reduce((acc, s) => acc + s.text.length, 0);
+          const effectiveChars = i === 0 ? chars + defaultChars : chars;
+          return { name: av.name, chars: effectiveChars, pct: totalChars > 0 ? Math.round((effectiveChars / totalChars) * 100) : 0, color: speakerColors[i % speakerColors.length], sec: Math.ceil(effectiveChars / 5) };
+        }).filter(s => s.chars > 0);
+        return speakerStats.length > 0 ? (
+          <div className="p-4 rounded-xl border bg-card/50 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                {t("lectureBuilder.hardcoded.speakerDistribution") || "화자별 발표 시간 비율"}
+              </h4>
+              <span className="text-xs text-muted-foreground">
+                {t("lectureBuilder.hardcoded.totalTime") || "총"} {Math.floor(Math.ceil(totalChars / 5) / 60)}{t("lectureBuilder.hardcoded.minutes") || "분"} {Math.ceil(totalChars / 5) % 60}{t("lectureBuilder.hardcoded.seconds") || "초"}
+              </span>
+            </div>
+            {/* Stacked bar */}
+            <div className="w-full h-4 rounded-full overflow-hidden flex bg-muted">
+              {speakerStats.map((sp, i) => (
+                <div key={i} className={`${sp.color} h-full transition-all`} style={{ width: `${sp.pct}%` }} title={`${sp.name}: ${sp.pct}%`} />
+              ))}
+            </div>
+            {/* Legend */}
+            <div className="flex flex-wrap gap-3">
+              {speakerStats.map((sp, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs">
+                  <div className={`w-3 h-3 rounded-sm ${sp.color}`} />
+                  <span className="font-medium">{sp.name}</span>
+                  <span className="text-muted-foreground">{sp.pct}% ({Math.floor(sp.sec / 60)}{t("lectureBuilder.hardcoded.minutes") || "분"}{sp.sec % 60}{t("lectureBuilder.hardcoded.seconds") || "초"})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null;
+      })()}
 
       {/* Script Sections List */}
       {sections.length > 0 &&
@@ -2181,26 +2252,56 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh, onGoToSt
           </CardContent>
         </Card>
       }
-      {/* Overwrite Confirmation Dialog */}
+      {/* Overwrite / Append Selection Dialog */}
       <AlertDialog open={showOverwriteConfirm} onOpenChange={setShowOverwriteConfirm}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("lectureBuilder.hardcoded.overwriteTitle") || "기존 스크립트를 덮어쓰시겠습니까?"}</AlertDialogTitle>
+            <AlertDialogTitle>{t("lectureBuilder.hardcoded.overwriteTitle") || "기존 스크립트가 있습니다"}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("lectureBuilder.hardcoded.overwriteDesc") || `현재 ${sections.length}개의 스크립트 섹션이 있습니다. AI 생성을 진행하면 기존 내용이 모두 대체됩니다.`}
+              {t("lectureBuilder.hardcoded.overwriteDesc2") || `현재 ${sections.length}개의 스크립트 섹션이 있습니다. 어떻게 진행할까요?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="flex flex-col gap-2 py-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3 px-4 border-blue-500/30 hover:bg-blue-500/10"
+              onClick={() => {
+                if (pendingGenerateAction) pendingGenerateAction();
+                setPendingGenerateAction(null);
+                setShowOverwriteConfirm(false);
+              }}>
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                <Plus className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-sm">{t("lectureBuilder.hardcoded.appendOption") || "이어서 추가"}</p>
+                <p className="text-xs text-muted-foreground">{t("lectureBuilder.hardcoded.appendDesc") || "기존 스크립트 뒤에 새 내용을 추가합니다"}</p>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3 px-4 border-destructive/30 hover:bg-destructive/10"
+              onClick={() => {
+                setSections([]);
+                setTimeout(() => {
+                  if (pendingGenerateAction) pendingGenerateAction();
+                  setPendingGenerateAction(null);
+                }, 100);
+                setShowOverwriteConfirm(false);
+              }}>
+              <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+                <Trash2 className="w-4 h-4 text-destructive" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-sm">{t("lectureBuilder.hardcoded.overwriteOption") || "새로 작성"}</p>
+                <p className="text-xs text-muted-foreground">{t("lectureBuilder.hardcoded.overwriteOptionDesc") || "기존 내용을 모두 삭제하고 새로 생성합니다"}</p>
+              </div>
+            </Button>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => { setPendingGenerateAction(null); }}>
               {t("lectureBuilder.hardcoded.cancel") || "취소"}
             </AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => {
-              if (pendingGenerateAction) pendingGenerateAction();
-              setPendingGenerateAction(null);
-              setShowOverwriteConfirm(false);
-            }}>
-              {t("lectureBuilder.hardcoded.overwriteConfirm") || "덮어쓰기"}
-            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
