@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useRoute, useLocation } from "wouter";
+import { useRoute, useLocation, Link } from "wouter";
 import {
   Users, FileText, Image, Layers, Eye, ChevronLeft, ChevronRight, Plus, Trash2,
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
@@ -204,6 +204,10 @@ export default function LectureBuilder() {
               <h1 className="text-3xl font-bold text-foreground">{t("lectureBuilder.jsxText24")}</h1>
               <p className="text-muted-foreground mt-1">{t("lectureBuilder.jsxText25")}</p>
             </div>
+            <div className="flex items-center gap-2">
+              <Link href="/video-history">
+                <Button variant="outline" className="gap-2"><History className="w-4 h-4" />{t("lectureBuilder.videoHistoryBtn")}</Button>
+              </Link>
             <Dialog open={showCreateDialog} onOpenChange={(open) => {setShowCreateDialog(open);if (!open) {setCreateStep("info");setNewTitle("");setNewDesc("");setSelectedFormats(null);}}}>
               <DialogTrigger asChild>
                 <Button size="lg" className="gap-2"><Plus className="w-5 h-5" />{t("lectureBuilder.jsxText26")}</Button>
@@ -260,6 +264,7 @@ export default function LectureBuilder() {
                 }
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           <PendingInvitationsPanel />

@@ -2624,3 +2624,12 @@
 - [x] 영상 생성 완료 후 다운로드 버튼 추가
 - [x] 링크 복사 버튼 추가 (클립보드 + 토스트)
 - [x] SNS 공유 버튼 (Web Share API / X / 텔레그램 / 왓츠앱)
+
+## v6.8.0 영상 생성 이력 페이지
+- [x] 프로젝트 제목 포함한 영상 이력 조회 API (listUserVideoGenerationsWithProject)
+- [x] VideoHistory 페이지 리팩토링 - 프로젝트 제목 표시, 필터 기능, 공유 패널
+- [x] 다운로드/URL복사/공유(네이티브)/X/텔레그램/왓츠앱 공유 버튼
+- [x] LectureBuilder 프로젝트 리스트에 "영상 이력" 바로가기 버튼 추가
+- [x] Navbar 강의 제작 메뉴에 "영상 생성 이력" 링크 추가
+- [x] 20개 언어 번역 완료
+- [x] aispeaker.cc 프로덕션 배포 완료

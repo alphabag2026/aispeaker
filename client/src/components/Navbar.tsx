@@ -48,6 +48,7 @@ import {
   Settings,
   ExternalLink,
   Store,
+  History,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -98,6 +99,7 @@ const productCategories = [
       { label: "navbar.products.lecture.productionStudio", href: "/studio", icon: Play, badge: null },
       { label: "navbar.products.lecture.whiteboardCollaboration", href: "/lecture-builder", icon: MessageSquare, badge: "new" as const },
       { label: "navbar.products.lecture.didVideoGallery", href: "/did-gallery", icon: Video, badge: "new" as const },
+      { label: "navbar.products.lecture.videoHistory", href: "/video-history", icon: History, badge: null },
     ],
   },
 ];

@@ -5417,10 +5417,10 @@ Return a JSON object with a "sections" array. Each section has:
         return db.listVideoGenerations(input.projectId);
       }),
 
-    // --- List all user video generations ---
+    // --- List all user video generations (with project info) ---
     listAllVideoHistory: protectedProcedure
       .query(async ({ ctx }) => {
-        return db.listUserVideoGenerations(ctx.user.id);
+        return db.listUserVideoGenerationsWithProject(ctx.user.id);
       }),
 
     // --- Delete video generation record ---
