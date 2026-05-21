@@ -5290,8 +5290,16 @@ Return a JSON object with a "sections" array. Each section has:
         if (input.selectedSlideIds && input.selectedSlideIds.length > 0) {
           filteredSlides = slides.filter(s => input.selectedSlideIds!.includes(s.id));
         }
-        const segments = filteredSlides.map(slide => {
-          const script = scripts.find(s => s.slideId === slide.id);
+        // Check if scripts use slideId=0 (legacy: matched by sortOrder)
+        const hasLegacyScripts = scripts.length > 0 && scripts.every(s => s.slideId === 0);
+        const segments = filteredSlides.map((slide, slideIdx) => {
+          let script;
+          if (hasLegacyScripts) {
+            // Match by sortOrder (index) when slideId is 0
+            script = scripts.find(s => s.sortOrder === slideIdx);
+          } else {
+            script = scripts.find(s => s.slideId === slide.id);
+          }
           const avatar = avatars.find(a => a.id === (script?.avatarId || avatars[0]?.id));
           const slideAnnotations = annotations.filter(a => a.slideId === slide.id);
           return {
@@ -5506,9 +5514,11 @@ Return a JSON object with a "sections" array. Each section has:
           db.listSlideScripts(input.projectId),
         ]);
         if (slides.length === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "No slides found" });
+        // Check if scripts use slideId=0 (legacy: matched by sortOrder)
+        const hasLegacyScripts = scripts.length > 0 && scripts.every(s => s.slideId === 0);
         // Build export segments
-        const segments = slides.map(slide => {
-          const script = scripts.find(s => s.slideId === slide.id);
+        const segments = slides.map((slide, slideIdx) => {
+          const script = hasLegacyScripts ? scripts.find(s => s.sortOrder === slideIdx) : scripts.find(s => s.slideId === slide.id);
           const avatar = avatars.find(a => a.id === (script?.avatarId || avatars[0]?.id));
           return {
             slideImageUrl: slide.imageUrl,
@@ -6280,8 +6290,9 @@ Rules:
       .mutation(async ({ ctx, input }) => {
         const scripts = await db.listSlideScripts(input.projectId);
         const slides = (await db.listProjectSlides(input.projectId)).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
-        const orderedScripts = slides.map((slide: any) => {
-          const script = scripts.find(s => s.slideId === slide.id);
+        const hasLegacyScripts = scripts.length > 0 && scripts.every(s => s.slideId === 0);
+        const orderedScripts = slides.map((slide: any, slideIdx: number) => {
+          const script = hasLegacyScripts ? scripts.find(s => s.sortOrder === slideIdx) : scripts.find(s => s.slideId === slide.id);
           return { slideId: slide.id, sortOrder: slide.sortOrder, scriptText: script?.scriptText || "", interpreterText: script?.interpreterText || "", durationSec: script?.estimatedDurationSec || 30 };
         }).filter((s: any) => s.scriptText || s.interpreterText);
 
@@ -7091,8 +7102,9 @@ Rules:
         if (!slides.length) throw new TRPCError({ code: "BAD_REQUEST", message: "No slides found." });
 
         // Build prompt for LLM
+        const hasLegacyScripts = scripts.length > 0 && scripts.every((sc: any) => sc.slideId === 0);
         const slideInfo = slides.map((s: any, i: number) => {
-          const script = scripts.find((sc: any) => sc.slideId === s.id);
+          const script = hasLegacyScripts ? scripts.find((sc: any) => sc.sortOrder === i) : scripts.find((sc: any) => sc.slideId === s.id);
           return `Slide ${i + 1} (ID: ${s.id}): script="${script?.scriptText || '(none)'}"`;
         }).join("\n");
 
