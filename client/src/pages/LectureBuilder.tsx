@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -21,7 +22,7 @@ import {
   Upload, Wand2, Loader2, GripVertical, Check, ArrowRight, Pencil, Circle,
   ArrowUpRight, CheckSquare, PenTool, MousePointer, Volume2, Play, Pause,
   Move, Settings2, Video, Download, X, Eraser, Palette, History, Undo2, Sparkles, Link2,
-  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket, Presentation, Mic, CreditCard, Coins, StopCircle, Pin } from
+  Copy, Save, Globe, Languages, Headphones, Camera, UserCircle2, ImagePlus, Star, ArrowUpDown, Rocket, Presentation, Mic, CreditCard, Coins, StopCircle, Pin, Clock } from
 "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Navbar from "@/components/Navbar";
@@ -443,7 +444,8 @@ export default function LectureBuilder() {
             slides={slides}
             scripts={scripts}
             avatars={avatars}
-            onRefresh={() => fullProjectQuery.refetch()} />
+            onRefresh={() => fullProjectQuery.refetch()}
+            onGoToStep4={() => { setCurrentStep(4); updateProject.mutate({ id: projectId, currentStep: 4 }); }} />
 
           }
             {currentStep === 3 &&
@@ -1310,13 +1312,13 @@ function Step1Avatars({ projectId, avatars, faces, voices, onRefresh, project, s
 }
 
 // ============ STEP 2: SCRIPTS ============
-function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
+function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh, onGoToStep4
 
 
 
 
 
-}: {projectId: number;slides: any[];scripts: any[];avatars: any[];onRefresh: () => void;}) {const { t } = useLanguage();
+}: {projectId: number;slides: any[];scripts: any[];avatars: any[];onRefresh: () => void;onGoToStep4?: () => void;}) {const { t } = useLanguage();
   const AVATAR_ROLES = getAVATAR_ROLES(t);
   const [mode, setMode] = useState<"generate" | "split" | "manual" | "ppt_ai">("manual");
   const [prompt, setPrompt] = useState("");
@@ -1333,6 +1335,10 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
   const [showVersionPanel, setShowVersionPanel] = useState(false);
   const [unsavedGenerated, setUnsavedGenerated] = useState(false);
   const [savingGenerated, setSavingGenerated] = useState(false);
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false);
+  const [pendingGenerateAction, setPendingGenerateAction] = useState<(() => void) | null>(null);
+  const [showSavedSummary, setShowSavedSummary] = useState(false);
+  const [savedTotalDuration, setSavedTotalDuration] = useState(0);
 
   const saveVersionMut = trpc.lectureBuilder.saveScriptVersion.useMutation({
     onSuccess: (data) => {toast.success(`\uBC84\uC804 ${data.versionNumber} \uC800\uC7A5\uB428`);versionsQuery.refetch();}
@@ -1590,6 +1596,10 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
       toast.success(t("lectureBuilder.stringLiteral77"));
       setUnsavedGenerated(false);
       setSavingGenerated(false);
+      // Calculate total estimated duration and show summary
+      const totalSec = sections.reduce((acc, s) => acc + Math.ceil(s.text.length / 5), 0);
+      setSavedTotalDuration(totalSec);
+      setShowSavedSummary(true);
       onRefresh();
     } catch (e: any) {
       toast.error(e.message || t("lectureBuilder.stringLiteral78"));
@@ -1735,7 +1745,15 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 <Button className="w-full" disabled={!prompt.trim()}
-              onClick={() => generateScript.mutate({ projectId, prompt: prompt.trim(), language, slideCount, useFormatContext: !!(avatars.length > 0 && (document.getElementById('useFormatCtx') as HTMLInputElement)?.checked) })}>
+              onClick={() => {
+                const action = () => generateScript.mutate({ projectId, prompt: prompt.trim(), language, slideCount, useFormatContext: !!(avatars.length > 0 && (document.getElementById('useFormatCtx') as HTMLInputElement)?.checked) });
+                if (sections.length > 0) {
+                  setPendingGenerateAction(() => action);
+                  setShowOverwriteConfirm(true);
+                } else {
+                  action();
+                }
+              }}>
                   <Wand2 className="w-4 h-4 mr-2" />{t("lectureBuilder.jsxText95")}
                 </Button>
                 {scripts.length > 0 &&
@@ -1766,7 +1784,15 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
               <Input type="number" min={1} max={50} value={slideCount} onChange={(e) => setSlideCount(parseInt(e.target.value) || 10)} />
             </div>
             <Button className="w-full" disabled={!fullText.trim() || splitScript.isPending}
-          onClick={() => splitScript.mutate({ projectId, fullText: fullText.trim(), slideCount, language })}>
+          onClick={() => {
+            const action = () => splitScript.mutate({ projectId, fullText: fullText.trim(), slideCount, language });
+            if (sections.length > 0) {
+              setPendingGenerateAction(() => action);
+              setShowOverwriteConfirm(true);
+            } else {
+              action();
+            }
+          }}>
               {splitScript.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Layers className="w-4 h-4 mr-2" />}{t("lectureBuilder.jsxText101")}
 
           </Button>
@@ -2154,6 +2180,58 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh
           }
           </CardContent>
         </Card>
+      }
+      {/* Overwrite Confirmation Dialog */}
+      <AlertDialog open={showOverwriteConfirm} onOpenChange={setShowOverwriteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("lectureBuilder.hardcoded.overwriteTitle") || "기존 스크립트를 덮어쓰시겠습니까?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("lectureBuilder.hardcoded.overwriteDesc") || `현재 ${sections.length}개의 스크립트 섹션이 있습니다. AI 생성을 진행하면 기존 내용이 모두 대체됩니다.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setPendingGenerateAction(null); }}>
+              {t("lectureBuilder.hardcoded.cancel") || "취소"}
+            </AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => {
+              if (pendingGenerateAction) pendingGenerateAction();
+              setPendingGenerateAction(null);
+              setShowOverwriteConfirm(false);
+            }}>
+              {t("lectureBuilder.hardcoded.overwriteConfirm") || "덮어쓰기"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Saved Summary Banner with total duration + Go to Step 4 */}
+      {showSavedSummary &&
+      <div className="p-4 rounded-xl border-2 border-blue-500/50 bg-blue-500/10 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-blue-500" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">{t("lectureBuilder.hardcoded.savedComplete") || "스크립트 저장 완료!"}</p>
+              <p className="text-xs text-muted-foreground">
+                {sections.length}{t("lectureBuilder.hardcoded.sectionsSaved") || "개 섹션"} · {t("lectureBuilder.hardcoded.totalDuration") || "총 예상 발표 시간"}: {Math.floor(savedTotalDuration / 60)}{t("lectureBuilder.hardcoded.minutes") || "분"} {savedTotalDuration % 60}{t("lectureBuilder.hardcoded.seconds") || "초"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowSavedSummary(false)}>
+              {t("lectureBuilder.hardcoded.dismiss") || "닫기"}
+            </Button>
+            <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white" size="sm" onClick={() => {
+              setShowSavedSummary(false);
+              onGoToStep4?.();
+            }}>
+              <ArrowRight className="w-4 h-4" />
+              {t("lectureBuilder.hardcoded.goToMatching") || "매칭 에디터로 이동"}
+            </Button>
+          </div>
+        </div>
       }
     </div>);
 
