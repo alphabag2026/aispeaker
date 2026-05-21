@@ -5,14 +5,16 @@ import Navbar from "@/components/Navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   History, Video, Download, Play, Trash2, Clock, Layers,
   Monitor, AlertCircle, CheckCircle2, Loader2, ArrowLeft,
-  Share2, Link2, ExternalLink, MessageCircle, Copy, FolderOpen
+  Share2, Link2, ExternalLink, MessageCircle, Copy, FolderOpen,
+  Search, RefreshCw, Calendar, Image as ImageIcon
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useLanguage, registerTranslations } from "@/contexts/LanguageContext";
 
 // --- Translations ---
@@ -54,6 +56,15 @@ registerTranslations("ko", {
   "videoHistory.filterGenerating": "생성 중",
   "videoHistory.filterFailed": "실패",
   "videoHistory.openProject": "프로젝트 열기",
+  "videoHistory.regenerate": "재생성",
+  "videoHistory.regenerateTooltip": "동일한 설정으로 영상을 다시 생성합니다",
+  "videoHistory.regenerating": "재생성 준비 중...",
+  "videoHistory.regenerateSuccess": "영상 재생성이 시작되었습니다",
+  "videoHistory.searchPlaceholder": "프로젝트 제목으로 검색...",
+  "videoHistory.searchByDate": "날짜 필터",
+  "videoHistory.noSearchResults": "검색 결과가 없습니다",
+  "videoHistory.thumbnail": "썸네일",
+  "videoHistory.noThumbnail": "썸네일 없음",
 });
 
 registerTranslations("en", {
@@ -94,6 +105,15 @@ registerTranslations("en", {
   "videoHistory.filterGenerating": "Generating",
   "videoHistory.filterFailed": "Failed",
   "videoHistory.openProject": "Open Project",
+  "videoHistory.regenerate": "Regenerate",
+  "videoHistory.regenerateTooltip": "Regenerate video with the same settings",
+  "videoHistory.regenerating": "Preparing regeneration...",
+  "videoHistory.regenerateSuccess": "Video regeneration started",
+  "videoHistory.searchPlaceholder": "Search by project title...",
+  "videoHistory.searchByDate": "Date filter",
+  "videoHistory.noSearchResults": "No search results",
+  "videoHistory.thumbnail": "Thumbnail",
+  "videoHistory.noThumbnail": "No thumbnail",
 });
 
 const STATUS_MAP: Record<string, { labelKey: string; color: string; icon: any }> = {
@@ -106,9 +126,13 @@ const STATUS_MAP: Record<string, { labelKey: string; color: string; icon: any }>
 export default function VideoHistory() {
   const { t } = useLanguage();
   const { user, loading: authLoading } = useAuth();
+  const [, setLocation] = useLocation();
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [shareOpenId, setShareOpenId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
 
   const { data: generations, isLoading, refetch } = trpc.lectureBuilder.listAllVideoHistory.useQuery(
     undefined,
@@ -122,6 +146,57 @@ export default function VideoHistory() {
     },
     onError: (err: any) => toast.error(err.message),
   });
+
+  const regenerateMut = trpc.lectureBuilder.regenerateVideo.useMutation({
+    onSuccess: (data) => {
+      // Navigate to the project's lecture builder to trigger regeneration
+      toast.success(t("videoHistory.regenerateSuccess"));
+      setLocation(`/lecture-builder/${data.projectId}`);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const generateVideoMut = trpc.lectureBuilder.generateVideo.useMutation({
+    onSuccess: () => {
+      toast.success(t("videoHistory.regenerateSuccess"));
+      refetch();
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  // Filter and search logic
+  const filteredGenerations = useMemo(() => {
+    if (!generations) return [];
+    let result = [...generations];
+
+    // Status filter
+    if (filter !== "all") {
+      result = result.filter((gen: any) => gen.status === filter);
+    }
+
+    // Search by project title
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter((gen: any) =>
+        (gen.projectTitle || "").toLowerCase().includes(query)
+      );
+    }
+
+    // Date filter
+    if (dateFilter) {
+      const filterDate = new Date(dateFilter);
+      result = result.filter((gen: any) => {
+        const genDate = new Date(gen.createdAt);
+        return genDate.toDateString() === filterDate.toDateString();
+      });
+    }
+
+    return result;
+  }, [generations, filter, searchQuery, dateFilter]);
+
+  const completedCount = generations?.filter((g: any) => g.status === "completed").length || 0;
+  const generatingCount = generations?.filter((g: any) => g.status === "generating").length || 0;
+  const failedCount = generations?.filter((g: any) => g.status === "failed").length || 0;
 
   if (authLoading || isLoading) {
     return (
@@ -145,14 +220,39 @@ export default function VideoHistory() {
     );
   }
 
-  const filteredGenerations = generations?.filter((gen: any) => {
-    if (filter === "all") return true;
-    return gen.status === filter;
-  }) || [];
+  const handleRegenerate = (gen: any) => {
+    const config = (gen.config as any) || {};
+    generateVideoMut.mutate({
+      projectId: gen.projectId,
+      avatarPosition: config.avatarPosition || "bottom-right",
+      avatarSize: config.avatarSize || 25,
+      avatarShape: config.avatarShape || "circle",
+      avatarOpacity: config.avatarOpacity || 100,
+      bgmUrl: config.bgmUrl || undefined,
+      bgmVolume: config.bgmVolume || 30,
+      noiseReduction: config.noiseReduction || false,
+      resolution: gen.resolution || "1080p",
+    });
+  };
 
-  const completedCount = generations?.filter((g: any) => g.status === "completed").length || 0;
-  const generatingCount = generations?.filter((g: any) => g.status === "generating").length || 0;
-  const failedCount = generations?.filter((g: any) => g.status === "failed").length || 0;
+  // Generate thumbnail from video
+  const captureThumbnail = (genId: number) => {
+    const video = videoRefs.current[genId];
+    if (!video) return null;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 320;
+      canvas.height = video.videoHeight || 180;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL("image/jpeg", 0.7);
+      }
+    } catch (e) {
+      // Cross-origin video, can't capture
+    }
+    return null;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,6 +275,38 @@ export default function VideoHistory() {
             </p>
           </div>
         </div>
+
+        {/* Search & Date Filter */}
+        {generations && generations.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder={t("videoHistory.searchPlaceholder")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="pl-9 w-[180px]"
+              />
+              {dateFilter && (
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setDateFilter("")}
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Stats & Filter */}
         {generations && generations.length > 0 && (
@@ -218,11 +350,12 @@ export default function VideoHistory() {
           </Card>
         )}
 
-        {/* Filtered Empty */}
+        {/* No Search Results */}
         {generations && generations.length > 0 && filteredGenerations.length === 0 && (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center text-muted-foreground">
-              해당 상태의 영상이 없습니다.
+              <Search className="w-8 h-8 mx-auto mb-3 opacity-50" />
+              {t("videoHistory.noSearchResults")}
             </CardContent>
           </Card>
         )}
@@ -239,26 +372,38 @@ export default function VideoHistory() {
             return (
               <Card key={gen.id} className="overflow-hidden hover:border-primary/30 transition-colors">
                 <div className="flex flex-col md:flex-row">
-                  {/* Video Preview / Player */}
+                  {/* Video Preview / Thumbnail */}
                   <div className="md:w-80 bg-black/50 flex items-center justify-center min-h-[180px] relative">
                     {gen.status === "completed" && gen.videoUrl ? (
                       isPlaying ? (
                         <video
+                          ref={(el) => { videoRefs.current[gen.id] = el; }}
                           src={gen.videoUrl}
                           controls
                           autoPlay
                           className="w-full h-full object-contain"
                           onEnded={() => setPlayingId(null)}
+                          crossOrigin="anonymous"
                         />
                       ) : (
                         <button
                           onClick={() => setPlayingId(gen.id)}
-                          className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                          className="relative w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
                         >
-                          <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center">
+                          {/* Thumbnail from project */}
+                          {gen.projectThumbnail ? (
+                            <img
+                              src={gen.projectThumbnail}
+                              alt="Video thumbnail"
+                              className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                            />
+                          ) : null}
+                          <div className="relative z-10 w-14 h-14 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30">
                             <Play className="w-6 h-6 text-primary" />
                           </div>
-                          <span className="text-xs">{t("videoHistory.clickToPlay")}</span>
+                          <span className="relative z-10 text-xs bg-black/50 px-2 py-0.5 rounded">
+                            {t("videoHistory.clickToPlay")}
+                          </span>
                         </button>
                       )
                     ) : gen.status === "generating" ? (
@@ -308,7 +453,23 @@ export default function VideoHistory() {
                           {new Date(gen.createdAt).toLocaleString("ko-KR")}
                         </p>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 flex-wrap justify-end">
+                        {/* Regenerate Button */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs gap-1"
+                          onClick={() => handleRegenerate(gen)}
+                          disabled={generateVideoMut.isPending}
+                          title={t("videoHistory.regenerateTooltip")}
+                        >
+                          {generateVideoMut.isPending ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3 h-3" />
+                          )}
+                          {t("videoHistory.regenerate")}
+                        </Button>
                         {gen.status === "completed" && gen.videoUrl && (
                           <>
                             <Button
