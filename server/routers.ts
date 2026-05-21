@@ -4481,6 +4481,15 @@ Respond ONLY in the following JSON format:
       return db.listLectureProjects(ctx.user.id);
     }),
 
+    togglePin: protectedProcedure
+      .input(z.object({ projectId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const project = await db.getLectureProject(input.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const isPinned = await db.toggleProjectPin(input.projectId, ctx.user.id);
+        return { isPinned };
+      }),
+
     getProject: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
