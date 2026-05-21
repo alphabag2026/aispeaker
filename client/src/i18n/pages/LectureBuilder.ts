@@ -620,6 +620,11 @@ registerTranslations("ko", {
   "lectureBuilder.formatWarningScripts": "스크립트 {{count}}개",
   "lectureBuilder.formatWarningCancel": "취소",
   "lectureBuilder.formatWarningConfirm": "변경 적용",
+  "lectureBuilder.shareBtn": "공유",
+  "lectureBuilder.shareTelegram": "텔레그램",
+  "lectureBuilder.shareWhatsApp": "왓츠앱",
+  "lectureBuilder.shareVideoTitle": "AI 강의 영상",
+  "lectureBuilder.shareVideoText": "AI로 생성한 강의 영상을 확인해보세요!",
 });
 registerTranslations("en", {
   "lectureBuilder.stringLiteral0": "Select Avatar",
@@ -1242,6 +1247,11 @@ registerTranslations("en", {
   "lectureBuilder.formatWarningScripts": "{{count}} scripts",
   "lectureBuilder.formatWarningCancel": "Cancel",
   "lectureBuilder.formatWarningConfirm": "Apply Changes",
+  "lectureBuilder.shareBtn": "Share",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "AI Lecture Video",
+  "lectureBuilder.shareVideoText": "Check out this AI-generated lecture video!",
 });
 registerTranslations("zh", {
   "lectureBuilder.stringLiteral0": "选择头像",
@@ -1835,6 +1845,11 @@ registerTranslations("zh", {
   "lectureBuilder.formatWarningScripts": "{{count}}个脚本",
   "lectureBuilder.formatWarningCancel": "取消",
   "lectureBuilder.formatWarningConfirm": "应用更改",
+  "lectureBuilder.shareBtn": "分享",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "AI讲座视频",
+  "lectureBuilder.shareVideoText": "来看看这个AI生成的讲座视频！",
 });
 registerTranslations("ja", {
   "lectureBuilder.stringLiteral0": "アバター選択",
@@ -2428,6 +2443,11 @@ registerTranslations("ja", {
   "lectureBuilder.formatWarningScripts": "スクリプト{{count}}件",
   "lectureBuilder.formatWarningCancel": "キャンセル",
   "lectureBuilder.formatWarningConfirm": "変更を適用",
+  "lectureBuilder.shareBtn": "共有",
+  "lectureBuilder.shareTelegram": "テレグラム",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "AI講義動画",
+  "lectureBuilder.shareVideoText": "AIで生成した講義動画をご覧ください！",
 });
 registerTranslations("vi", {
   "lectureBuilder.stringLiteral0": "Chọn avatar",
@@ -3021,6 +3041,11 @@ registerTranslations("vi", {
   "lectureBuilder.formatWarningScripts": "{{count}} kịch bản",
   "lectureBuilder.formatWarningCancel": "Hủy",
   "lectureBuilder.formatWarningConfirm": "Áp dụng thay đổi",
+  "lectureBuilder.shareBtn": "Chia sẻ",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Video bài giảng AI",
+  "lectureBuilder.shareVideoText": "Xem video bài giảng được tạo bởi AI!",
 });
 registerTranslations("th", {
   "lectureBuilder.stringLiteral0": "เลือกอวาตาร์",
@@ -3614,6 +3639,11 @@ registerTranslations("th", {
   "lectureBuilder.formatWarningScripts": "สคริปต์ {{count}} รายการ",
   "lectureBuilder.formatWarningCancel": "ยกเลิก",
   "lectureBuilder.formatWarningConfirm": "ใช้การเปลี่ยนแปลง",
+  "lectureBuilder.shareBtn": "แชร์",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "วิดีโอบรรยาย AI",
+  "lectureBuilder.shareVideoText": "ดูวิดีโอบรรยายที่สร้างโดย AI!",
 });
 registerTranslations("id", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4207,6 +4237,11 @@ registerTranslations("id", {
   "lectureBuilder.formatWarningScripts": "{{count}} skrip",
   "lectureBuilder.formatWarningCancel": "Batal",
   "lectureBuilder.formatWarningConfirm": "Terapkan Perubahan",
+  "lectureBuilder.shareBtn": "Bagikan",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Video Kuliah AI",
+  "lectureBuilder.shareVideoText": "Lihat video kuliah yang dibuat oleh AI!",
 });
 registerTranslations("ms", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4800,6 +4835,11 @@ registerTranslations("ms", {
   "lectureBuilder.formatWarningScripts": "{{count}} skrip",
   "lectureBuilder.formatWarningCancel": "Batal",
   "lectureBuilder.formatWarningConfirm": "Gunakan Perubahan",
+  "lectureBuilder.shareBtn": "Kongsi",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Video Kuliah AI",
+  "lectureBuilder.shareVideoText": "Lihat video kuliah yang dijana oleh AI!",
 });
 registerTranslations("es", {
   "lectureBuilder.stringLiteral0": "Seleccionar avatar",
@@ -5393,6 +5433,11 @@ registerTranslations("es", {
   "lectureBuilder.formatWarningScripts": "{{count}} guiones",
   "lectureBuilder.formatWarningCancel": "Cancelar",
   "lectureBuilder.formatWarningConfirm": "Aplicar cambios",
+  "lectureBuilder.shareBtn": "Compartir",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Video de Conferencia AI",
+  "lectureBuilder.shareVideoText": "¡Mira este video de conferencia generado por IA!",
 });
 registerTranslations("fr", {
   "lectureBuilder.stringLiteral0": "Sélection de l'avatar",
@@ -5986,6 +6031,11 @@ registerTranslations("fr", {
   "lectureBuilder.formatWarningScripts": "{{count}} scripts",
   "lectureBuilder.formatWarningCancel": "Annuler",
   "lectureBuilder.formatWarningConfirm": "Appliquer les modifications",
+  "lectureBuilder.shareBtn": "Partager",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Vidéo de conférence IA",
+  "lectureBuilder.shareVideoText": "Découvrez cette vidéo de conférence générée par l'IA !",
 });
 registerTranslations("de", {
   "lectureBuilder.stringLiteral0": "Avatar auswählen",
@@ -6579,6 +6629,11 @@ registerTranslations("de", {
   "lectureBuilder.formatWarningScripts": "{{count}} Skripte",
   "lectureBuilder.formatWarningCancel": "Abbrechen",
   "lectureBuilder.formatWarningConfirm": "Änderungen anwenden",
+  "lectureBuilder.shareBtn": "Teilen",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "AI-Vorlesungsvideo",
+  "lectureBuilder.shareVideoText": "Schauen Sie sich dieses KI-generierte Vorlesungsvideo an!",
 });
 registerTranslations("pt", {
   "lectureBuilder.stringLiteral0": "Selecionar avatar",
@@ -7172,6 +7227,11 @@ registerTranslations("pt", {
   "lectureBuilder.formatWarningScripts": "{{count}} roteiros",
   "lectureBuilder.formatWarningCancel": "Cancelar",
   "lectureBuilder.formatWarningConfirm": "Aplicar alterações",
+  "lectureBuilder.shareBtn": "Compartilhar",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Vídeo de Palestra IA",
+  "lectureBuilder.shareVideoText": "Confira este vídeo de palestra gerado por IA!",
 });
 registerTranslations("ru", {
   "lectureBuilder.stringLiteral0": "Выбор аватара",
@@ -7765,6 +7825,11 @@ registerTranslations("ru", {
   "lectureBuilder.formatWarningScripts": "{{count}} сценариев",
   "lectureBuilder.formatWarningCancel": "Отмена",
   "lectureBuilder.formatWarningConfirm": "Применить изменения",
+  "lectureBuilder.shareBtn": "Поделиться",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Видео лекции ИИ",
+  "lectureBuilder.shareVideoText": "Посмотрите это видео лекции, созданное ИИ!",
 });
 registerTranslations("ar", {
   "lectureBuilder.stringLiteral0": "اختيار الصورة الرمزية",
@@ -8358,6 +8423,11 @@ registerTranslations("ar", {
   "lectureBuilder.formatWarningScripts": "{{count}} نص",
   "lectureBuilder.formatWarningCancel": "إلغاء",
   "lectureBuilder.formatWarningConfirm": "تطبيق التغييرات",
+  "lectureBuilder.shareBtn": "مشاركة",
+  "lectureBuilder.shareTelegram": "تيليجرام",
+  "lectureBuilder.shareWhatsApp": "واتساب",
+  "lectureBuilder.shareVideoTitle": "فيديو محاضرة AI",
+  "lectureBuilder.shareVideoText": "شاهد فيديو المحاضرة المُنشأ بالذكاء الاصطناعي!",
 });
 registerTranslations("hi", {
   "lectureBuilder.stringLiteral0": "अवतार चुनें",
@@ -8951,6 +9021,11 @@ registerTranslations("hi", {
   "lectureBuilder.formatWarningScripts": "{{count}} स्क्रिप्ट",
   "lectureBuilder.formatWarningCancel": "रद्द करें",
   "lectureBuilder.formatWarningConfirm": "परिवर्तन लागू करें",
+  "lectureBuilder.shareBtn": "शेयर",
+  "lectureBuilder.shareTelegram": "टेलीग्राम",
+  "lectureBuilder.shareWhatsApp": "व्हाट्सएप",
+  "lectureBuilder.shareVideoTitle": "AI व्याख्यान वीडियो",
+  "lectureBuilder.shareVideoText": "AI द्वारा बनाए गए इस व्याख्यान वीडियो को देखें!",
 });
 registerTranslations("it", {
   "lectureBuilder.stringLiteral0": "Seleziona avatar",
@@ -9544,6 +9619,11 @@ registerTranslations("it", {
   "lectureBuilder.formatWarningScripts": "{{count}} script",
   "lectureBuilder.formatWarningCancel": "Annulla",
   "lectureBuilder.formatWarningConfirm": "Applica modifiche",
+  "lectureBuilder.shareBtn": "Condividi",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Video Lezione AI",
+  "lectureBuilder.shareVideoText": "Guarda questo video di lezione generato dall'IA!",
 });
 registerTranslations("nl", {
   "lectureBuilder.stringLiteral0": "Avatar selecteren",
@@ -10137,6 +10217,11 @@ registerTranslations("nl", {
   "lectureBuilder.formatWarningScripts": "{{count}} scripts",
   "lectureBuilder.formatWarningCancel": "Annuleren",
   "lectureBuilder.formatWarningConfirm": "Wijzigingen toepassen",
+  "lectureBuilder.shareBtn": "Delen",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "AI College Video",
+  "lectureBuilder.shareVideoText": "Bekijk deze door AI gegenereerde collegevideo!",
 });
 registerTranslations("pl", {
   "lectureBuilder.stringLiteral0": "Wybierz awatara",
@@ -10730,6 +10815,11 @@ registerTranslations("pl", {
   "lectureBuilder.formatWarningScripts": "{{count}} skryptów",
   "lectureBuilder.formatWarningCancel": "Anuluj",
   "lectureBuilder.formatWarningConfirm": "Zastosuj zmiany",
+  "lectureBuilder.shareBtn": "Udostępnij",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "Film wykładowy AI",
+  "lectureBuilder.shareVideoText": "Zobacz ten film wykładowy wygenerowany przez AI!",
 });
 registerTranslations("sv", {
   "lectureBuilder.stringLiteral0": "Välj avatar",
@@ -11323,6 +11413,11 @@ registerTranslations("sv", {
   "lectureBuilder.formatWarningScripts": "{{count}} skript",
   "lectureBuilder.formatWarningCancel": "Avbryt",
   "lectureBuilder.formatWarningConfirm": "Tillämpa ändringar",
+  "lectureBuilder.shareBtn": "Dela",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "AI-föreläsningsvideo",
+  "lectureBuilder.shareVideoText": "Kolla in denna AI-genererade föreläsningsvideo!",
 });
 registerTranslations("tr", {
   "lectureBuilder.stringLiteral0": "Avatar Seçimi",
@@ -11916,4 +12011,9 @@ registerTranslations("tr", {
   "lectureBuilder.formatWarningScripts": "{{count}} senaryo",
   "lectureBuilder.formatWarningCancel": "İptal",
   "lectureBuilder.formatWarningConfirm": "Değişiklikleri Uygula",
+  "lectureBuilder.shareBtn": "Paylaş",
+  "lectureBuilder.shareTelegram": "Telegram",
+  "lectureBuilder.shareWhatsApp": "WhatsApp",
+  "lectureBuilder.shareVideoTitle": "AI Ders Videosu",
+  "lectureBuilder.shareVideoText": "AI tarafından oluşturulan bu ders videosuna göz atın!",
 });
