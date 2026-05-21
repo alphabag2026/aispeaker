@@ -1987,6 +1987,7 @@ export async function listUserVideoGenerationsWithProject(userId: number) {
     totalDuration: videoGenerations.totalDuration,
     slideCount: videoGenerations.slideCount,
     resolution: videoGenerations.resolution,
+    config: videoGenerations.config,
     errorMessage: videoGenerations.errorMessage,
     createdAt: videoGenerations.createdAt,
     completedAt: videoGenerations.completedAt,

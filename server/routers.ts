@@ -5433,6 +5433,29 @@ Return a JSON object with a "sections" array. Each section has:
         return { success: true };
       }),
 
+    // --- Regenerate video with same settings ---
+    regenerateVideo: protectedProcedure
+      .input(z.object({ generationId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const gen = await db.getVideoGeneration(input.generationId);
+        if (!gen || gen.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+        const project = await db.getLectureProject(gen.projectId);
+        if (!project || project.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND", message: "Project not found" });
+        const config = (gen.config as any) || {};
+        // Return the config so frontend can call generateVideo with same settings
+        return {
+          projectId: gen.projectId,
+          avatarPosition: config.avatarPosition || "bottom-right",
+          avatarSize: config.avatarSize || 25,
+          avatarShape: config.avatarShape || "circle",
+          avatarOpacity: config.avatarOpacity || 100,
+          bgmUrl: config.bgmUrl || undefined,
+          bgmVolume: config.bgmVolume || 30,
+          noiseReduction: config.noiseReduction || false,
+          resolution: gen.resolution || "1080p",
+        };
+      }),
+
     // --- Apply extracted texts as script drafts ---
     applyExtractedTextsAsScripts: protectedProcedure
       .input(z.object({
