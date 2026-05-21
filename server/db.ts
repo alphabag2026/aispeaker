@@ -1976,6 +1976,28 @@ export async function listUserVideoGenerations(userId: number) {
     .orderBy(desc(videoGenerations.createdAt));
 }
 
+export async function listUserVideoGenerationsWithProject(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  return db.select({
+    id: videoGenerations.id,
+    projectId: videoGenerations.projectId,
+    status: videoGenerations.status,
+    videoUrl: videoGenerations.videoUrl,
+    totalDuration: videoGenerations.totalDuration,
+    slideCount: videoGenerations.slideCount,
+    resolution: videoGenerations.resolution,
+    errorMessage: videoGenerations.errorMessage,
+    createdAt: videoGenerations.createdAt,
+    completedAt: videoGenerations.completedAt,
+    projectTitle: lectureProjects.title,
+    projectThumbnail: lectureProjects.thumbnailUrl,
+  }).from(videoGenerations)
+    .leftJoin(lectureProjects, eq(videoGenerations.projectId, lectureProjects.id))
+    .where(eq(videoGenerations.userId, userId))
+    .orderBy(desc(videoGenerations.createdAt));
+}
+
 export async function updateVideoGeneration(id: number, data: Partial<InsertVideoGeneration>) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
