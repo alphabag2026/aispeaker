@@ -1560,7 +1560,7 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh, onGoToSt
           if (!current[i].text.trim()) continue;
           await setScriptMut.mutateAsync({
             projectId,
-            slideId: 0,
+            slideId: slides[i]?.id || 0,
             scriptText: current[i].text,
             avatarId: current[i].avatarId,
             sortOrder: i
@@ -1583,11 +1583,11 @@ function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh, onGoToSt
       for (const s of scripts) {
         await deleteScriptMut.mutateAsync({ id: s.id });
       }
-      // Save new sections
+      // Save new sections - map to actual slide IDs
       for (let i = 0; i < sections.length; i++) {
         await setScriptMut.mutateAsync({
           projectId,
-          slideId: 0, // Will be assigned in Step 4
+          slideId: slides[i]?.id || 0,
           scriptText: sections[i].text,
           avatarId: sections[i].avatarId,
           sortOrder: i
@@ -4317,6 +4317,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       setGenProgress(100);
       setGenStep(t("lectureBuilder.stringLiteral303"));
       toast.success(t("lectureBuilder.stringLiteral304"));
+      // Browser notification when tab is not focused
+      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+        new Notification("🎬 영상 생성 완료", { body: "AI 강의 영상이 성공적으로 생성되었습니다." });
+      }
       onRefresh();
     } else if (d.status === "failed") {
       setGenerating(false);
@@ -4509,6 +4513,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       toast.error(t("lectureBuilder.stringLiteral309"));
       return;
     }
+    // Request browser notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
     setGenerating(true);
     setGenProgress(0);
     setGenStep(t("lectureBuilder.stringLiteral310"));
@@ -4529,6 +4537,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       setGenProgress(100);
       setGenStep(t("lectureBuilder.stringLiteral311"));
       toast.success(t("lectureBuilder.stringLiteral312"));
+      // Browser notification when tab is not focused
+      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+        new Notification("🎬 영상 생성 완료", { body: "AI 강의 영상이 성공적으로 생성되었습니다." });
+      }
       onRefresh();
     } catch (err: any) {
       toast.error(err.message || t("lectureBuilder.stringLiteral313"));

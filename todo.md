@@ -2614,3 +2614,8 @@
 
 ## 버그 수정
 - [x] "No segments with scripts found" 에러 - slideId=0인 legacy 스크립트를 sortOrder로 매칭하도록 수정
+
+## v6.6.9 개선
+- [x] 스크립트 저장 시 실제 slideId 매핑 (근본적 수정)
+- [x] 영상 생성 실시간 프로그레스 바 표시 (이미 구현됨)
+- [x] 생성 완료 후 자동 알림 발송 (notifyOwner + 브라우저 Notification)
