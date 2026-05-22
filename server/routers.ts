@@ -5341,10 +5341,13 @@ Return a JSON object with a "sections" array. Each section has:
           const totalSegments = segments.length;
           const { generateLectureVideo } = await import("./lectureVideoGenerator");
 
-          // Progress callback to update DB during generation
+          // Progress callback to update DB + push via WebSocket
+          const { pushVideoProgress } = await import("./websocket");
           const onProgress = async (progress: { phase: string; current: number; total: number; message: string }) => {
             let pct = 0;
-            if (progress.phase === "avatar") {
+            if (progress.phase === "tts") {
+              pct = Math.round((progress.current / progress.total) * 40);
+            } else if (progress.phase === "avatar") {
               pct = Math.round((progress.current / progress.total) * 70);
             } else if (progress.phase === "compose") {
               pct = 75;
@@ -5353,9 +5356,17 @@ Return a JSON object with a "sections" array. Each section has:
             } else if (progress.phase === "complete") {
               pct = 100;
             }
+            const clampedPct = Math.min(95, pct);
             await db.updateLectureProject(input.projectId, {
-              generationProgress: Math.min(95, pct),
+              generationProgress: clampedPct,
               generationStep: progress.message,
+            });
+            // Push real-time update via WebSocket
+            pushVideoProgress(input.projectId, {
+              phase: progress.phase,
+              progress: clampedPct,
+              step: progress.message,
+              status: "generating",
             });
           };
 
@@ -5371,6 +5382,14 @@ Return a JSON object with a "sections" array. Each section has:
             finalVideoUrl: result.videoUrl,
             generationProgress: 100,
             generationStep: "Complete",
+          });
+          // Push completion via WebSocket
+          pushVideoProgress(input.projectId, {
+            phase: "complete",
+            progress: 100,
+            step: "Complete",
+            status: "completed",
+            videoUrl: result.videoUrl,
           });
           // Update generation history
           await db.updateVideoGeneration(genId, {
@@ -5404,6 +5423,17 @@ Return a JSON object with a "sections" array. Each section has:
             status: "failed",
             errorMessage: error.message,
           });
+          // Push failure via WebSocket
+          try {
+            const { pushVideoProgress: pushFail } = await import("./websocket");
+            pushFail(input.projectId, {
+              phase: "error",
+              progress: 0,
+              step: error.message,
+              status: "failed",
+              errorMessage: error.message,
+            });
+          } catch (_) {}
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: error.message });
         }
       }),
