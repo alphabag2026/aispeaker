@@ -7,7 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
-import { setupWebSocket } from "../websocket";
+import { setupWebSocket, setupVideoProgressWebSocket } from "../websocket";
 import { loadKlingKeysFromDb } from "./systemRouter";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -243,6 +243,8 @@ async function startServer() {
 
   // Initialize WebSocket server for whiteboard collaboration
   setupWebSocket(server);
+  // Initialize WebSocket server for video generation progress
+  setupVideoProgressWebSocket(server);
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);

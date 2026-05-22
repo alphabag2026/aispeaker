@@ -281,3 +281,69 @@ export function getActiveSessionCount(): number {
 export function getSessionParticipantCount(sessionCode: string): number {
   return sessions.get(sessionCode)?.size || 0;
 }
+
+// ============ Video Generation Progress WebSocket ============
+// Clients subscribe by projectId, server pushes progress updates
+const videoProgressClients = new Map<number, Set<WebSocket>>();
+let videoWss: WebSocketServer | null = null;
+
+export function setupVideoProgressWebSocket(server: Server) {
+  videoWss = new WebSocketServer({ server, path: "/ws/video-progress" });
+
+  videoWss.on("connection", (ws, req) => {
+    let subscribedProjectId: number | null = null;
+
+    ws.on("message", (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+        if (msg.type === "subscribe" && msg.projectId) {
+          subscribedProjectId = msg.projectId;
+          if (!videoProgressClients.has(msg.projectId)) {
+            videoProgressClients.set(msg.projectId, new Set());
+          }
+          videoProgressClients.get(msg.projectId)!.add(ws);
+          ws.send(JSON.stringify({ type: "subscribed", projectId: msg.projectId }));
+        }
+      } catch (err) {
+        console.error("[WS:video-progress] Message parse error:", err);
+      }
+    });
+
+    ws.on("close", () => {
+      if (subscribedProjectId !== null) {
+        const clients = videoProgressClients.get(subscribedProjectId);
+        if (clients) {
+          clients.delete(ws);
+          if (clients.size === 0) videoProgressClients.delete(subscribedProjectId);
+        }
+      }
+    });
+
+    ws.on("error", (err) => {
+      console.error("[WS:video-progress] Error:", err.message);
+    });
+  });
+
+  console.log("[WS] Video progress WebSocket initialized at /ws/video-progress");
+}
+
+/**
+ * Push progress update to all clients subscribed to a projectId
+ */
+export function pushVideoProgress(projectId: number, data: {
+  phase: string;
+  progress: number;
+  step: string;
+  status?: string;
+  videoUrl?: string;
+  errorMessage?: string;
+}) {
+  const clients = videoProgressClients.get(projectId);
+  if (!clients || clients.size === 0) return;
+  const payload = JSON.stringify({ type: "progress", projectId, ...data });
+  clients.forEach((ws) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(payload);
+    }
+  });
+}

@@ -34,6 +34,7 @@ import AvatarSettingsDialog from "@/components/AvatarSettingsDialog";
 import StepGuideTooltip from "@/components/StepGuideTooltip";
 import AvatarCustomizePanel from "@/components/AvatarCustomizePanel";
 import OnboardingTour from "@/components/OnboardingTour";
+import { useVideoProgress } from "@/hooks/useVideoProgress";
 import ScriptAutocomplete from "@/components/ScriptAutocomplete";
 import AvatarPresetPackages from "@/components/AvatarPresetPackages";
 
@@ -4305,14 +4306,46 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
   const uploadBgmMut = trpc.lectureBuilder.uploadBgm.useMutation();
   const generateVideoMut = trpc.lectureBuilder.generateVideo.useMutation();
   const exportVideoMut = trpc.lectureBuilder.exportVideo.useMutation();
+  // WebSocket real-time progress (primary)
+  const wsProgress = useVideoProgress(projectId, generating);
+
+  // Polling fallback (slower interval, only if WebSocket misses)
   const progressQuery = trpc.lectureBuilder.getVideoProgress.useQuery(
     { projectId },
-    { enabled: generating, refetchInterval: generating ? 3000 : false }
+    { enabled: generating, refetchInterval: generating ? 5000 : false }
   );
 
-  // Poll progress while generating
+  // Handle WebSocket progress updates (real-time)
+  useEffect(() => {
+    if (!generating || !wsProgress) return;
+    setGenProgress(wsProgress.progress);
+    setGenStep(wsProgress.step);
+    if (wsProgress.status === "completed" && wsProgress.videoUrl) {
+      setGenerating(false);
+      setGeneratedVideoUrl(wsProgress.videoUrl);
+      setGenProgress(100);
+      setGenStep(t("lectureBuilder.stringLiteral303"));
+      toast.success(t("lectureBuilder.stringLiteral304"));
+      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+        new Notification("🎬 영상 생성 완료", { body: "AI 강의 영상이 성공적으로 생성되었습니다." });
+      }
+      onRefresh();
+      setTimeout(() => {
+        document.getElementById('generated-video-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+    } else if (wsProgress.status === "failed") {
+      setGenerating(false);
+      setGenProgress(0);
+      setGenStep("");
+      toast.error(wsProgress.errorMessage || t("lectureBuilder.stringLiteral305"));
+    }
+  }, [generating, wsProgress]);
+
+  // Polling fallback - only acts if WebSocket hasn't delivered updates
   useEffect(() => {
     if (!generating || !progressQuery.data) return;
+    // Only use polling data if WebSocket hasn't provided recent data
+    if (wsProgress && wsProgress.progress > 0) return;
     const d = progressQuery.data;
     setGenProgress(d.progress);
     setGenStep(d.step);
@@ -4322,12 +4355,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       setGenProgress(100);
       setGenStep(t("lectureBuilder.stringLiteral303"));
       toast.success(t("lectureBuilder.stringLiteral304"));
-      // Browser notification when tab is not focused
       if (document.hidden && "Notification" in window && Notification.permission === "granted") {
         new Notification("🎬 영상 생성 완료", { body: "AI 강의 영상이 성공적으로 생성되었습니다." });
       }
       onRefresh();
-      // Auto-scroll to generated video result
       setTimeout(() => {
         document.getElementById('generated-video-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 300);
@@ -4337,7 +4368,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
       setGenStep("");
       toast.error(d.errorMessage || t("lectureBuilder.stringLiteral305"));
     }
-  }, [generating, progressQuery.data]);
+  }, [generating, progressQuery.data, wsProgress]);
 
   const assignedSlides = slides.filter((s: any) => scripts.some((sc: any) => sc.slideId === s.id));
   const totalDuration = scripts.reduce((acc: number, s: any) => acc + (s.estimatedDurationSec || 30), 0);
@@ -5170,6 +5201,19 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
               </CardContent>
             }
           </Card>
+
+          {/* TTS Mode Notice - when no avatar face is configured */}
+          {avatars.length === 0 || avatars.every((a: any) => !a.customFaceUrl) ?
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-2">
+              <div className="flex items-start gap-2">
+                <svg className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  <p className="font-semibold">{t("lectureBuilder.ttsModeBanner.title")}</p>
+                  <p className="mt-0.5 text-blue-600 dark:text-blue-400">{t("lectureBuilder.ttsModeBanner.desc")}</p>
+                </div>
+              </div>
+            </div> : null
+          }
 
           {/* Generate Button */}
           <Button id="step5-generate-video-btn" className="w-full gap-2" size="lg" onClick={handleGenerateVideo} disabled={generating || exporting || selectedSlideIds.size === 0}>

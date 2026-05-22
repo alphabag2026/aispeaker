@@ -2649,3 +2649,9 @@
 - [x] 영상 이력 카드에 인라인 영상 플레이어 추가 (클릭 시 바로 재생) - 큰 재생 버튼, 호버 애니메이션, 정지 버튼, 시간 배지, 재생 중 카드 하이라이트
 - [x] video_generations 테이블 기록 로직 점검/수정 (영상 생성 완료 시 DB 저장) - 확인 완료, 정상 동작
 - [x] 프로덕션 DB 자동 백업 스케줄 설정 (매일 새벽 2시 mysqldump, 7일 보관, /opt/1page/apps/aispeaker/backups/)
+
+## v6.11.0 영상 생성 UX 개선
+- [x] 영상 생성 로직 테스트 (프로덕션 서버 로그 확인)
+- [x] 아바타 없을 때 TTS 모드 안내 UX 추가 (20개 언어 번역 포함)
+- [x] 영상 생성 진행률 WebSocket 실시간 전환 (/ws/video-progress + polling fallback 5초)
+- [x] 프로덕션 배포 (aispeaker-v16.4)

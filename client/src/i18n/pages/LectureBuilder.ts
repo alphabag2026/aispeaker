@@ -626,7 +626,9 @@ registerTranslations("ko", {
   "lectureBuilder.shareVideoTitle": "AI 강의 영상",
   "lectureBuilder.shareVideoText": "AI로 생성한 강의 영상을 확인해보세요!",
   "lectureBuilder.videoHistoryBtn": "영상 이력",
-  "lectureBuilder.viewVideoHistory": "생성된 영상 확인하기"
+  "lectureBuilder.viewVideoHistory": "생성된 영상 확인하기",
+  "lectureBuilder.ttsModeBanner.title": "TTS 슬라이드 모드로 생성됩니다",
+  "lectureBuilder.ttsModeBanner.desc": "아바타 얼굴 이미지가 설정되지 않아 AI 음성 + 슬라이드 이미지로 영상이 생성됩니다. 아바타 탭에서 얼굴을 등록하면 AI 아바타 영상으로 전환됩니다."
 });
 registerTranslations("en", {
   "lectureBuilder.stringLiteral0": "Select Avatar",
@@ -1255,7 +1257,9 @@ registerTranslations("en", {
   "lectureBuilder.shareVideoTitle": "AI Lecture Video",
   "lectureBuilder.shareVideoText": "Check out this AI-generated lecture video!",
   "lectureBuilder.videoHistoryBtn": "Video History",
-  "lectureBuilder.viewVideoHistory": "View Generated Videos"
+  "lectureBuilder.viewVideoHistory": "View Generated Videos",
+  "lectureBuilder.ttsModeBanner.title": "TTS Slide Mode will be used",
+  "lectureBuilder.ttsModeBanner.desc": "No avatar face image is configured. Video will be generated with AI voice + slide images. Register a face in the Avatar tab to switch to AI avatar video."
 });
 registerTranslations("zh", {
   "lectureBuilder.stringLiteral0": "选择头像",
@@ -1855,7 +1859,10 @@ registerTranslations("zh", {
   "lectureBuilder.shareVideoTitle": "AI讲座视频",
   "lectureBuilder.shareVideoText": "来看看这个AI生成的讲座视频！",
   "lectureBuilder.videoHistoryBtn": "视频历史",
-  "lectureBuilder.viewVideoHistory": "查看生成的视频"
+  "lectureBuilder.viewVideoHistory": "查看生成的视频",
+
+  "lectureBuilder.ttsModeBanner.title": "将使用TTS幻灯片模式",
+  "lectureBuilder.ttsModeBanner.desc": "未设置头像面部图像。视频将使用AI语音+幻灯片图像生成。在头像标签中注册面部即可切换为AI头像视频。"
 });
 registerTranslations("ja", {
   "lectureBuilder.stringLiteral0": "アバター選択",
@@ -2455,7 +2462,10 @@ registerTranslations("ja", {
   "lectureBuilder.shareVideoTitle": "AI講義動画",
   "lectureBuilder.shareVideoText": "AIで生成した講義動画をご覧ください！",
   "lectureBuilder.videoHistoryBtn": "動画履歴",
-  "lectureBuilder.viewVideoHistory": "生成された動画を確認"
+  "lectureBuilder.viewVideoHistory": "生成された動画を確認",
+
+  "lectureBuilder.ttsModeBanner.title": "TTSスライドモードで生成されます",
+  "lectureBuilder.ttsModeBanner.desc": "アバターの顔画像が設定されていません。AI音声+スライド画像で動画が生成されます。アバタータブで顔を登録するとAIアバター動画に切り替わります。"
 });
 registerTranslations("vi", {
   "lectureBuilder.stringLiteral0": "Chọn avatar",
@@ -3055,7 +3065,10 @@ registerTranslations("vi", {
   "lectureBuilder.shareVideoTitle": "Video bài giảng AI",
   "lectureBuilder.shareVideoText": "Xem video bài giảng được tạo bởi AI!",
   "lectureBuilder.videoHistoryBtn": "Lịch sử video",
-  "lectureBuilder.viewVideoHistory": "Xem video đã tạo"
+  "lectureBuilder.viewVideoHistory": "Xem video đã tạo",
+
+  "lectureBuilder.ttsModeBanner.title": "Sẽ sử dụng chế độ TTS Slide",
+  "lectureBuilder.ttsModeBanner.desc": "Chưa cấu hình hình ảnh khuôn mặt avatar. Video sẽ được tạo bằng giọng nói AI + hình ảnh slide. Đăng ký khuôn mặt trong tab Avatar để chuyển sang video avatar AI."
 });
 registerTranslations("th", {
   "lectureBuilder.stringLiteral0": "เลือกอวาตาร์",
@@ -3655,7 +3668,10 @@ registerTranslations("th", {
   "lectureBuilder.shareVideoTitle": "วิดีโอบรรยาย AI",
   "lectureBuilder.shareVideoText": "ดูวิดีโอบรรยายที่สร้างโดย AI!",
   "lectureBuilder.videoHistoryBtn": "ประวัติวิดีโอ",
-  "lectureBuilder.viewVideoHistory": "ดูวิดีโอที่สร้าง"
+  "lectureBuilder.viewVideoHistory": "ดูวิดีโอที่สร้าง",
+
+  "lectureBuilder.ttsModeBanner.title": "จะใช้โหมด TTS Slide",
+  "lectureBuilder.ttsModeBanner.desc": "ยังไม่ได้ตั้งค่ารูปใบหน้าอวาตาร์ วิดีโอจะถูกสร้างด้วยเสียง AI + รูปสไลด์ ลงทะเบียนใบหน้าในแท็บอวาตาร์เพื่อเปลี่ยนเป็นวิดีโออวาตาร์ AI"
 });
 registerTranslations("id", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4255,7 +4271,10 @@ registerTranslations("id", {
   "lectureBuilder.shareVideoTitle": "Video Kuliah AI",
   "lectureBuilder.shareVideoText": "Lihat video kuliah yang dibuat oleh AI!",
   "lectureBuilder.videoHistoryBtn": "Riwayat Video",
-  "lectureBuilder.viewVideoHistory": "Lihat Video yang Dibuat"
+  "lectureBuilder.viewVideoHistory": "Lihat Video yang Dibuat",
+
+  "lectureBuilder.ttsModeBanner.title": "Mode TTS Slide akan digunakan",
+  "lectureBuilder.ttsModeBanner.desc": "Gambar wajah avatar belum dikonfigurasi. Video akan dibuat dengan suara AI + gambar slide. Daftarkan wajah di tab Avatar untuk beralih ke video avatar AI."
 });
 registerTranslations("ms", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4855,7 +4874,10 @@ registerTranslations("ms", {
   "lectureBuilder.shareVideoTitle": "Video Kuliah AI",
   "lectureBuilder.shareVideoText": "Lihat video kuliah yang dijana oleh AI!",
   "lectureBuilder.videoHistoryBtn": "Sejarah Video",
-  "lectureBuilder.viewVideoHistory": "Lihat Video yang Dijana"
+  "lectureBuilder.viewVideoHistory": "Lihat Video yang Dijana",
+
+  "lectureBuilder.ttsModeBanner.title": "Mod TTS Slide akan digunakan",
+  "lectureBuilder.ttsModeBanner.desc": "Imej muka avatar belum dikonfigurasi. Video akan dijana dengan suara AI + imej slaid. Daftarkan muka di tab Avatar untuk beralih ke video avatar AI."
 });
 registerTranslations("es", {
   "lectureBuilder.stringLiteral0": "Seleccionar avatar",
@@ -5455,7 +5477,10 @@ registerTranslations("es", {
   "lectureBuilder.shareVideoTitle": "Video de Conferencia AI",
   "lectureBuilder.shareVideoText": "¡Mira este video de conferencia generado por IA!",
   "lectureBuilder.videoHistoryBtn": "Historial",
-  "lectureBuilder.viewVideoHistory": "Ver Videos Generados"
+  "lectureBuilder.viewVideoHistory": "Ver Videos Generados",
+
+  "lectureBuilder.ttsModeBanner.title": "Se usará el modo TTS Slide",
+  "lectureBuilder.ttsModeBanner.desc": "No se ha configurado la imagen facial del avatar. El video se generará con voz AI + imágenes de diapositivas. Registre un rostro en la pestaña Avatar para cambiar a video con avatar AI."
 });
 registerTranslations("fr", {
   "lectureBuilder.stringLiteral0": "Sélection de l'avatar",
@@ -6055,7 +6080,10 @@ registerTranslations("fr", {
   "lectureBuilder.shareVideoTitle": "Vidéo de conférence IA",
   "lectureBuilder.shareVideoText": "Découvrez cette vidéo de conférence générée par l'IA !",
   "lectureBuilder.videoHistoryBtn": "Historique",
-  "lectureBuilder.viewVideoHistory": "Voir les vidéos générées"
+  "lectureBuilder.viewVideoHistory": "Voir les vidéos générées",
+
+  "lectureBuilder.ttsModeBanner.title": "Le mode TTS Slide sera utilisé",
+  "lectureBuilder.ttsModeBanner.desc": "Aucune image de visage d'avatar n'est configurée. La vidéo sera générée avec voix AI + images de diapositives. Enregistrez un visage dans l'onglet Avatar pour passer à la vidéo avatar AI."
 });
 registerTranslations("de", {
   "lectureBuilder.stringLiteral0": "Avatar auswählen",
@@ -6655,7 +6683,10 @@ registerTranslations("de", {
   "lectureBuilder.shareVideoTitle": "AI-Vorlesungsvideo",
   "lectureBuilder.shareVideoText": "Schauen Sie sich dieses KI-generierte Vorlesungsvideo an!",
   "lectureBuilder.videoHistoryBtn": "Verlauf",
-  "lectureBuilder.viewVideoHistory": "Erstellte Videos anzeigen"
+  "lectureBuilder.viewVideoHistory": "Erstellte Videos anzeigen",
+
+  "lectureBuilder.ttsModeBanner.title": "TTS-Folien-Modus wird verwendet",
+  "lectureBuilder.ttsModeBanner.desc": "Kein Avatar-Gesichtsbild konfiguriert. Video wird mit KI-Stimme + Folienbildern erstellt. Registrieren Sie ein Gesicht im Avatar-Tab, um zum KI-Avatar-Video zu wechseln."
 });
 registerTranslations("pt", {
   "lectureBuilder.stringLiteral0": "Selecionar avatar",
@@ -7255,7 +7286,10 @@ registerTranslations("pt", {
   "lectureBuilder.shareVideoTitle": "Vídeo de Palestra IA",
   "lectureBuilder.shareVideoText": "Confira este vídeo de palestra gerado por IA!",
   "lectureBuilder.videoHistoryBtn": "Histórico",
-  "lectureBuilder.viewVideoHistory": "Ver Vídeos Gerados"
+  "lectureBuilder.viewVideoHistory": "Ver Vídeos Gerados",
+
+  "lectureBuilder.ttsModeBanner.title": "O modo TTS Slide será usado",
+  "lectureBuilder.ttsModeBanner.desc": "Nenhuma imagem facial do avatar foi configurada. O vídeo será gerado com voz AI + imagens de slides. Registre um rosto na aba Avatar para mudar para vídeo com avatar AI."
 });
 registerTranslations("ru", {
   "lectureBuilder.stringLiteral0": "Выбор аватара",
@@ -7855,7 +7889,10 @@ registerTranslations("ru", {
   "lectureBuilder.shareVideoTitle": "Видео лекции ИИ",
   "lectureBuilder.shareVideoText": "Посмотрите это видео лекции, созданное ИИ!",
   "lectureBuilder.videoHistoryBtn": "История",
-  "lectureBuilder.viewVideoHistory": "Просмотр созданных видео"
+  "lectureBuilder.viewVideoHistory": "Просмотр созданных видео",
+
+  "lectureBuilder.ttsModeBanner.title": "Будет использован режим TTS Slide",
+  "lectureBuilder.ttsModeBanner.desc": "Изображение лица аватара не настроено. Видео будет создано с AI-голосом + изображениями слайдов. Зарегистрируйте лицо во вкладке Аватар для переключения на AI-аватар видео."
 });
 registerTranslations("ar", {
   "lectureBuilder.stringLiteral0": "اختيار الصورة الرمزية",
@@ -8455,7 +8492,10 @@ registerTranslations("ar", {
   "lectureBuilder.shareVideoTitle": "فيديو محاضرة AI",
   "lectureBuilder.shareVideoText": "شاهد فيديو المحاضرة المُنشأ بالذكاء الاصطناعي!",
   "lectureBuilder.videoHistoryBtn": "السجل",
-  "lectureBuilder.viewVideoHistory": "عرض مقاطع الفيديو المنشأة"
+  "lectureBuilder.viewVideoHistory": "عرض مقاطع الفيديو المنشأة",
+
+  "lectureBuilder.ttsModeBanner.title": "سيتم استخدام وضع TTS Slide",
+  "lectureBuilder.ttsModeBanner.desc": "لم يتم تكوين صورة وجه الأفاتار. سيتم إنشاء الفيديو بصوت AI + صور الشرائح. سجل وجهاً في علامة تبويب الأفاتار للتبديل إلى فيديو أفاتار AI."
 });
 registerTranslations("hi", {
   "lectureBuilder.stringLiteral0": "अवतार चुनें",
@@ -9055,7 +9095,10 @@ registerTranslations("hi", {
   "lectureBuilder.shareVideoTitle": "AI व्याख्यान वीडियो",
   "lectureBuilder.shareVideoText": "AI द्वारा बनाए गए इस व्याख्यान वीडियो को देखें!",
   "lectureBuilder.videoHistoryBtn": "इतिहास",
-  "lectureBuilder.viewVideoHistory": "बनाए गए वीडियो देखें"
+  "lectureBuilder.viewVideoHistory": "बनाए गए वीडियो देखें",
+
+  "lectureBuilder.ttsModeBanner.title": "TTS स्लाइड मोड का उपयोग किया जाएगा",
+  "lectureBuilder.ttsModeBanner.desc": "अवतार चेहरे की छवि कॉन्फ़िगर नहीं है। वीडियो AI आवाज + स्लाइड छवियों के साथ बनाया जाएगा। AI अवतार वीडियो पर स्विच करने के लिए अवतार टैब में चेहरा पंजीकृत करें।"
 });
 registerTranslations("it", {
   "lectureBuilder.stringLiteral0": "Seleziona avatar",
@@ -9655,7 +9698,10 @@ registerTranslations("it", {
   "lectureBuilder.shareVideoTitle": "Video Lezione AI",
   "lectureBuilder.shareVideoText": "Guarda questo video di lezione generato dall'IA!",
   "lectureBuilder.videoHistoryBtn": "Cronologia",
-  "lectureBuilder.viewVideoHistory": "Visualizza video generati"
+  "lectureBuilder.viewVideoHistory": "Visualizza video generati",
+
+  "lectureBuilder.ttsModeBanner.title": "Verrà utilizzata la modalità TTS Slide",
+  "lectureBuilder.ttsModeBanner.desc": "Nessuna immagine del volto dell'avatar configurata. Il video sarà generato con voce AI + immagini delle diapositive. Registra un volto nella scheda Avatar per passare al video avatar AI."
 });
 registerTranslations("nl", {
   "lectureBuilder.stringLiteral0": "Avatar selecteren",
@@ -10255,7 +10301,10 @@ registerTranslations("nl", {
   "lectureBuilder.shareVideoTitle": "AI College Video",
   "lectureBuilder.shareVideoText": "Bekijk deze door AI gegenereerde collegevideo!",
   "lectureBuilder.videoHistoryBtn": "Geschiedenis",
-  "lectureBuilder.viewVideoHistory": "Gegenereerde video's bekijken"
+  "lectureBuilder.viewVideoHistory": "Gegenereerde video's bekijken",
+
+  "lectureBuilder.ttsModeBanner.title": "TTS Slide-modus wordt gebruikt",
+  "lectureBuilder.ttsModeBanner.desc": "Geen avatar-gezichtsafbeelding geconfigureerd. Video wordt gegenereerd met AI-stem + dia-afbeeldingen. Registreer een gezicht in het Avatar-tabblad om over te schakelen naar AI-avatar video."
 });
 registerTranslations("pl", {
   "lectureBuilder.stringLiteral0": "Wybierz awatara",
@@ -10855,7 +10904,10 @@ registerTranslations("pl", {
   "lectureBuilder.shareVideoTitle": "Film wykładowy AI",
   "lectureBuilder.shareVideoText": "Zobacz ten film wykładowy wygenerowany przez AI!",
   "lectureBuilder.videoHistoryBtn": "Historia",
-  "lectureBuilder.viewVideoHistory": "Zobacz wygenerowane filmy"
+  "lectureBuilder.viewVideoHistory": "Zobacz wygenerowane filmy",
+
+  "lectureBuilder.ttsModeBanner.title": "Zostanie użyty tryb TTS Slide",
+  "lectureBuilder.ttsModeBanner.desc": "Nie skonfigurowano obrazu twarzy awatara. Film zostanie wygenerowany z głosem AI + obrazami slajdów. Zarejestruj twarz w zakładce Awatar, aby przełączyć na film z awatarem AI."
 });
 registerTranslations("sv", {
   "lectureBuilder.stringLiteral0": "Välj avatar",
@@ -11455,7 +11507,10 @@ registerTranslations("sv", {
   "lectureBuilder.shareVideoTitle": "AI-föreläsningsvideo",
   "lectureBuilder.shareVideoText": "Kolla in denna AI-genererade föreläsningsvideo!",
   "lectureBuilder.videoHistoryBtn": "Historik",
-  "lectureBuilder.viewVideoHistory": "Visa genererade videor"
+  "lectureBuilder.viewVideoHistory": "Visa genererade videor",
+
+  "lectureBuilder.ttsModeBanner.title": "TTS Slide-läge kommer att användas",
+  "lectureBuilder.ttsModeBanner.desc": "Ingen avatar-ansiktsbild konfigurerad. Video skapas med AI-röst + bildbilder. Registrera ett ansikte i Avatar-fliken för att byta till AI-avatar-video."
 });
 registerTranslations("tr", {
   "lectureBuilder.stringLiteral0": "Avatar Seçimi",
@@ -12055,5 +12110,8 @@ registerTranslations("tr", {
   "lectureBuilder.shareVideoTitle": "AI Ders Videosu",
   "lectureBuilder.shareVideoText": "AI tarafından oluşturulan bu ders videosuna göz atın!",
   "lectureBuilder.videoHistoryBtn": "Geçmiş",
-  "lectureBuilder.viewVideoHistory": "Oluşturulan Videoları Görüntüle"
+  "lectureBuilder.viewVideoHistory": "Oluşturulan Videoları Görüntüle",
+
+  "lectureBuilder.ttsModeBanner.title": "TTS Slayt Modu kullanılacak",
+  "lectureBuilder.ttsModeBanner.desc": "Avatar yüz görseli yapılandırılmadı. Video AI sesi + slayt görselleri ile oluşturulacak. AI avatar videosuna geçmek için Avatar sekmesinde bir yüz kaydedin."
 });
