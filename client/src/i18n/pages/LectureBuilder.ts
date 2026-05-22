@@ -626,6 +626,7 @@ registerTranslations("ko", {
   "lectureBuilder.shareVideoTitle": "AI 강의 영상",
   "lectureBuilder.shareVideoText": "AI로 생성한 강의 영상을 확인해보세요!",
   "lectureBuilder.videoHistoryBtn": "영상 이력",
+  "lectureBuilder.viewVideoHistory": "생성된 영상 확인하기"
 });
 registerTranslations("en", {
   "lectureBuilder.stringLiteral0": "Select Avatar",
@@ -1254,6 +1255,7 @@ registerTranslations("en", {
   "lectureBuilder.shareVideoTitle": "AI Lecture Video",
   "lectureBuilder.shareVideoText": "Check out this AI-generated lecture video!",
   "lectureBuilder.videoHistoryBtn": "Video History",
+  "lectureBuilder.viewVideoHistory": "View Generated Videos"
 });
 registerTranslations("zh", {
   "lectureBuilder.stringLiteral0": "选择头像",
@@ -1853,6 +1855,7 @@ registerTranslations("zh", {
   "lectureBuilder.shareVideoTitle": "AI讲座视频",
   "lectureBuilder.shareVideoText": "来看看这个AI生成的讲座视频！",
   "lectureBuilder.videoHistoryBtn": "视频历史",
+  "lectureBuilder.viewVideoHistory": "查看生成的视频"
 });
 registerTranslations("ja", {
   "lectureBuilder.stringLiteral0": "アバター選択",
@@ -2452,6 +2455,7 @@ registerTranslations("ja", {
   "lectureBuilder.shareVideoTitle": "AI講義動画",
   "lectureBuilder.shareVideoText": "AIで生成した講義動画をご覧ください！",
   "lectureBuilder.videoHistoryBtn": "動画履歴",
+  "lectureBuilder.viewVideoHistory": "生成された動画を確認"
 });
 registerTranslations("vi", {
   "lectureBuilder.stringLiteral0": "Chọn avatar",
@@ -3051,6 +3055,7 @@ registerTranslations("vi", {
   "lectureBuilder.shareVideoTitle": "Video bài giảng AI",
   "lectureBuilder.shareVideoText": "Xem video bài giảng được tạo bởi AI!",
   "lectureBuilder.videoHistoryBtn": "Lịch sử video",
+  "lectureBuilder.viewVideoHistory": "Xem video đã tạo"
 });
 registerTranslations("th", {
   "lectureBuilder.stringLiteral0": "เลือกอวาตาร์",
@@ -3650,6 +3655,7 @@ registerTranslations("th", {
   "lectureBuilder.shareVideoTitle": "วิดีโอบรรยาย AI",
   "lectureBuilder.shareVideoText": "ดูวิดีโอบรรยายที่สร้างโดย AI!",
   "lectureBuilder.videoHistoryBtn": "ประวัติวิดีโอ",
+  "lectureBuilder.viewVideoHistory": "ดูวิดีโอที่สร้าง"
 });
 registerTranslations("id", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4249,6 +4255,7 @@ registerTranslations("id", {
   "lectureBuilder.shareVideoTitle": "Video Kuliah AI",
   "lectureBuilder.shareVideoText": "Lihat video kuliah yang dibuat oleh AI!",
   "lectureBuilder.videoHistoryBtn": "Riwayat Video",
+  "lectureBuilder.viewVideoHistory": "Lihat Video yang Dibuat"
 });
 registerTranslations("ms", {
   "lectureBuilder.stringLiteral0": "Pilih Avatar",
@@ -4848,6 +4855,7 @@ registerTranslations("ms", {
   "lectureBuilder.shareVideoTitle": "Video Kuliah AI",
   "lectureBuilder.shareVideoText": "Lihat video kuliah yang dijana oleh AI!",
   "lectureBuilder.videoHistoryBtn": "Sejarah Video",
+  "lectureBuilder.viewVideoHistory": "Lihat Video yang Dijana"
 });
 registerTranslations("es", {
   "lectureBuilder.stringLiteral0": "Seleccionar avatar",
@@ -5447,6 +5455,7 @@ registerTranslations("es", {
   "lectureBuilder.shareVideoTitle": "Video de Conferencia AI",
   "lectureBuilder.shareVideoText": "¡Mira este video de conferencia generado por IA!",
   "lectureBuilder.videoHistoryBtn": "Historial",
+  "lectureBuilder.viewVideoHistory": "Ver Videos Generados"
 });
 registerTranslations("fr", {
   "lectureBuilder.stringLiteral0": "Sélection de l'avatar",
@@ -6046,6 +6055,7 @@ registerTranslations("fr", {
   "lectureBuilder.shareVideoTitle": "Vidéo de conférence IA",
   "lectureBuilder.shareVideoText": "Découvrez cette vidéo de conférence générée par l'IA !",
   "lectureBuilder.videoHistoryBtn": "Historique",
+  "lectureBuilder.viewVideoHistory": "Voir les vidéos générées"
 });
 registerTranslations("de", {
   "lectureBuilder.stringLiteral0": "Avatar auswählen",
@@ -6645,6 +6655,7 @@ registerTranslations("de", {
   "lectureBuilder.shareVideoTitle": "AI-Vorlesungsvideo",
   "lectureBuilder.shareVideoText": "Schauen Sie sich dieses KI-generierte Vorlesungsvideo an!",
   "lectureBuilder.videoHistoryBtn": "Verlauf",
+  "lectureBuilder.viewVideoHistory": "Erstellte Videos anzeigen"
 });
 registerTranslations("pt", {
   "lectureBuilder.stringLiteral0": "Selecionar avatar",
@@ -7244,6 +7255,7 @@ registerTranslations("pt", {
   "lectureBuilder.shareVideoTitle": "Vídeo de Palestra IA",
   "lectureBuilder.shareVideoText": "Confira este vídeo de palestra gerado por IA!",
   "lectureBuilder.videoHistoryBtn": "Histórico",
+  "lectureBuilder.viewVideoHistory": "Ver Vídeos Gerados"
 });
 registerTranslations("ru", {
   "lectureBuilder.stringLiteral0": "Выбор аватара",
@@ -7843,6 +7855,7 @@ registerTranslations("ru", {
   "lectureBuilder.shareVideoTitle": "Видео лекции ИИ",
   "lectureBuilder.shareVideoText": "Посмотрите это видео лекции, созданное ИИ!",
   "lectureBuilder.videoHistoryBtn": "История",
+  "lectureBuilder.viewVideoHistory": "Просмотр созданных видео"
 });
 registerTranslations("ar", {
   "lectureBuilder.stringLiteral0": "اختيار الصورة الرمزية",
@@ -8442,6 +8455,7 @@ registerTranslations("ar", {
   "lectureBuilder.shareVideoTitle": "فيديو محاضرة AI",
   "lectureBuilder.shareVideoText": "شاهد فيديو المحاضرة المُنشأ بالذكاء الاصطناعي!",
   "lectureBuilder.videoHistoryBtn": "السجل",
+  "lectureBuilder.viewVideoHistory": "عرض مقاطع الفيديو المنشأة"
 });
 registerTranslations("hi", {
   "lectureBuilder.stringLiteral0": "अवतार चुनें",
@@ -9041,6 +9055,7 @@ registerTranslations("hi", {
   "lectureBuilder.shareVideoTitle": "AI व्याख्यान वीडियो",
   "lectureBuilder.shareVideoText": "AI द्वारा बनाए गए इस व्याख्यान वीडियो को देखें!",
   "lectureBuilder.videoHistoryBtn": "इतिहास",
+  "lectureBuilder.viewVideoHistory": "बनाए गए वीडियो देखें"
 });
 registerTranslations("it", {
   "lectureBuilder.stringLiteral0": "Seleziona avatar",
@@ -9640,6 +9655,7 @@ registerTranslations("it", {
   "lectureBuilder.shareVideoTitle": "Video Lezione AI",
   "lectureBuilder.shareVideoText": "Guarda questo video di lezione generato dall'IA!",
   "lectureBuilder.videoHistoryBtn": "Cronologia",
+  "lectureBuilder.viewVideoHistory": "Visualizza video generati"
 });
 registerTranslations("nl", {
   "lectureBuilder.stringLiteral0": "Avatar selecteren",
@@ -10239,6 +10255,7 @@ registerTranslations("nl", {
   "lectureBuilder.shareVideoTitle": "AI College Video",
   "lectureBuilder.shareVideoText": "Bekijk deze door AI gegenereerde collegevideo!",
   "lectureBuilder.videoHistoryBtn": "Geschiedenis",
+  "lectureBuilder.viewVideoHistory": "Gegenereerde video's bekijken"
 });
 registerTranslations("pl", {
   "lectureBuilder.stringLiteral0": "Wybierz awatara",
@@ -10838,6 +10855,7 @@ registerTranslations("pl", {
   "lectureBuilder.shareVideoTitle": "Film wykładowy AI",
   "lectureBuilder.shareVideoText": "Zobacz ten film wykładowy wygenerowany przez AI!",
   "lectureBuilder.videoHistoryBtn": "Historia",
+  "lectureBuilder.viewVideoHistory": "Zobacz wygenerowane filmy"
 });
 registerTranslations("sv", {
   "lectureBuilder.stringLiteral0": "Välj avatar",
@@ -11437,6 +11455,7 @@ registerTranslations("sv", {
   "lectureBuilder.shareVideoTitle": "AI-föreläsningsvideo",
   "lectureBuilder.shareVideoText": "Kolla in denna AI-genererade föreläsningsvideo!",
   "lectureBuilder.videoHistoryBtn": "Historik",
+  "lectureBuilder.viewVideoHistory": "Visa genererade videor"
 });
 registerTranslations("tr", {
   "lectureBuilder.stringLiteral0": "Avatar Seçimi",
@@ -12036,4 +12055,5 @@ registerTranslations("tr", {
   "lectureBuilder.shareVideoTitle": "AI Ders Videosu",
   "lectureBuilder.shareVideoText": "AI tarafından oluşturulan bu ders videosuna göz atın!",
   "lectureBuilder.videoHistoryBtn": "Geçmiş",
+  "lectureBuilder.viewVideoHistory": "Oluşturulan Videoları Görüntüle"
 });
