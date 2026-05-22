@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  History, Video, Download, Play, Trash2, Clock, Layers,
+  History, Video, Download, Play, Pause, Square, Trash2, Clock, Layers,
   Monitor, AlertCircle, CheckCircle2, Loader2, ArrowLeft,
   Share2, Link2, ExternalLink, MessageCircle, Copy, FolderOpen,
   Search, RefreshCw, Calendar, Image as ImageIcon
@@ -370,40 +370,57 @@ export default function VideoHistory() {
             const isShareOpen = shareOpenId === gen.id;
 
             return (
-              <Card key={gen.id} className="overflow-hidden hover:border-primary/30 transition-colors">
+              <Card key={gen.id} className={`overflow-hidden transition-all duration-300 ${isPlaying ? 'border-primary/60 ring-1 ring-primary/20 shadow-lg shadow-primary/5' : 'hover:border-primary/30'}`}>
                 <div className="flex flex-col md:flex-row">
                   {/* Video Preview / Thumbnail */}
-                  <div className="md:w-80 bg-black/50 flex items-center justify-center min-h-[180px] relative">
+                  <div className={`md:w-80 bg-black/50 flex items-center justify-center relative ${isPlaying ? 'min-h-[220px]' : 'min-h-[180px]'}`}>
                     {gen.status === "completed" && gen.videoUrl ? (
                       isPlaying ? (
-                        <video
-                          ref={(el) => { videoRefs.current[gen.id] = el; }}
-                          src={gen.videoUrl}
-                          controls
-                          autoPlay
-                          className="w-full h-full object-contain"
-                          onEnded={() => setPlayingId(null)}
-                          crossOrigin="anonymous"
-                        />
+                        <div className="relative w-full h-full">
+                          <video
+                            ref={(el) => { videoRefs.current[gen.id] = el; }}
+                            src={gen.videoUrl}
+                            controls
+                            autoPlay
+                            className="w-full h-full object-contain"
+                            onEnded={() => setPlayingId(null)}
+                            crossOrigin="anonymous"
+                          />
+                          <button
+                            onClick={() => setPlayingId(null)}
+                            className="absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center transition-colors"
+                            title="Stop"
+                          >
+                            <Square className="w-3 h-3 text-white" />
+                          </button>
+                        </div>
                       ) : (
                         <button
                           onClick={() => setPlayingId(gen.id)}
-                          className="relative w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+                          className="relative w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-all duration-200 group cursor-pointer"
                         >
                           {/* Thumbnail from project */}
                           {gen.projectThumbnail ? (
                             <img
                               src={gen.projectThumbnail}
                               alt="Video thumbnail"
-                              className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity"
+                              className="absolute inset-0 w-full h-full object-cover opacity-50 group-hover:opacity-75 group-hover:scale-[1.02] transition-all duration-300"
                             />
                           ) : null}
-                          <div className="relative z-10 w-14 h-14 rounded-full bg-primary/20 backdrop-blur-sm flex items-center justify-center border border-primary/30">
-                            <Play className="w-6 h-6 text-primary" />
+                          {/* Gradient overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                          <div className="relative z-10 w-16 h-16 rounded-full bg-primary/30 backdrop-blur-md flex items-center justify-center border-2 border-primary/50 group-hover:scale-110 group-hover:bg-primary/40 transition-all duration-300 shadow-lg shadow-primary/20">
+                            <Play className="w-7 h-7 text-primary fill-primary/30" />
                           </div>
-                          <span className="relative z-10 text-xs bg-black/50 px-2 py-0.5 rounded">
+                          <span className="relative z-10 text-xs font-medium bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full text-white/90">
                             {t("videoHistory.clickToPlay")}
                           </span>
+                          {/* Duration badge */}
+                          {gen.totalDuration && (
+                            <span className="absolute bottom-2 right-2 z-10 text-[10px] bg-black/70 text-white/80 px-1.5 py-0.5 rounded">
+                              {Math.floor(gen.totalDuration / 60)}:{String(Math.round(gen.totalDuration % 60)).padStart(2, '0')}
+                            </span>
+                          )}
                         </button>
                       )
                     ) : gen.status === "generating" ? (
