@@ -4327,6 +4327,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
         new Notification("🎬 영상 생성 완료", { body: "AI 강의 영상이 성공적으로 생성되었습니다." });
       }
       onRefresh();
+      // Auto-scroll to generated video result
+      setTimeout(() => {
+        document.getElementById('generated-video-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
     } else if (d.status === "failed") {
       setGenerating(false);
       setGenProgress(0);
@@ -4547,6 +4551,10 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
         new Notification("🎬 영상 생성 완료", { body: "AI 강의 영상이 성공적으로 생성되었습니다." });
       }
       onRefresh();
+      // Auto-scroll to generated video result
+      setTimeout(() => {
+        document.getElementById('generated-video-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
     } catch (err: any) {
       toast.error(err.message || t("lectureBuilder.stringLiteral313"));
     } finally {
@@ -4802,7 +4810,7 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
 
           {/* Generated Video & Export */}
           {generatedVideoUrl &&
-          <Card className="mt-4 border-green-500/30">
+          <Card id="generated-video-result" className="mt-4 border-green-500/30 ring-2 ring-green-500/50 animate-pulse-once">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -5171,6 +5179,11 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             <><Video className="w-5 h-5" />{t("lectureBuilder.jsxText410")}</>
             }
           </Button>
+          <Link href="/video-history">
+            <Button variant="outline" className="w-full gap-2 mt-2" size="sm">
+              <History className="w-4 h-4" />{t("lectureBuilder.viewVideoHistory")}
+            </Button>
+          </Link>
           {generating &&
           <Card>
               <CardContent className="pt-4 space-y-3">
