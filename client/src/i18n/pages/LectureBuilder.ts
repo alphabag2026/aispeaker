@@ -625,6 +625,7 @@ registerTranslations("ko", {
   "lectureBuilder.shareWhatsApp": "왓츠앱",
   "lectureBuilder.shareVideoTitle": "AI 강의 영상",
   "lectureBuilder.shareVideoText": "AI로 생성한 강의 영상을 확인해보세요!",
+  "lectureBuilder.shareVideoLabel": "소셜 미디어로 공유",
   "lectureBuilder.videoHistoryBtn": "영상 이력",
   "lectureBuilder.viewVideoHistory": "생성된 영상 확인하기",
   "lectureBuilder.ttsModeBanner.title": "TTS 슬라이드 모드로 생성됩니다",
@@ -1256,6 +1257,7 @@ registerTranslations("en", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "AI Lecture Video",
   "lectureBuilder.shareVideoText": "Check out this AI-generated lecture video!",
+  "lectureBuilder.shareVideoLabel": "Share via social media",
   "lectureBuilder.videoHistoryBtn": "Video History",
   "lectureBuilder.viewVideoHistory": "View Generated Videos",
   "lectureBuilder.ttsModeBanner.title": "TTS Slide Mode will be used",
@@ -1858,6 +1860,7 @@ registerTranslations("zh", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "AI讲座视频",
   "lectureBuilder.shareVideoText": "来看看这个AI生成的讲座视频！",
+  "lectureBuilder.shareVideoLabel": "通过社交媒体分享",
   "lectureBuilder.videoHistoryBtn": "视频历史",
   "lectureBuilder.viewVideoHistory": "查看生成的视频",
 
@@ -2461,6 +2464,7 @@ registerTranslations("ja", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "AI講義動画",
   "lectureBuilder.shareVideoText": "AIで生成した講義動画をご覧ください！",
+  "lectureBuilder.shareVideoLabel": "SNSで共有",
   "lectureBuilder.videoHistoryBtn": "動画履歴",
   "lectureBuilder.viewVideoHistory": "生成された動画を確認",
 
@@ -3064,6 +3068,7 @@ registerTranslations("vi", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Video bài giảng AI",
   "lectureBuilder.shareVideoText": "Xem video bài giảng được tạo bởi AI!",
+  "lectureBuilder.shareVideoLabel": "Chia sẻ qua mạng xã hội",
   "lectureBuilder.videoHistoryBtn": "Lịch sử video",
   "lectureBuilder.viewVideoHistory": "Xem video đã tạo",
 
@@ -3667,6 +3672,7 @@ registerTranslations("th", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "วิดีโอบรรยาย AI",
   "lectureBuilder.shareVideoText": "ดูวิดีโอบรรยายที่สร้างโดย AI!",
+  "lectureBuilder.shareVideoLabel": "แชร์ผ่านโซเชียลมีเดีย",
   "lectureBuilder.videoHistoryBtn": "ประวัติวิดีโอ",
   "lectureBuilder.viewVideoHistory": "ดูวิดีโอที่สร้าง",
 
@@ -4270,6 +4276,7 @@ registerTranslations("id", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Video Kuliah AI",
   "lectureBuilder.shareVideoText": "Lihat video kuliah yang dibuat oleh AI!",
+  "lectureBuilder.shareVideoLabel": "Bagikan via media sosial",
   "lectureBuilder.videoHistoryBtn": "Riwayat Video",
   "lectureBuilder.viewVideoHistory": "Lihat Video yang Dibuat",
 
@@ -4873,6 +4880,7 @@ registerTranslations("ms", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Video Kuliah AI",
   "lectureBuilder.shareVideoText": "Lihat video kuliah yang dijana oleh AI!",
+  "lectureBuilder.shareVideoLabel": "Kongsi melalui media sosial",
   "lectureBuilder.videoHistoryBtn": "Sejarah Video",
   "lectureBuilder.viewVideoHistory": "Lihat Video yang Dijana",
 
@@ -5476,6 +5484,7 @@ registerTranslations("es", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Video de Conferencia AI",
   "lectureBuilder.shareVideoText": "¡Mira este video de conferencia generado por IA!",
+  "lectureBuilder.shareVideoLabel": "Compartir en redes sociales",
   "lectureBuilder.videoHistoryBtn": "Historial",
   "lectureBuilder.viewVideoHistory": "Ver Videos Generados",
 
@@ -6079,6 +6088,7 @@ registerTranslations("fr", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Vidéo de conférence IA",
   "lectureBuilder.shareVideoText": "Découvrez cette vidéo de conférence générée par l'IA !",
+  "lectureBuilder.shareVideoLabel": "Partager sur les réseaux sociaux",
   "lectureBuilder.videoHistoryBtn": "Historique",
   "lectureBuilder.viewVideoHistory": "Voir les vidéos générées",
 
@@ -6682,6 +6692,7 @@ registerTranslations("de", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "AI-Vorlesungsvideo",
   "lectureBuilder.shareVideoText": "Schauen Sie sich dieses KI-generierte Vorlesungsvideo an!",
+  "lectureBuilder.shareVideoLabel": "Über soziale Medien teilen",
   "lectureBuilder.videoHistoryBtn": "Verlauf",
   "lectureBuilder.viewVideoHistory": "Erstellte Videos anzeigen",
 
@@ -7285,6 +7296,7 @@ registerTranslations("pt", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Vídeo de Palestra IA",
   "lectureBuilder.shareVideoText": "Confira este vídeo de palestra gerado por IA!",
+  "lectureBuilder.shareVideoLabel": "Compartilhar nas redes sociais",
   "lectureBuilder.videoHistoryBtn": "Histórico",
   "lectureBuilder.viewVideoHistory": "Ver Vídeos Gerados",
 
@@ -7888,6 +7900,7 @@ registerTranslations("ru", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Видео лекции ИИ",
   "lectureBuilder.shareVideoText": "Посмотрите это видео лекции, созданное ИИ!",
+  "lectureBuilder.shareVideoLabel": "Поделиться в социальных сетях",
   "lectureBuilder.videoHistoryBtn": "История",
   "lectureBuilder.viewVideoHistory": "Просмотр созданных видео",
 
@@ -8491,6 +8504,7 @@ registerTranslations("ar", {
   "lectureBuilder.shareWhatsApp": "واتساب",
   "lectureBuilder.shareVideoTitle": "فيديو محاضرة AI",
   "lectureBuilder.shareVideoText": "شاهد فيديو المحاضرة المُنشأ بالذكاء الاصطناعي!",
+  "lectureBuilder.shareVideoLabel": "مشاركة عبر وسائل التواصل الاجتماعي",
   "lectureBuilder.videoHistoryBtn": "السجل",
   "lectureBuilder.viewVideoHistory": "عرض مقاطع الفيديو المنشأة",
 
@@ -9094,6 +9108,7 @@ registerTranslations("hi", {
   "lectureBuilder.shareWhatsApp": "व्हाट्सएप",
   "lectureBuilder.shareVideoTitle": "AI व्याख्यान वीडियो",
   "lectureBuilder.shareVideoText": "AI द्वारा बनाए गए इस व्याख्यान वीडियो को देखें!",
+  "lectureBuilder.shareVideoLabel": "सोशल मीडिया पर साझा करें",
   "lectureBuilder.videoHistoryBtn": "इतिहास",
   "lectureBuilder.viewVideoHistory": "बनाए गए वीडियो देखें",
 
@@ -9697,6 +9712,7 @@ registerTranslations("it", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Video Lezione AI",
   "lectureBuilder.shareVideoText": "Guarda questo video di lezione generato dall'IA!",
+  "lectureBuilder.shareVideoLabel": "Condividi sui social media",
   "lectureBuilder.videoHistoryBtn": "Cronologia",
   "lectureBuilder.viewVideoHistory": "Visualizza video generati",
 
@@ -10300,6 +10316,7 @@ registerTranslations("nl", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "AI College Video",
   "lectureBuilder.shareVideoText": "Bekijk deze door AI gegenereerde collegevideo!",
+  "lectureBuilder.shareVideoLabel": "Delen via sociale media",
   "lectureBuilder.videoHistoryBtn": "Geschiedenis",
   "lectureBuilder.viewVideoHistory": "Gegenereerde video's bekijken",
 
@@ -10903,6 +10920,7 @@ registerTranslations("pl", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "Film wykładowy AI",
   "lectureBuilder.shareVideoText": "Zobacz ten film wykładowy wygenerowany przez AI!",
+  "lectureBuilder.shareVideoLabel": "Udostępnij w mediach społecznościowych",
   "lectureBuilder.videoHistoryBtn": "Historia",
   "lectureBuilder.viewVideoHistory": "Zobacz wygenerowane filmy",
 
@@ -11506,6 +11524,7 @@ registerTranslations("sv", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "AI-föreläsningsvideo",
   "lectureBuilder.shareVideoText": "Kolla in denna AI-genererade föreläsningsvideo!",
+  "lectureBuilder.shareVideoLabel": "Dela via sociala medier",
   "lectureBuilder.videoHistoryBtn": "Historik",
   "lectureBuilder.viewVideoHistory": "Visa genererade videor",
 
@@ -12109,6 +12128,7 @@ registerTranslations("tr", {
   "lectureBuilder.shareWhatsApp": "WhatsApp",
   "lectureBuilder.shareVideoTitle": "AI Ders Videosu",
   "lectureBuilder.shareVideoText": "AI tarafından oluşturulan bu ders videosuna göz atın!",
+  "lectureBuilder.shareVideoLabel": "Sosyal medyada paylaş",
   "lectureBuilder.videoHistoryBtn": "Geçmiş",
   "lectureBuilder.viewVideoHistory": "Oluşturulan Videoları Görüntüle",
 

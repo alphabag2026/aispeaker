@@ -596,6 +596,16 @@ export default function VideoHistory() {
                           >
                             <MessageCircle className="w-3 h-3" /> {t("videoHistory.shareWhatsApp")}
                           </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => {
+                              window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(gen.videoUrl!)}`, "_blank");
+                            }}
+                          >
+                            <MessageCircle className="w-3 h-3" /> LINE
+                          </Button>
                         </div>
                       </div>
                     )}

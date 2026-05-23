@@ -4866,41 +4866,48 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
                     <Link2 className="w-3 h-3" />{t("lectureBuilder.jsxText341")}
                   </Button>
                 </div>
-                {/* SNS Share Buttons */}
-                <div className="grid grid-cols-4 gap-2">
-                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: project?.title || t("lectureBuilder.shareVideoTitle"),
-                        text: t("lectureBuilder.shareVideoText"),
-                        url: generatedVideoUrl
-                      }).catch(() => {});
-                    } else {
-                      navigator.clipboard.writeText(generatedVideoUrl);
-                      toast.success(t("lectureBuilder.stringLiteral340"));
-                    }
-                  }}>
-                    <Share2 className="w-3 h-3" />{t("lectureBuilder.shareBtn")}
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
-                    const text = encodeURIComponent(project?.title || t("lectureBuilder.shareVideoTitle"));
-                    const url = encodeURIComponent(generatedVideoUrl);
-                    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
-                  }}>
-                    <ExternalLink className="w-3 h-3" />X
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
-                    const text = encodeURIComponent(`${project?.title || t("lectureBuilder.shareVideoTitle")}\n${generatedVideoUrl}`);
-                    window.open(`https://t.me/share/url?url=${encodeURIComponent(generatedVideoUrl)}&text=${text}`, "_blank");
-                  }}>
-                    <MessageCircle className="w-3 h-3" />{t("lectureBuilder.shareTelegram")}
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
-                    const url = encodeURIComponent(generatedVideoUrl);
-                    window.open(`https://wa.me/?text=${encodeURIComponent((project?.title || '') + '\n' + generatedVideoUrl)}`, "_blank");
-                  }}>
-                    <MessageCircle className="w-3 h-3" />{t("lectureBuilder.shareWhatsApp")}
-                  </Button>
+                {/* SNS Share Buttons - Enhanced */}
+                <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium">{t("lectureBuilder.shareVideoLabel")}</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    <Button variant="outline" size="sm" className="gap-1 text-xs h-9" onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: project?.title || t("lectureBuilder.shareVideoTitle"),
+                          text: t("lectureBuilder.shareVideoText"),
+                          url: generatedVideoUrl
+                        }).catch(() => {});
+                      } else {
+                        navigator.clipboard.writeText(generatedVideoUrl);
+                        toast.success(t("lectureBuilder.stringLiteral340"));
+                      }
+                    }}>
+                      <Share2 className="w-3 h-3" />{t("lectureBuilder.shareBtn")}
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1 text-xs h-9" onClick={() => {
+                      const text = encodeURIComponent(project?.title || t("lectureBuilder.shareVideoTitle"));
+                      const url = encodeURIComponent(generatedVideoUrl);
+                      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, "_blank");
+                    }}>
+                      <ExternalLink className="w-3 h-3" />X
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1 text-xs h-9" onClick={() => {
+                      const text = encodeURIComponent(`${project?.title || t("lectureBuilder.shareVideoTitle")}\n${generatedVideoUrl}`);
+                      window.open(`https://t.me/share/url?url=${encodeURIComponent(generatedVideoUrl)}&text=${text}`, "_blank");
+                    }}>
+                      <MessageCircle className="w-3 h-3" />{t("lectureBuilder.shareTelegram")}
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1 text-xs h-9" onClick={() => {
+                      window.open(`https://wa.me/?text=${encodeURIComponent((project?.title || '') + '\n' + generatedVideoUrl)}`, "_blank");
+                    }}>
+                      <MessageCircle className="w-3 h-3" />{t("lectureBuilder.shareWhatsApp")}
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1 text-xs h-9" onClick={() => {
+                      window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(generatedVideoUrl)}`, "_blank");
+                    }}>
+                      <MessageCircle className="w-3 h-3" />LINE
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -5229,23 +5236,29 @@ function Step5Preview({ projectId, project, slides, scripts, avatars, annotation
             </Button>
           </Link>
           {generating &&
-          <Card>
+          <Card className="border-primary/30 progress-bar-glow">
               <CardContent className="pt-4 space-y-3">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{t("lectureBuilder.jsxText411")}</span>
-                  <span className="font-mono font-bold text-primary">{genProgress}%</span>
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+                    </span>
+                    {t("lectureBuilder.jsxText411")}
+                  </span>
+                  <span className="font-mono font-bold text-primary text-lg">{genProgress}%</span>
                 </div>
-                <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+                <div className="w-full h-4 bg-muted rounded-full overflow-hidden relative">
                   <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-700 ease-out"
-                  style={{ width: `${genProgress}%` }} />
-                
+                    className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 rounded-full transition-all duration-700 ease-out progress-bar-animated relative"
+                    style={{ width: `${genProgress}%` }}
+                  />
                 </div>
                 {genStep &&
-              <p className="text-xs text-muted-foreground flex items-center gap-2">
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    {genStep}
-                  </p>
+              <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                    <p className="text-xs text-muted-foreground">{genStep}</p>
+                  </div>
               }
                 <p className="text-[10px] text-muted-foreground/60 text-center">{t("lectureBuilder.jsxText412")}</p>
               </CardContent>
