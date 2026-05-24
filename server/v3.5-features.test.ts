@@ -61,7 +61,7 @@ describe("v3.5 Payment Notification System", () => {
       path.resolve(__dirname, "_core/index.ts"),
       "utf-8"
     );
-    expect(content).toContain("새 구독 결제 완료");
+    expect(content).toContain("New subscription payment completed");
     expect(content).toContain("notifyOwner");
   });
 
@@ -70,7 +70,7 @@ describe("v3.5 Payment Notification System", () => {
       path.resolve(__dirname, "_core/index.ts"),
       "utf-8"
     );
-    expect(content).toContain("크레딧 패키지 구매");
+    expect(content).toContain("Credit package purchased");
   });
 
   it("should handle payment_intent.payment_failed event", () => {

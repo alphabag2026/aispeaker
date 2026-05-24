@@ -124,11 +124,11 @@ describe("v8.1 - Pricing page updates", () => {
     const fs = await import("fs");
     const path = "/home/ubuntu/ai-lecture-platform/client/src/pages/Pricing.tsx";
     const content = fs.readFileSync(path, "utf-8");
-    expect(content).toContain("AI 이미지 생성");
-    expect(content).toContain("배경 제거/교체");
-    expect(content).toContain("음성 복제");
-    expect(content).toContain("비디오 이펙트");
-    expect(content).toContain("페이스 스왑");
-    expect(content).toContain("비디오 번역");
+    expect(content).toContain("pricing.credit.image");
+    expect(content).toContain("pricing.credit.background");
+    expect(content).toContain("pricing.credit.voice_clone");
+    expect(content).toContain("pricing.credit.video_effect");
+    expect(content).toContain("pricing.credit.face_swap");
+    expect(content).toContain("pricing.credit.video_translate");
   });
 });

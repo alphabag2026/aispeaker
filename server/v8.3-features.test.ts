@@ -80,7 +80,7 @@ describe("v8.3 - User Profile, AI History, Admin Analytics", () => {
       const path = resolve(__dirname, "../client/src/pages/AdminAnalytics.tsx");
       const content = readFileSync(path, "utf-8");
       expect(content).toContain('user?.role === "admin"');
-      expect(content).toContain("관리자 권한이 필요합니다");
+      expect(content).toContain("adminAnalytics.hardcoded10");
     });
 
     it("AdminAnalytics shows user stats cards", async () => {
@@ -88,9 +88,9 @@ describe("v8.3 - User Profile, AI History, Admin Analytics", () => {
       const path = resolve(__dirname, "../client/src/pages/AdminAnalytics.tsx");
       const content = readFileSync(path, "utf-8");
       expect(content).toContain("totalUsers");
-      expect(content).toContain("DAU");
-      expect(content).toContain("WAU");
-      expect(content).toContain("MAU");
+      expect(content).toContain("adminAnalytics.dau");
+      expect(content).toContain("adminAnalytics.wau");
+      expect(content).toContain("adminAnalytics.mau");
     });
   });
 

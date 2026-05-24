@@ -194,7 +194,7 @@ describe("v3.4 - Payment Troubleshooting, Crypto FAQ, Onboarding Tutorial", () =
         "./client/src/pages/OnboardingTutorial.tsx",
         "utf-8"
       );
-      expect(content).toContain("PRO TIP");
+      expect(content).toContain("onboardingTutorial.proTip");
       expect(content).toContain("tip:");
       // Tips should contain practical advice
       // i18n: was toContain("추천")

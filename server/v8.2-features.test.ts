@@ -97,7 +97,7 @@ describe("v8.2 - InsufficientCreditsDialog Component", () => {
     const content = fs.readFileSync(filePath, "utf-8");
     expect(content).toContain("InsufficientCreditsDialog");
     expect(content).toContain("/pricing");
-    expect(content).toContain("크레딧");
+    expect(content).toContain("insufficientCreditsDialog");
   });
 });
 

@@ -111,8 +111,8 @@ describe("v10.0 SCORM Export Page", () => {
   });
 
   it("should have SCORM version selector (1.2 and 2004)", () => {
-    expect(page).toContain("SCORM 2004");
-    expect(page).toContain("SCORM 1.2");
+    expect(page).toContain("scormExport.optionScorm2004");
+    expect(page).toContain("scormExport.optionScorm12");
   });
 
   it("should have completion criteria selector", () => {
@@ -148,7 +148,7 @@ describe("v10.0 SCORM Export Page", () => {
   it("should have info banner explaining SCORM", () => {
     // i18n: was toContain("SCORM 패키지란")
     expect(page).toContain("t(");
-    expect(page).toContain("Moodle");
+    expect(page).toContain("scormExport.infoBannerTitle");
   });
 });
 

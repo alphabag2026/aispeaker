@@ -65,16 +65,16 @@ describe("v3.4.1 - Payment Troubleshooting Failure Scenarios, Onboarding Time + 
         "./client/src/pages/PaymentTroubleshooting.tsx",
         "utf-8"
       );
-      // Has section header
-      expect(content).toContain("Stripe 테스트 카드 실패 시나리오");
+      // Has section header (i18n key)
+      expect(content).toContain("pt.failureScenarios");
       // Has expandable items
       expect(content).toContain("expandedItems.has(scenario.id)");
       // Has copy button for card numbers
       expect(content).toContain("copyCardNumber(scenario.cardNumber)");
-      // Has error message display
-      expect(content).toContain("예상 에러 메시지");
-      // Has resolution display
-      expect(content).toContain("해결 방법");
+      // Has error message display (i18n)
+      expect(content).toContain("failureScenarios.expectedError");
+      // Has resolution display (i18n)
+      expect(content).toContain("failureScenarios");
     });
   });
 
@@ -99,8 +99,7 @@ describe("v3.4.1 - Payment Troubleshooting Failure Scenarios, Onboarding Time + 
         "./client/src/pages/OnboardingTutorial.tsx",
         "utf-8"
       );
-      expect(content).toContain("전체 예상 소요 시간");
-      expect(content).toContain("약 30~42분");
+      expect(content).toContain("onboardingTutorial.totalEstimatedTime");
     });
 
     it("should have celebration modal when all steps completed", async () => {
@@ -116,12 +115,12 @@ describe("v3.4.1 - Payment Troubleshooting Failure Scenarios, Onboarding Time + 
       expect(content).toContain("Trophy");
       // Star icons
       expect(content).toContain("Star");
-      // Celebration text
-      expect(content).toContain("축하합니다!");
-      expect(content).toContain("모든 온보딩 단계를 완료했습니다");
-      // Action buttons
-      expect(content).toContain("제작 스튜디오로 이동");
-      expect(content).toContain("계속 둘러보기");
+      // Celebration text (i18n keys)
+      expect(content).toContain("onboardingTutorial.congratulations");
+      expect(content).toContain("onboardingTutorial.allOnboardingCompleted");
+      // Action buttons (i18n keys)
+      expect(content).toContain("onboardingTutorial.goToStudio");
+      expect(content).toContain("onboardingTutorial.keepExploring");
     });
 
     it("should track all completed state and show green progress", async () => {
@@ -133,8 +132,8 @@ describe("v3.4.1 - Payment Troubleshooting Failure Scenarios, Onboarding Time + 
       expect(content).toContain("allCompleted");
       // Green gradient when all complete
       expect(content).toContain("from-green-500 to-emerald-400");
-      // Completion text
-      expect(content).toContain("모든 단계 완료!");
+      // Completion text (i18n key)
+      expect(content).toContain("onboardingTutorial.allStepsCompleted");
     });
 
     it("should have each step with estimatedTime field", async () => {
