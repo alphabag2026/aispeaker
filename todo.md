@@ -2667,3 +2667,14 @@
 - [x] PM2 startup 설정 (서버 재부팅 시 자동 시작)
 - [x] 로그 관리 설정 (/opt/aispeaker/logs/)
 - [x] HTTPS 200 + API 정상 응답 확인
+
+## Day 2 완료: 버그 수정 + 테스트 100%
+- [x] v3.4-pages.test.ts 수정 (PRO TIP → i18n key)
+- [x] v3.4.1-improvements.test.ts 수정 (4개 한국어 → i18n key)
+- [x] v3.5-features.test.ts 수정 (한국어 알림 → 영어)
+- [x] v8.1-features.test.ts 수정 (한국어 기능명 → i18n key)
+- [x] v8.2-features.test.ts 수정 (크레딧 → i18n key)
+- [x] v8.3-features.test.ts 수정 (관리자 권한/DAU/WAU/MAU → i18n key)
+- [x] v10-scorm-marketplace.test.ts 수정 (SCORM 2004/Moodle → i18n key)
+- [x] 테스트 결과: 78 파일, 1,577 테스트 모두 통과
+- [x] 프로덕션 배포 (v17.1, PM2 online, aispeaker.cc 200 OK)
