@@ -2678,3 +2678,22 @@
 - [x] v10-scorm-marketplace.test.ts 수정 (SCORM 2004/Moodle → i18n key)
 - [x] 테스트 결과: 78 파일, 1,577 테스트 모두 통과
 - [x] 프로덕션 배포 (v17.1, PM2 online, aispeaker.cc 200 OK)
+
+## Day 3 완료: 대규모 코드 분할 리팩토링
+- [x] server/routers.ts (5,765줄) → server/routers/ 디렉토리 (15개 도메인별 파일로 분할)
+  - admin.ts, analytics.ts, broadcast.ts, collaboration.ts, community.ts
+  - credit.ts, lecture.ts, marketplace.ts, payment.ts, project.ts
+  - scorm.ts, script.ts, system.ts, user.ts, voice.ts + index.ts
+- [x] server/db.ts (4,299줄) → server/db/ 디렉토리 (도메인별 파일로 분할)
+  - shared.ts, user.ts, lecture.ts, project.ts, voice.ts
+  - community.ts, analytics.ts, collaboration.ts + index.ts
+- [x] client/src/pages/LectureBuilder.tsx (6,480줄) → lecture-builder/ 디렉토리 (13개 컴포넌트로 분할)
+  - types.ts, Step1Avatars.tsx, Step2Scripts.tsx, Step3Slides.tsx
+  - Step4Matching.tsx, Step5Preview.tsx, ImprovementHistoryPanel.tsx
+  - PPTAIScriptPanel.tsx, SlideVoiceModePanel.tsx, AICloneVoiceSection.tsx
+  - BatchCloneVoiceButton.tsx, VersionHistoryButton.tsx
+  - PronunciationGuideButton.tsx, PronunciationHighlight.tsx
+- [x] 하위 호환성 유지 (re-export 파일로 기존 import 경로 보존)
+- [x] 78개 테스트 파일, 1,577개 테스트 모두 통과
+- [x] TypeScript 에러 0개
+- [x] 서버 정상 빌드 및 실행 확인

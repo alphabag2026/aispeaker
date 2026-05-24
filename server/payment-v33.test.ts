@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import path from "path";
 
 // ===== Crypto Payment Tests =====
 describe("Crypto Payment System", () => {
@@ -29,9 +30,8 @@ describe("Crypto Payment System", () => {
   describe("Wallet address configuration", () => {
     it("should use environment variables for wallet addresses", async () => {
       // Verify the crypto router uses env vars instead of hardcoded addresses
-      const routerCode = await import("fs").then(fs => 
-        fs.readFileSync("/home/ubuntu/ai-lecture-platform/server/routers.ts", "utf-8")
-      );
+      const fs = await import("fs");
+      const routerCode = (() => { const dir = "/home/ubuntu/ai-lecture-platform/server/routers"; return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
       expect(routerCode).toContain("CRYPTO_WALLET_EVM");
       expect(routerCode).toContain("CRYPTO_WALLET_TRON");
       expect(routerCode).toContain("CRYPTO_WALLET_BTC");

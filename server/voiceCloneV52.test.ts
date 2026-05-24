@@ -2,15 +2,23 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+function readAllDbFiles(): string {
+  const dir = path.resolve(__dirname, "db");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return fs.readFileSync(path.resolve(__dirname, "db.ts"), "utf-8");
+}
+
 const schemaPath = path.join(__dirname, "../drizzle/schema.ts");
-const routersPath = path.join(__dirname, "routers.ts");
+const routersPath = path.join(__dirname, "routers");
 const dbPath = path.join(__dirname, "db.ts");
 const dialogPath = path.join(__dirname, "../client/src/components/AvatarSettingsDialog.tsx");
 const i18nPath = path.join(__dirname, "../client/src/i18n/components/AvatarSettingsDialog.ts");
 
 const schema = fs.readFileSync(schemaPath, "utf-8");
-const routers = fs.readFileSync(routersPath, "utf-8");
-const dbHelpers = fs.readFileSync(dbPath, "utf-8");
+const routers = (() => { if (fs.existsSync(routersPath) && fs.statSync(routersPath).isDirectory()) return fs.readdirSync(routersPath).filter((f) => f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(routersPath, f), "utf-8")).join("\n"); return fs.readFileSync(routersPath, "utf-8"); })();
+const dbHelpers = readAllDbFiles();
 const dialog = fs.readFileSync(dialogPath, "utf-8");
 const i18n = fs.readFileSync(i18nPath, "utf-8");
 
@@ -75,21 +83,21 @@ describe("v5.2 - Voice Effect Presets Table", () => {
 
 describe("v5.2 - Voice Effect Preset CRUD Router", () => {
   it("voiceEffectPreset router exists", () => {
-    expect(routers).toContain("voiceEffectPreset: router(");
+    expect(routers).toContain("voiceEffectPresetRouter = router(");
   });
 
   it("voiceEffectPreset.create exists", () => {
-    const section = routers.split("voiceEffectPreset: router(")[1] || "";
+    const section = routers.split("voiceEffectPresetRouter = router(")[1] || "";
     expect(section).toContain("create: protectedProcedure");
   });
 
   it("voiceEffectPreset.list exists", () => {
-    const section = routers.split("voiceEffectPreset: router(")[1] || "";
+    const section = routers.split("voiceEffectPresetRouter = router(")[1] || "";
     expect(section).toContain("list: protectedProcedure");
   });
 
   it("voiceEffectPreset.delete exists", () => {
-    const section = routers.split("voiceEffectPreset: router(")[1] || "";
+    const section = routers.split("voiceEffectPresetRouter = router(")[1] || "";
     expect(section).toContain("delete: protectedProcedure");
   });
 

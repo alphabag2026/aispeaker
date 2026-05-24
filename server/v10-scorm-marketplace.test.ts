@@ -10,10 +10,24 @@ import * as path from "path";
 function readFile(relPath: string): string {
   return fs.readFileSync(path.resolve(__dirname, "..", relPath), "utf-8");
 }
+function readAllDbFiles(): string {
+  const dir = path.resolve(__dirname, "db");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return readAllDbFiles();
+}
+function readAllRouterFiles(): string {
+  const dir = path.resolve(__dirname, "routers");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return readFile("server/routers.ts");
+}
 
 // ── 1. SCORM/xAPI Backend (routers.ts) ──
 describe("v10.0 SCORM Backend", () => {
-  const routers = readFile("server/routers.ts");
+  const routers = readAllRouterFiles();
 
   it("should have scorm router in appRouter", () => {
     expect(routers).toContain("scorm:");
@@ -87,7 +101,7 @@ describe("v10.0 SCORM DB Schema", () => {
 
 // ── 3. SCORM DB Helpers ──
 describe("v10.0 SCORM DB Helpers", () => {
-  const db = readFile("server/db.ts");
+  const db = readAllDbFiles();
 
   it("should have createScormPackage helper", () => {
     expect(db).toContain("createScormPackage");
@@ -167,7 +181,7 @@ describe("v10.0 SCORM Route Registration", () => {
 
 // ── 6. Marketplace Backend ──
 describe("v10.0 Marketplace Backend", () => {
-  const routers = readFile("server/routers.ts");
+  const routers = readAllRouterFiles();
 
   it("should have marketplace router in appRouter", () => {
     expect(routers).toContain("marketplace:");
@@ -230,7 +244,7 @@ describe("v10.0 Marketplace DB Schema", () => {
 
 // ── 8. Marketplace DB Helpers ──
 describe("v10.0 Marketplace DB Helpers", () => {
-  const db = readFile("server/db.ts");
+  const db = readAllDbFiles();
 
   it("should have createMarketplaceListing helper", () => {
     expect(db).toContain("createMarketplaceListing");

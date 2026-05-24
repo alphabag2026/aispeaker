@@ -2,27 +2,47 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
-const routersPath = join(__dirname, "routers.ts");
-const routersContent = readFileSync(routersPath, "utf-8");
+function readAllDbFiles(): string {
+  const fsx = require('fs');
+  const pathx = require('path');
+  const dir = pathx.resolve(__dirname, 'db');
+  if (fsx.existsSync(dir) && fsx.statSync(dir).isDirectory()) {
+    return fsx.readdirSync(dir).filter((f: string) => f.endsWith('.ts')).map((f: string) => fsx.readFileSync(pathx.join(dir, f), 'utf-8')).join('\n');
+  }
+  return fsx.readFileSync(pathx.resolve(__dirname, 'db.ts'), 'utf-8');
+}
+
+const routersPath = join(__dirname, "routers");
+const routersContent = (() => { const { existsSync, statSync, readdirSync } = require("fs"); if (existsSync(routersPath) && statSync(routersPath).isDirectory()) return readdirSync(routersPath).filter((f) => f.endsWith(".ts")).map((f) => readFileSync(join(routersPath, f), "utf-8")).join("\n"); return readFileSync(routersPath, "utf-8"); })();
 const schemaPath = join(__dirname, "../drizzle/schema.ts");
 const schemaContent = readFileSync(schemaPath, "utf-8");
 
+
+function readAllLectureBuilderFiles(): string {
+  const fsx = require('fs');
+  const pathx = require('path');
+  const mainFile = pathx.resolve(__dirname, '../client/src/pages/LectureBuilder.tsx');
+  const subDir = pathx.resolve(__dirname, '../client/src/pages/lecture-builder');
+  let content = fsx.readFileSync(mainFile, 'utf-8');
+  if (fsx.existsSync(subDir) && fsx.statSync(subDir).isDirectory()) {
+    const subFiles = fsx.readdirSync(subDir).filter(f => f.endsWith('.tsx') || f.endsWith('.ts'));
+    content += '\n' + subFiles.map(f => fsx.readFileSync(pathx.join(subDir, f), 'utf-8')).join('\n');
+  }
+  return content;
+}
+
 describe("v12.5 - 아바타 설정 다이얼로그", () => {
   it("updateAvatar 라우터에 sampleFaceId 필드가 있어야 한다", () => {
-    // updateAvatar input에 sampleFaceId가 nullable로 존재
-    const updateAvatarSection = routersContent.substring(
-      routersContent.indexOf("updateAvatar: protectedProcedure"),
-      routersContent.indexOf("updateAvatar: protectedProcedure") + 500
-    );
+    // updateAvatar input에 sampleFaceId가 nullable로 존재 (lectureBuilder의 updateAvatar)
+    const idx = routersContent.lastIndexOf("updateAvatar: protectedProcedure");
+    const updateAvatarSection = routersContent.substring(idx, idx + 500);
     expect(updateAvatarSection).toContain("sampleFaceId");
     expect(updateAvatarSection).toContain("nullable");
   });
 
   it("updateAvatar 라우터에 customFaceUrl 필드가 있어야 한다", () => {
-    const updateAvatarSection = routersContent.substring(
-      routersContent.indexOf("updateAvatar: protectedProcedure"),
-      routersContent.indexOf("updateAvatar: protectedProcedure") + 500
-    );
+    const idx = routersContent.lastIndexOf("updateAvatar: protectedProcedure");
+    const updateAvatarSection = routersContent.substring(idx, idx + 500);
     expect(updateAvatarSection).toContain("customFaceUrl");
     expect(updateAvatarSection).toContain("nullable");
   });
@@ -64,8 +84,7 @@ describe("v12.5 - 아바타 설정 다이얼로그", () => {
   });
 
   it("LectureBuilder에서 아바타 카드 클릭 시 설정 다이얼로그가 열려야 한다", () => {
-    const builderPath = join(__dirname, "../client/src/pages/LectureBuilder.tsx");
-    const content = readFileSync(builderPath, "utf-8");
+    const content = readAllLectureBuilderFiles();
     expect(content).toContain("AvatarSettingsDialog");
     expect(content).toContain("setEditingAvatar");
     expect(content).toContain("cursor-pointer");
@@ -74,8 +93,7 @@ describe("v12.5 - 아바타 설정 다이얼로그", () => {
   });
 
   it("아바타 카드에 customFaceUrl 우선 표시 로직이 있어야 한다", () => {
-    const builderPath = join(__dirname, "../client/src/pages/LectureBuilder.tsx");
-    const content = readFileSync(builderPath, "utf-8");
+    const content = readAllLectureBuilderFiles();
     expect(content).toContain("av.customFaceUrl");
   });
 });
@@ -89,8 +107,8 @@ describe("v12.5 - 협업 권한 세분화 (presenter/editor/viewer)", () => {
 
   it("collaboration invite 라우터에 presenter 역할이 포함되어야 한다", () => {
     const inviteSection = routersContent.substring(
-      routersContent.indexOf("collaboration: router"),
-      routersContent.indexOf("collaboration: router") + 3000
+      routersContent.indexOf("collaborationRouter = router"),
+      routersContent.indexOf("collaborationRouter = router") + 3000
     );
     expect(inviteSection).toContain("presenter");
     expect(inviteSection).toContain("editor");
@@ -102,7 +120,7 @@ describe("v12.5 - 협업 권한 세분화 (presenter/editor/viewer)", () => {
     expect(routersContent).toContain("presenter");
     // getCollaboratorRole 함수 사용
     const dbPath = join(__dirname, "db.ts");
-    const dbContent = readFileSync(dbPath, "utf-8");
+    const dbContent = readAllDbFiles();
     expect(dbContent).toContain("getCollaboratorRole");
   });
 

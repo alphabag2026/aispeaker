@@ -45,10 +45,7 @@ describe("v3.5 Brand Rename: Virtual Speaker → AI Speaker", () => {
   });
 
   it("should contain 'AI Speaker' in Stripe product names", () => {
-    const content = fs.readFileSync(
-      path.resolve(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const content = (() => { const dir = path.resolve(__dirname, "routers"); if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return fs.readdirSync(dir).filter((f) => f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); return fs.readFileSync(path.resolve(__dirname, "routers.ts"), "utf-8"); })();
     expect(content).toContain("AI Speaker ${product.name}");
     expect(content).toContain("AI Speaker ${pkg.name}");
     expect(content).not.toContain("Virtual Speaker ${product.name}");

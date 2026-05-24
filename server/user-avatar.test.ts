@@ -2,6 +2,28 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+function readAllDbFiles(): string {
+  const dir = path.resolve(__dirname, "db");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return fs.readFileSync(path.resolve(__dirname, "db.ts"), "utf-8");
+}
+
+
+function readAllLectureBuilderFiles(): string {
+  const fsx = require('fs');
+  const pathx = require('path');
+  const mainFile = pathx.resolve(__dirname, '../client/src/pages/LectureBuilder.tsx');
+  const subDir = pathx.resolve(__dirname, '../client/src/pages/lecture-builder');
+  let content = fsx.readFileSync(mainFile, 'utf-8');
+  if (fsx.existsSync(subDir) && fsx.statSync(subDir).isDirectory()) {
+    const subFiles = fsx.readdirSync(subDir).filter(f => f.endsWith('.tsx') || f.endsWith('.ts'));
+    content += '\n' + subFiles.map(f => fsx.readFileSync(pathx.join(subDir, f), 'utf-8')).join('\n');
+  }
+  return content;
+}
+
 describe("User Avatar Feature", () => {
   // Test 1: DB schema includes userAvatars table
   it("should have userAvatars table in schema", () => {
@@ -16,10 +38,7 @@ describe("User Avatar Feature", () => {
 
   // Test 2: Router includes userAvatar procedures
   it("should have userAvatar router with CRUD procedures", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("userAvatar:");
     expect(routers).toContain("list:");
     expect(routers).toContain("create:");
@@ -28,7 +47,7 @@ describe("User Avatar Feature", () => {
 
   // Test 3: DB helpers include userAvatar functions
   it("should have userAvatar helper functions in db.ts", () => {
-    const db = fs.readFileSync(path.join(__dirname, "db.ts"), "utf-8");
+    const db = readAllDbFiles();
     expect(db).toContain("listUserAvatars");
     expect(db).toContain("createUserAvatar");
     expect(db).toContain("deleteUserAvatar");
@@ -36,10 +55,7 @@ describe("User Avatar Feature", () => {
 
   // Test 4: LectureBuilder has avatar upload UI with tabs
   it("should have avatar upload tabs in LectureBuilder including AI tab", () => {
-    const lb = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const lb = readAllLectureBuilderFiles();
     // Check for tab structure
     expect(lb).toContain("TabsList");
     expect(lb).toContain("TabsTrigger");
@@ -77,29 +93,20 @@ describe("User Avatar Feature", () => {
 
   // Test 6: addAvatar mutation supports customFaceUrl
   it("should support customFaceUrl in addAvatar mutation", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("customFaceUrl");
   });
 
   // Test 7: userAvatar create uses storagePut for S3 upload
   it("should use storagePut for avatar image storage", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     // The userAvatar.create procedure should use storagePut
     expect(routers).toContain("storagePut");
   });
 
   // Test 8: LectureBuilder uses trpc.userAvatar hooks
   it("should use trpc.userAvatar hooks in LectureBuilder", () => {
-    const lb = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const lb = readAllLectureBuilderFiles();
     expect(lb).toContain("trpc.userAvatar.list.useQuery");
     expect(lb).toContain("trpc.userAvatar.create.useMutation");
     expect(lb).toContain("trpc.userAvatar.delete.useMutation");
@@ -109,10 +116,7 @@ describe("User Avatar Feature", () => {
 describe("AI Face Generation Feature", () => {
   // Test 9: Router includes generateFace procedure
   it("should have generateFace procedure in userAvatar router", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("generateFace:");
     expect(routers).toContain("generateImage");
     expect(routers).toContain("Professional headshot portrait photo");
@@ -120,10 +124,7 @@ describe("AI Face Generation Feature", () => {
 
   // Test 10: generateFace handles undefined URL from generateImage
   it("should handle undefined URL from generateImage with TRPCError", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     // Check that there's a null check for generatedUrl
     expect(routers).toContain("if (!generatedUrl)");
     expect(routers).toContain("Image generation failed");
@@ -131,10 +132,7 @@ describe("AI Face Generation Feature", () => {
 
   // Test 11: generateFace saves to S3 and creates DB record
   it("should save generated image to S3 and create DB record", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     // Check S3 upload path pattern
     expect(routers).toContain("user-avatars/");
     expect(routers).toContain("ai-");
@@ -145,10 +143,7 @@ describe("AI Face Generation Feature", () => {
 
   // Test 12: LectureBuilder has AI generation tab UI
   it("should have AI generation tab UI in LectureBuilder", () => {
-    const lb = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const lb = readAllLectureBuilderFiles();
     // AI tab trigger
     expect(lb).toContain('value="ai"');
     // AI generation state
@@ -191,10 +186,7 @@ describe("AI Face Generation Feature", () => {
 
   // Test 14: Grid layout is 4 columns for tabs
   it("should use grid-cols-4 for tab layout", () => {
-    const lb = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const lb = readAllLectureBuilderFiles();
     expect(lb).toContain("grid-cols-4");
   });
 });
@@ -202,26 +194,20 @@ describe("AI Face Generation Feature", () => {
 describe("Avatar Edit Feature", () => {
   // Test 15: Router includes update procedure
   it("should have update procedure in userAvatar router", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("update:");
     expect(routers).toContain("updateUserAvatar");
   });
 
   // Test 16: DB helpers include updateUserAvatar
   it("should have updateUserAvatar helper in db.ts", () => {
-    const db = fs.readFileSync(path.join(__dirname, "db.ts"), "utf-8");
+    const db = readAllDbFiles();
     expect(db).toContain("updateUserAvatar");
   });
 
   // Test 17: LectureBuilder has edit dialog for user avatars
   it("should have user avatar edit dialog in LectureBuilder", () => {
-    const lb = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const lb = readAllLectureBuilderFiles();
     // Edit state
     expect(lb).toContain("editingUserAvatar");
     expect(lb).toContain("editUserAvatarName");
@@ -264,7 +250,7 @@ describe("Avatar Favorite & Sort Feature", () => {
 
   // Test 20: DB helpers include favorite/usage functions
   it("should have toggleFavorite, recordUsage, listSorted helpers in db.ts", () => {
-    const db = fs.readFileSync(path.join(__dirname, "db.ts"), "utf-8");
+    const db = readAllDbFiles();
     expect(db).toContain("toggleUserAvatarFavorite");
     expect(db).toContain("recordUserAvatarUsage");
     expect(db).toContain("listUserAvatarsSorted");
@@ -272,7 +258,7 @@ describe("Avatar Favorite & Sort Feature", () => {
 
   // Test 21: listUserAvatarsSorted supports 4 sort modes
   it("should support favorite, recent, name, created sort modes", () => {
-    const db = fs.readFileSync(path.join(__dirname, "db.ts"), "utf-8");
+    const db = readAllDbFiles();
     expect(db).toContain('"favorite"');
     expect(db).toContain('"recent"');
     expect(db).toContain('"name"');
@@ -283,10 +269,7 @@ describe("Avatar Favorite & Sort Feature", () => {
 
   // Test 22: Router includes toggleFavorite and recordUsage procedures
   it("should have toggleFavorite and recordUsage procedures in router", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("toggleFavorite:");
     expect(routers).toContain("recordUsage:");
     expect(routers).toContain("toggleUserAvatarFavorite");
@@ -295,20 +278,14 @@ describe("Avatar Favorite & Sort Feature", () => {
 
   // Test 23: Router list procedure accepts sortBy parameter
   it("should accept sortBy parameter in list procedure", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("sortBy");
     expect(routers).toContain("listUserAvatarsSorted");
   });
 
   // Test 24: LectureBuilder has favorite toggle and sort UI
   it("should have favorite toggle and sort dropdown in LectureBuilder", () => {
-    const lb = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const lb = readAllLectureBuilderFiles();
     // Sort state
     expect(lb).toContain("avatarSortBy");
     // Favorite toggle mutation
@@ -328,10 +305,7 @@ describe("Avatar Favorite & Sort Feature", () => {
 
   // Test 25: Favorite star badge shows on favorited avatars
   it("should show star badge on favorited avatars", () => {
-    const lb = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const lb = readAllLectureBuilderFiles();
     expect(lb).toContain("av.isFavorite");
     expect(lb).toContain("fill-yellow-400");
   });
@@ -357,10 +331,7 @@ describe("Avatar Favorite & Sort Feature", () => {
 describe("D-ID Avatar Preview Feature", () => {
   // Test: Router includes D-ID preview procedures
   it("should have createDidPreview procedure in userAvatar router", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("createDidPreview:");
     expect(routers).toContain("getDidPreviewStatus:");
     expect(routers).toContain("checkDidCredits:");
@@ -368,10 +339,7 @@ describe("D-ID Avatar Preview Feature", () => {
 
   // Test: D-ID createDidPreview accepts correct input schema
   it("should accept imageUrl, text, voiceId, voiceProvider in createDidPreview", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("imageUrl: z.string().url()");
     expect(routers).toContain('text: z.string().min(1).max(1000)');
     expect(routers).toContain('voiceId: z.string().default("en-US-JennyNeural")');
@@ -380,30 +348,21 @@ describe("D-ID Avatar Preview Feature", () => {
 
   // Test: D-ID API endpoint is correct
   it("should call correct D-ID API endpoint", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("https://api.d-id.com/talks");
     expect(routers).toContain("https://api.d-id.com/credits");
   });
 
   // Test: D-ID videos are uploaded to S3
   it("should upload D-ID video to S3 for persistence", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("did-previews/");
     expect(routers).toContain("storagePut(videoKey, videoBuffer");
   });
 
   // Test: getDidPreviewStatus returns status and videoUrl
   it("should return status, videoUrl, and error from getDidPreviewStatus", () => {
-    const routers = fs.readFileSync(
-      path.join(__dirname, "routers.ts"),
-      "utf-8"
-    );
+    const routers = (() => { const dir = path.join(__dirname, "routers"); if (!fs.existsSync(dir)) return fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8"); return fs.readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); })();
     expect(routers).toContain("status: data.status as string");
     expect(routers).toContain("videoUrl");
     expect(routers).toContain("error: data.error?.description");
@@ -421,10 +380,7 @@ describe("D-ID Avatar Preview Feature", () => {
 
   // Test: Frontend includes DID preview tab
   it("should have DID preview tab in LectureBuilder", () => {
-    const builder = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const builder = readAllLectureBuilderFiles();
     expect(builder).toContain('value="did"');
     expect(builder).toContain("createDidPreview");
     expect(builder).toContain("didVideoUrl");
@@ -446,10 +402,7 @@ describe("D-ID Avatar Preview Feature", () => {
 
   // Test: D-ID voice options are available
   it("should include multiple voice options for D-ID", () => {
-    const builder = fs.readFileSync(
-      path.join(__dirname, "../client/src/pages/LectureBuilder.tsx"),
-      "utf-8"
-    );
+    const builder = readAllLectureBuilderFiles();
     expect(builder).toContain("en-US-JennyNeural");
     expect(builder).toContain("ko-KR-SunHiNeural");
     expect(builder).toContain("ja-JP-NanamiNeural");

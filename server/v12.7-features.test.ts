@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync, existsSync } from "fs";
 import { resolve } from "path";
 
 const schemaFile = readFileSync(resolve(__dirname, "../drizzle/schema.ts"), "utf-8");
-const routersFile = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
-const dbFile = readFileSync(resolve(__dirname, "./db.ts"), "utf-8");
+const routersFile = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
+const dbFile = (() => { const dir = resolve(__dirname, "db"); if (existsSync(dir)) return readdirSync(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); return readFileSync(resolve(__dirname, "./db.ts"), "utf-8"); })();
 
 describe("v12.7 - 방송 녹화/VOD 자동 변환", () => {
   it("broadcastRecordings 테이블이 스키마에 정의되어 있어야 한다", () => {

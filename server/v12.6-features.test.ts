@@ -1,13 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync, existsSync, statSync } from "fs";
+import * as fs from "fs";
+import * as path from "path";
 import { resolve } from "path";
 
 function readFile(relPath: string): string {
   return readFileSync(resolve(__dirname, "..", relPath), "utf-8");
 }
+function readAllDbFiles(): string {
+  const dir = path.resolve(__dirname, "db");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return readFileSync(resolve(__dirname, "db.ts"), "utf-8");
+}
 
+function readAllRouterFiles(): string {
+  const fsx = require('fs');
+  const pathx = require('path');
+  const dir = pathx.resolve(__dirname, 'routers');
+  if (fsx.existsSync(dir)) return fsx.readdirSync(dir).filter((f: string) => f.endsWith('.ts')).map((f: string) => fsx.readFileSync(pathx.join(dir, f), 'utf-8')).join('\n');
+  return fsx.readFileSync(pathx.resolve(__dirname, 'routers.ts'), 'utf-8');
+}
 describe("v12.6 - Avatar AI Face Generation", () => {
-  const routersCode = readFile("server/routers.ts");
+  const routersCode = readAllRouterFiles();
 
   it("should have generateAvatarFace procedure in lectureBuilder router", () => {
     expect(routersCode).toContain("generateAvatarFace");
@@ -128,9 +144,9 @@ describe("v12.6 - Presenter Studio", () => {
 });
 
 describe("v12.6 - Voice Clone Backend", () => {
-  const routersCode = readFile("server/routers.ts");
+  const routersCode = readAllRouterFiles();
   const schemaCode = readFile("drizzle/schema.ts");
-  const dbCode = readFile("server/db.ts");
+  const dbCode = readAllDbFiles();
 
   it("should have voiceClones table in schema", () => {
     expect(schemaCode).toContain("voiceClones");
@@ -154,9 +170,9 @@ describe("v12.6 - Voice Clone Backend", () => {
   });
 
   it("should have voiceClone router with CRUD operations", () => {
-    expect(routersCode).toContain("voiceClone: router({");
+    expect(routersCode).toContain("voiceCloneRouter = router({");
     // Check procedures exist within the router
-    const vcIdx = routersCode.indexOf("voiceClone: router({");
+    const vcIdx = routersCode.indexOf("voiceCloneRouter = router({");
     const vcSection = routersCode.substring(vcIdx, vcIdx + 8000);
     expect(vcSection).toContain("create: protectedProcedure");
     expect(vcSection).toContain("list: protectedProcedure");
@@ -164,7 +180,7 @@ describe("v12.6 - Voice Clone Backend", () => {
   });
 
   it("should have voice clone preview procedure", () => {
-    const vcIdx = routersCode.indexOf("voiceClone: router({");
+    const vcIdx = routersCode.indexOf("voiceCloneRouter = router({");
     const vcSection = routersCode.substring(vcIdx, vcIdx + 8000);
     expect(vcSection).toContain("preview: protectedProcedure");
     // Should use TTS for preview
@@ -174,8 +190,8 @@ describe("v12.6 - Voice Clone Backend", () => {
   it("should upload voice sample to S3", () => {
     // The create procedure should use storagePut
     const voiceCloneSection = routersCode.substring(
-      routersCode.indexOf("voiceClone: router({"),
-      routersCode.indexOf("voiceClone: router({") + 2000
+      routersCode.indexOf("voiceCloneRouter = router({"),
+      routersCode.indexOf("voiceCloneRouter = router({") + 2000
     );
     expect(voiceCloneSection).toContain("storagePut");
     expect(voiceCloneSection).toContain("voice-clones/");
@@ -196,7 +212,7 @@ describe("v12.6 - Broadcast ProjectId Integration", () => {
 
 describe("v12.6 - Collaboration Role Presenter", () => {
   const schemaCode = readFile("drizzle/schema.ts");
-  const routersCode = readFile("server/routers.ts");
+  const routersCode = readAllRouterFiles();
 
   it("should have presenter role in projectCollaborators enum", () => {
     expect(schemaCode).toContain("presenter");
@@ -205,8 +221,8 @@ describe("v12.6 - Collaboration Role Presenter", () => {
   it("should allow presenter role in collaboration invite", () => {
     // The invite procedure should accept presenter role
     const collabSection = routersCode.substring(
-      routersCode.indexOf("collaboration: router({"),
-      routersCode.indexOf("collaboration: router({") + 3000
+      routersCode.indexOf("collaborationRouter = router({"),
+      routersCode.indexOf("collaborationRouter = router({") + 3000
     );
     expect(collabSection).toContain("presenter");
   });

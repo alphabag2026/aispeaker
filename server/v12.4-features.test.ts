@@ -123,8 +123,8 @@ describe("v12.4 - BroadcastViewer Interpretation Panel", () => {
   });
 
   describe("broadcast.translateSlide backend procedure", () => {
-    const routersPath = path.join(serverDir, "routers.ts");
-    const routersContent = fs.readFileSync(routersPath, "utf-8");
+    const routersPath = path.join(serverDir, "routers");
+    const routersContent = (() => { if (fs.existsSync(routersPath) && fs.statSync(routersPath).isDirectory()) return fs.readdirSync(routersPath).filter((f) => f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(routersPath, f), "utf-8")).join("\n"); return fs.readFileSync(routersPath, "utf-8"); })();
 
     it("should have translateSlide procedure in broadcast router", () => {
       expect(routersContent).toContain("translateSlide: protectedProcedure");
@@ -169,15 +169,15 @@ describe("v12.4 - BroadcastViewer Interpretation Panel", () => {
 
 // ========== 2. 협업 알림 연동 ==========
 describe("v12.4 - Collaboration Notification Integration", () => {
-  const routersPath = path.join(serverDir, "routers.ts");
-  const routersContent = fs.readFileSync(routersPath, "utf-8");
+  const routersPath = path.join(serverDir, "routers");
+  const routersContent = (() => { if (fs.existsSync(routersPath) && fs.statSync(routersPath).isDirectory()) return fs.readdirSync(routersPath).filter((f) => f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(routersPath, f), "utf-8")).join("\n"); return fs.readFileSync(routersPath, "utf-8"); })();
 
   describe("Invite notification", () => {
     it("should send notification to invitee when invited", () => {
       // Find the invite section
       const inviteSection = routersContent.substring(
-        routersContent.indexOf("collaboration: router({"),
-        routersContent.indexOf("collaboration: router({") + 3000
+        routersContent.indexOf("collaborationRouter = router({"),
+        routersContent.indexOf("collaborationRouter = router({") + 3000
       );
       expect(inviteSection).toContain("createNotification");
       // i18n: was toContain("협업 초대")
@@ -186,24 +186,24 @@ describe("v12.4 - Collaboration Notification Integration", () => {
 
     it("should include project title in invite notification", () => {
       const inviteSection = routersContent.substring(
-        routersContent.indexOf("collaboration: router({"),
-        routersContent.indexOf("collaboration: router({") + 3000
+        routersContent.indexOf("collaborationRouter = router({"),
+        routersContent.indexOf("collaborationRouter = router({") + 3000
       );
       expect(inviteSection).toContain("project.title");
     });
 
     it("should include inviter name in notification message", () => {
       const inviteSection = routersContent.substring(
-        routersContent.indexOf("collaboration: router({"),
-        routersContent.indexOf("collaboration: router({") + 3000
+        routersContent.indexOf("collaborationRouter = router({"),
+        routersContent.indexOf("collaborationRouter = router({") + 3000
       );
       expect(inviteSection).toContain("ctx.user.name");
     });
 
     it("should include role info in invite notification", () => {
       const inviteSection = routersContent.substring(
-        routersContent.indexOf("collaboration: router({"),
-        routersContent.indexOf("collaboration: router({") + 3000
+        routersContent.indexOf("collaborationRouter = router({"),
+        routersContent.indexOf("collaborationRouter = router({") + 3000
       );
       // i18n: was toContain("편집자")
       expect(inviteSection).toContain("t(");

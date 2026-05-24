@@ -1,30 +1,30 @@
 import { describe, it, expect } from "vitest";
 import * as db from "./db";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync, existsSync } from "fs";
 import { resolve } from "path";
 
 // ===== Stripe Connect Payout System Tests =====
 describe("v11 - Stripe Connect Payout System", () => {
   describe("payout router procedures", () => {
     it("should have connectOnboard procedure defined in routers", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("connectOnboard");
       expect(routerContent).toContain("protectedProcedure");
     });
 
     it("should have connectStatus procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("connectStatus");
     });
 
     it("should have requestPayout procedure with amount validation", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("requestPayout");
       expect(routerContent).toContain("amountInCents");
     });
 
     it("should have earnings procedure for balance info", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("totalEarnings");
       expect(routerContent).toContain("availableBalance");
       expect(routerContent).toContain("pendingPayouts");
@@ -32,18 +32,18 @@ describe("v11 - Stripe Connect Payout System", () => {
     });
 
     it("should have payoutHistory procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("payoutHistory");
     });
 
     it("should apply 20% platform fee on payouts", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("platformFeeInCents");
       expect(routerContent).toContain("netPayoutInCents");
     });
 
     it("should enforce minimum payout of $10 (1000 cents)", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("1000");
     });
   });
@@ -131,46 +131,46 @@ describe("v11 - Stripe Connect Payout System", () => {
 describe("v11 - AI Recommendation Engine", () => {
   describe("recommendation router procedures", () => {
     it("should have getPersonalized procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("getPersonalized");
     });
 
     it("should have getTrending procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("getTrending");
     });
 
     it("should have getSimilar procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("getSimilar");
     });
 
     it("should have trackProgress procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("trackProgress");
       expect(routerContent).toContain("progressPercent");
       expect(routerContent).toContain("watchTimeSec");
     });
 
     it("should have updatePreferences procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("updatePreferences");
       expect(routerContent).toContain("preferredCategories");
       expect(routerContent).toContain("weeklyTargetMinutes");
     });
 
     it("should have getHistory procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("getHistory");
     });
 
     it("should have getPreferences procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("getPreferences");
     });
 
     it("should use caching for recommendations", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("setCachedRecommendations");
       expect(routerContent).toContain("fromCache");
     });

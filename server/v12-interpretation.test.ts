@@ -1,7 +1,18 @@
 import { describe, it, expect } from "vitest";
 import * as db from "./db";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync, existsSync } from "fs";
 import { resolve } from "path";
+
+// Helper to read all db files
+function readAllDbFiles(): string {
+  const fsx = require('fs');
+  const pathx = require('path');
+  const dir = pathx.resolve(__dirname, 'db');
+  if (fsx.existsSync(dir) && fsx.statSync(dir).isDirectory()) {
+    return fsx.readdirSync(dir).filter((f: string) => f.endsWith('.ts')).map((f: string) => fsx.readFileSync(pathx.join(dir, f), 'utf-8')).join('\n');
+  }
+  return fsx.readFileSync(pathx.resolve(__dirname, 'db.ts'), 'utf-8');
+}
 
 // ===== Real-time AI Interpretation Tests (v12.0) =====
 
@@ -59,19 +70,19 @@ describe("v12 - Real-time AI Interpretation", () => {
   // --- DB Helper Tests ---
   describe("DB Helper Functions", () => {
     it("should import interpretationSessions in db.ts", () => {
-      const dbContent = readFileSync(resolve(__dirname, "db.ts"), "utf-8");
+      const dbContent = readAllDbFiles();
       expect(dbContent).toContain("interpretationSessions");
       expect(dbContent).toContain("InsertInterpretationSession");
     });
 
     it("should import translationSegments in db.ts", () => {
-      const dbContent = readFileSync(resolve(__dirname, "db.ts"), "utf-8");
+      const dbContent = readAllDbFiles();
       expect(dbContent).toContain("translationSegments");
       expect(dbContent).toContain("InsertTranslationSegment");
     });
 
     it("should import supportedLanguages in db.ts", () => {
-      const dbContent = readFileSync(resolve(__dirname, "db.ts"), "utf-8");
+      const dbContent = readAllDbFiles();
       expect(dbContent).toContain("supportedLanguages");
       expect(dbContent).toContain("InsertSupportedLanguage");
     });
@@ -116,61 +127,61 @@ describe("v12 - Real-time AI Interpretation", () => {
   // --- Router Tests ---
   describe("Interpretation Router", () => {
     it("should have interpretation router in appRouter", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
-      expect(routerContent).toContain("interpretation: router({");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
+      expect(routerContent).toContain("interpretationRouter = router({");
     });
 
     it("should have getSupportedLanguages as public procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("getSupportedLanguages: publicProcedure");
     });
 
     it("should have startSession as protected procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("startSession: protectedProcedure");
       expect(routerContent).toContain("sourceLanguage");
       expect(routerContent).toContain("targetLanguages");
     });
 
     it("should have translate procedure with LLM integration", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("translate: protectedProcedure");
       expect(routerContent).toContain("invokeLLM");
       expect(routerContent).toContain("professional real-time interpreter");
     });
 
     it("should have batchTranslate for multiple languages at once", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("batchTranslate: protectedProcedure");
       expect(routerContent).toContain("Promise.all");
     });
 
     it("should have endSession procedure", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("endSession: protectedProcedure");
       expect(routerContent).toContain("endInterpretationSession");
     });
 
     it("should have getHistory procedure with optional language filter", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("getHistory: protectedProcedure");
       expect(routerContent).toContain("targetLanguage: z.string().optional()");
     });
 
     it("should have mySessions procedure for user's session list", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("mySessions: protectedProcedure");
       expect(routerContent).toContain("getUserInterpretationSessions");
     });
 
     it("should have translateChat for multilingual chat messages", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("translateChat: protectedProcedure");
       expect(routerContent).toContain("chat message");
     });
 
     it("should support 15 language codes in translation", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       const langCodes = ["ko", "zh", "en", "ja", "vi", "th", "es", "fr", "de", "ar", "hi", "pt", "ru", "id", "tr"];
       langCodes.forEach((code) => {
         expect(routerContent).toContain(`${code}:`);
@@ -178,13 +189,13 @@ describe("v12 - Real-time AI Interpretation", () => {
     });
 
     it("should verify session ownership before translation", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("session.hostUserId !== ctx.user.id");
       expect(routerContent).toContain("FORBIDDEN");
     });
 
     it("should update session stats after translation", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("updateInterpretationSessionStats");
       expect(routerContent).toContain("getSessionSegmentCount");
     });
@@ -270,6 +281,14 @@ describe("v12 - Real-time AI Interpretation", () => {
     });
 
     it("should have lazy import for LiveInterpretation", () => {
+
+function readAllDbFiles(): string {
+  const dir = path.resolve(__dirname, "db");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return fs.readFileSync(path.resolve(__dirname, "db.ts"), "utf-8");
+}
       const app = readFileSync(resolve(__dirname, "../client/src/App.tsx"), "utf-8");
       expect(app).toContain('lazy(() => import("./pages/LiveInterpretation"))');
     });
@@ -314,22 +333,22 @@ describe("v12 - Real-time AI Interpretation", () => {
   // --- Integration Tests ---
   describe("Integration", () => {
     it("should have default source language as Korean", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain('z.string().default("ko")');
     });
 
     it("should require at least 1 target language", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("z.array(z.string()).min(1)");
     });
 
     it("should save confidence score for translations", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("confidence: 90");
     });
 
     it("should handle batch translation errors gracefully", () => {
-      const routerContent = readFileSync(resolve(__dirname, "routers.ts"), "utf-8");
+      const routerContent = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routerContent).toContain("success: true");
       expect(routerContent).toContain("success: false");
     });
@@ -356,25 +375,25 @@ describe("v12 - Real-time AI Interpretation", () => {
 describe("v12.1 - Whisper API Server-side STT", () => {
   describe("tRPC Router - transcribeAudioUpload", () => {
     it("should define transcribeAudioUpload procedure in routers.ts", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routers).toContain("transcribeAudioUpload");
       expect(routers).toContain("audioData: z.string()");
     });
 
     it("should validate file size limit of 16MB", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routers).toContain("sizeMB > 16");
       // i18n: was toContain("최대 16MB까지 허용됩니다")
       expect(routers).toContain("t(");
     });
 
     it("should upload audio to S3 before transcription", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routers).toContain("storagePut(fileKey, buffer, input.mimeType)");
     });
 
     it("should call transcribeAudio with audioUrl", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       const section = routers.substring(
         routers.indexOf("transcribeAudioUpload"),
         routers.indexOf("transcribeAndTranslate")
@@ -384,7 +403,7 @@ describe("v12.1 - Whisper API Server-side STT", () => {
     });
 
     it("should return text, language, duration, segments, and audioUrl", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       const section = routers.substring(
         routers.indexOf("transcribeAudioUpload"),
         routers.indexOf("transcribeAndTranslate")
@@ -397,14 +416,14 @@ describe("v12.1 - Whisper API Server-side STT", () => {
 
   describe("tRPC Router - transcribeAndTranslate", () => {
     it("should define transcribeAndTranslate procedure", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       expect(routers).toContain("transcribeAndTranslate");
       expect(routers).toContain("targetLanguages: z.array(z.string()).min(1)");
       expect(routers).toContain("sessionId: z.number().optional()");
     });
 
     it("should transcribe then translate to multiple languages in parallel", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       const section = routers.substring(routers.indexOf("transcribeAndTranslate"));
       expect(section).toContain("transcribeAudio({");
       expect(section).toContain("Promise.all");
@@ -412,20 +431,20 @@ describe("v12.1 - Whisper API Server-side STT", () => {
     });
 
     it("should return empty translations when no speech detected", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       const section = routers.substring(routers.indexOf("transcribeAndTranslate"));
       expect(section).toContain('sourceText: ""');
       expect(section).toContain("translations: []");
     });
 
     it("should save segments to DB when sessionId provided", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       const section = routers.substring(routers.indexOf("transcribeAndTranslate"));
       expect(section).toContain("db.addTranslationSegment");
     });
 
     it("should support all 15 languages", () => {
-      const routers = readFileSync(resolve(__dirname, "./routers.ts"), "utf-8");
+      const routers = (() => { const dir = resolve(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(resolve(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(resolve(dir, f), "utf-8")).join("\n"); })();
       const section = routers.substring(routers.indexOf("transcribeAndTranslate"));
       for (const lang of ["Korean", "Chinese", "English", "Japanese", "Vietnamese", "Thai",
         "Spanish", "French", "German", "Arabic", "Hindi", "Portuguese", "Russian", "Indonesian", "Turkish"]) {

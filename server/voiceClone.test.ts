@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync, existsSync } from "fs";
 import { join } from "path";
 
 /**
@@ -8,10 +8,21 @@ import { join } from "path";
  * v5.1: Speed/pitch sliders, voice test, preset voices
  */
 
+// Helper to read all db files
+function readAllDbFiles(): string {
+  const fsx = require('fs');
+  const pathx = require('path');
+  const dir = pathx.resolve(__dirname, 'db');
+  if (fsx.existsSync(dir) && fsx.statSync(dir).isDirectory()) {
+    return fsx.readdirSync(dir).filter((f: string) => f.endsWith('.ts')).map((f: string) => fsx.readFileSync(pathx.join(dir, f), 'utf-8')).join('\n');
+  }
+  return fsx.readFileSync(pathx.resolve(__dirname, 'db.ts'), 'utf-8');
+}
+
 // Read source files for structural assertions
-const routersSource = readFileSync(join(__dirname, "routers.ts"), "utf-8");
+const routersSource = (() => { const dir = join(__dirname, "routers"); const { readdirSync: rd, existsSync: ex } = require("fs"); if (!ex(dir)) return readFileSync(join(__dirname, "routers.ts"), "utf-8"); return rd(dir).filter((f: string) => f.endsWith(".ts")).map((f: string) => readFileSync(join(dir, f), "utf-8")).join("\n"); })();
 const schemaSource = readFileSync(join(__dirname, "../drizzle/schema.ts"), "utf-8");
-const dbSource = readFileSync(join(__dirname, "db.ts"), "utf-8");
+const dbSource = readAllDbFiles();
 const avatarDialogSource = readFileSync(join(__dirname, "../client/src/components/AvatarSettingsDialog.tsx"), "utf-8");
 const i18nSource = readFileSync(join(__dirname, "../client/src/i18n/components/AvatarSettingsDialog.ts"), "utf-8");
 const geminiTtsSource = readFileSync(join(__dirname, "_core/geminiTts.ts"), "utf-8");
@@ -40,7 +51,7 @@ describe("Voice Clone - Database Schema", () => {
 
 describe("Voice Clone - Backend Router", () => {
   it("voiceClone.create router exists with AI analysis pipeline", () => {
-    expect(routersSource).toContain("voiceClone: router({");
+    expect(routersSource).toContain("voiceCloneRouter = router({");
     expect(routersSource).toContain("create: protectedProcedure");
   });
 
@@ -347,6 +358,14 @@ describe("Voice Clone v5.1 - Frontend Speed/Pitch UI", () => {
 
   it("imports Slider component", () => {
     expect(avatarDialogSource).toContain('import { Slider }');
+
+function readAllDbFiles(): string {
+  const dir = path.resolve(__dirname, "db");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return fs.readFileSync(path.resolve(__dirname, "db.ts"), "utf-8");
+}
   });
 });
 

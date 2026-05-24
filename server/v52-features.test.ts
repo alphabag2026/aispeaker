@@ -66,10 +66,7 @@ describe("v5.2 - PPT Slide Preview, Batch PIP/PPT, Gallery Filter/Sort", () => {
 
   // ── Backend: batchStart PIP options ──
   describe("Backend batchStart PIP options", () => {
-    const routersContent = fs.readFileSync(
-      path.resolve(__dirname, "./routers.ts"),
-      "utf-8"
-    );
+    const routersContent = (() => { const dir = path.resolve(__dirname, "routers"); if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return fs.readdirSync(dir).filter((f) => f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); return fs.readFileSync(path.resolve(__dirname, "routers.ts"), "utf-8"); })();
 
     it("should accept pipEnabled in batchStart input schema", () => {
       expect(routersContent).toContain("pipEnabled: z.boolean().optional()");
@@ -124,10 +121,7 @@ describe("v5.2 - PPT Slide Preview, Batch PIP/PPT, Gallery Filter/Sort", () => {
 
   // ── Backend: gallery.list filter/sort ──
   describe("Backend gallery.list filter/sort", () => {
-    const routersContent = fs.readFileSync(
-      path.resolve(__dirname, "./routers.ts"),
-      "utf-8"
-    );
+    const routersContent = (() => { const dir = path.resolve(__dirname, "routers"); if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return fs.readdirSync(dir).filter((f) => f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); return fs.readFileSync(path.resolve(__dirname, "routers.ts"), "utf-8"); })();
 
     it("should accept method filter in gallery.list input", () => {
       expect(routersContent).toContain('method: z.enum(["all", "builtin", "did", "heygen"])');
@@ -140,10 +134,7 @@ describe("v5.2 - PPT Slide Preview, Batch PIP/PPT, Gallery Filter/Sort", () => {
 
   // ── DB: getGalleryItems filter/sort ──
   describe("DB getGalleryItems filter/sort", () => {
-    const dbContent = fs.readFileSync(
-      path.resolve(__dirname, "./db.ts"),
-      "utf-8"
-    );
+    const dbContent = (() => { const dir = path.resolve(__dirname, "db"); if (fs.existsSync(dir)) return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n"); return fs.readFileSync(path.resolve(__dirname, "./db.ts"), "utf-8"); })();
 
     it("should accept method and sort parameters", () => {
       expect(dbContent).toContain('method: "all" | "builtin" | "did" | "heygen"');

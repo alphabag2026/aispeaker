@@ -2,11 +2,19 @@ import { describe, it, expect } from "vitest";
 import * as fs from "fs";
 import * as path from "path";
 
-const routersPath = path.join(__dirname, "routers.ts");
-const routersContent = fs.readFileSync(routersPath, "utf-8");
+function readAllDbFiles(): string {
+  const dir = path.resolve(__dirname, "db");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return fs.readFileSync(path.resolve(__dirname, "db.ts"), "utf-8");
+}
+
+const routersPath = path.join(__dirname, "routers");
+const routersContent = (() => { if (fs.existsSync(routersPath) && fs.statSync(routersPath).isDirectory()) return fs.readdirSync(routersPath).filter((f) => f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(routersPath, f), "utf-8")).join("\n"); return fs.readFileSync(routersPath, "utf-8"); })();
 
 const dbPath = path.join(__dirname, "db.ts");
-const dbContent = fs.readFileSync(dbPath, "utf-8");
+const dbContent = readAllDbFiles();
 
 const schemaPath = path.join(__dirname, "../drizzle/schema.ts");
 const schemaContent = fs.readFileSync(schemaPath, "utf-8");
@@ -15,7 +23,21 @@ const creditDashboardPath = path.join(__dirname, "../client/src/pages/CreditDash
 const creditDashboardContent = fs.readFileSync(creditDashboardPath, "utf-8");
 
 const lectureBuilderPath = path.join(__dirname, "../client/src/pages/LectureBuilder.tsx");
-const lectureBuilderContent = fs.readFileSync(lectureBuilderPath, "utf-8");
+const lectureBuilderContent = readAllLectureBuilderFiles();
+
+
+function readAllLectureBuilderFiles(): string {
+  const fsx = require('fs');
+  const pathx = require('path');
+  const mainFile = pathx.resolve(__dirname, '../client/src/pages/LectureBuilder.tsx');
+  const subDir = pathx.resolve(__dirname, '../client/src/pages/lecture-builder');
+  let content = fsx.readFileSync(mainFile, 'utf-8');
+  if (fsx.existsSync(subDir) && fsx.statSync(subDir).isDirectory()) {
+    const subFiles = fsx.readdirSync(subDir).filter(f => f.endsWith('.tsx') || f.endsWith('.ts'));
+    content += '\n' + subFiles.map(f => fsx.readFileSync(pathx.join(subDir, f), 'utf-8')).join('\n');
+  }
+  return content;
+}
 
 describe("v6.3: AI Clone Voice Preview", () => {
   it("should have generateCloneVoice router for single slide preview", () => {

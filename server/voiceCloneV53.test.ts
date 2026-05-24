@@ -8,11 +8,25 @@ const ROOT = path.resolve(__dirname, "..");
 function readFile(relPath: string): string {
   return fs.readFileSync(path.join(ROOT, relPath), "utf-8");
 }
+function readAllDbFiles(): string {
+  const dir = path.resolve(__dirname, "db");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return readAllDbFiles();
+}
+function readAllRouterFiles(): string {
+  const dir = path.join(ROOT, "server/routers");
+  if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+    return fs.readdirSync(dir).filter(f => f.endsWith(".ts")).map(f => fs.readFileSync(path.join(dir, f), "utf-8")).join("\n");
+  }
+  return readFile("server/routers.ts");
+}
 
 describe("Voice Clone v5.3 - Multi-Sample Analysis", () => {
   const schema = readFile("drizzle/schema.ts");
-  const routers = readFile("server/routers.ts");
-  const db = readFile("server/db.ts");
+  const routers = readAllRouterFiles();
+  const db = readAllDbFiles();
 
   describe("DB Schema - voiceCloneSamples table", () => {
     it("should have voiceCloneSamples table defined", () => {
@@ -69,8 +83,8 @@ describe("Voice Clone v5.3 - Multi-Sample Analysis", () => {
 
 describe("Voice Clone v5.3 - Community Preset Library", () => {
   const schema = readFile("drizzle/schema.ts");
-  const routers = readFile("server/routers.ts");
-  const db = readFile("server/db.ts");
+  const routers = readAllRouterFiles();
+  const db = readAllDbFiles();
 
   describe("DB Schema - voiceEffectPresets enhancements", () => {
     it("should have isPublic column", () => {
@@ -147,7 +161,7 @@ describe("Voice Clone v5.3 - Community Preset Library", () => {
 });
 
 describe("Voice Clone v5.3 - Realtime Voice Analysis", () => {
-  const routers = readFile("server/routers.ts");
+  const routers = readAllRouterFiles();
 
   describe("Backend - analyzeRealtime router", () => {
     it("should have analyzeRealtime procedure", () => {
