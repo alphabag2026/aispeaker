@@ -76,6 +76,8 @@ export async function generateLectureVideo(
 ): Promise<{ videoUrl: string; totalDuration: number }> {
   const didApiKey = process.env.DID_API_KEY;
   if (!didApiKey) throw new Error("DID_API_KEY is not configured.");
+  const siteBaseUrl = process.env.SITE_BASE_URL || "https://aispeaker.cc";
+  const toAbsoluteUrl = (url: string) => url.startsWith("/") ? `${siteBaseUrl}${url}` : url;
   const totalSegments = config.segments.length;
   const segmentVideoUrls: string[] = [];
 
@@ -84,8 +86,18 @@ export async function generateLectureVideo(
     onProgress?.({ phase: "avatar", current: i + 1, total: totalSegments,
       message: `Generating avatar video (${i + 1}/${totalSegments}): ${segment.avatarName}` });
     try {
-      const url = await generateAvatarVideo(segment.avatarFaceUrl, segment.script, segment.avatarVoiceId, didApiKey);
+      // Skip segments without avatar face URL
+      if (!segment.avatarFaceUrl) {
+        console.warn(`[LectureVideo] Segment ${i} skipped: no avatar face URL`);
+        segmentVideoUrls.push("");
+        continue;
+      }
+      const absoluteFaceUrl = toAbsoluteUrl(segment.avatarFaceUrl);
+      console.log(`[LectureVideo] Segment ${i}: faceUrl=${absoluteFaceUrl}`);
+      const url = await generateAvatarVideo(absoluteFaceUrl, segment.script, segment.avatarVoiceId, didApiKey);
       segmentVideoUrls.push(url);
+      // Add delay between segments to avoid D-ID rate limiting
+      if (i < totalSegments - 1) await new Promise(r => setTimeout(r, 3000));
     } catch (error: any) {
       console.error(`Segment ${i} failed:`, error.message);
       segmentVideoUrls.push("");

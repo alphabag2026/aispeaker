@@ -2655,3 +2655,15 @@
 - [x] 아바타 없을 때 TTS 모드 안내 UX 추가 (20개 언어 번역 포함)
 - [x] 영상 생성 진행률 WebSocket 실시간 전환 (/ws/video-progress + polling fallback 5초)
 - [x] 프로덕션 배포 (aispeaker-v16.4)
+
+## Day 1 완료: 프로덕션 전체 배포 + PM2 설치
+- [x] TypeScript 에러 확인 (0개 - 이미 수정됨)
+- [x] 프로덕션 DB 마이그레이션 확인 (98개 테이블 모두 존재)
+- [x] v17.0 프로덕션 빌드 + 배포 (Docker → PM2 전환)
+- [x] DB 접속 문제 해결 (비밀번호 불일치 수정)
+- [x] Nginx 포트 불일치 해결 (PORT=3030)
+- [x] .env.production CRLF → LF 변환
+- [x] PM2 설치 + fork 모드 설정
+- [x] PM2 startup 설정 (서버 재부팅 시 자동 시작)
+- [x] 로그 관리 설정 (/opt/aispeaker/logs/)
+- [x] HTTPS 200 + API 정상 응답 확인
