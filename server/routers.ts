@@ -35,6 +35,28 @@ const instructorProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+async function assertLectureAccess(
+  lectureId: number,
+  userId: number,
+  role: string | null | undefined,
+  mode: "read" | "write" = "read"
+) {
+  const lecture = await db.getLectureById(lectureId);
+  if (!lecture) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Lecture not found." });
+  }
+
+  if (role === "admin" || lecture.instructorId === userId) {
+    return lecture;
+  }
+
+  if (mode === "read" && await db.isEnrolled(lectureId, userId)) {
+    return lecture;
+  }
+
+  throw new TRPCError({ code: "FORBIDDEN", message: "Lecture access denied." });
+}
+
 // Supported languages
 const SUPPORTED_LANGUAGES = [
   { code: "ko", name: "한국어", flag: "🇰🇷" },
@@ -187,10 +209,8 @@ export const appRouter = router({
         const token = crypto.randomBytes(32).toString("hex");
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
         await db.savePasswordResetToken(user.id, token, expiresAt);
-        // In production, send email with reset link
-        // For now, return token (development mode)
-        console.log(`[Password Reset] Token for ${input.email}: ${token}`);
-        return { success: true, message: "If the email is registered, a password reset link will be sent.", resetToken: token };
+        // Token delivery must happen out-of-band (email/notification provider).
+        return { success: true, message: "If the email is registered, a password reset link will be sent." };
       }),
 
     // Reset Password with token
@@ -306,10 +326,14 @@ export const appRouter = router({
   material: router({
     list: protectedProcedure
       .input(z.object({ lectureId: z.number() }))
-      .query(async ({ input }) => db.getLectureMaterials(input.lectureId)),
+      .query(async ({ ctx, input }) => {
+        await assertLectureAccess(input.lectureId, ctx.user.id, ctx.user.role, "read");
+        return db.getLectureMaterials(input.lectureId);
+      }),
     upload: instructorProcedure
       .input(z.object({ lectureId: z.number(), title: z.string(), fileType: z.enum(["pdf", "ppt", "image", "video", "other"]), fileData: z.string(), fileName: z.string(), pageCount: z.number().optional() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        await assertLectureAccess(input.lectureId, ctx.user.id, ctx.user.role, "write");
         const buffer = Buffer.from(input.fileData, "base64");
         const fileKey = `materials/${input.lectureId}/${Date.now()}-${input.fileName}`;
         const { url } = await storagePut(fileKey, buffer, input.fileType === "pdf" ? "application/pdf" : "application/octet-stream");
@@ -318,7 +342,13 @@ export const appRouter = router({
       }),
     delete: instructorProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => { await db.deleteLectureMaterial(input.id); return { success: true }; }),
+      .mutation(async ({ ctx, input }) => {
+        const material = await db.getLectureMaterialById(input.id);
+        if (!material) throw new TRPCError({ code: "NOT_FOUND", message: "Material not found." });
+        await assertLectureAccess(material.lectureId, ctx.user.id, ctx.user.role, "write");
+        await db.deleteLectureMaterial(input.id);
+        return { success: true };
+      }),
   }),
 
   // ============ Enrollment ============
@@ -10514,10 +10544,33 @@ function generateCertificateHtml(studentName: string, lectureTitle: string, code
 
 // ============ SCORM Helper Functions ============
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function escapeXml(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 function generateScormManifest(title: string, version: string, sections: any[], language: string): string {
   const orgId = `ORG-${Date.now()}`;
   const itemId = `ITEM-${Date.now()}`;
   const resourceId = `RES-${Date.now()}`;
+  const safeTitle = escapeXml(title);
+  const sectionItems = sections.map((s: any, i: number) => {
+    const sectionTitle = escapeXml(s.title || `Section ${i + 1}`);
+    return `<item identifier="${itemId}-${i}" identifierref="${resourceId}"><title>${sectionTitle}</title></item>`;
+  }).join('\n      ');
   
   if (version === "1.2") {
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -10530,8 +10583,8 @@ function generateScormManifest(title: string, version: string, sections: any[], 
   </metadata>
   <organizations default="${orgId}">
     <organization identifier="${orgId}">
-      <title>${title}</title>
-      ${sections.map((s: any, i: number) => `<item identifier="${itemId}-${i}" identifierref="${resourceId}"><title>${s.title || `Section ${i+1}`}</title></item>`).join('\n      ')}
+      <title>${safeTitle}</title>
+      ${sectionItems}
     </organization>
   </organizations>
   <resources>
@@ -10555,8 +10608,8 @@ function generateScormManifest(title: string, version: string, sections: any[], 
   </metadata>
   <organizations default="${orgId}">
     <organization identifier="${orgId}">
-      <title>${title}</title>
-      ${sections.map((s: any, i: number) => `<item identifier="${itemId}-${i}" identifierref="${resourceId}"><title>${s.title || `Section ${i+1}`}</title></item>`).join('\n      ')}
+      <title>${safeTitle}</title>
+      ${sectionItems}
     </organization>
   </organizations>
   <resources>
@@ -10568,11 +10621,17 @@ function generateScormManifest(title: string, version: string, sections: any[], 
 }
 
 function generateScoHtml(title: string, pipeline: any, sections: any[], version: string, includeSubtitles: boolean): string {
+  const safeTitle = escapeHtml(title);
+  const safeVideoUrl = pipeline.finalVideoUrl ? escapeHtml(pipeline.finalVideoUrl) : "";
+  const sectionHtml = sections.map((s: any, i: number) => (
+    `<div class="section"><h3>${i + 1}. ${escapeHtml(s.title || "")}</h3><p>${escapeHtml(s.content || "")}</p></div>`
+  )).join('');
+
   return `<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>${title}</title>
+  <title>${safeTitle}</title>
   <style>
     body { font-family: 'Noto Sans KR', sans-serif; margin: 0; padding: 20px; background: #0f0f23; color: #e0e0e0; }
     .container { max-width: 900px; margin: 0 auto; }
@@ -10589,13 +10648,13 @@ function generateScoHtml(title: string, pipeline: any, sections: any[], version:
 </head>
 <body>
   <div class="container">
-    <h1>${title}</h1>
+    <h1>${safeTitle}</h1>
     <div class="video-container">
-      ${pipeline.finalVideoUrl ? `<video controls src="${pipeline.finalVideoUrl}"></video>` : '<p>Video is not ready.</p>'}
+      ${safeVideoUrl ? `<video controls src="${safeVideoUrl}"></video>` : '<p>Video is not ready.</p>'}
     </div>
     <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
     <div class="sections">
-      ${sections.map((s: any, i: number) => `<div class="section"><h3>${i+1}. ${s.title || ''}</h3><p>${s.content || ''}</p></div>`).join('')}
+      ${sectionHtml}
     </div>
   </div>
   <script>

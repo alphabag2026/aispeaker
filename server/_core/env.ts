@@ -1,6 +1,18 @@
+function optionalEnv(name: string): string {
+  return process.env[name]?.trim() ?? "";
+}
+
+function requiredInProduction(name: string): string {
+  const value = optionalEnv(name);
+  if (process.env.NODE_ENV === "production" && !value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
 export const ENV = {
   appId: process.env.VITE_APP_ID ?? "",
-  cookieSecret: process.env.JWT_SECRET ?? "",
+  cookieSecret: requiredInProduction("JWT_SECRET"),
   databaseUrl: process.env.DATABASE_URL ?? "",
   oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",

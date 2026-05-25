@@ -15,13 +15,9 @@ export default function ForgotPassword() {
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [resetToken, setResetToken] = useState<string | null>(null);
   const forgotMutation = trpc.auth.forgotPassword.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       setSent(true);
-      if (data.resetToken) {
-        setResetToken(data.resetToken);
-      }
     },
     onError: (err) => {
       toast.error(err.message);
@@ -71,20 +67,6 @@ export default function ForgotPassword() {
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
                 <h3 className="text-lg font-semibold">{t("forgotPassword.successTitle")}</h3>
                 <p className="text-sm text-muted-foreground">{t("forgotPassword.successMessage")}</p>
-                
-                {resetToken && (
-                  <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                    <p className="text-xs text-amber-400 mb-2">{t("forgotPassword.devNote")}</p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate(`/reset-password?token=${resetToken}`)}
-                    >
-                      {t("forgotPassword.resetNow")}
-                    </Button>
-                  </div>
-                )}
               </div>
             )}
             <button
