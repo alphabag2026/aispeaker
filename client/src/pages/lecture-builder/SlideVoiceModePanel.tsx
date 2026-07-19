@@ -4,7 +4,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, Loader2, Check, Circle, Volume2, Headphones, Mic, StopCircle } from "lucide-react";
+import { Upload, Loader2, Check, Circle, Volume2, Headphones, Mic, StopCircle, Sparkles } from "lucide-react";
+import AICloneVoiceSection from "./AICloneVoiceSection";
 
 export default function SlideVoiceModePanel({ projectId, slideId, slideIdx, scripts, onRefresh }: {
   projectId: number;

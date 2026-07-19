@@ -12,9 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs } from "@/components/ui/tabs";
-import { Users, Layers, Plus, Trash2, Wand2, Loader2, Check, ArrowRight, Download, X, History, Undo2, Sparkles, Save, Clock } from "lucide-react";
+import { Users, Layers, Plus, Trash2, Wand2, Loader2, Check, ArrowRight, Download, X, History, Undo2, Sparkles, Save, Clock, Presentation, FileText } from "lucide-react";
 import ScriptAutocomplete from "@/components/ScriptAutocomplete";
 import { ScriptSection, getAVATAR_ROLES } from "./types";
+import PPTAIScriptPanel from "./PPTAIScriptPanel";
+import ImprovementHistoryPanel from "./ImprovementHistoryPanel";
 
 export default function Step2Scripts({ projectId, slides, scripts, avatars, onRefresh, onGoToStep4
 

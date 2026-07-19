@@ -15,6 +15,11 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Users, FileText, Plus, Trash2, Loader2, Check, Pencil, MousePointer, Move, X, Eraser, Sparkles, Save, Globe, Languages, Headphones } from "lucide-react";
 import { PEN_COLORS, getAVATAR_ROLES, getANNOTATION_TOOLS } from "./types";
+import BatchCloneVoiceButton from "./BatchCloneVoiceButton";
+import VersionHistoryButton from "./VersionHistoryButton";
+import PronunciationHighlight from "./PronunciationHighlight";
+import PronunciationGuideButton from "./PronunciationGuideButton";
+import SlideVoiceModePanel from "./SlideVoiceModePanel";
 
 export default function Step4Matching({ projectId, slides, scripts, avatars, annotations, avatarOverrides, insertContent, transitions, onRefresh
 
