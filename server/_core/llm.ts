@@ -210,38 +210,18 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
-/**
- * Resolve LLM API URL:
- * - If GEMINI_API_KEY is set, use Gemini OpenAI-compatible endpoint directly
- * - Otherwise fall back to BUILT_IN_FORGE_API_URL (Manus Forge)
- */
+/** Resolve the direct Gemini OpenAI-compatible endpoint. */
 const resolveApiUrl = () => {
-  // If Gemini API key is available, use Gemini directly
-  if (ENV.geminiApiKey) {
-    return "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
-  }
-  // Fallback to Forge API
-  if (!ENV.forgeApiUrl || ENV.forgeApiUrl.trim().length === 0) {
-    return "https://forge.manus.im/v1/chat/completions";
-  }
-  const base = ENV.forgeApiUrl.replace(/\/$/, "");
-  if (base.includes("/chat/completions")) return base;
-  if (base.endsWith("/openai")) return `${base}/chat/completions`;
-  return `${base}/v1/chat/completions`;
+  return "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 };
 
-/**
- * Resolve the API key for LLM calls:
- * - If GEMINI_API_KEY is set, use it
- * - Otherwise use BUILT_IN_FORGE_API_KEY
- */
 const resolveApiKey = () => {
-  return ENV.geminiApiKey || ENV.forgeApiKey;
+  return ENV.geminiApiKey;
 };
 
 const assertApiKey = () => {
-  if (!ENV.geminiApiKey && !ENV.forgeApiKey) {
-    throw new Error("API key is not configured (set GEMINI_API_KEY or BUILT_IN_FORGE_API_KEY)");
+  if (!ENV.geminiApiKey) {
+    throw new Error("API key is not configured (set GEMINI_API_KEY)");
   }
 };
 

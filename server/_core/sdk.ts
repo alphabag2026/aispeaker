@@ -27,6 +27,9 @@ class AuthService {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
+    if (!secret) {
+      throw new Error("JWT_SECRET is required for session signing");
+    }
     return new TextEncoder().encode(secret);
   }
 

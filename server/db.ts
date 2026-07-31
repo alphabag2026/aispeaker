@@ -309,6 +309,11 @@ export async function getLectureMaterials(lectureId: number) {
   const db = await getDb(); if (!db) return [];
   return db.select().from(lectureMaterials).where(eq(lectureMaterials.lectureId, lectureId)).orderBy(lectureMaterials.sortOrder);
 }
+export async function getLectureMaterialById(id: number) {
+  const db = await getDb(); if (!db) return undefined;
+  const result = await db.select().from(lectureMaterials).where(eq(lectureMaterials.id, id)).limit(1);
+  return result[0];
+}
 export async function createLectureMaterial(data: InsertLectureMaterial) {
   const db = await getDb(); if (!db) return null;
   const result = await db.insert(lectureMaterials).values(data); return result[0].insertId;

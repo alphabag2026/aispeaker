@@ -1,6 +1,7 @@
 import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "http";
 import * as db from "./db";
+import { sdk } from "./_core/sdk";
 
 // --- Types ---
 interface WsClient {
@@ -40,11 +41,22 @@ export function setupWebSocket(server: Server) {
 
         // --- JOIN session ---
         if (msg.type === "join") {
-          const { sessionCode, userId, userName } = msg;
-          if (!sessionCode || !userId) {
-            ws.send(JSON.stringify({ type: "error", message: "Missing sessionCode or userId" }));
+          const { sessionCode } = msg;
+          if (!sessionCode) {
+            ws.send(JSON.stringify({ type: "error", message: "Missing sessionCode" }));
             return;
           }
+
+          let user;
+          try {
+            user = await sdk.authenticateRequest(req as any);
+          } catch {
+            ws.send(JSON.stringify({ type: "error", message: "Authentication required" }));
+            ws.close();
+            return;
+          }
+          const userId = user.id;
+          const userName = user.name || user.email || `User ${userId}`;
 
           // Verify session exists
           const session = await db.getWhiteboardSessionByCode(sessionCode);
@@ -196,6 +208,11 @@ export function setupWebSocket(server: Server) {
 
         // --- CLEAR ALL (host only) ---
         if (msg.type === "clear_all") {
+          const session = await db.getWhiteboardSessionByCode(client.sessionCode);
+          if (!session || (session.hostUserId !== client.userId)) {
+            ws.send(JSON.stringify({ type: "error", message: "Host permission required" }));
+            return;
+          }
           broadcastToRoom(client.sessionCode, {
             type: "clear_all",
             userId: client.userId,

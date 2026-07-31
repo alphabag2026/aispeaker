@@ -88,7 +88,6 @@ log_info "배포 패키지 생성: $DEPLOY_PACKAGE"
 tar -czf "/tmp/$DEPLOY_PACKAGE" \
   --exclude='node_modules' \
   --exclude='.git' \
-  --exclude='.manus-logs' \
   --exclude='client/src' \
   --exclude='*.test.ts' \
   --exclude='*.test.js' \

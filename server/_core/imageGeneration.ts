@@ -1,9 +1,5 @@
 /**
- * Image generation helper with Gemini Imagen fallback
- *
- * - If BUILT_IN_FORGE_API_URL is set, use Forge ImageService
- * - If Forge fails or is unavailable, fall back to Gemini Imagen API
- * - If neither is available, throw a descriptive error
+ * Image generation helper using the direct Gemini Imagen API.
  */
 import { storagePut } from "server/storage";
 import { ENV } from "./env";
@@ -21,10 +17,6 @@ export type GenerateImageResponse = {
   url?: string;
 };
 
-/**
- * Generate image using Gemini Imagen API (fallback when Forge is unavailable)
- * Uses gemini-2.5-flash-preview-image-generation model
- */
 async function generateWithGemini(prompt: string): Promise<Buffer> {
   const apiKey = ENV.geminiApiKey;
   if (!apiKey) {
@@ -69,76 +61,11 @@ async function generateWithGemini(prompt: string): Promise<Buffer> {
   throw new Error("Gemini did not return an image in the response");
 }
 
-/**
- * Generate image using Forge ImageService
- */
-async function generateWithForge(options: GenerateImageOptions): Promise<{ buffer: Buffer; mimeType: string }> {
-  const baseUrl = ENV.forgeApiUrl!.endsWith("/")
-    ? ENV.forgeApiUrl!
-    : `${ENV.forgeApiUrl!}/`;
-  const fullUrl = new URL(
-    "images.v1.ImageService/GenerateImage",
-    baseUrl
-  ).toString();
-
-  const response = await fetch(fullUrl, {
-    method: "POST",
-    headers: {
-      accept: "application/json",
-      "content-type": "application/json",
-      "connect-protocol-version": "1",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
-    },
-    body: JSON.stringify({
-      prompt: options.prompt,
-      original_images: options.originalImages || [],
-    }),
-  });
-
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(
-      `Image generation request failed (${response.status} ${response.statusText})${detail ? `: ${detail}` : ""}`
-    );
-  }
-
-  const result = (await response.json()) as {
-    image: { b64Json: string; mimeType: string };
-  };
-  return {
-    buffer: Buffer.from(result.image.b64Json, "base64"),
-    mimeType: result.image.mimeType,
-  };
-}
-
 export async function generateImage(
   options: GenerateImageOptions
 ): Promise<GenerateImageResponse> {
-  let buffer: Buffer;
-  let mimeType = "image/png";
-
-  // Try Forge first, then Gemini fallback
-  if (ENV.forgeApiUrl && ENV.forgeApiKey) {
-    try {
-      const result = await generateWithForge(options);
-      buffer = result.buffer;
-      mimeType = result.mimeType;
-    } catch (forgeError: any) {
-      console.warn(`[ImageGen] Forge failed: ${forgeError.message}. Falling back to Gemini...`);
-      if (ENV.geminiApiKey) {
-        buffer = await generateWithGemini(options.prompt);
-      } else {
-        throw forgeError;
-      }
-    }
-  } else if (ENV.geminiApiKey) {
-    console.log("[ImageGen] Forge not available, using Gemini Imagen fallback");
-    buffer = await generateWithGemini(options.prompt);
-  } else {
-    throw new Error(
-      "Image generation service is unavailable. Please configure BUILT_IN_FORGE_API_URL or GEMINI_API_KEY."
-    );
-  }
+  const buffer = await generateWithGemini(options.prompt);
+  const mimeType = "image/png";
 
   // Save to storage
   const { url } = await storagePut(

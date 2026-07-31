@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 
 /**
- * OAuth routes - Manus OAuth removed.
+ * OAuth routes.
  * Email/password and Google OAuth are handled via tRPC auth procedures.
  */
 export function registerOAuthRoutes(app: Express) {

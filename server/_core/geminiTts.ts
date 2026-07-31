@@ -200,13 +200,12 @@ export async function generateGeminiTts(
   const startTime = Date.now();
   const model = "gemini-2.5-flash-preview-tts";
   try {
-    // Validate environment - prefer GEMINI_API_KEY, fallback to BUILT_IN_FORGE_API_KEY
-    const apiKey = ENV.geminiApiKey || ENV.forgeApiKey;
+    const apiKey = ENV.geminiApiKey;
     if (!apiKey) {
       return {
         error: "TTS service authentication key is not configured",
         code: "SERVICE_ERROR",
-        details: "GEMINI_API_KEY or BUILT_IN_FORGE_API_KEY is not set",
+        details: "GEMINI_API_KEY is not set",
       };
     }
 
